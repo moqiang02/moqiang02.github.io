@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Gson使用技巧小结 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="背景json格式在移动端开发中再熟悉不过了，相较xml等格式，json有易读、体积小等优点。在解析json格式时，个人比较习惯使用Google的gson工具包，之前看过gson和阿里fastjson的性能比较，貌似gson在数据量不大时性能更好。目前项目级别使用gson完全能够胜任。开始的时候使用gson只是简单的新建Gson实例，调用from方法解析成对应model类。随着业务发展和http模块">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Gson使用技巧小结">
+<meta property="og:url" content="http://moqiang02.github.io/2016/04/26/Gson%E4%BD%BF%E7%94%A8%E6%8A%80%E5%B7%A7%E5%B0%8F%E7%BB%93/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="背景json格式在移动端开发中再熟悉不过了，相较xml等格式，json有易读、体积小等优点。在解析json格式时，个人比较习惯使用Google的gson工具包，之前看过gson和阿里fastjson的性能比较，貌似gson在数据量不大时性能更好。目前项目级别使用gson完全能够胜任。开始的时候使用gson只是简单的新建Gson实例，调用from方法解析成对应model类。随着业务发展和http模块">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2016-04-26T13:36:20.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:18.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Gson使用技巧小结" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/04/26/Gson%E4%BD%BF%E7%94%A8%E6%8A%80%E5%B7%A7%E5%B0%8F%E7%BB%93/" class="article-date">
+  <time datetime="2016-04-26T13:36:20.000Z" itemprop="datePublished">2016-04-26</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Android/">Android</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Gson使用技巧小结
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>json格式在移动端开发中再熟悉不过了，相较xml等格式，json有易读、体积小等优点。在解析json格式时，个人比较习惯使用Google的gson工具包，之前看过gson和阿里fastjson的性能比较，貌似gson在数据量不大时性能更好。目前项目级别使用gson完全能够胜任。<br>开始的时候使用gson只是简单的新建Gson实例，调用from方法解析成对应model类。随着业务发展和http模块的升级，简单的toJson和from方法已经不能满足需求了。因为接口返回数据的差异性，不同情形下可能使用不同的解析策略，最简单的方法当然是针对每个接口返回的数据使用相对应的model，但这样很容易造成model对象过多过杂难以管理和分辨。另外接口返回数据命名策略也可能因人而异，下划线和驼峰式都有可能，为了保证Application端代码的一致性，就要想办法把下划线风格的转为驼峰式风格。这些需求gson通通能够解决。<a id="more"></a></p>
+<h3 id="Gson基础"><a href="#Gson基础" class="headerlink" title="Gson基础"></a>Gson基础</h3><p>from和toJson方法，分别用于json格式字符串转为Model对象、对象转json。很好理解。</p>
+<pre><code>public static void baseGson() {
+    String json = &quot;{\&quot;name\&quot;:\&quot;gson\&quot;,\&quot;date\&quot;:\&quot;2015/12/29\&quot;}&quot;;
+    BaseGson fromJson = getSimpleGson().fromJson(json, BaseGson.class);
+
+    String toJson = getSimpleGson().toJson(fromJson);
+}
+
+static class BaseGson {
+    public String name;
+    public String date;
+
+    @Override
+    public String toString() {
+        return &quot;BaseGson{&quot; +
+                &quot;name=&#39;&quot; + name + &#39;\&#39;&#39; +
+                &quot;, date=&#39;&quot; + date + &#39;\&#39;&#39; +
+                &#39;}&#39;;
+    }
+}</code></pre><p>注意这里的fromJson方法后可以跟type类型或class类型。解析List时多用TypeToken，如下：</p>
+<p><code>new TypeToken&lt;List&lt;BaseGson&gt;&gt;(){}.getType();</code></p>
+<h3 id="Gson注解"><a href="#Gson注解" class="headerlink" title="Gson注解"></a>Gson注解</h3><p>介绍下常用几个注解，Expose和SerializedName。</p>
+<h4 id="SerializedName"><a href="#SerializedName" class="headerlink" title="SerializedName"></a>SerializedName</h4><p>举个例子，解决接口和本地model风格差异问题，比如返回的字段mobile_phone要解析为mobilePhone，只需在本地model类中添加注解<code>@SerializedName(&quot;mobile_phone&quot;)</code>即可，代码如下：</p>
+<pre><code>public static void annotataionGson(){
+    String json = &quot;{\&quot;name\&quot;:\&quot;gson\&quot;,\&quot;date\&quot;:\&quot;2015/12/29\&quot;, \&quot;mobile_phone\&quot;:\&quot;13111111111\&quot;}&quot;;
+    BaseGson fromJson = getSimpleGson().fromJson(json, BaseGson.class);
+
+    Log.d(&quot;Gson&quot;, fromJson.toString());
+}
+
+static class BaseGson {
+    public String name;
+    public String date;
+    @SerializedName(&quot;mobile_phone&quot;)
+    public String mobilePhone;
+
+    @Override
+    public String toString() {
+        return &quot;BaseGson{&quot; +
+                &quot;name=&#39;&quot; + name + &#39;\&#39;&#39; +
+                &quot;, date=&#39;&quot; + date + &#39;\&#39;&#39; +
+                &quot;, mobilePhone=&#39;&quot; + mobilePhone + &#39;\&#39;&#39; +
+                &#39;}&#39;;
+    }
+}</code></pre><p>输出为<br><code>12-29 05:59:27.490 15245-15245/? D/Gson: BaseGson{name=&#39;gson&#39;, date=&#39;2015/12/29&#39;, mobilePhone=&#39;13111111111&#39;}</code></p>
+<p>相当方便吧，SerializedName后跟的字段就是转化后/被转化前json字符串时显示的字段。此外，除了注解Gson还提供Builder方式建造不同策略的gson对象，例如</p>
+<p><code>Gson policyGson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+            .create();</code></p>
+<p>使用这样的policyGson，toJson时会按照“小写下划线”格式输出(toJson)。不过对<code>@SerializedName</code>不生效，即优先级小于<code>@SerializedName</code>。</p>
+<h4 id="Expose"><a href="#Expose" class="headerlink" title="Expose"></a>Expose</h4><p>用来标示toJson时输出的字段。<br>比如对name字段使用Expose。同时开启excludeFieldsWithoutExposeAnnotation。代码如下：</p>
+<pre><code>public static void annotataionGson(){
+    String json = &quot;{\&quot;name\&quot;:\&quot;gson\&quot;,\&quot;date\&quot;:\&quot;2015/12/29\&quot;, \&quot;mobile_phone\&quot;:\&quot;13111111111\&quot;}&quot;;
+    Gson g = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
+    BaseGson fromJson = g.fromJson(json, BaseGson.class);
+
+    Log.d(&quot;Gson&quot;, fromJson.toString());
+
+    Log.d(&quot;Gson&quot;, g.toJson(fromJson));
+}
+
+static class BaseGson {
+    @Expose
+    public String name;
+    public String date;
+    @SerializedName(&quot;mobile_phone&quot;)
+    public String mobilePhone;
+
+    @Override
+    public String toString() {
+        return &quot;BaseGson{&quot; +
+                &quot;name=&#39;&quot; + name + &#39;\&#39;&#39; +
+                &quot;, date=&#39;&quot; + date + &#39;\&#39;&#39; +
+                &quot;, mobilePhone=&#39;&quot; + mobilePhone + &#39;\&#39;&#39; +
+                &#39;}&#39;;
+    }
+}</code></pre><p>则输出</p>
+<pre><code>12-29 08:02:08.922 26266-26266/? D/Gson: BaseGson{name=&#39;gson&#39;, date=&#39;null&#39;, mobilePhone=&#39;null&#39;}
+12-29 08:02:08.926 26266-26266/? D/Gson: {&quot;name&quot;:&quot;gson&quot;}</code></pre><p>除此，还有根据关键字来筛选序列化、反序列化时要忽略的字段，<code>new GsonBuilder().excludeFieldsWithModifiers(Modifier.TRANSIENT).create();</code>这样transient修饰的字段就会被忽略啦。</p>
+<blockquote>
+<p>1.1 deserialize (boolean) 反序列化 默认true 例：<code>@Expose(deserialize=false)</code><br>1.2 serialize  (boolean) 序列化 默认true 例：<code>@Expose(serialize=false)</code><br>使用<code>new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();</code>创建Gson对象，没有@Expose注释的属性将不会被序列化。</p>
+</blockquote>
+<h3 id="Gson的TypeAdapter"><a href="#Gson的TypeAdapter" class="headerlink" title="Gson的TypeAdapter"></a>Gson的TypeAdapter</h3><p>typeAdapter是灵活使用Gson的一大利器，使用场景：服务器的小伙伴传来的json为（这里使用了<a href="http://httpbin.org/" target="_blank" rel="noopener">测试站Get数据</a>）</p>
+<pre><code>{
+  &quot;args&quot;: {
+    &quot;intValue&quot;: &quot;123&quot;, 
+    &quot;name&quot;: &quot;test&quot;
+  }, 
+  &quot;headers&quot;: {
+    &quot;Accept&quot;: &quot;text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8&quot;, 
+    &quot;Accept-Encoding&quot;: &quot;gzip, deflate, sdch&quot;, 
+    &quot;Accept-Language&quot;: &quot;zh-CN,zh;q=0.8&quot;, 
+    &quot;Cookie&quot;: &quot;_ga=GA1.2.867290806.1451279087&quot;, 
+    &quot;Host&quot;: &quot;httpbin.org&quot;, 
+    &quot;Upgrade-Insecure-Requests&quot;: &quot;1&quot;, 
+    &quot;User-Agent&quot;: &quot;Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36&quot;
+  }, 
+  &quot;origin&quot;: &quot;123.126.22.222&quot;, 
+  &quot;url&quot;: &quot;http://httpbin.org/get?name=test&amp;intValue=123&quot;
+}</code></pre><p>很不幸本地model类没有考虑这么复杂，所有字段均为String类型，且并不需要嵌套过深过细的数据结构。要是能转化为以下数据结构对应的model就好了。</p>
+<pre><code>{
+  &quot;args&quot;: &quot;xx&quot;, 
+  &quot;headers&quot;: &quot;xx&quot;, 
+  &quot;origin&quot;: &quot;123.126.22.222&quot;, 
+  &quot;url&quot;: &quot;http://httpbin.org/get?name=test&amp;intValue=123&quot;
+}</code></pre><p>使用typeAdapter就可以自定义解析格式。首先要自己新建TypeAdapter的子类，有点类似于实现Parcelable接口，需要实现write和read方法。</p>
+<pre><code>/**
+ * Created by opticalix@gmail.com on 15/12/28.
+ */
+public class HttpBinTypeAdapter extends TypeAdapter&lt;HttpBinModel&gt; {
+    @Override
+    public void write(JsonWriter out, HttpBinModel value) throws IOException {
+        //value write to json
+        if (value == null) {
+            out.nullValue();
+        } else {
+            out.beginObject();
+            out.name(&quot;args&quot;).value(value.args);
+            out.name(&quot;headers&quot;).value(value.headers);
+            out.name(&quot;origin&quot;).value(value.origin);
+            out.name(&quot;url&quot;).value(value.url);
+            out.endObject();
+        }
+    }
+    @Override
+    public HttpBinModel read(JsonReader in) throws IOException {
+        //read json, return model
+        if (in.peek() == JsonToken.NULL) {
+            return null;
+        } else {
+            in.beginObject();
+            HttpBinModel model = new HttpBinModel();
+            if (in.nextName().equals(&quot;args&quot;)) {
+                in.beginObject();
+                String args = &quot;&quot;;
+                while (in.hasNext()) {
+                    if (!TextUtils.isEmpty(args)) args += &quot;, &quot;;
+                    args += in.nextName() + &quot;=&quot; + in.nextString();
+                }
+                model.args = args;
+                in.endObject();
+            }
+            if (in.nextName().equals(&quot;headers&quot;)) {
+                in.beginObject();
+                String headers = &quot;&quot;;
+                while (in.hasNext()) {
+                    if (!TextUtils.isEmpty(headers)) headers += &quot;, &quot;;
+                    headers += in.nextName() + &quot;=&quot; + in.nextString();
+                }
+                model.headers = headers;
+                in.endObject();
+            }
+            if (in.nextName().equals(&quot;origin&quot;)) {
+                model.origin = in.nextString();
+            }
+            if (in.nextName().equals(&quot;url&quot;)) {
+                model.url = in.nextString();
+            }
+            in.endObject();
+            return model;
+        }
+    }
+}</code></pre><p>write比较简单，如果model不为空，则输出model中各个字段到JsonWriter。注意<code>out.beginObject();</code>和<code>out.endObject();</code>，它处理的是json中的大小括号。<br>read方法，实现的是从reader中恢复model的过程，关键代码在于</p>
+<pre><code>while (in.hasNext()) {
+    if (!TextUtils.isEmpty(args)) args += &quot;, &quot;;
+    args += in.nextName() + &quot;=&quot; + in.nextString();
+}</code></pre><p>由于我们不希望Gson死板地解析args为一个jsonObject，这就需要手动空读‘{’即in.beginObject();，循环读args中子字段但都只做拼接操作，最终将拼接好的String赋值给本地model：</p>
+<pre><code>model.args = args;
+in.endObject();</code></pre><p>最后别忘了返回model。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>Gson用法远比我之前想象的灵活（才学疏浅 - -），Gson建造者模式能够创建出各式各样策略的gson对象，本文也只是总结自己项目中用到的一些点，像复杂map的解析什么的都没有涉及，日后可以补充。</p>
+<blockquote>
+<p>参考:<br><a href="http://www.javacreed.com/gson-typeadapter-example/" target="_blank" rel="noopener">Gson TypeAdapter Example</a><br><a href="http://blog.163.com/zhang_91026/blog/static/141094533201222033158561/" target="_blank" rel="noopener">gson的@Expose注解和@SerializedName注解</a><br>转自：<a href="https://opticalix.github.io/2016/01/03/gson-skill/" target="_blank" rel="noopener">https://opticalix.github.io/2016/01/03/gson-skill/</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2016/04/26/Gson%E4%BD%BF%E7%94%A8%E6%8A%80%E5%B7%A7%E5%B0%8F%E7%BB%93/" data-id="ckcqdgkn100f09xlfh5xb871u" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/04/27/%E4%BD%BF%E7%94%A8Android-Support-Annotations%E4%BC%98%E5%8C%96%E4%BD%A0%E7%9A%84%E4%BB%A3%E7%A0%81/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          使用Android Support Annotations优化你的代码
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/04/26/Android%E5%AE%A2%E6%88%B7%E7%AB%AF%E5%92%8C%E6%9C%8D%E5%8A%A1%E7%AB%AF%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8Token%E5%92%8CSession/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Android客户端和服务端如何使用Token和Session</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

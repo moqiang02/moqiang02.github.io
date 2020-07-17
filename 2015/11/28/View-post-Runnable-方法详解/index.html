@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>View.post(Runnable)方法详解 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="Runnable 并不一定是新开一个线程，比如下面的调用方法就是运行在UI主线程中的： Handler mHandler&#x3D;new Handler(); mHandler.post(new Runnable(){     @Override     public void run() {         &#x2F;&#x2F; TODO Auto-generated method stub     } });">
+<meta property="og:type" content="article">
+<meta property="og:title" content="View.post(Runnable)方法详解">
+<meta property="og:url" content="http://moqiang02.github.io/2015/11/28/View-post-Runnable-%E6%96%B9%E6%B3%95%E8%AF%A6%E8%A7%A3/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="Runnable 并不一定是新开一个线程，比如下面的调用方法就是运行在UI主线程中的： Handler mHandler&#x3D;new Handler(); mHandler.post(new Runnable(){     @Override     public void run() {         &#x2F;&#x2F; TODO Auto-generated method stub     } });">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2015-11-28T11:03:48.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:36:56.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-View-post-Runnable-方法详解" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/11/28/View-post-Runnable-%E6%96%B9%E6%B3%95%E8%AF%A6%E8%A7%A3/" class="article-date">
+  <time datetime="2015-11-28T11:03:48.000Z" itemprop="datePublished">2015-11-28</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Android/">Android</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      View.post(Runnable)方法详解
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <p>Runnable 并不一定是新开一个线程，比如下面的调用方法就是运行在UI主线程中的：</p>
+<pre><code>Handler mHandler=new Handler();
+mHandler.post(new Runnable(){
+    @Override
+    public void run() {
+        // TODO Auto-generated method stub
+    }
+});</code></pre><a id="more"></a>
+<p>官方对这个方法的解释如下，注意其中的：“The runnable will be run on the user interface thread. ”</p>
+<p>boolean android.view.View .post(Runnable action)</p>
+<p>Causes the Runnable to be added to the message queue. The runnable will be run on the user interface thread.</p>
+<p>Parameters:<br>action The Runnable that will be executed.<br>Returns:<br>Returns true if the Runnable was successfully placed in to the message queue. Returns false on failure, usually because the looper processing the message queue is exiting.</p>
+<p>我们可以通过调用handler的post方法，把Runnable对象（一般是Runnable的子类）传过去；handler会在looper中调用这个Runnable的Run方法执行。</p>
+<p>Runnable是一个接口，不是一个线程，一般线程会实现Runnable。</p>
+<p>有关 Looper、Handler，Thread 关系可以看这篇博客：<br>Android 的消息队列模型<br><a href="http://www.cnblogs.com/ghj1976/archive/2011/05/06/2038469.html" target="_blank" rel="noopener">http://www.cnblogs.com/ghj1976/archive/2011/05/06/2038469.html</a></p>
+<p>这里我们看代码 <code>mHandler.post(new Runnable(){</code>  好像是new 了一个 interface， 其实是new的一个实现Runnable的匿名内部类（Inner Anonymous Class），这是很简练的写法。</p>
+<p>上面的代码可以看成是：<code>new anonymousClass() implement interface{ [改写interface method]}</code></p>
+<p>Runnable是一个接口，不是一个线程，一般线程会实现Runnable。 所以如果我们使用匿名内部类是运行在UI主线程的，如果我们使用实现这个Runnable接口的线程类，则是运行在对应线程的。</p>
+<p>具体来说，这个函数的工作原理如下：</p>
+<p>View.post(Runnable)方法。在post(Runnable action)方法里，View获得当前线程（即UI线程）的Handler，然后将action对象post到Handler里。在Handler里，它将传递过来的action对象包装成一个Message（Message的callback为action），然后将其投入UI线程的消息循环中。在Handler再次处理该Message时，有一条分支（未解释的那条）就是为它所设，直接调用runnable的run方法。而此时，已经路由到UI线程里，因此，我们可以毫无顾虑的来更新UI。</p>
+<p>参考资料：</p>
+<p>Android中的Handler, Looper, MessageQueue和Thread<br><a href="http://www.cnblogs.com/xirihanlin/archive/2011/04/11/2012746.html" target="_blank" rel="noopener">http://www.cnblogs.com/xirihanlin/archive/2011/04/11/2012746.html</a></p>
+<p>Android系列之Message机制的灵活应用<br><a href="http://tech.ddvip.com/2010-07/1280393505158258_3.html" target="_blank" rel="noopener">http://tech.ddvip.com/2010-07/1280393505158258_3.html</a></p>
+<p>Android 在其他线程中更新UI线程的解决方法<br><a href="http://www.jb51.net/article/37208.htm" target="_blank" rel="noopener">http://www.jb51.net/article/37208.htm</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2015/11/28/View-post-Runnable-%E6%96%B9%E6%B3%95%E8%AF%A6%E8%A7%A3/" data-id="ckcqdgkt200y79xlfa2b1bgzt" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/11/28/Android-%E5%9C%A8%E5%85%B6%E4%BB%96%E7%BA%BF%E7%A8%8B%E4%B8%AD%E6%9B%B4%E6%96%B0UI%E7%BA%BF%E7%A8%8B%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Android 在其他线程中更新UI线程的解决方法
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/11/23/Apache%E9%94%99%E8%AF%AF%E9%A1%B5%E9%9D%A2404%E9%85%8D%E7%BD%AE/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Apache错误页面404配置</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

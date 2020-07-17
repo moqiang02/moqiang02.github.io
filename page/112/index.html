@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="website">
+<meta property="og:title" content="自强不息">
+<meta property="og:url" content="http://moqiang02.github.io/page/112/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main">
+  
+    <article id="post-一个简单的CI分页类" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/07/23/%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84CI%E5%88%86%E9%A1%B5%E7%B1%BB/" class="article-date">
+  <time datetime="2014-07-23T11:51:47.000Z" itemprop="datePublished">2014-07-23</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/07/23/%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84CI%E5%88%86%E9%A1%B5%E7%B1%BB/">一个简单的CI分页类</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <br>
+```
+    /** 
+     *  
+     * 关于 页码有效性的判断需要加在 控制器中判断，即当页码数<1或者>总页数 
+     * 
+     */  
+
+<pre><code>class Custom_pagination  
+{  
+    var $page_url = &#39;&#39;; //分页目标URL  
+    var $page_size = 10; //每一页行数  
+    var $page_num = 1;//页码  
+    var $rows_num= &#39;&#39;;//数据总行数  
+    var $links_num= 3;//选中链接前后的链接数，必须大于等于1  
+
+    var $anchor_class= &#39;&#39;;//链接样式类  
+    var $current_class= &#39;&#39;;//当前页样式类  
+    var $full_tag_open= &#39;&#39;;//分页开始标签  
+    var $full_tag_close= &#39;&#39;;//分页结束标签  
+    var $info_tag_open= &#39;&#39;;  
+    var $info_tag_close= &#39; &#39;;  
+    var $first_tag_open= &#39;&#39;;  
+    var $first_tag_close= &#39; &#39;;  
+    var $last_tag_open= &#39; &#39;;  
+    var $last_tag_close= &#39;&#39;;  
+    var $cur_tag_open= &#39; &lt;strong&gt;&#39;;  
+    var $cur_tag_close= &#39;&lt;/strong&gt;&#39;;  
+    var $next_tag_open= &#39; &#39;;  
+    var $next_tag_close= &#39; &#39;;  
+    var $prev_tag_open= &#39; &#39;;  
+    var $prev_tag_close= &#39;&#39;;  
+    var $num_tag_open= &#39; &#39;;  
+    var $num_tag_close= &#39;&#39;;  
+
+    public function __construct($params = array())  
+    {  
+        if (count($params) &gt; 0)  
+        {  
+            $this-&gt;init($params);  
+        }  
+    }  
+
+    function init($params = array()) //初始化数据  
+    {  
+        if (count($params) &gt; 0)  
+        {  
+            foreach ($params as $key =&gt; $val)  
+            {  
+                if (isset($this-&gt;$key))  
+                {  
+                    $this-&gt;$key = $val;  
+                }  
+            }  
+        }  
+    }  
+
+    function create_links()  
+    {  
+        ///////////////////////////////////////////////////////  
+        //准备数据  
+        ///////////////////////////////////////////////////////  
+        $page_url = $this-&gt;page_url;  
+        $rows_num = $this-&gt;rows_num;  
+        $page_size = $this-&gt;page_size;  
+        $links_num = $this-&gt;links_num;  
+
+        if ($rows_num == 0 OR $page_size == 0)  
+        {  
+            return &#39;&#39;;  
+        }  
+
+        $pages = intval($rows_num/$page_size);  
+        if ($rows_num % $page_size)  
+        {  
+            //有余数pages+1  
+            $pages++;  
+        };  
+        $page_num = $this-&gt;page_num &lt; 1 ? &#39;1&#39; : $this-&gt;page_num;  
+
+        $anchor_class = &#39;&#39;;  
+        if($this-&gt;anchor_class !== &#39;&#39;)  
+        {  
+            $anchor_class = &#39;class=&quot;&#39;.$this-&gt;anchor_class.&#39;&quot; &#39;;  
+        }  
+
+        $current_class = &#39;&#39;;  
+        if($this-&gt;current_class !== &#39;&#39;)  
+        {  
+            $current_class = &#39;class=&quot;&#39;.$this-&gt;current_class.&#39;&quot; &#39;;  
+        }  
+        if($pages == 1)  
+        {  
+            return &#39;&#39;;  
+        }  
+        if($links_num &lt; 0)  
+        {  
+            return &#39;- -！links_num必须大于等于0&#39;;  
+        }  
+        ////////////////////////////////////////////////////////  
+        //创建链接开始  
+        ////////////////////////////////////////////////////////  
+        $output = $this-&gt;full_tag_open;  
+        $output .= $this-&gt;info_tag_open.&#39;共&#39;.$rows_num.&#39;条数据  第 &#39;.$page_num.&#39;/&#39;.$pages.&#39; 页&#39;.$this-&gt;info_tag_close;  
+        //首页  
+        if($page_num &gt; 1)  
+        {  
+            $output .= $this-&gt;first_tag_open.&#39;&lt;a &#39;.$anchor_class.&#39; href=&quot;&#39;.site_url($page_url).&#39;&quot; &gt;首页&lt;/a&gt;&#39;.$this-&gt;first_tag_close;  
+        }  
+        //上一页  
+        if($page_num &gt; 1)  
+        {  
+            $n = $page_num - 1;  
+            $output .= $this-&gt;prev_tag_open.&#39;&lt;a &#39;.$anchor_class.&#39; href=&quot;&#39;.site_url($page_url.&#39;/&#39;.$n).&#39;&quot; &gt;上一页&lt;/a&gt;&#39;.$this-&gt;prev_tag_close;  
+        }  
+        //pages  
+        for($i=1;$i&lt;=$pages;$i++)  
+        {  
+            $pl = $page_num - $links_num &lt; 0 ? 0 : $page_num - $links_num;  
+            $pr = $page_num + $links_num &gt; $pages ? $pages : $page_num + $links_num;  
+            //判断链接个数是否太少，举例，假设links_num = 2，则链接个数不可少于 5 个，主要是 当page_num 等于 1， 2 和 n，n-1的时候  
+            if($pr &lt; 2 * $links_num + 1)  
+            {  
+                $pr = 2 * $links_num + 1;  
+            }  
+            if($pl &gt; $pages-2 * $links_num)  
+            {  
+                $pl = $pages - 2 * $links_num;  
+            }  
+            if($i == $page_num)  
+            {   //current page  
+                $output .= $this-&gt;cur_tag_open.&#39;&lt;span &#39;.$current_class.&#39; &gt;&#39;.$i.&#39;&lt;/span&gt;&#39;.$this-&gt;cur_tag_close;  
+            }else if($i &gt;= $pl &amp;&amp; $i &lt;= $pr)  
+            {  
+                $output .= $this-&gt;num_tag_open.&#39;&lt;a &#39;.$anchor_class.&#39; href=&quot;&#39;.site_url($page_url.&#39;/&#39;.$i).&#39;&quot; &gt;&#39;.$i.&#39;&lt;/a&gt;&#39;.$this-&gt;num_tag_close;  
+            }  
+        }  
+        //下一页  
+        if($page_num &lt; $pages)  
+        {  
+            $n = $page_num + 1;  
+            $output .= $this-&gt;next_tag_open.&#39;&lt;a &#39;.$anchor_class.&#39; href=&quot;&#39;.site_url($page_url.&#39;/&#39;.$n).&#39;&quot; &gt;下一页&lt;/a&gt;&#39;.$this-&gt;next_tag_close;  
+        }  
+        //末页  
+        if($page_num &lt; $pages)  
+        {  
+            $output .= $this-&gt;last_tag_open.&#39;&lt;a &#39;.$anchor_class.&#39; href=&quot;&#39;.site_url($page_url.&#39;/&#39;.$pages).&#39;&quot; &gt;末页&lt;/a&gt;&#39;.$this-&gt;last_tag_close;  
+        }  
+
+        $output.=$this-&gt;full_tag_close;  
+        return $output;  
+    }  
+}  </code></pre><pre><code>控制器里调用</code></pre><pre><code>$config[&#39;page_url&#39;]  = &#39;about/science&#39;;  
+$config[&#39;page_size&#39;] = $pagesize;  
+$config[&#39;rows_num&#39;] = $num_rows;  
+$config[&#39;page_num&#39;] = $page;    
+
+$this-&gt;load-&gt;library(&#39;Custom_pagination&#39;);  
+$this-&gt;custom_pagination-&gt;init($config);  
+echo $this-&gt;custom_pagination-&gt;create_links();&lt;/span&gt;  </code></pre><pre><code>
+</code></pre><pre><code>&lt;?php  
+class page{  
+
+    public $page; //当前页  
+    public $pagenum;  // 页数  
+    public $pagesize;  // 每页显示条数  
+    public function __construct($count, $pagesize){  
+        $this-&gt;pagenum = ceil($count/$pagesize);  
+        $this-&gt;pagesize = $pagesize;  
+        $this-&gt;page =(isset($_GET[&#39;p&#39;])&amp;&amp;$_GET[&#39;p&#39;]&gt;0) ? intval($_GET[&#39;p&#39;]) : 1;  
+    }  
+    /** 
+     * 获得 url 后面GET传递的参数 
+     */   
+    public function getUrl(){     
+        $url = &#39;index.php?&#39;.http_build_query($_GET);  
+        $url = preg_replace(&#39;/[?,&amp;]p=(\w)+/&#39;,&#39;&#39;,$url);  
+        $url .= (strpos($url,&quot;?&quot;) === false) ? &#39;?&#39; : &#39;&amp;&#39;;  
+        return $url;  
+    }  
+    /** 
+     * 获得分页HTML 
+     */  
+    public function getPage(){  
+        $url = $this-&gt;getUrl();  
+        $start = $this-&gt;page-5;  
+        $start=$start&gt;0 ? $start : 1;   
+        $end   = $start+9;  
+        $end = $end&lt;$this-&gt;pagenum ? $end : $this-&gt;pagenum;  
+        $pagestr = &#39;&#39;;  
+        if($this-&gt;page&gt;5){  
+            $pagestr = &quot;&lt;a href=&quot;.$url.&quot;p=1&quot;.&quot;&gt;首页&lt;/a&gt; &quot;;  
+        }  
+        if($this-&gt;page!=1){  
+            $pagestr.= &quot;&lt;a href=&quot;.$url.&quot;p=&quot;.($this-&gt;page-1).&quot;&gt;上一页&lt;/a&gt;&quot;;  
+        }  
+
+        for($i=$start;$i&lt;=$end;$i++){  
+            $pagestr.= &quot;&lt;a href=&quot;.$url.&quot;p=&quot;.$i.&quot;&gt;&quot;.$i.&quot;&lt;/a&gt;  &quot;;                       
+        }  
+        if($this-&gt;page!=$this-&gt;pagenum){  
+            $pagestr.=&quot;&lt;a href=&quot;.$url.&quot;p=&quot;.($this-&gt;page+1).&quot;&gt;下一页&lt;/a&gt;&quot;;  
+
+        }  
+        if($this-&gt;page+5&lt;$this-&gt;pagenum){  
+            $pagestr.=&quot;&lt;a href=&quot;.$url.&quot;p=&quot;.$this-&gt;pagenum.&quot;&gt;尾页&lt;/a&gt; &quot;;  
+        }  
+        return $pagestr;      
+    }  
+
+}  
+// 测试代码  
+$page = new page(100,10);  
+$str=$page-&gt;getPage();  
+echo $str;  
+
+?&gt;  </code></pre><p>```</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/07/23/%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84CI%E5%88%86%E9%A1%B5%E7%B1%BB/" data-id="ckcqdgl1c01j39xlfc4e2ap60" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/CI/" rel="tag">CI</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-jQuery-如何给动态生成的元素绑定事件" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/07/23/jQuery-%E5%A6%82%E4%BD%95%E7%BB%99%E5%8A%A8%E6%80%81%E7%94%9F%E6%88%90%E7%9A%84%E5%85%83%E7%B4%A0%E7%BB%91%E5%AE%9A%E4%BA%8B%E4%BB%B6/" class="article-date">
+  <time datetime="2014-07-23T11:47:46.000Z" itemprop="datePublished">2014-07-23</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/javascript/">javascript</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/07/23/jQuery-%E5%A6%82%E4%BD%95%E7%BB%99%E5%8A%A8%E6%80%81%E7%94%9F%E6%88%90%E7%9A%84%E5%85%83%E7%B4%A0%E7%BB%91%E5%AE%9A%E4%BA%8B%E4%BB%B6/">jQuery如何给动态生成的元素绑定事件live/on</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>jQuery的html()可以给现在元素附加新的元素，innerHTML也可以，那么，如何给这些新生成的元素绑定事件呢？直接在元素还未生成前就绑定肯定是无效的，因为所绑定的元素目前根本不存在。</p>
+<p>然而，jQuery为我们提供了一个函数来解决这个问题，它就是.live()，它可以给所有元素绑定事件，不论是已有的，还是将来生成的，比如：</p>
+<pre><code class="js">    $(‘#div’).live(‘click’,function(){   
+        //do stuff   
+    });   </code></pre>
+        
+          <p class="article-more-link">
+            <a href="/2014/07/23/jQuery-%E5%A6%82%E4%BD%95%E7%BB%99%E5%8A%A8%E6%80%81%E7%94%9F%E6%88%90%E7%9A%84%E5%85%83%E7%B4%A0%E7%BB%91%E5%AE%9A%E4%BA%8B%E4%BB%B6/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/07/23/jQuery-%E5%A6%82%E4%BD%95%E7%BB%99%E5%8A%A8%E6%80%81%E7%94%9F%E6%88%90%E7%9A%84%E5%85%83%E7%B4%A0%E7%BB%91%E5%AE%9A%E4%BA%8B%E4%BB%B6/" data-id="ckcqdgkvp01559xlf5e351j4u" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-数组和json的相互转换" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/07/22/%E6%95%B0%E7%BB%84%E5%92%8Cjson%E7%9A%84%E7%9B%B8%E4%BA%92%E8%BD%AC%E6%8D%A2/" class="article-date">
+  <time datetime="2014-07-22T03:10:26.000Z" itemprop="datePublished">2014-07-22</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/php/">php</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/07/22/%E6%95%B0%E7%BB%84%E5%92%8Cjson%E7%9A%84%E7%9B%B8%E4%BA%92%E8%BD%AC%E6%8D%A2/">数组和json的相互转换</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>json_encode()</p>
+<pre><code class="php">    &lt;?php  
+
+    /*****一维数组*********/  
+    //有键  
+    $arr = array(  
+        &#39;a&#39;=&gt;1,   
+        &#39;b&#39;=&gt;2,  
+        &#39;c&#39;=&gt;3,  
+    );  
+    $json = json_encode($arr);  
+    echo($json);  //{&quot;a&quot;:1,&quot;b&quot;:2,&quot;c&quot;:3}  
+
+    //无键  
+    $arr = array(1,2,3);  
+    $json = json_encode($arr);  
+    echo($json);  //[1,2,3]  
+
+    /*****二维数组*********/  
+    //有键  
+    $arr = array(  
+        &#39;a&#39; =&gt; array(&#39;id&#39;=&gt;1, &#39;xuefei&#39;=&gt;&quot;100&quot; ),   
+        &#39;b&#39; =&gt; array(&#39;id&#39;=&gt;2, &#39;xuefei&#39;=&gt;&quot;200&quot; ),  
+        &#39;c&#39; =&gt; array(&#39;id&#39;=&gt;3, &#39;xuefei&#39;=&gt;&quot;300&quot; ),  
+    );  
+    $json = json_encode($arr);  
+    echo($json);  //{&quot;a&quot;:{&quot;id&quot;:1,&quot;xuefei&quot;:&quot;100&quot;},&quot;b&quot;:{&quot;id&quot;:2,&quot;xuefei&quot;:&quot;200&quot;},&quot;c&quot;:{&quot;id&quot;:3,&quot;xuefei&quot;:&quot;300&quot;}}  
+
+    //无键  
+    $arr = array(  
+        array(&#39;id&#39;=&gt;1, &#39;xuefei&#39;=&gt;&quot;100&quot; ),   
+        array(&#39;id&#39;=&gt;2, &#39;xuefei&#39;=&gt;&quot;200&quot; ),  
+        array(&#39;id&#39;=&gt;3, &#39;xuefei&#39;=&gt;&quot;300&quot; ),  
+    );  
+    $json = json_encode($arr);  
+    echo($json);  //[{&quot;id&quot;:1,&quot;xuefei&quot;:&quot;100&quot;},{&quot;id&quot;:2,&quot;xuefei&quot;:&quot;200&quot;},{&quot;id&quot;:3,&quot;xuefei&quot;:&quot;300&quot;}]  
+
+    ?&gt;  </code></pre>
+        
+          <p class="article-more-link">
+            <a href="/2014/07/22/%E6%95%B0%E7%BB%84%E5%92%8Cjson%E7%9A%84%E7%9B%B8%E4%BA%92%E8%BD%AC%E6%8D%A2/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/07/22/%E6%95%B0%E7%BB%84%E5%92%8Cjson%E7%9A%84%E7%9B%B8%E4%BA%92%E8%BD%AC%E6%8D%A2/" data-id="ckcqdgl7001v99xlf5tkj5ghi" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-telnet不能用，提示：-bash-telnet-command-not-found" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/07/22/telnet%E4%B8%8D%E8%83%BD%E7%94%A8%EF%BC%8C%E6%8F%90%E7%A4%BA%EF%BC%9A-bash-telnet-command-not-found/" class="article-date">
+  <time datetime="2014-07-22T03:09:24.000Z" itemprop="datePublished">2014-07-22</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/linux/">linux</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/07/22/telnet%E4%B8%8D%E8%83%BD%E7%94%A8%EF%BC%8C%E6%8F%90%E7%A4%BA%EF%BC%9A-bash-telnet-command-not-found/">telnet不能用，提示：-bash: telnet: command not found</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>1、<code>[root@localhost ~]# telnet</code><br><code>bash: telnet: command not found</code><br>2、 查询了是否安装Telnet包，结果如下：<br><code>[root@localhost ~]# rpm -qa telnet*</code><br><code>telnet-server-0.17-47.el6.i686</code><br>3、又查询了xinetd的状态：<br><code>[root@localhost ~]# service xinetd status</code><br>xinetd (pid  2967) 正在运行…<br>4、使用ntsysv命令，开启了Telnet服务；同时，也查看<code>/etc/xinetd.d/telnet</code>文件，将将<code>disable = yes</code>改为<code>disable = no</code>，也重启了服务<br><code>[root@CentOS5 /]#service xinetd restart</code><br>在系统服务里面，也查看过，telnet服务和xinetd也都是工作状态。</p>
+        
+          <p class="article-more-link">
+            <a href="/2014/07/22/telnet%E4%B8%8D%E8%83%BD%E7%94%A8%EF%BC%8C%E6%8F%90%E7%A4%BA%EF%BC%9A-bash-telnet-command-not-found/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/07/22/telnet%E4%B8%8D%E8%83%BD%E7%94%A8%EF%BC%8C%E6%8F%90%E7%A4%BA%EF%BC%9A-bash-telnet-command-not-found/" data-id="ckcqdgl0c01gq9xlfdemdb2ny" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-linux增加-删除虚拟IP地址" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/07/20/linux%E5%A2%9E%E5%8A%A0-%E5%88%A0%E9%99%A4%E8%99%9A%E6%8B%9FIP%E5%9C%B0%E5%9D%80/" class="article-date">
+  <time datetime="2014-07-20T14:48:51.000Z" itemprop="datePublished">2014-07-20</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/linux/">linux</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/07/20/linux%E5%A2%9E%E5%8A%A0-%E5%88%A0%E9%99%A4%E8%99%9A%E6%8B%9FIP%E5%9C%B0%E5%9D%80/">linux增加/删除虚拟IP地址</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>网卡上增加一个IP：<br>ifconfig eth0:1 192.168.0.1 netmask 255.255.255.0</p>
+<p>删除网卡的第二个IP地址:<br>ip addr del 192.168.0.1 dev eth0</p>
+        
+          <p class="article-more-link">
+            <a href="/2014/07/20/linux%E5%A2%9E%E5%8A%A0-%E5%88%A0%E9%99%A4%E8%99%9A%E6%8B%9FIP%E5%9C%B0%E5%9D%80/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/07/20/linux%E5%A2%9E%E5%8A%A0-%E5%88%A0%E9%99%A4%E8%99%9A%E6%8B%9FIP%E5%9C%B0%E5%9D%80/" data-id="ckcqdgkwm017o9xlf4d1a7t9j" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-为什么一段时间后网站后台自动退出-php中session过期时间设置" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/07/20/%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%80%E6%AE%B5%E6%97%B6%E9%97%B4%E5%90%8E%E7%BD%91%E7%AB%99%E5%90%8E%E5%8F%B0%E8%87%AA%E5%8A%A8%E9%80%80%E5%87%BA-php%E4%B8%ADsession%E8%BF%87%E6%9C%9F%E6%97%B6%E9%97%B4%E8%AE%BE%E7%BD%AE/" class="article-date">
+  <time datetime="2014-07-20T03:15:24.000Z" itemprop="datePublished">2014-07-20</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/php/">php</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/07/20/%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%80%E6%AE%B5%E6%97%B6%E9%97%B4%E5%90%8E%E7%BD%91%E7%AB%99%E5%90%8E%E5%8F%B0%E8%87%AA%E5%8A%A8%E9%80%80%E5%87%BA-php%E4%B8%ADsession%E8%BF%87%E6%9C%9F%E6%97%B6%E9%97%B4%E8%AE%BE%E7%BD%AE/">为什么一段时间后网站后台自动退出-php中session过期时间设置</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>修改php配置文件中的session.gc_maxlifetime。如果想了解更多session回收机制，继续阅读。（本文环境php5.2）</p>
+<p>概述：每一次php请求，会有1/100的概率（默认值）触发“session回收”。如果“session回收”发生，那就会检查<code>/tmp/sess_*</code>的文件，如果最后的修改时间到现在超过了1440秒（gc_maxlifetime的值），就将其删除，意味着这些session过期失效。</p>
+<p>1.session在server端（一般是Apache with PHP module）如何存在的？</p>
+<p>默认的，php会将session保存在/tmp目录下（Linux系统），文件名为这个样子：sess_01aab840166fd1dc253e3b4a3f0b8381。每一个文件对应了一个session（会话）。</p>
+<p><code>more /tmp/sess_01aab840166fd1dc253e3b4a3f0b8381</code><br><code>username|s:9:”jiangfeng”;admin|s:1:”0″;</code><br><code>#变量名|类型:长度:值</code><br>删除这里的session文件，就表示对应的session失效了。
+        
+          <p class="article-more-link">
+            <a href="/2014/07/20/%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%80%E6%AE%B5%E6%97%B6%E9%97%B4%E5%90%8E%E7%BD%91%E7%AB%99%E5%90%8E%E5%8F%B0%E8%87%AA%E5%8A%A8%E9%80%80%E5%87%BA-php%E4%B8%ADsession%E8%BF%87%E6%9C%9F%E6%97%B6%E9%97%B4%E8%AE%BE%E7%BD%AE/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/07/20/%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%80%E6%AE%B5%E6%97%B6%E9%97%B4%E5%90%8E%E7%BD%91%E7%AB%99%E5%90%8E%E5%8F%B0%E8%87%AA%E5%8A%A8%E9%80%80%E5%87%BA-php%E4%B8%ADsession%E8%BF%87%E6%9C%9F%E6%97%B6%E9%97%B4%E8%AE%BE%E7%BD%AE/" data-id="ckcqdgl1s01k49xlffopu1ck9" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+  
+    <nav id="page-nav">
+      <a class="extend prev" rel="prev" href="/page/111/">« Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/110/">110</a><a class="page-number" href="/page/111/">111</a><span class="page-number current">112</span><a class="page-number" href="/page/113/">113</a><a class="page-number" href="/page/114/">114</a><span class="space">&hellip;</span><a class="page-number" href="/page/194/">194</a><a class="extend next" rel="next" href="/page/113/">Next »</a>
+    </nav>
+  
+
+
+<!-- prev_text: '&laquo; Prev',
+next_text: 'Next &raquo;' --></section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

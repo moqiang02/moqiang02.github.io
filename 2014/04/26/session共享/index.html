@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>session共享 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="伴随网站业务规模和访问量的逐步发展，原本由单台服务器、单个域名的迷你网站架构已经无法满足发展需要。 此时我们可能会购买更多服务器，并且启用多个二级子域名以频道化的方式，根据业务功能将网站分布部署在独立的服务器上；或通过负载均衡技术（如：DNS轮询、Radware、F5、LVS等）让多个频道共享一组服务器。 我们把网站程序分布部署到多台服务器上，而且独立为几个二级域名，由于Session受实现原理的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="session共享">
+<meta property="og:url" content="http://moqiang02.github.io/2014/04/26/session%E5%85%B1%E4%BA%AB/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="伴随网站业务规模和访问量的逐步发展，原本由单台服务器、单个域名的迷你网站架构已经无法满足发展需要。 此时我们可能会购买更多服务器，并且启用多个二级子域名以频道化的方式，根据业务功能将网站分布部署在独立的服务器上；或通过负载均衡技术（如：DNS轮询、Radware、F5、LVS等）让多个频道共享一组服务器。 我们把网站程序分布部署到多台服务器上，而且独立为几个二级域名，由于Session受实现原理的">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/session%E5%85%B1%E4%BA%AB/1.jpg">
+<meta property="article:published_time" content="2014-04-26T11:51:15.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:18.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta property="article:tag" content="集群">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/session%E5%85%B1%E4%BA%AB/1.jpg">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-session共享" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/04/26/session%E5%85%B1%E4%BA%AB/" class="article-date">
+  <time datetime="2014-04-26T11:51:15.000Z" itemprop="datePublished">2014-04-26</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/memcached/">memcached</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      session共享
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <p>伴随网站业务规模和访问量的逐步发展，原本由单台服务器、单个域名的迷你网站架构已经无法满足发展需要。</p>
+<p>此时我们可能会购买更多服务器，并且启用多个二级子域名以频道化的方式，根据业务功能将网站分布部署在独立的服务器上；或通过负载均衡技术（如：DNS轮询、Radware、F5、LVS等）让多个频道共享一组服务器。</p>
+<p>我们把网站程序分布部署到多台服务器上，而且独立为几个二级域名，由于Session受实现原理的局限（PHP中Session默认以文件的形式保存在本地服务器的硬盘），使得我们的网站用户不得不经常在几个频道间来回输入用户名、密码登入，导致用户体验大打折扣；另外，原本程序可以直接从用户Session变量中读取的资料（如：昵称、积分、登入时间等），因为无法跨服务器同步更新Session变量，迫使开发人员必须实时读写数据库，从而增加了数据库的负担。</p>
+<a id="more"></a>
+
+<p><strong>方案：1. 把session放到共享的设备上去，如nfs</strong></p>
+<p>NFS是Net FileSystem的简称，最早由Sun公司为解决Unix网络主机间的目录共享而研发。</p>
+<p>这个方案实现最为简单，无需做过多的二次开发，仅需将共享目录服务器mount到各频道服务器的本地session目录即可，缺点是NFS依托于复杂的安全机制和文件系统，因此并发效率不高，尤其对于session这类高并发读写的小文件， 会由于共享目录服务器的io-wait过高，最终拖累前端WEB应用程序的执行效率</p>
+<p><strong>方案：2. 基于数据库的Session共享</strong></p>
+<p>首选当然是大名鼎鼎的Mysql数据库，并且建议使用内存表Heap，提高session操作的读写效率。这个方案的实用性比较强，相信大家普遍在使用，它的缺点在于session的并发读写能力取决于Mysql数据库的性能，同时需要自己实现session淘汰逻辑，以便定时从数据表中更新、删除session记录，当并发过高时容易出现表锁，虽然我们可以选择行级锁的表引擎，但不得不否认使用数据库存储Session还是有些杀鸡用牛刀的架势</p>
+<p><strong>方案：3. 基于Memcache的Session共享</strong></p>
+<p>Memcache由于是一款基于Libevent多路异步I/O技术的内存共享系统，简单的Key + Value数据存储模式使得代码逻辑小巧高效，因此在并发处理能力上占据了绝对优势，目前本人所经历的项目达到2000/秒 平均查询，并且服务器CPU消耗依然不到10%。</p>
+<p>另外值得一提的是Memcache的内存hash表所特有的Expires数据过期淘汰机制，正好和Session的过期机制不谋而合，降低了过期Session数据删除的代码复杂度，对比“基于数据库的存储方案”，仅这块逻辑就给数据表产生巨大的查询压力 </p>
+<p>1.首先安装memcache，以及memcache在php中的扩展</p>
+<p>2.修改php.ini文件<br>  session.save_handler = memcache<br>  session.save_path = “tcp://127.0.0.1:11211”</p>
+<p>使用多个 memcached server 时用逗号”,”隔开，并且和 Memcache::addServer() 文档中说明的一样，可以带额外的参数”persistent”、”weight”、”timeout”、”retry_interval” 等等，类似这样的：”tcp://host1:port1?persistent=1&amp;weight=2,tcp://host2:port2″ 。</p>
+<p>3.大功告成，重启apache和memcache看看phpinfo里的session配置是不是变成了memcache了。</p>
+<p>4.自己的程序完全不用修改，系统已经自己去找memcache来做他的session宿主啦。<br>PS:如果不想整台服务器全局都是用memcache的话也可以用如下两种方法：</p>
+<p>修改 .htaccess<br>php_value session.save_handler “memcache”<br>php_value session.save_path “tcp://127.0.0.1:11211″</p>
+<p>修改程序<br>ini_set(“session.save_handler”,”memcache”);<br>ini_set(“session.save_path”,”tcp://127.0.0.1:11211”);</p>
+<hr>
+<p>以上是基于php的memcache扩展的session共享，如果是基于memcached扩展的话稍有不同：</p>
+<p>session.save_handler = memcached  (注意此处有一个”d”)<br>session.save_path = “127.0.0.1:11211” （此处必须去掉tcp://，而memcache去不去掉tcp均可）</p>
+<p>另外，如果服务器安装了php-fpm，在php.ini文件中我们可以看到session.save_path实际上是被注释掉的：</p>
+<p>; for php-fpm, see /etc/php-fpm.d/*conf<br>;session.save_path = “/tmp”</p>
+<p>通过第一行可知，要在php-fpm目录下的<a href="http://www.conf文件中添加：">www.conf文件中添加：</a></p>
+<p>php_value[session.save_handler] = memcached<br>php_value[session.save_path] = “127.0.0.1:11211”</p>
+<p>phpinfo页面的Registered save handlers可以看到。如果设置不正确，会有”Cannot find save handler memcache”的错误提示。</p>
+<p><img src="/images/session%E5%85%B1%E4%BA%AB/1.jpg" alt=""><br>memcache和memcached还有一点不同的是：</p>
+<pre><code>&lt;?php
+$memcache = memcache_connect(&#39;127.0.0.1&#39;, 11211);  //memcached中为addServer(&#39;127.0.0.1&#39;, 11211)
+var_dump($memcache-&gt;get(&#39;3bbf03b9cedace4e0164a0c3d56712d1&#39;));  //根据sessionid取值
+?&gt;</code></pre><p>memcache输出:string(21) “aaa|s:10:”cww333cccc”;”</p>
+<p>memcached输出:bool(false) ，memcached中的key类似于：memc.sess.key.arsorbl4tj0p8pj6lg288rc2h1</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/04/26/session%E5%85%B1%E4%BA%AB/" data-id="ckcqdgl0201g09xlf56tk9wgz" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E9%9B%86%E7%BE%A4/" rel="tag">集群</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/04/29/CentOS-%E5%AE%89%E8%A3%85%E5%9B%BE%E5%BD%A2%E5%8C%96%E7%95%8C%E9%9D%A2%E6%96%B9%E6%B3%95/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          CentOS 安装图形化界面方法
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/04/25/memcache%E5%92%8Ciptables%E5%BC%80%E5%90%AF11211%E7%AB%AF%E5%8F%A3/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">memcache和iptables开启11211端口</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

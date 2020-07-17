@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>ExpandableListView详解 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="一、前言今天我们来实现一下如下这个效果，类似于QQ好友分组的UI效果，废话不多说，先上效果图：  ExpandableListView是一个用来显示二级节点的listview。默认展示的是第一级的分组，点击某个分组后会展开该分组下的子列表，下面我们就一步步来实现这个效果。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ExpandableListView详解">
+<meta property="og:url" content="http://moqiang02.github.io/2015/08/10/ExpandableListView%E8%AF%A6%E8%A7%A3/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="一、前言今天我们来实现一下如下这个效果，类似于QQ好友分组的UI效果，废话不多说，先上效果图：  ExpandableListView是一个用来显示二级节点的listview。默认展示的是第一级的分组，点击某个分组后会展开该分组下的子列表，下面我们就一步步来实现这个效果。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/ExpandableListView%E8%AF%A6%E8%A7%A3/1.gif">
+<meta property="article:published_time" content="2015-08-10T14:42:25.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:08.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/ExpandableListView%E8%AF%A6%E8%A7%A3/1.gif">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-ExpandableListView详解" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/08/10/ExpandableListView%E8%AF%A6%E8%A7%A3/" class="article-date">
+  <time datetime="2015-08-10T14:42:25.000Z" itemprop="datePublished">2015-08-10</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/AndroidUI/">AndroidUI</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      ExpandableListView详解
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <h3 id="一、前言"><a href="#一、前言" class="headerlink" title="一、前言"></a>一、前言</h3><p>今天我们来实现一下如下这个效果，类似于QQ好友分组的UI效果，废话不多说，先上效果图：</p>
+<p><img src="/images/ExpandableListView%E8%AF%A6%E8%A7%A3/1.gif" alt=""></p>
+<p>ExpandableListView是一个用来显示二级节点的listview。默认展示的是第一级的分组，点击某个分组后会展开该分组下的子列表，下面我们就一步步来实现这个效果。<a id="more"></a></p>
+<h3 id="二、实现过程"><a href="#二、实现过程" class="headerlink" title="二、实现过程"></a>二、实现过程</h3><p>1.首先在activity_main.xml中指定ExpandableListView组件</p>
+<pre><code>&lt;RelativeLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;
+    xmlns:tools=&quot;http://schemas.android.com/tools&quot;
+    android:layout_width=&quot;match_parent&quot;
+    android:layout_height=&quot;match_parent&quot;
+    android:background=&quot;#FFFFFF&quot;
+    tools:context=&quot;.MainActivity&quot; &gt;
+
+    &lt;!-- cacheColorHint：系统默认拖动过程中列表背景是黑的,设置为透明 --&gt;
+    &lt;ExpandableListView
+        android:id=&quot;@+id/expendlist&quot;
+        android:layout_width=&quot;match_parent&quot;
+        android:layout_height=&quot;match_parent&quot;
+        android:cacheColorHint=&quot;#00000000&quot;
+        android:divider=&quot;@drawable/gbt&quot;
+        android:childDivider=&quot;@drawable/fij&quot;&gt;
+    &lt;/ExpandableListView&gt;
+
+&lt;/RelativeLayout&gt;</code></pre><p>2.分别添加一级布局expendlist_group.xml和二级布局（子布局）expendlist_item.xml</p>
+<p>expendlist_group.xml</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;LinearLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;
+    android:layout_width=&quot;match_parent&quot;
+    android:layout_height=&quot;70dp&quot;
+    android:gravity=&quot;center_vertical&quot;
+    android:orientation=&quot;horizontal&quot; &gt;
+
+    &lt;RelativeLayout
+        android:layout_width=&quot;match_parent&quot;
+        android:layout_height=&quot;70dp&quot; &gt;
+
+        &lt;ImageView
+            android:id=&quot;@+id/img&quot;
+            android:layout_width=&quot;wrap_content&quot;
+            android:layout_height=&quot;wrap_content&quot;
+            android:layout_marginLeft=&quot;20dp&quot;
+            android:layout_centerVertical=&quot;true&quot;
+            /&gt;
+
+        &lt;TextView
+            android:id=&quot;@+id/txt&quot;
+            android:layout_width=&quot;wrap_content&quot;
+            android:layout_height=&quot;wrap_content&quot;
+            android:layout_centerVertical=&quot;true&quot;
+            android:layout_toRightOf=&quot;@+id/img&quot;
+            android:layout_marginLeft=&quot;20dp&quot;
+            android:textSize=&quot;18sp&quot;
+            android:text=&quot;张三&quot; /&gt;
+
+        &lt;TextView
+            android:id=&quot;@+id/txt2&quot;
+            android:layout_width=&quot;wrap_content&quot;
+            android:layout_height=&quot;wrap_content&quot;
+            android:layout_centerVertical=&quot;true&quot;
+            android:layout_alignParentRight=&quot;true&quot;
+            android:layout_marginRight=&quot;20dp&quot;
+            android:gravity=&quot;right&quot;
+            android:text=&quot;4/17&quot; /&gt;
+    &lt;/RelativeLayout&gt;
+
+&lt;/LinearLayout&gt;</code></pre><p>expendlist_item.xml</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;LinearLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;
+    android:layout_width=&quot;match_parent&quot;
+    android:layout_height=&quot;70dp&quot;
+    android:orientation=&quot;horizontal&quot;
+    android:gravity=&quot;center_vertical&quot;
+    android:padding=&quot;10.0dp&quot; &gt;
+
+    &lt;ImageView
+        android:id=&quot;@+id/img&quot;
+        android:layout_width=&quot;50dp&quot;
+        android:layout_height=&quot;50dp&quot;
+        android:layout_marginLeft=&quot;20dp&quot;
+        android:src=&quot;@drawable/ic_launcher&quot; /&gt;
+
+    &lt;LinearLayout
+        android:layout_width=&quot;match_parent&quot;
+        android:layout_height=&quot;70dp&quot;
+        android:gravity=&quot;center_vertical&quot;
+        android:orientation=&quot;vertical&quot; &gt;
+
+        &lt;TextView
+            android:id=&quot;@+id/txt&quot;
+            android:layout_width=&quot;wrap_content&quot;
+            android:layout_height=&quot;wrap_content&quot;
+            android:text=&quot;李大钊&quot; /&gt;
+
+        &lt;TextView
+            android:id=&quot;@+id/txt2&quot;
+            android:layout_width=&quot;wrap_content&quot;
+            android:layout_height=&quot;wrap_content&quot;
+            android:layout_marginTop=&quot;10dp&quot;
+            android:text=&quot;今天是个好日子啊，咿呀咿呀呀&quot; /&gt;
+    &lt;/LinearLayout&gt;
+
+&lt;/LinearLayout&gt;</code></pre><p>3.关键代码MainActivity.java，该类中的关键代码是</p>
+<p>MyExpandableListViewAdapter适配器，适配器中有两个关键方法，分别是getGroupView（类似于ListView的getView方法）,每次加载组列表时都会执行该方法重新绘制页面；另一个是getChildView,当展开分组时会调用此方法来绘制当前分组的子项，值得注意的是，当用户点击某个分组时，ExpandableListView页面的其他分组也会重新绘制（即每次都会重新绘制所有的分组）；下面贴出MainActivity.java的代码，关键部分已经做了注释，很容易理解。</p>
+<pre><code>package com.example.android.expandable.listview;
+
+import java.util.ArrayList;
+import java.util.List;
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.content.Context;
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.BaseExpandableListAdapter;
+import android.widget.ExpandableListView;
+import android.widget.ExpandableListView.OnChildClickListener;
+import android.widget.ExpandableListView.OnGroupClickListener;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+public class MainActivity extends Activity
+{
+    private ExpandableListView expandableListView;
+
+    private List&lt;String&gt; group_list;
+
+    private List&lt;String&gt; item_lt;
+
+    private List&lt;List&lt;String&gt;&gt; item_list;
+
+    private List&lt;List&lt;Integer&gt;&gt; item_list2;
+
+    private List&lt;List&lt;Integer&gt;&gt; gr_list2;
+
+    private MyExpandableListViewAdapter adapter;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState)
+    {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        // 随便一堆测试数据
+        group_list = new ArrayList&lt;String&gt;();
+        group_list.add(&quot;我的好友&quot;);
+        group_list.add(&quot;我的家人&quot;);
+        group_list.add(&quot;兄弟姐妹&quot;);
+        group_list.add(&quot;我的同学&quot;);
+
+        item_lt = new ArrayList&lt;String&gt;();
+        item_lt.add(&quot;张三丰&quot;);
+        item_lt.add(&quot;董存瑞&quot;);
+        item_lt.add(&quot;李大钊&quot;);
+
+        item_list = new ArrayList&lt;List&lt;String&gt;&gt;();
+        item_list.add(item_lt);
+        item_list.add(item_lt);
+        item_list.add(item_lt);
+        item_list.add(item_lt);
+
+        List&lt;Integer&gt; tmp_list = new ArrayList&lt;Integer&gt;();
+        tmp_list.add(R.drawable.ic_launcher);
+        tmp_list.add(R.drawable.ic_launcher);
+        tmp_list.add(R.drawable.ic_launcher);
+        tmp_list.add(R.drawable.ic_launcher);
+
+        item_list2 = new ArrayList&lt;List&lt;Integer&gt;&gt;();
+        item_list2.add(tmp_list);
+        item_list2.add(tmp_list);
+        item_list2.add(tmp_list);
+        item_list2.add(tmp_list);
+
+        List&lt;Integer&gt; gr_list = new ArrayList&lt;Integer&gt;();
+        gr_list.add(R.drawable.group_img);
+        gr_list.add(R.drawable.group_img);
+        gr_list.add(R.drawable.group_img);
+        gr_list.add(R.drawable.group_img);
+
+        gr_list2 = new ArrayList&lt;List&lt;Integer&gt;&gt;();
+        gr_list2.add(gr_list);
+        gr_list2.add(gr_list);
+        gr_list2.add(gr_list);
+        gr_list2.add(gr_list);
+
+        expandableListView = (ExpandableListView)findViewById(R.id.expendlist);
+        expandableListView.setGroupIndicator(null);
+
+        // 监听组点击
+        expandableListView.setOnGroupClickListener(new OnGroupClickListener()
+        {
+            @SuppressLint(&quot;NewApi&quot;)
+            @Override
+            public boolean onGroupClick(ExpandableListView parent, View v, int groupPosition, long id)
+            {
+                if (item_list.get(groupPosition).isEmpty())
+                {
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        // 监听每个分组里子控件的点击事件
+        expandableListView.setOnChildClickListener(new OnChildClickListener()
+        {
+
+            @Override
+            public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id)
+            {
+
+                Toast.makeText(MainActivity.this, &quot;group=&quot; + groupPosition + &quot;---child=&quot; + childPosition + &quot;---&quot; + item_list.get(groupPosition).get(childPosition), Toast.LENGTH_SHORT).show();
+
+                return false;
+            }
+        });
+
+        adapter = new MyExpandableListViewAdapter(this);
+
+        expandableListView.setAdapter(adapter);
+    }
+
+    // 用过ListView的人一定很熟悉，只不过这里是BaseExpandableListAdapter
+    class MyExpandableListViewAdapter extends BaseExpandableListAdapter
+    {
+
+        private Context context;
+
+        public MyExpandableListViewAdapter(Context context)
+        {
+            this.context = context;
+        }
+
+        /**
+         * 
+         * 获取组的个数
+         * 
+         * @return
+         * @see android.widget.ExpandableListAdapter#getGroupCount()
+         */
+        @Override
+        public int getGroupCount()
+        {
+            return group_list.size();
+        }
+
+        /**
+         * 
+         * 获取指定组中的子元素个数
+         * 
+         * @param groupPosition
+         * @return
+         * @see android.widget.ExpandableListAdapter#getChildrenCount(int)
+         */
+        @Override
+        public int getChildrenCount(int groupPosition)
+        {
+            return item_list.get(groupPosition).size();
+        }
+
+        /**
+         * 
+         * 获取指定组中的数据
+         * 
+         * @param groupPosition
+         * @return
+         * @see android.widget.ExpandableListAdapter#getGroup(int)
+         */
+        @Override
+        public Object getGroup(int groupPosition)
+        {
+            return group_list.get(groupPosition);
+        }
+
+        /**
+         * 
+         * 获取指定组中的指定子元素数据。
+         * 
+         * @param groupPosition
+         * @param childPosition
+         * @return
+         * @see android.widget.ExpandableListAdapter#getChild(int, int)
+         */
+        @Override
+        public Object getChild(int groupPosition, int childPosition)
+        {
+            return item_list.get(groupPosition).get(childPosition);
+        }
+
+        /**
+         * 
+         * 获取指定组的ID，这个组ID必须是唯一的
+         * 
+         * @param groupPosition
+         * @return
+         * @see android.widget.ExpandableListAdapter#getGroupId(int)
+         */
+        @Override
+        public long getGroupId(int groupPosition)
+        {
+            return groupPosition;
+        }
+
+        /**
+         * 
+         * 获取指定组中的指定子元素ID
+         * 
+         * @param groupPosition
+         * @param childPosition
+         * @return
+         * @see android.widget.ExpandableListAdapter#getChildId(int, int)
+         */
+        @Override
+        public long getChildId(int groupPosition, int childPosition)
+        {
+            return childPosition;
+        }
+
+        /**
+         * 
+         * 组和子元素是否持有稳定的ID,也就是底层数据的改变不会影响到它们。
+         * 
+         * @return
+         * @see android.widget.ExpandableListAdapter#hasStableIds()
+         */
+        @Override
+        public boolean hasStableIds()
+        {
+            return true;
+        }
+
+        /**
+         * 
+         * 获取显示指定组的视图对象
+         * 
+         * @param groupPosition 组位置
+         * @param isExpanded 该组是展开状态还是伸缩状态
+         * @param convertView 重用已有的视图对象
+         * @param parent 返回的视图对象始终依附于的视图组
+         * @return
+         * @see android.widget.ExpandableListAdapter#getGroupView(int, boolean, android.view.View,
+         *      android.view.ViewGroup)
+         */
+        @Override
+        public View getGroupView(int groupPosition, boolean isExpanded, View convertView, ViewGroup parent)
+        {
+            GroupHolder groupHolder = null;
+            if (convertView == null)
+            {
+                convertView = LayoutInflater.from(context).inflate(R.layout.expendlist_group, null);
+                groupHolder = new GroupHolder();
+                groupHolder.txt = (TextView)convertView.findViewById(R.id.txt);
+                groupHolder.img = (ImageView)convertView.findViewById(R.id.img);
+                convertView.setTag(groupHolder);
+            }
+            else
+            {
+                groupHolder = (GroupHolder)convertView.getTag();
+            }
+
+            if (!isExpanded)
+            {
+                 groupHolder.img.setBackgroundResource(R.drawable.group_img);
+            }
+            else
+            {
+                 groupHolder.img.setBackgroundResource(R.drawable.group_open_two);
+            }
+
+            groupHolder.txt.setText(group_list.get(groupPosition));
+            return convertView;
+        }
+
+        /**
+         * 
+         * 获取一个视图对象，显示指定组中的指定子元素数据。
+         * 
+         * @param groupPosition 组位置
+         * @param childPosition 子元素位置
+         * @param isLastChild 子元素是否处于组中的最后一个
+         * @param convertView 重用已有的视图(View)对象
+         * @param parent 返回的视图(View)对象始终依附于的视图组
+         * @return
+         * @see android.widget.ExpandableListAdapter#getChildView(int, int, boolean, android.view.View,
+         *      android.view.ViewGroup)
+         */
+        @Override
+        public View getChildView(int groupPosition, int childPosition, boolean isLastChild, View convertView, ViewGroup parent)
+        {
+            ItemHolder itemHolder = null;
+            if (convertView == null)
+            {
+                convertView = LayoutInflater.from(context).inflate(R.layout.expendlist_item, null);
+                itemHolder = new ItemHolder();
+                itemHolder.txt = (TextView)convertView.findViewById(R.id.txt);
+                itemHolder.img = (ImageView)convertView.findViewById(R.id.img);
+                convertView.setTag(itemHolder);
+            }
+            else
+            {
+                itemHolder = (ItemHolder)convertView.getTag();
+            }
+            itemHolder.txt.setText(item_list.get(groupPosition).get(childPosition));
+            itemHolder.img.setBackgroundResource(item_list2.get(groupPosition).get(childPosition));
+            return convertView;
+        }
+
+        /**
+         * 
+         * 是否选中指定位置上的子元素。
+         * 
+         * @param groupPosition
+         * @param childPosition
+         * @return
+         * @see android.widget.ExpandableListAdapter#isChildSelectable(int, int)
+         */
+        @Override
+        public boolean isChildSelectable(int groupPosition, int childPosition)
+        {
+            return true;
+        }
+
+    }
+
+    class GroupHolder
+    {
+        public TextView txt;
+
+        public ImageView img;
+    }
+
+    class ItemHolder
+    {
+        public ImageView img;
+
+        public TextView txt;
+    }
+
+}</code></pre><hr>
+<p>父控件和子控件的数据也可以使用数组表示，如：</p>
+<pre><code>    //设置组视图的图片
+    int[] logos = new int[] { R.drawable.wei, R.drawable.shu,R.drawable.wu};
+    //设置组视图的显示文字
+    private String[] parent_txt = new String[] { &quot;魏&quot;, &quot;蜀&quot;, &quot;吴&quot; };
+    //子视图显示文字
+    private String[][] son = new String[][] {
+            { &quot;夏侯惇&quot;, &quot;甄姬&quot;, &quot;许褚&quot;, &quot;郭嘉&quot;, &quot;司马懿&quot;, &quot;杨修&quot; },
+            { &quot;马超&quot;, &quot;张飞&quot;, &quot;刘备&quot;, &quot;诸葛亮&quot;, &quot;黄月英&quot;, &quot;赵云&quot; },
+            { &quot;吕蒙&quot;, &quot;陆逊&quot;, &quot;孙权&quot;, &quot;周瑜&quot;, &quot;孙尚香&quot; }
+
+    };</code></pre><p>统计元素个数：<code>logos.length</code></p>
+<blockquote>
+<p>参考：<a href="http://www.cnblogs.com/eyu8874521/archive/2012/08/16/2642605.html" target="_blank" rel="noopener">关于ExpandableListView用法的一个简单小例子</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2015/08/10/ExpandableListView%E8%AF%A6%E8%A7%A3/" data-id="ckcqdgkmm00dl9xlf6i3yh7ol" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/08/12/Android-Volley%E5%AE%8C%E5%85%A8%E8%A7%A3%E6%9E%90-%E4%B8%80-%EF%BC%8C%E5%88%9D%E8%AF%86Volley%E7%9A%84%E5%9F%BA%E6%9C%AC%E7%94%A8%E6%B3%95/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Android Volley完全解析(一)，初识Volley的基本用法
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/08/10/%E8%AE%A9PHP%E6%9B%B4%E5%BF%AB%E7%9A%84%E6%8F%90%E4%BE%9B%E6%96%87%E4%BB%B6%E4%B8%8B%E8%BD%BD/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">让PHP更快的提供文件下载</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

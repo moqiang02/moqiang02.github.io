@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>CentOS6.5下Redis源码安装与配置 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="本文详细介绍redis单机单实例安装与配置，服务及开机自启动。 （以下配置基于CentOS release 6.5 Final， redis版本3.0.2 [redis版本号中间位是偶数的是稳定版，奇数的为非稳定版]）">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CentOS6.5下Redis源码安装与配置">
+<meta property="og:url" content="http://moqiang02.github.io/2016/07/28/CentOS6-5%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="本文详细介绍redis单机单实例安装与配置，服务及开机自启动。 （以下配置基于CentOS release 6.5 Final， redis版本3.0.2 [redis版本号中间位是偶数的是稳定版，奇数的为非稳定版]）">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/1.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/2.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/3.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/4.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/5.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/6.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/7.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/8.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/9.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/10.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/11.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/12.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/13.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/14.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/15.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/16.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/17.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/18.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/19.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/20.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/21.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/22.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/23.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/24.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/25.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/26.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/27.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/28.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/29.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/30.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/31.jpg">
+<meta property="article:published_time" content="2016-07-27T23:31:00.000Z">
+<meta property="article:modified_time" content="2018-03-20T15:26:04.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/1.jpg">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-CentOS6-5下Redis源码安装与配置" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/07/28/CentOS6-5%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/" class="article-date">
+  <time datetime="2016-07-27T23:31:00.000Z" itemprop="datePublished">2016-07-28</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/redis/">redis</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      CentOS6.5下Redis源码安装与配置
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <p>本文详细介绍redis单机单实例安装与配置，服务及开机自启动。</p>
+<p>（以下配置基于CentOS release 6.5 Final， redis版本3.0.2 [redis版本号中间位是偶数的是稳定版，奇数的为非稳定版]）</p>
+<a id="more"></a>
+
+<h3 id="一．安装redis"><a href="#一．安装redis" class="headerlink" title="一．安装redis"></a>一．安装redis</h3><p>1)下载redis安装包，可去官网<a href="http://redis.io" target="_blank" rel="noopener">http://redis.io</a> ，也可通过wget命令，</p>
+<p><code>wget http://download.redis.io/redis-stable.tar.gz</code><br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/1.jpg" alt=""></p>
+<p>2)解压</p>
+<p><code>tar -zxvf redis-stable.tar.gz</code><br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/2.jpg" alt=""></p>
+<p>3)编译、安装</p>
+<p><code>cd redis-stable</code><br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/3.jpg" alt=""></p>
+<p><code>make</code><br>如果提示gcc command不识别，请自行安装gcc;</p>
+<p>如果提示<code>couldn’t execute tcl : no such file or dicrectory</code>，请自行安装tcl;</p>
+<p>如果提示<br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/4.jpg" alt=""></p>
+<p>请执行<code>make distclean</code>，然后再make<br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/5.jpg" alt=""></p>
+<p>Make成功之后，会在src目录下多出一些文件，如下<br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/6.jpg" alt=""></p>
+<p>可手动拷贝redis-server、redis-cli、redis-check-aof、redis-check-dump等至/usr/local/bin目录下，也可执行<code>make install</code>，此处执行<code>make install</code><br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/7.jpg" alt=""></p>
+<p>可查看，/usr/local/bin下已有这些文件。</p>
+<p>注意：若此时执行<code>redis-server -v</code>(查看版本命令)，若提示<code>redis-server command not found</code>，则需要将/usr/local/bin目录加到环境变量，如何添加，此处不做详细介绍，可查看修改/etc/profile，(查看环境变量命令：<code>echo $PATH</code>)</p>
+<p>正常如下<br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/8.jpg" alt=""></p>
+<p>至此，redis安装完成，接着配置。</p>
+<h3 id="二．修改配置文件-conf"><a href="#二．修改配置文件-conf" class="headerlink" title="二．修改配置文件.conf"></a>二．修改配置文件.conf</h3><p>1)创建配置文件目录，dump file 目录，进程pid目录，log目录等</p>
+<p>配置文件一般放在/etc/下，创建redis目录</p>
+<pre><code>cd /etc/
+mkdir redis</code></pre><p><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/9.jpg" alt=""></p>
+<p><code>ll</code>查看创建的redis目录 ~</p>
+<p>dump file、进程pid、log目录等，一般放在/var/目录下，</p>
+<pre><code>cd /var/
+mkdir redis
+cd redis
+mkdir data log run</code></pre><p><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/10.jpg" alt=""></p>
+<p>至此，目录创建完毕</p>
+<p>2)修改配置文件，配置参数</p>
+<p>首先拷贝解压包下的redis.conf文件至/etc/redis<br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/11.jpg" alt=""></p>
+<p>查看/etc/redis/redis.conf</p>
+<p><code>cd /etc/redis/</code></p>
+<p><code>ll</code><br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/12.jpg" alt=""></p>
+<p>打开redis.conf文件</p>
+<p>修改端口(默认6379)<br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/13.jpg" alt=""></p>
+<p>修改pid目录为新建目录<br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/14.jpg" alt=""></p>
+<p>修改dump目录为新建目录<br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/15.jpg" alt=""></p>
+<p>修改log存储目录为新建目录<br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/16.jpg" alt=""></p>
+<p>3)持久化</p>
+<p>默认rdb，可选择是否开启aof，若开启，修改配置文件appendonly</p>
+<p>4)启动redis，查看各目录下文件<br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/17.jpg" alt=""></p>
+<p>查看进程<br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/18.jpg" alt=""></p>
+<p>redis已启动</p>
+<p>查看dump, log, pid等<br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/19.jpg" alt=""></p>
+<p>发现只有日志，没有dump和pid信息，是因为当前redis服务仍然是console模式运行的，且没有数据存储操作</p>
+<p>停止redis服务，修改配置文件使得redis在background运行<br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/20.jpg" alt=""></p>
+<p>改成yes，保存，重启redis服务</p>
+<p>查看pid信息，如下<br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/21.jpg" alt=""></p>
+<p>查看dump信息<br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/22.jpg" alt=""></p>
+<p>若配置了aof持久化方式，data目录下还会有aof的相关文件</p>
+<p>5)客户端连接redis<br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/23.jpg" alt=""></p>
+<p>默认端口6379</p>
+<p>6)至此，redis基础配置完毕，若有其他相关配置调整，可查找文档再修改</p>
+<h3 id="三．服务及开机自启动"><a href="#三．服务及开机自启动" class="headerlink" title="三．服务及开机自启动"></a>三．服务及开机自启动</h3><p>1)创建redis启动脚本</p>
+<p>拷贝解压包下utils下redis启动脚本至/etc/init.d/</p>
+<p><code>cp redis_init_script /etc/init.d/</code></p>
+<p>修改脚本名称(也可不修改)为redis</p>
+<p>查看<code>ll</code><br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/24.jpg" alt=""></p>
+<p>修改脚本pid及conf路径为实际路径<br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/25.jpg" alt=""></p>
+<p>生产环境下，配置时，配置文件、pid等最好加上端口标识，以便区分，如<br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/26.jpg" alt=""></p>
+<p>保存</p>
+<p>退出</p>
+<p>至此，在/etc/init.d/目录下，已经可以通过<code>service redis start/stop</code> 命令启动和关闭redis<br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/27.jpg" alt=""></p>
+<p>若在其他目录下，不能够使用这2个命令，请继续配置2)，添加权限</p>
+<p>2)给启动脚本添加权限</p>
+<p><code>chmod +x /etc/init.d/redis</code><br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/28.jpg" alt=""></p>
+<p>实际命令，根据目录的不同，会不一样</p>
+<p>相应的删除权限是</p>
+<p><code>chmod -x /etc/init.d/redis</code></p>
+<p>如果需要在开机的时候，redis服务自动启动，可继续3)</p>
+<p>3)设置自启动</p>
+<p><code>chkconfig redis on</code></p>
+<p>如果运行报错，提示<br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/29.jpg" alt=""></p>
+<p>是因为没有在启动脚本里加入redis启动优先级信息，可添加如下<br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/30.jpg" alt=""></p>
+<p>再次执行chkconfig redis on，成功<br><img src="/images/CentOS65%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/31.jpg" alt=""></p>
+<p>至此，自启动配置完毕。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2016/07/28/CentOS6-5%E4%B8%8BRedis%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/" data-id="ckcqdgkl9008p9xlfc28e47fi" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/08/02/Linux%E4%B8%8B%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AEMongoDB-3-0-x-%E7%89%88%E6%9C%AC%E6%95%B0%E6%8D%AE%E5%BA%93/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Linux下安装配置MongoDB 3.0.x 版本数据库
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/07/28/%E8%87%AA%E5%AE%9A%E4%B9%89EditText%E8%BE%93%E5%85%A5%E6%A1%86/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">自定义EditText输入框</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

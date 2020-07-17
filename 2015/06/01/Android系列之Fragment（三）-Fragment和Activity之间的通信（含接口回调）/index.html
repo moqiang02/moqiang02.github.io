@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Android系列之Fragment（三）----Fragment和Activity之间的通信（含接口回调） | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="一、接口回调的简单引入：我们先来看一个简单的接口回调的例子： 新建一个Java工程，然后新建一个包。然后新建一个A.java文件：">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android系列之Fragment（三）----Fragment和Activity之间的通信（含接口回调）">
+<meta property="og:url" content="http://moqiang02.github.io/2015/06/01/Android%E7%B3%BB%E5%88%97%E4%B9%8BFragment%EF%BC%88%E4%B8%89%EF%BC%89-Fragment%E5%92%8CActivity%E4%B9%8B%E9%97%B4%E7%9A%84%E9%80%9A%E4%BF%A1%EF%BC%88%E5%90%AB%E6%8E%A5%E5%8F%A3%E5%9B%9E%E8%B0%83%EF%BC%89/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="一、接口回调的简单引入：我们先来看一个简单的接口回调的例子： 新建一个Java工程，然后新建一个包。然后新建一个A.java文件：">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/Android%E7%B3%BB%E5%88%97%E4%B9%8BFragment/3-1.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/Android%E7%B3%BB%E5%88%97%E4%B9%8BFragment/3-2.jpg">
+<meta property="article:published_time" content="2015-06-01T00:01:02.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:34.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/Android%E7%B3%BB%E5%88%97%E4%B9%8BFragment/3-1.png">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Android系列之Fragment（三）-Fragment和Activity之间的通信（含接口回调）" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/06/01/Android%E7%B3%BB%E5%88%97%E4%B9%8BFragment%EF%BC%88%E4%B8%89%EF%BC%89-Fragment%E5%92%8CActivity%E4%B9%8B%E9%97%B4%E7%9A%84%E9%80%9A%E4%BF%A1%EF%BC%88%E5%90%AB%E6%8E%A5%E5%8F%A3%E5%9B%9E%E8%B0%83%EF%BC%89/" class="article-date">
+  <time datetime="2015-06-01T00:01:02.000Z" itemprop="datePublished">2015-06-01</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Android/">Android</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Android系列之Fragment（三）----Fragment和Activity之间的通信（含接口回调）
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <h4 id="一、接口回调的简单引入："><a href="#一、接口回调的简单引入：" class="headerlink" title="一、接口回调的简单引入："></a>一、接口回调的简单引入：</h4><p>我们先来看一个简单的接口回调的例子：</p>
+<p>新建一个Java工程，然后新建一个包。然后新建一个A.java文件：<a id="more"></a></p>
+<p>A.java代码如下：</p>
+<pre><code>package com.cn.callback;
+
+public class A {
+    public A() {
+
+    }
+
+    //下载图片的操作
+    public void loadImage(String image_path,final CallBack callBack) {
+        new Thread(new Runnable(){
+
+            public void run() {
+                // TODO Auto-generated method stub
+                String msg = &quot;Hello world&quot;;
+                callBack.getResult(msg);                
+            }
+
+        }).start();
+    }
+
+    public interface CallBack {
+        public void getResult(String result);
+    }
+} </code></pre><p>第21至23行就是回调方法。</p>
+<p>新建B.java，代码如下：</p>
+<pre><code>package com.cn.callback;
+
+import com.cn.callback.A.CallBack;
+
+public class B {
+    public B(){
+
+    }
+
+    public static void main(String args[]) {
+        A a = new A();
+        a.loadImage(&quot;http://www.baidu.com/a.gif&quot;, new CallBack() {
+            public void getResult(String result) {
+                // TODO Auto-generated method stub
+                System.out.println(result);
+            }
+
+        });
+    }
+}</code></pre><p>最后程序运行的结果如下：<br><img src="/images/Android%E7%B3%BB%E5%88%97%E4%B9%8BFragment/3-1.png" alt=""><br>关于接口回调，有一个博客，不过现在还不能完全理解，附上链接：</p>
+<p>一个经典例子让你彻彻底底理解java回调机制：<a href="http://blog.csdn.net/xiaanming/article/details/8703708" target="_blank" rel="noopener">http://blog.csdn.net/xiaanming/article/details/8703708</a></p>
+<h4 id="二、Fragment和Activity的交互："><a href="#二、Fragment和Activity的交互：" class="headerlink" title="二、Fragment和Activity的交互："></a>二、Fragment和Activity的交互：</h4><p>1、在Fragment中调用Activity中的方法：</p>
+<p>Fragment可以通过getActivity()方法来获得Activity的实例，然后就可以调用一些例如findViewById()之类的方法。例如：</p>
+<p><code>View listView = getActivity().findViewById(R.id.list);</code></p>
+<p>但是注意调用getActivity()时，fragment必须和activity关联（attached to an activity），否则将会返回一个null。</p>
+<p>另外，当碎片中需要使用Context对象时，也可以使用getActivity()方法，因此获取到的活动本身就是一个Context对象。</p>
+<p>【实例】在Activity的EditText中输入一段文本，这个时候，点击Fragment中的按钮，让它弹出吐司，显示出对应的文本。</p>
+<p>其实就是让Activity中的文本显示在Fragment中，Fragment的核心代码如下：</p>
+<pre><code>    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+            Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_left, null);    
+        button = (Button) view.findViewById(R.id.button1);
+        button.setOnClickListener(new OnClickListener() {            
+            @Override
+            public void onClick(View v) {
+                // TODO Auto-generated method stub
+                EditText editText = (EditText) getActivity().findViewById(R.id.editText);
+                Toast.makeText(getActivity(), editText.getText().toString(), 1).show();
+            }
+        });
+
+        return view;
+    }</code></pre><p>第09行代码是核心，通过getActivity()方法来获得Activity的实例，然后就可以调用findViewById()的方法得到其中的EditText控件。</p>
+<p>2、在Activity中调用Fragment中的方法：（要用到接口回调）</p>
+<p>activity也可以获得一个fragment的引用，从而调用fragment中的方法。获得fragment的引用要用FragmentManager，之后可以调用findFragmentById() 或者 findFragmentByTag()。例如：</p>
+<p><code>ExampleFragment fragment = (ExampleFragment) getFragmentManager().findFragmentById(R.id.example_fragment);</code></p>
+<p>具体例子稍后再讲。</p>
+<p>3、Fragment与Fragment之间的通信：</p>
+<p>既然Fragment和Activity之间的通信问题解决了，那Fragment与Fragment之间的通信也没有那么复杂。基本思路是：</p>
+<p>首先在一个Fragment中可以得到与它相关联的Activity，然后再通过这个Activity去获取另外一个Fragment的实例，这样就实现了不同Fragment之间的通信。</p>
+<h4 id="三、创建事件回调（在Activity中获取Fragment中的值）："><a href="#三、创建事件回调（在Activity中获取Fragment中的值）：" class="headerlink" title="三、创建事件回调（在Activity中获取Fragment中的值）："></a>三、创建事件回调（在Activity中获取Fragment中的值）：</h4><p>一些情况下，可能需要fragment和activity共享事件，一个比较好的做法是在fragment里面定义一个回调接口，然后要求宿主activity实现这个接口。当activity通过这个接口接收到一个回调，它可以让同布局中的其他fragment分享这个信息。</p>
+<p>例如，一个新闻显示应用在一个activity中有两个fragment，一个fragment A显示文章题目的列表，一个fragment B显示文章。所以当一个文章被选择的时候，fragment A必须通知activity，然后activity通知fragment B，让它显示这篇文章。（例子的代码见官方文档）</p>
+<p>我们现在举一个其他的例子：</p>
+<p>【实例】在Fragment中输入值，点击Activity中的按钮，弹出吐司，显示之前输入的值。其实就是让Fragment中的文本显示在Activity中</p>
+<p>我们在平板的左侧加入一个fragment，完整代码如下：</p>
+<p>fragment_left.xml代码如下：</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;LinearLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;
+    android:layout_width=&quot;match_parent&quot;
+    android:layout_height=&quot;match_parent&quot;
+    android:orientation=&quot;vertical&quot; &gt;
+
+    &lt;EditText
+        android:id=&quot;@+id/editText1&quot;
+        android:layout_width=&quot;match_parent&quot;
+        android:layout_height=&quot;wrap_content&quot;
+        android:ems=&quot;10&quot; &gt;
+        &lt;requestFocus /&gt;
+    &lt;/EditText&gt;
+
+&lt;/LinearLayout&gt;</code></pre><p>其实就是加了一个EditText,方便在里面输入文本内容。</p>
+<p>然后在frament中加一个接口回调，让它在Activity当中调用，方便获取输入文本的值。LeftFragment.java的代码如下：</p>
+<pre><code>package com.example.m01_fragment05;
+
+import android.app.Fragment;
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
+
+public class LeftFragment extends Fragment {
+
+    private Button button;
+    private EditText editText;
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+            Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_left, null);
+        editText = (EditText) view.findViewById(R.id.editText1);
+        return view;
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+    }
+
+    //接口回调
+    public void getEditText(CallBack callBack) {
+        String msg = editText.getText().toString();
+        callBack.getResult(msg);
+    }
+
+    public interface CallBack {
+        public void getResult(String result);
+    }
+}</code></pre><p>代码解释如下：</p>
+<p>第25行：一定要为editText加一个id，不然会报空指针异常的错误；</p>
+<p>34至42行：添加一个接口回调，用于获取文本的值，然后稍后再Activity当中进行调用。</p>
+<p>activity_main.xml的代码如下：</p>
+<pre><code>&lt;LinearLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;
+    xmlns:tools=&quot;http://schemas.android.com/tools&quot;
+    android:layout_width=&quot;match_parent&quot;
+    android:layout_height=&quot;match_parent&quot;
+    android:orientation=&quot;horizontal&quot;
+    tools:context=&quot;.MainActivity&quot; &gt;
+
+     &lt;LinearLayout
+        android:id=&quot;@+id/left&quot;
+        android:layout_width=&quot;224dp&quot;
+        android:layout_height=&quot;match_parent&quot;
+        android:background=&quot;#CCCCCC&quot;
+        android:orientation=&quot;vertical&quot; &gt;
+    &lt;/LinearLayout&gt;
+
+    &lt;LinearLayout
+        android:layout_width=&quot;wrap_content&quot;
+        android:layout_height=&quot;match_parent&quot;
+        android:orientation=&quot;vertical&quot; &gt;
+
+        &lt;EditText
+            android:id=&quot;@+id/editText1&quot;
+            android:layout_width=&quot;match_parent&quot;
+            android:layout_height=&quot;wrap_content&quot;
+            android:ems=&quot;10&quot; &gt;
+            &lt;requestFocus /&gt;
+        &lt;/EditText&gt;
+
+        &lt;Button
+            android:id=&quot;@+id/button&quot;
+            android:layout_width=&quot;wrap_content&quot;
+            android:layout_height=&quot;wrap_content&quot;
+            android:text=&quot;获得Fragment的值&quot; /&gt;
+    &lt;/LinearLayout&gt; 
+
+&lt;/LinearLayout&gt;</code></pre><p>其实一共就两个线性布局，左边的现性布局留给fragment，右边的线性性局留给Activity。</p>
+<p>MainActivity.java的代码如下：</p>
+<pre><code>package com.example.m01_fragment05;
+
+import com.example.m01_fragment05.LeftFragment.CallBack;
+
+import android.app.Activity;
+import android.app.FragmentManager;
+import android.app.FragmentTransaction;
+import android.os.Bundle;
+import android.view.Menu;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.Toast;
+
+public class MainActivity extends Activity {
+    private FragmentManager manager;
+    private FragmentTransaction transaction;
+    private Button button;
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);        
+        button = (Button)findViewById(R.id.button);
+
+        //动态加载leftFragment
+        manager = getFragmentManager();
+        transaction = manager.beginTransaction();
+        final LeftFragment leftFragment = new LeftFragment();
+        transaction.add(R.id.left, leftFragment, &quot;left&quot;);
+        transaction.commit();
+        button.setOnClickListener(new OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                //点击按钮后，通过接口回调，获取fragment当中EditText的值，并弹出吐司
+                leftFragment.getEditText(new CallBack(){
+                    @Override
+                    public void getResult(String result) {
+                        // TODO Auto-generated method stub
+                        Toast.makeText(MainActivity.this, result, 1).show();
+                    }                    
+                });
+            }
+        });
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
+    }    
+}</code></pre><p>我们在Activity当中动态加载Fragment，然后点击按钮，通过接口回调，获取fragment当中EditText的值，并弹出吐司。</p>
+<p>程序运行后，在左侧的Fragment的EditText当中输入值，点击右侧的按钮，弹出吐司，效果如下：<br><img src="/images/Android%E7%B3%BB%E5%88%97%E4%B9%8BFragment/3-2.jpg" alt=""><br>【声明】 </p>
+<p>欢迎转载，但请保留文章原始出处→_→ </p>
+<p>生命壹号：<a href="http://www.cnblogs.com/smyhvae/" target="_blank" rel="noopener">http://www.cnblogs.com/smyhvae/</a> </p>
+<p>文章来源：<a href="http://www.cnblogs.com/smyhvae/p/4000390.html" target="_blank" rel="noopener">http://www.cnblogs.com/smyhvae/p/4000390.html</a></p>
+<p>联系方式：<a href="mailto:smyhvae@163.com">smyhvae@163.com</a> </p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2015/06/01/Android%E7%B3%BB%E5%88%97%E4%B9%8BFragment%EF%BC%88%E4%B8%89%EF%BC%89-Fragment%E5%92%8CActivity%E4%B9%8B%E9%97%B4%E7%9A%84%E9%80%9A%E4%BF%A1%EF%BC%88%E5%90%AB%E6%8E%A5%E5%8F%A3%E5%9B%9E%E8%B0%83%EF%BC%89/" data-id="ckcqdgkkh005t9xlf48rng26b" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/06/01/Android%E7%B3%BB%E5%88%97%E4%B9%8BFragment%EF%BC%88%E5%9B%9B%EF%BC%89-ListFragment%E7%9A%84%E4%BD%BF%E7%94%A8/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Android系列之Fragment（四）----ListFragment的使用
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/06/01/Android%E7%B3%BB%E5%88%97%E4%B9%8BFragment%EF%BC%88%E4%BA%8C%EF%BC%89-Fragment%E7%9A%84%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%E5%92%8C%E8%BF%94%E5%9B%9E%E6%A0%88/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Android系列之Fragment（二）----Fragment的生命周期和返回栈</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

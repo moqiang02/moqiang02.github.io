@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>rsync+inotify实现数据的实时同步更新 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="rsync可以实现触发式的文件同步，但是通过crontab守护进程方式进行触发，同步的数据和实际数据会有差异，而inotify可以监控文件系统的各种变化，当文件有任何变动时，就触发rsync同步，这样就可以解决同步数据的实时性问题。 一、rsync的优点与不足rsync具有安全性高、备份迅速、支持增量备份等优点，通过rsync可以解决对实时性要求不高的数据备份需求，例如定期的备份文件服务器数据到远">
+<meta property="og:type" content="article">
+<meta property="og:title" content="rsync+inotify实现数据的实时同步更新">
+<meta property="og:url" content="http://moqiang02.github.io/2014/02/20/rsync-inotify%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E7%9A%84%E5%AE%9E%E6%97%B6%E5%90%8C%E6%AD%A5%E6%9B%B4%E6%96%B0/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="rsync可以实现触发式的文件同步，但是通过crontab守护进程方式进行触发，同步的数据和实际数据会有差异，而inotify可以监控文件系统的各种变化，当文件有任何变动时，就触发rsync同步，这样就可以解决同步数据的实时性问题。 一、rsync的优点与不足rsync具有安全性高、备份迅速、支持增量备份等优点，通过rsync可以解决对实时性要求不高的数据备份需求，例如定期的备份文件服务器数据到远">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2014-02-20T14:53:30.000Z">
+<meta property="article:modified_time" content="2019-11-03T08:27:58.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta property="article:tag" content="集群">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-rsync-inotify实现数据的实时同步更新" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/02/20/rsync-inotify%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E7%9A%84%E5%AE%9E%E6%97%B6%E5%90%8C%E6%AD%A5%E6%9B%B4%E6%96%B0/" class="article-date">
+  <time datetime="2014-02-20T14:53:30.000Z" itemprop="datePublished">2014-02-20</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/linux/">linux</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      rsync+inotify实现数据的实时同步更新
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+<!-- 文章目录开始 -->
+
+<div id="toc" class="toc-article">
+<strong class="toc-title" style="cursor:pointer">contents</strong>
+<ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、rsync的优点与不足"><span class="toc-number">1.</span> <span class="toc-text">一、rsync的优点与不足</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、-初识inotify"><span class="toc-number">2.</span> <span class="toc-text">二、 初识inotify</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#三、-安装inotify工具inotify-tools"><span class="toc-number">3.</span> <span class="toc-text">三、 安装inotify工具inotify-tools</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#四、inotify的简单介绍"><span class="toc-number">4.</span> <span class="toc-text">四、inotify的简单介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#五、rsync-inotify企业应用案例"><span class="toc-number">5.</span> <span class="toc-text">五、rsync+inotify企业应用案例</span></a></li></ol>
+</div>
+
+<!-- 文章目录结束 -->	  
+
+	  
+        <p>rsync可以实现触发式的文件同步，但是通过crontab守护进程方式进行触发，同步的数据和实际数据会有差异，而inotify可以监控文件系统的各种变化，当文件有任何变动时，就触发rsync同步，这样就可以解决同步数据的实时性问题。</p>
+<h3 id="一、rsync的优点与不足"><a href="#一、rsync的优点与不足" class="headerlink" title="一、rsync的优点与不足"></a>一、rsync的优点与不足</h3><p>rsync具有安全性高、备份迅速、支持增量备份等优点，通过rsync可以解决对实时性要求不高的数据备份需求，例如定期的备份文件服务器数据到远端服务器，对本地磁盘定期做数据镜像等。</p>
+<a id="more"></a>
+<p>随着应用系统规模的不断扩大，对数据的安全性和可靠性也提出的更好的要求，rsync在高端业务系统中也逐渐暴露出了很多不足，首先，rsync同步数据时，需要扫描所有文件后进行比对，进行差量传输。如果文件数量达到了百万甚至千万量级，扫描所有文件将是非常耗时的。而且正在发生变化的往往是其中很少的一部分，这是非常低效的方式。其次，rsync不能实时的去监测、同步数据，虽然它可以通过Linux守护进程的方式进行触发同步，但是两次触发动作一定会有时间差，这样就导致了服务端和客户端数据可能出现不一致，无法在应用故障时完全的恢复数据。基于以上原因，rsync+inotify可以解决这个问题。</p>
+<h3 id="二、-初识inotify"><a href="#二、-初识inotify" class="headerlink" title="二、 初识inotify"></a>二、 初识inotify</h3><p>Inotify 是一种强大的、细粒度的、异步的文件系统事件监控机制，linux内核从2.6.13起，加入了Inotify支持，通过Inotify可以监控文件系统中添加、删除，修改、移动等各种细微事件，利用这个内核接口，第三方软件就可以监控文件系统下文件的各种变化情况，而inotify-tools就是这样的一个第三方软件。</p>
+<p>我们曾讲到，rsync可以实现触发式的文件同步，但是通过crontab守护进程方式进行触发，同步的数据和实际数据会有差异，而inotify可以监控文件系统的各种变化，当文件有任何变动时，就触发rsync同步，这样刚好解决了同步数据的实时性问题。</p>
+<h3 id="三、-安装inotify工具inotify-tools"><a href="#三、-安装inotify工具inotify-tools" class="headerlink" title="三、 安装inotify工具inotify-tools"></a>三、 安装inotify工具inotify-tools</h3><p>由于inotify特性需要Linux内核的支持，在安装inotify-tools前要先确认Linux系统内核是否达到了 2.6.13以上，如果Linux内核低于2.6.13版本，就需要重新编译内核加入inotify的支持，也可以用如下方法判断，内核是否支持 inotify(服务器系统为Centos5.5 x86_64)：</p>
+<pre><code class="txt">uname -r
+
+2.6.18-194.el5
+
+ls -lsart /proc/sys/fs/inotify/
+
+总计 0
+
+0 dr-xr-xr-x 7 root root 0 06-16 00:02 ..
+0 -rw-r--r-- 1 root root 0 06-21 11:15 max_user_watches
+0 -rw-r--r-- 1 root root 0 06-21 11:15 max_user_instances
+0 -rw-r--r-- 1 root root 0 06-21 11:15 max_queued_events
+0 dr-xr-xr-x 2 root root 0 06-21 11:15 .</code></pre>
+<p>通过以上显示我们明白，Centos5.5 x86_64是支持inotify的。</p>
+<h3 id="四、inotify的简单介绍"><a href="#四、inotify的简单介绍" class="headerlink" title="四、inotify的简单介绍"></a>四、inotify的简单介绍</h3><p>Inotify 是文件系统事件监控机制，作为 dnotify 的有效替代。dnotify 是较早内核支持的文件监控机制。Inotify 是一种强大的、细粒度的、异步的机制，它满足各种各样的文件监控需要，不仅限于安全和性能。</p>
+<p>inotify 可以监视的文件系统事件包括：</p>
+<p>IN_ACCESS，即文件被访问<br>IN_MODIFY，文件被 write<br>IN_ATTRIB，文件属性被修改，如 chmod、chown、touch 等<br>IN_CLOSE_WRITE，可写文件被 close<br>IN_CLOSE_NOWRITE，不可写文件被 close<br>IN_OPEN，文件被 open<br>IN_MOVED_FROM，文件被移走,如 mv<br>IN_MOVED_TO，文件被移来，如 mv、cp<br>IN_CREATE，创建新文件<br>IN_DELETE，文件被删除，如 rm<br>IN_DELETE_SELF，自删除，即一个可执行文件在执行时删除自己<br>IN_MOVE_SELF，自移动，即一个可执行文件在执行时移动自己<br>IN_UNMOUNT，宿主文件系统被 umount<br>IN_CLOSE，文件被关闭，等同于(IN_CLOSE_WRITE | IN_CLOSE_NOWRITE)<br>IN_MOVE，文件被移动，等同于(IN_MOVED_FROM | IN_MOVED_TO)</p>
+<p>注：上面所说的文件也包括目录。</p>
+<h3 id="五、rsync-inotify企业应用案例"><a href="#五、rsync-inotify企业应用案例" class="headerlink" title="五、rsync+inotify企业应用案例"></a>五、rsync+inotify企业应用案例</h3><p>我们的后端WEB是二台部署了Nginx的WEB服务器，由于没有共享存储，我们现在要实现的是对它们的根目录<code>/data/htdocs/www</code>实现即时同步更新。</p>
+<p>WebServer1:192.168.1.5，Centos5.5 x86_64<br>WebServer2:192.168.1.6，Centos5.5 x86_64</p>
+<p>根目录均为<code>/data/htdocs/www</code>，自动同步顺序为WebServer2à WebServer1，我们将WebServer1配置成rsync的服务器端即可</p>
+<p>1.我们首先开始安装inotify-tools</p>
+<p>可以到<a href="http://inotify-tools.sourceforge.net/" target="_blank" rel="noopener">http://inotify-tools.sourceforge.net/</a> 下载相应的inotify-tools版本，然后开始编译安装：</p>
+<pre><code>cd /usr/local/src
+tar zxvf inotify-tools-3.14.tar.gz
+cd inotify-tools-3.14
+./configure &amp;&amp;make &amp;&amp; make install</code></pre><p>2.WebServer1端</p>
+<p>即192.168.1.5的rsync，我们配置好/etc/rsyncd.conf文件，如下：</p>
+<pre><code class="ini">[root@server ~0m]# vim /etc/rsyncd.conf
+uid = nobody
+gid = nobody
+user chroot = no
+max connections = 200
+timeout = 600
+pid file = /var/run/rsyncd.pid
+lock file = /var/run/rsyncd.lock
+log file = /var/log/rsyncd.log
+[www]
+path=/data/htdocs/
+ignore errors
+read only = no
+list = no
+hosts allow = 192.168.1.0/255.255.255.0
+auth users = www
+secrets file = /etc/rsyncd.password</code></pre>
+<p>然后重启xinetd即可，如下所示：</p>
+<p><code>/etc/init.d/xinetd restart</code></p>
+<p>记得二台WEB机器都要配置<code>/etc/rsyncd.passwd</code>文件，rsync的配置过程和原理请大家参考我在51cto.com的rsync配置相关文章，这里就不详细说明了。</p>
+<p>3.我们配置好WebServer2的inotify</p>
+<p>让其开机即启动，脚本内容如下：</p>
+<pre><code class="ini">vim /root/rsync.sh
+#!/bin/bash
+src=/data/htdocs/www/
+des=www
+ip=192.168.1.5
+/usr/local/bin/inotifywait -mrq --timefmt &#39;%d/%m/%y %H:%M&#39; --format &#39;%T %w%f&#39; -e modify,delete,create,attrib $src | while read file
+do
+rsync -vzrtopg --delete --progress $src www@$ip::$des --password-file=/etc/rsyncd.password &amp;&amp;
+echo &quot;$src was rsynced&quot;
+done</code></pre>
+<p>脚本相关解释如下：<br>timefmt：指定时间的输出格式。<br>format：指定变化文件的详细信息。</p>
+<p>这个脚本的作用就是通过inotify监控文件目录的变化，进而触发rsync进行同步操作，由于这个过程是一种主动触发操作，通过系统内核完成的，所以，比起那些遍历整个目录的扫描方式，效率要高很多。</p>
+<p>然后我们将此脚本放在<code>/etc/rc.local</code>，即在最后一行添加，<code>/etc/rc.local</code>文件改动后内容如下：</p>
+<pre><code class="ini">[root@slave www0m]# cat /etc/rc.local
+#!/bin/sh
+#
+# This script will be executed *after* all the other init scripts.
+# You can put your own initialization stuff in here if you don&#39;t
+# want to do the full Sys V style init stuff.
+touch /var/lock/subsys/local
+/root/rsync.sh &amp;</code></pre>
+<p>修改rc.local后重启生效，注意最后的“&amp;”不能少，如果不加“&amp;”的话，系统无法重启。</p>
+<p>如果文件无法同步的话，也可能是rsync.sh脚本写错了，那么可以在命令行界面直接执行：<code>/root/rsync.sh</code>，看是否有语法错误。</p>
+<p>4.验证就很容易了</p>
+<p>我们可以在192.168.1.6的机器的<code>/data/htdocs/www</code>目录下新建文件，更改文件内容，我们很欣慰的发现，192.168.1.5的机器上马上也会发生相应的改变，就像二台机器是网络Raid-1样，非常方便。</p>
+<p>总体说来，rsync+inofity比较适用于没有存储环境的小文件的即时同步更新，如果要更新的文件非常大而且同步的机器数量在10台以上时，我建议还是以共享存储的方法来解决，如果没有资金购置昂贵的存储，大家不妨考虑下Heartbeat+DRBD+NFS方案来作为我们的文件服务器。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/02/20/rsync-inotify%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E7%9A%84%E5%AE%9E%E6%97%B6%E5%90%8C%E6%AD%A5%E6%9B%B4%E6%96%B0/" data-id="ckcqdgkzq01f29xlf6m8q3tjf" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E9%9B%86%E7%BE%A4/" rel="tag">集群</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/02/20/PHP-jQuery%E5%AE%9E%E7%8E%B0%E7%BF%BB%E6%9D%BF%E6%8A%BD%E5%A5%96%EF%BC%88%E4%B8%AD%E5%A5%96%E6%A6%82%E7%8E%87%E7%AE%97%E6%B3%95%EF%BC%89/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          PHP+jQuery实现翻板抽奖（中奖概率算法）
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/02/20/rsync%E5%AE%89%E8%A3%85%E4%BD%BF%E7%94%A8%E8%AF%A6%E8%A7%A3/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">rsync安装使用详解</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

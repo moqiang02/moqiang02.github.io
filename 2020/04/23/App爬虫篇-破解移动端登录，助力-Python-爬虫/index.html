@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>App爬虫篇 - 破解移动端登录，助力 Python 爬虫 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="目 标 场 景在移动互联网时代，很大一部分企业抛弃了传统的网站，选择将数据、服务整合到 App 端，因此 App 端无论是爬虫还是反反爬都显得尤为重要。 常见的 App 端的爬虫方式是利用 Appium 和 Airtest 驱动手机打开应用，操作页面，然后通过元素 ID 获取元素的内容，又或者借助 mitmproxy 捕获到请求的数据，最后将数据保存下来。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="App爬虫篇 - 破解移动端登录，助力 Python 爬虫">
+<meta property="og:url" content="http://moqiang02.github.io/2020/04/23/App%E7%88%AC%E8%99%AB%E7%AF%87-%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95%EF%BC%8C%E5%8A%A9%E5%8A%9B-Python-%E7%88%AC%E8%99%AB/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="目 标 场 景在移动互联网时代，很大一部分企业抛弃了传统的网站，选择将数据、服务整合到 App 端，因此 App 端无论是爬虫还是反反爬都显得尤为重要。 常见的 App 端的爬虫方式是利用 Appium 和 Airtest 驱动手机打开应用，操作页面，然后通过元素 ID 获取元素的内容，又或者借助 mitmproxy 捕获到请求的数据，最后将数据保存下来。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/1.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/2.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/3.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/4.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/5.jpg">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/1466987-6d99cefb5c2f3cae?imageMogr2/auto-orient/strip%7C!%5B%5D(/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/6.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/7.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/8.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/9.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/10.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/11.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/12.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/13.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/14.jpg">
+<meta property="article:published_time" content="2020-04-23T15:52:15.000Z">
+<meta property="article:modified_time" content="2020-06-09T23:34:50.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta property="article:tag" content="爬虫">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/1.jpg">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-App爬虫篇-破解移动端登录，助力-Python-爬虫" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/04/23/App%E7%88%AC%E8%99%AB%E7%AF%87-%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95%EF%BC%8C%E5%8A%A9%E5%8A%9B-Python-%E7%88%AC%E8%99%AB/" class="article-date">
+  <time datetime="2020-04-23T15:52:15.000Z" itemprop="datePublished">2020-04-23</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/python/">python</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      App爬虫篇 - 破解移动端登录，助力 Python 爬虫
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <h1 id="目-标-场-景"><a href="#目-标-场-景" class="headerlink" title="目 标 场 景"></a>目 标 场 景</h1><p>在移动互联网时代，很大一部分企业抛弃了传统的网站，选择将数据、服务整合到 App 端，因此 App 端无论是爬虫还是反反爬都显得尤为重要。</p>
+<p>常见的 App 端的爬虫方式是利用 Appium 和 Airtest 驱动手机打开应用，操作页面，然后通过元素 ID 获取元素的内容，又或者借助 mitmproxy 捕获到请求的数据，最后将数据保存下来。<a id="more"></a></p>
+<p>​如果要完成复杂的操作，加快爬虫的效率，就必须破解 App 端的登录，获取一些关键的数据，直接模拟接口请求，达到快速高效地爬取数据的目的。</p>
+<p><img src="/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/1.jpg" alt=""></p>
+<p>本篇文章的目的是带大家「<strong>破解 App 端的登录</strong>」这一操作。</p>
+<p>ps：本文仅限技术交流，请勿用于其他用途。</p>
+<h1 id="准-备-工-作"><a href="#准-备-工-作" class="headerlink" title="准 备 工 作"></a>准 备 工 作</h1><p>在开始编写脚本之前，需要做好如下准备工作</p>
+<ul>
+<li><p>待破解的 APK 应用，可去官网或者各大应用市场去下载，然后安装应用到手机中</p>
+</li>
+<li><p>反编译工具，MAC OSX 推荐 Android Crack Tool 工具集，Win OS 可以使用 dex2jar 来反编译 APK 应用包</p>
+</li>
+<li><p>源码浏览工具：jadx_gui</p>
+</li>
+<li><p>抓包工具：Charles 或者 Fiddler</p>
+</li>
+</ul>
+<h1 id="编-写-脚-本"><a href="#编-写-脚-本" class="headerlink" title="编 写 脚 本"></a>编 写 脚 本</h1><p>第 1 步，确保手机配置好代理之后，就可以利用 Charles 对「<strong>获取验证码</strong>」和「<strong>登录</strong>」进行抓包操作，得到请求地址、请求参数和请求头等数据。</p>
+<p><img src="/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/2.jpg" alt=""></p>
+<p>第 2 步，对请求参数、请求头中「<strong>没有规律的数据</strong>」寻找生成的规律，并用 Python 代码来生成这些数据。</p>
+<p>首先，我们查看获取验证码这一请求的参数，发现除了手机号码外，参数 t 可以很容易想到是请求的时间戳，唯独参数 token 在没有其他网络请求的情况下生成了。</p>
+<pre><code class="python">def get_unix_time(type_13):
+    &quot;&quot;&quot;
+    获取时间戳
+    :param type_13:10位、13位，是否是13位
+    :return:
+    &quot;&quot;&quot;
+    t = time.time()
+
+    if type_13:
+
+        millis = int(round(t * 1000))
+    else:
+        millis = int(t)
+
+    return millis
+</code></pre>
+<p>所以，我们大胆猜测：<strong>这个 token 是 App 端通过一定的逻辑生成的；同理，请求头中 token 也是由 App 端生成</strong>。</p>
+<p>在我们多次发起获取验证码的操作之后，我们得出一个规律：参数中的 token 保持不变，与请求时间没有关系；请求头的 token 会随着时间的变化的也会发生变化。</p>
+<p>我们利用 Android Crack Tool 对 APK 应用进行反编译，得到源码 Jar 包。</p>
+<p><img src="/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/3.jpg" alt=""></p>
+<p>然后就可以使用 jadx_gui 工具打开源码 Jar 包，通过请求地址中的「<strong>关键词：login</strong>」搜索源码，就能找到请求发送的位置。</p>
+<p><img src="/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/4.jpg" alt=""></p>
+<p>由于应用源码打包的时候混淆了代码，因此，我们需要根据上面的搜索结果去定位参数初始化位置及实现逻辑。</p>
+<p><img src="/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/5.jpg" alt=""></p>
+<p>逐步往上追溯应用源码，可以找到按钮点击事件的监听函数。</p>
+<p>具体实现逻辑是把用户输入的手机函数传给混淆后的函数 ：b()</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/1466987-6d99cefb5c2f3cae?imageMogr2/auto-orient/strip%7C!%5B%5D(/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/6.jpg" alt=""></p>
+<p>点击查看函数 b() 的实现逻辑，会发现方法中对手机号码进行了截取，获取当前日期时间，进行字符串的「<strong>第一次拼接</strong>」操作。</p>
+<p><img src="/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/7.jpg" alt=""></p>
+<p>对第一部分的拼接我们用 Python 代码进行实现。</p>
+<pre><code class="python">def __get_param_token(self, phone_num):
+        &quot;&quot;&quot;
+        获取参数Token
+        :return: BNpK8SMDiV6jTU4DR99A9vYoN9e90yBd
+        &quot;&quot;&quot;
+        today = datetime.date.today()
+        formatted_today = today.strftime(&#39;%Y%m%d&#39;)
+
+        formatted_day = today.strftime(&#39;%m%d&#39;)
+
+        # 参数1  手机号码|完整日期6位
+        arg1 = phone_num + &quot;|&quot; + formatted_today
+
+        # 手机号码后4位+日期包含月、日
+        # 参数2  64230704
+        # 字符串转为bytes
+        arg2 = bytes(phone_num[7:] + formatted_day, encoding=&quot;utf8&quot;)
+</code></pre>
+<p>第一次拼接完成之后，我们发现又调用了一个函数 a()，参数为上面拼接生成的两个变量。</p>
+<p>函数 a() 的内部使用「<strong>DES + Base64</strong>」加密算法来进行第二步的处理。</p>
+<p><img src="/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/8.jpg" alt=""></p>
+<p>加密的操作用 Python 可以很轻松的实现。</p>
+<pre><code class="python">def encode(arg1, arg2):
+    &quot;&quot;&quot;
+    加密
+    :param arg1:11位手机号码|完整日期 string
+    :param arg2:手机后4位+日期4位  bytes
+    :return:
+    &quot;&quot;&quot;
+    des = DES.new(arg2, mode=DES.MODE_CBC, iv=bytearray([1, 2, 3, 4, 5, 6, 7, 8]))
+    msg = des.encrypt(pad(arg1.encode(), DES.block_size))
+
+    # 加密后的结果,bytes
+    encode_result = base64.b64encode(msg)
+
+    # 转为string
+    return str(encode_result, encoding=&#39;utf-8&#39;)
+</code></pre>
+<p>需要注意的是，b()函数的最后一行，对第二步生成的字符串进行了特殊字符的替换操作，生成 Token 之前需要对数据进行同样的处理。</p>
+<p><img src="/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/9.jpg" alt=""></p>
+<p>通过以上三步操作，就可以生成网络请求中的参数 Token。</p>
+<p>同样的方式，针对请求中的 Token，我们通过查询 token 关键字查询源码。</p>
+<p><img src="/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/10.jpg" alt=""></p>
+<p>通过观察，我们发现类 e 中的 b()函数的功能就是往请求中添加请求头，继续查看函数 b() 的实现类，发现这个类也全部被混淆了。</p>
+<p><img src="/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/11.jpg" alt=""></p>
+<p>如果你细心一点，一定会发现当前实现类的包名是 Okhttp3，我们可以从 Github 下载 Okhttp3 的源码，然后进行对比，就能很清晰的知道里面的实现逻辑了。</p>
+<p>ps：okhttp 是 Android 使用很多一个网络请求库。</p>
+<p><img src="/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/12.jpg" alt=""></p>
+<p>通过对比没有混淆过的代码，可以很容易的编写出生成请求头中 Token 的逻辑。</p>
+<pre><code class="python">def __get_head_token(self, method, url, data):
+        &quot;&quot;&quot;
+        获取请求头Token
+         分为Get和Post请求方式
+        :param method: 请求方式
+        :param url: 请求URL
+        :param data: Post请求中的参数
+        :return:
+        &quot;&quot;&quot;
+        today = datetime.date.today()
+        formatted_today = today.strftime(&#39;%Y%m%d&#39;)
+
+        if method == Method.GET:
+            # 请求的URL的query部分
+            query_content = url.split(&#39;?&#39;)[1]
+        else:
+            query_content = urlencode(data)
+
+        print(&#39;query_content:&#39; + query_content)
+
+        # 根据反编译后的源码增加对应的逻辑
+        token_pro = query_content + &quot;|&quot; + formatted_today + &#39;|zxw&#39;
+
+        # MD5计算
+        token = md5(token_pro)
+
+        return token
+</code></pre>
+<p>至此，这一步就完成两个 Token 的生成。</p>
+<p>第 3 步就可以利用 Python「<strong>模拟发起一个请求</strong>」，来获取手机验证码了。</p>
+<pre><code class="php">def get_code(self, timestamp):
+    &quot;&quot;&quot;
+    获取验证码
+    :return:
+    &quot;&quot;&quot;
+
+    # 1.1 获取参数Token,与日期有关
+    self.param_token = self.__get_param_token(self.phone)
+    print(&quot;parm_token:&quot; + self.param_token)
+
+    # 1.2 获取请求头Token，与时间有关
+    url = self.code_url.format(self.phone, timestamp, self.param_token)
+
+    # 获取请求头中的Token
+    self.head_token = self.__get_head_token(Method.GET, url, None)
+
+    print(&#39;head_token【获取验证码】:&#39; + self.head_token)
+
+    # 2.获取手机验证码的URL
+    get_code_url = self.code_url.format(self.phone, timestamp, self.param_token)
+
+    # 3.修改Head中的token
+    HEADERS[&#39;token&#39;] = self.head_token
+
+    print(get_code_url)
+
+    # 4.发起【获取验证码】的请求
+    resp = requests.get(get_code_url, headers=HEADERS)
+
+    print(&#39;==&#39; * 60)
+    print(resp.text)
+</code></pre>
+<p>同理，后面的登录请求也是先通过抓包，使用上面生成的 Token 逻辑去修改请求头中 Token，然后模拟请求，就可以正常登录了。</p>
+<pre><code class="python">def login(self, code, timestamp):
+    &quot;&quot;&quot;
+    登录
+    :return:
+    &quot;&quot;&quot;
+
+    # 修改参数
+    self.login_params[&#39;loginCode&#39;] = code
+    self.login_params[&#39;t&#39;] = timestamp
+
+    # 请求token
+    # url = self.code_url.format(self.phone, timestamp, self.param_token)
+    self.head_token = self.__get_head_token(Method.POST, None, self.login_params)
+
+    print(&#39;head_token【登录】:&#39; + self.head_token)
+
+    HEADERS[&#39;token&#39;] = self.head_token
+
+    # 登录
+    resp = requests.post(self.login_url, data=self.login_params, headers=HEADERS)
+
+    print(resp.text)
+</code></pre>
+<h1 id="结-果-结-论"><a href="#结-果-结-论" class="headerlink" title="结 果 结 论"></a>结 果 结 论</h1><p>通过模拟获取验证码的请求，等待手机收到验证码之后，输入验证码，然后再模拟登录的请求，就可以获取登录成功后的令牌。</p>
+<p><img src="/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/13.jpg" alt=""></p>
+<p>由于验证码是由服务器产生的，这里没法获取生成逻辑，但是针对安卓手机可以监听通知栏消息元素，拿到短信验证码进行自动填入，就不需要人工输入了。</p>
+<p><img src="/images/%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95/14.jpg" alt=""></p>
+<p>拿到登录令牌之后，理论上 App 上页面的各类网络请求都可以利用 Python 去模拟，后面提供的源码包含了一个完整抢票的流程。</p>
+<p>我已经将全部源码上传到公众号后台上，关注公众号「AirPython」，回复「App登录」即可获得。</p>
+<blockquote>
+<p>扩展阅读：<a href="https://www.kingname.info/2019/01/19/use-airtest/" target="_blank" rel="noopener">使用Airtest超快速开发App爬虫</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2020/04/23/App%E7%88%AC%E8%99%AB%E7%AF%87-%E7%A0%B4%E8%A7%A3%E7%A7%BB%E5%8A%A8%E7%AB%AF%E7%99%BB%E5%BD%95%EF%BC%8C%E5%8A%A9%E5%8A%9B-Python-%E7%88%AC%E8%99%AB/" data-id="ckcqdgkks006p9xlfajlj47rp" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E7%88%AC%E8%99%AB/" rel="tag">爬虫</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2020/04/25/Flutter%E6%9B%B4%E6%96%B0showDialog%E4%B8%AD%E7%9A%84%E5%86%85%E5%AE%B9/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Flutter更新showDialog中的内容
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2020/04/04/Flutter-Spacer-%E7%81%B5%E6%B4%BB%E9%85%8D%E7%BD%AE%E4%BD%A0%E7%9A%84Row-Column/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Flutter Spacer 灵活配置你的Row/Column</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

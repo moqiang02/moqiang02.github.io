@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Python广为使用的并发处理库futures使用入门与内部原理 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="在使用Python处理任务时，限于单线程处理能力有限，需要将任务并行化，分散到多个线程或者是多个进程去执行。concurrent.futures就是这样一种库，它可以让用户可以非常方便的将任务并行化。这个名字有点长，后面我直接使用词汇concurrent来代替concurrent.futures。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Python广为使用的并发处理库futures使用入门与内部原理">
+<meta property="og:url" content="http://moqiang02.github.io/2018/01/19/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="在使用Python处理任务时，限于单线程处理能力有限，需要将任务并行化，分散到多个线程或者是多个进程去执行。concurrent.futures就是这样一种库，它可以让用户可以非常方便的将任务并行化。这个名字有点长，后面我直接使用词汇concurrent来代替concurrent.futures。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/1.webp">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/2.webp">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/3.webp">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/4.webp">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/5.webp">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/6.webp">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/7.webp">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/8.webp">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/9.webp">
+<meta property="article:published_time" content="2018-01-19T02:21:18.000Z">
+<meta property="article:modified_time" content="2018-06-19T05:21:54.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/1.webp">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Python广为使用的并发处理库futures使用入门与内部原理" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/01/19/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/" class="article-date">
+  <time datetime="2018-01-19T02:21:18.000Z" itemprop="datePublished">2018-01-19</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/python/">python</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Python广为使用的并发处理库futures使用入门与内部原理
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+<!-- 文章目录开始 -->
+
+<div id="toc" class="toc-article">
+<strong class="toc-title" style="cursor:pointer">contents</strong>
+<ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#多线程"><span class="toc-number">1.</span> <span class="toc-text">多线程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#多进程"><span class="toc-number">2.</span> <span class="toc-text">多进程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#深入原理"><span class="toc-number">3.</span> <span class="toc-text">深入原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#线程池内部结构"><span class="toc-number">4.</span> <span class="toc-text">线程池内部结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#线程池的缺点"><span class="toc-number">5.</span> <span class="toc-text">线程池的缺点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#进程池内部结构"><span class="toc-number">6.</span> <span class="toc-text">进程池内部结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#跨进程队列"><span class="toc-number">7.</span> <span class="toc-text">跨进程队列</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#总结"><span class="toc-number">8.</span> <span class="toc-text">总结</span></a></li></ol>
+</div>
+
+<!-- 文章目录结束 -->	  
+
+	  
+        <p>在使用Python处理任务时，限于单线程处理能力有限，需要将任务并行化，分散到多个线程或者是多个进程去执行。<br>concurrent.futures就是这样一种库，它可以让用户可以非常方便的将任务并行化。这个名字有点长，后面我直接使用词汇concurrent来代替concurrent.futures。<a id="more"></a><br><img src="/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/1.webp" alt=""><br>concurrent提供了两种并发模型，一个是多线程ThreadPoolExecutor，一个是多进程ProcessPoolExecutor(实测：爬虫用这种快)。对于IO密集型任务宜使用多线程模型。对于计算密集型任务应该使用多进程模型。<br>为什么要这样选择呢？是因为Python GIL的存在让Python虚拟机在进行运算时无法有效利用多核心。对于纯计算任务，它永远最多只能榨干单个CPU核心。如果要突破这个瓶颈，就必须fork出多个子进程来分担计算任务。而对于IO密集型任务，CPU使用率往往是极低的，使用多线程虽然会加倍CPU使用率，但是还远远到不了饱和(100%)的地步，在单核心可以应付整体计算的前提下，自然是应该选择资源占用少的模式，也就是多线程模式。<br>接下来我们分别尝试一下两种模式来进行并行计算。</p>
+<h3 id="多线程"><a href="#多线程" class="headerlink" title="多线程"></a>多线程</h3><p><img src="/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/2.webp" alt=""><br>多线程模式适合IO密集型运算，这里我要使用sleep来模拟一下慢速的IO任务。同时为了方便编写命令行程序，这里使用Google fire开源库来简化命令行参数处理。</p>
+<pre><code class="py"># coding: utf8
+# t.py
+
+import time
+import fire
+import threading
+from concurrent.futures import ThreadPoolExecutor, wait
+
+
+# 分割子任务
+def each_task(index):
+    time.sleep(1)  # 睡1s，模拟IO
+    print &quot;thread %s square %d&quot; % (threading.current_thread().ident, index)
+    return index * index  # 返回结果
+
+
+def run(thread_num, task_num):
+    # 实例化线程池，thread_num个线程
+    executor = ThreadPoolExecutor(thread_num)
+    start = time.time()
+    fs = []  # future列表
+    for i in range(task_num):
+        fs.append(executor.submit(each_task, i))  # 提交任务
+    wait(fs)  # 等待计算结束
+    end = time.time()
+    duration = end - start
+    s = sum([f.result() for f in fs])  # 求和
+    print &quot;total result=%s cost: %.2fs&quot; % (s, duration)
+    executor.shutdown()  # 销毁线程池
+
+
+if __name__ == &#39;__main__&#39;:
+    fire.Fire(run)</code></pre>
+<p>运行<code>python t.py 2 10</code>，也就是2个线程跑10个任务，观察输出</p>
+<pre><code>thread 123145422131200 square 0thread 123145426337792 square 1
+
+thread 123145426337792 square 2
+ thread 123145422131200 square 3
+thread 123145426337792 square 4
+thread 123145422131200 square 5
+thread 123145426337792 square 6
+thread 123145422131200 square 7
+thread 123145426337792 square 8
+thread 123145422131200 square 9
+total result=285 cost: 5.02s</code></pre><p>我们看到计算总共花费了大概5s，总共sleep了10s由两个线程分担，所以是5s。读者也许会问，为什么输出乱了，这是因为print操作不是原子的，它是两个连续的write操作合成的，第一个write输出内容，第二个write输出换行符，write操作本身是原子的，但是在多线程环境下，这两个write操作会交错执行，所以输出就不整齐了。如果将代码稍作修改，将print改成单个write操作，输出就整齐了(关于write是否绝对原子性还需要进一步深入讨论)</p>
+<pre><code class="py"># 分割子任务
+def each_task(index):
+    time.sleep(1)  # 睡1s，模拟IO
+    import sys
+    sys.stdout.write(&quot;thread %s square %d\n&quot; % (threading.current_thread().ident, index))
+    return index * index  # 返回结果</code></pre>
+<p>我们再跑一下<code>python t.py 2 10</code>，观察输出</p>
+<pre><code>thread 123145438244864 square 0
+thread 123145442451456 square 1
+thread 123145442451456 square 2
+thread 123145438244864 square 3
+thread 123145438244864 square 4
+thread 123145442451456 square 5
+thread 123145438244864 square 6
+thread 123145442451456 square 7
+thread 123145442451456 square 9
+thread 123145438244864 square 8
+total result=285 cost: 5.02s</code></pre><p>接下来，我们改变参数，扩大到10个线程，看看所有任务总共需要多久完成</p>
+<pre><code>&gt; python t.py 10 10
+thread 123145327464448 square 0
+thread 123145335877632 square 2
+thread 123145331671040 square 1
+thread 123145344290816 square 4
+thread 123145340084224 square 3
+thread 123145348497408 square 5
+thread 123145352704000 square 6
+thread 123145356910592 square 7
+thread 123145365323776 square 9
+thread 123145361117184 square 8
+total result=285 cost: 1.01s</code></pre><p>可以看到1s中就完成了所有的任务。这就是多线程的魅力，可以将多个IO操作并行化，减少整体处理时间。</p>
+<h3 id="多进程"><a href="#多进程" class="headerlink" title="多进程"></a>多进程</h3><p><img src="/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/3.webp" alt=""><br>相比多线程适合处理IO密集型任务，多进程适合计算密集型。接下来我们要模拟一下计算密集型任务。我的个人电脑有2个核心，正好可以体验多核心计算的优势。<br>那这个密集型计算任务怎么模拟呢，我们可以使用圆周率计算公式。<br><img src="/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/4.webp" alt=""><br>通过扩大级数的长度n，就可以无限逼近圆周率。当n特别大时，计算会比较缓慢，这时候CPU就会一直处于繁忙状态，这正是我们所期望的。<br>好，下面开写多进程并行计算代码</p>
+<pre><code class="py"># coding: utf8
+# p.py
+
+import os
+import sys
+import math
+import time
+import fire
+from concurrent.futures import ProcessPoolExecutor, wait
+
+
+# 分割子任务
+def each_task(n):
+    # 按公式计算圆周率
+    s = 0.0
+    for i in range(n):
+        s += 1.0/(i+1)/(i+1)
+    pi = math.sqrt(6*s)
+    # os.getpid可以获得子进程号
+    sys.stdout.write(&quot;process %s n=%d pi=%s\n&quot; % (os.getpid(), n, pi))
+    return pi
+
+
+def run(process_num, *ns):  # 输入多个n值，分成多个子任务来计算结果
+    # 实例化进程池，process_num个进程
+    executor = ProcessPoolExecutor(process_num)
+    start = time.time()
+    fs = []  # future列表
+    for n in ns:
+        fs.append(executor.submit(each_task, int(n)))  # 提交任务
+    wait(fs)  # 等待计算结束
+    end = time.time()
+    duration = end - start
+    print &quot;total cost: %.2fs&quot; % duration
+    executor.shutdown()  # 销毁进程池
+
+
+if __name__ == &#39;__main__&#39;:
+    fire.Fire(run)</code></pre>
+<p>通过代码可以看出多进程模式在代码的编写上和多线程没有多大差异，仅仅是换了一个类名，其它都一摸一样。这也是concurrent库的魅力所在，将多线程和多进程模型抽象出了一样的使用接口。<br>接下来我们运行一下<code>python p.py 1 5000000 5001000 5002000 5003000</code>，总共计算4次pi，只用一个进程。观察输出</p>
+<pre><code>process 96354 n=5000000 pi=3.1415924626
+process 96354 n=5001000 pi=3.14159246264
+process 96354 n=5002000 pi=3.14159246268
+process 96354 n=5003000 pi=3.14159246272
+total cost: 9.45s</code></pre><p>可以看出来随着n的增大，结果越来越逼近圆周率，因为只用了一个进程，所以任务是串行执行，总共花了大约9.5s。<br>接下来再增加一个进程，观察输出</p>
+<pre><code>&gt; python p.py 2 5000000 5001000 5002000 5003000
+process 96529 n=5001000 pi=3.14159246264
+process 96530 n=5000000 pi=3.1415924626
+process 96529 n=5002000 pi=3.14159246268
+process 96530 n=5003000 pi=3.14159246272
+total cost: 4.98s</code></pre><p>从耗时上看缩短了接近1半，说明多进程确实起到了计算并行化的效果。此刻如果使用top命令观察进程的CPU使用率，这两个进程的CPU使用率都占到了接近100%。<br>如果我们再增加2个进程，是不是还能继续压缩计算时间呢</p>
+<pre><code>&gt; python p.py 4 5000000 5001000 5002000 5003000
+process 96864 n=5002000 pi=3.14159246268
+process 96862 n=5000000 pi=3.1415924626
+process 96863 n=5001000 pi=3.14159246264
+process 96865 n=5003000 pi=3.14159246272
+total cost: 4.86s</code></pre><p>看来耗时不能继续节约了，因为只有2个计算核心，2个进程已经足以榨干它们了，即使再多加进程也只有2个计算核心可用。</p>
+<h3 id="深入原理"><a href="#深入原理" class="headerlink" title="深入原理"></a>深入原理</h3><p><img src="/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/5.webp" alt=""><br>concurrent用的时候非常简单，但是内部实现并不是很好理解。在深入分析内部的结构之前，我们需要先理解一下Future这个对象。在前面的例子中，executor提交(submit)任务后都会返回一个Future对象，它表示一个结果的坑，在任务刚刚提交时，这个坑是空的，一旦子线程运行任务结束，就会将运行的结果塞到这个坑里，主线程就可以通过Future对象获得这个结果。简单一点说，Future对象是主线程和子线程通信的媒介。</p>
+<p>Future对象的内部逻辑简单一点可以使用下面的代码进行表示</p>
+<pre><code class="py">class Future(object):
+
+    def __init__(self):
+        self._condition = threading.Condition()  # 条件变量
+        self._result = None
+
+    def result(self, timeout=None):
+        self._condition.wait(timeout)
+        return self._result
+
+    def set_result(self, result):
+        self._result = result
+        self._condition.notify_all()</code></pre>
+<p>主线程将任务塞进线程池后得到了这个Future对象，它内部的_result还是空的。如果主线程调用result()方法获取结果，就会阻塞在条件变量上。如果子线程计算任务完成了就会立即调用set_result()方法将结果填充进future对象，并唤醒阻塞在条件变量上的线程，也就是主线程。这时主线程立即醒过来并正常返回结果。</p>
+<h3 id="线程池内部结构"><a href="#线程池内部结构" class="headerlink" title="线程池内部结构"></a>线程池内部结构</h3><p>主线程和子线程交互分为两部分，第一部分是主线程如何将任务传递给子线程，第二部分是子线程如何将结果传递给主线程。第二部分已经讲过了是通过Future对象来完成的。那第一部分是怎么做到的呢？<br><img src="/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/6.webp" alt=""><br>如上图所示，秘密就在于这个队列，主线程是通过队列将任务传递给多个子线程的。一旦主线程将任务塞进任务队列，子线程们就会开始争抢，最终只有一个线程能抢到这个任务，并立即进行执行，执行完后将结果放进Future对象就完成了这个任务的完整执行过程。</p>
+<h3 id="线程池的缺点"><a href="#线程池的缺点" class="headerlink" title="线程池的缺点"></a>线程池的缺点</h3><p>concurrent的线程池有个重大的设计问题，那就是任务队列是无界的。如果队列的生产者任务生产的太快，而线程池消费太慢处理不过来，任务就会堆积。如果堆积一直持续下去，内存就会持续增长直到OOM，任务队列里堆积的所有任务全部彻底丢失。用户使用时一定要注意这点，并做好适当的控制。</p>
+<h3 id="进程池内部结构"><a href="#进程池内部结构" class="headerlink" title="进程池内部结构"></a>进程池内部结构</h3><p>进程池内部结构复杂，连concurent库的作者自己也觉得特别复杂，所以在代码里专门画了一张ascii图来讲解模型内部结构</p>
+<p><img src="/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/7.webp" alt=""><br><img src="/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/8.webp" alt=""></p>
+<p>我觉得作者的这张图还不够好懂，所以也单独画了一张图，请读者们仔细结合上面两张图，一起来过一边完整的任务处理过程。</p>
+<p>1.主线程将任务塞进TaskQueue(普通内存队列)，拿到Future对象<br>2.唯一的管理线程从TaskQueue获取任务，塞进CallQueue(分布式跨进程队列)<br>3.子进程从CallQueue中争抢任务进行处理<br>4.子进程将处理结果塞进ResultQueue(分布式跨进程队列)<br>5.管理线程从ResultQueue中获取结果，塞进Future对象<br>6.主线程从Future对象中拿到结果</p>
+<p>这个复杂的流程中涉及到3个队列，还有中间附加的管理线程。那为什么作者要设计的这么复杂，这样的设计有什么好处？<br>首先，我们看这张图的左半边，它和线程池的处理流程没有太多区别，区别仅仅是管理线程只有一个，而线程池的子线程会有多个。这样设计可以使得多进程模型和多线程模型的使用方法保持一致，这就是为什么两个模型使用起来没有任何区别的原因所在——通过中间的管理线程隐藏了背后的多进程交互逻辑。<br>然后我们再看这张图的右半边，管理线程通过两个队列来和子进程们进行交互，这两个队列都是跨进程队列(multiprocessing.Queue)。CallQueue是单生产者多消费者，ResultQueue是多生产者单消费者。<br>CallQueue是个有界队列，它的上限在代码里写死了为「子进程数+1」。如果子进程们处理不过来，CallQueue就会变满，管理线程就会停止往里面塞数据。但是这里也遭遇了和线程池一样的问题，TaskQueue是无界队列，它的内容可不管消费者是否在持续(管理线程)消费，TaskQueue会无限制的持续生长，于是最终也会会导致OOM。</p>
+<h3 id="跨进程队列"><a href="#跨进程队列" class="headerlink" title="跨进程队列"></a>跨进程队列</h3><p>进程池模型中的跨进程队列是用multiprocessing.Queue实现的。那这个跨进程队列内部细节是怎样的，它又是用什么高科技来实现的呢<br>笔者仔细阅读了multiprocessing.Queue的源码发现，它使用无名套接字sockerpair来完成的跨进程通信，socketpair和socket的区别就在于socketpair不需要端口，不需要走网络协议栈，通过内核的套接字读写缓冲区直接进行跨进程通信。</p>
+<p><img src="/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/9.webp" alt=""></p>
+<p>当父进程要传递任务给子进程时，先使用pickle将任务对象进行序列化成字节数组，然后将字节数组通过socketpair的写描述符写入内核的buffer中。子进程接下来就可以从buffer中读取到字节数组，然后再使用pickle对字节数组进行反序列化来得到任务对象，这样总算可以执行任务了。同样子进程将结果传递给父进程走的也是一样的流程，只不过这里的socketpair是ResultQueue内部创建的无名套接字。<br>multiprocessing.Queue是支持双工通信，数据流向可以是父到子，也可以是子到父，只不过在concurrent的进程池实现中只用到了单工通信。CallQueue是从父到子，ResultQueue是从子到父。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>concurrent.futures框架非常好用，虽然内部实现机制异常复杂，读者也无需完全理解内部细节就可以直接使用了。但是需要特别注意的是不管是线程池还是进程池其内部的任务队列都是无界的，一定要避免消费者处理不及时内存持续攀升的情况发生。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2018/01/19/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/" data-id="ckcqdgkrk00tj9xlfcmy3g7gs" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/01/23/%E6%88%91%E7%9A%84%E7%A7%91%E5%AD%A6%E4%B8%8A%E7%BD%91%E6%8A%80%E5%B7%A7/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          我的科学上网技巧
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/01/18/%E8%BF%9C%E7%A8%8B%E8%BF%9E%E6%8E%A5mySql%E6%95%B0%E6%8D%AE%E5%BA%9310061%E9%94%99%E8%AF%AF/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">远程连接mySql数据库10061错误</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

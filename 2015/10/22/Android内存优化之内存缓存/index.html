@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Android内存优化之内存缓存 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="什么是缓存？缓存技术原理就是把用户访问的所有对象看作一个全集，经过算法标记哪些是用户经常访问的对象，把这些对象放到一个集合里，这个集合是全集一个子集，下一次用户再访问的时候会先从这个子集集合中查找用户要访问的对象如果找到就直接返回这个对象，如果没有找到则再去全集中查找。当然了我这里说的只是原理性的东西，缓存是有很多算法的，并且有的不止一级缓存，这里就不过多讲了。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android内存优化之内存缓存">
+<meta property="og:url" content="http://moqiang02.github.io/2015/10/22/Android%E5%86%85%E5%AD%98%E4%BC%98%E5%8C%96%E4%B9%8B%E5%86%85%E5%AD%98%E7%BC%93%E5%AD%98/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="什么是缓存？缓存技术原理就是把用户访问的所有对象看作一个全集，经过算法标记哪些是用户经常访问的对象，把这些对象放到一个集合里，这个集合是全集一个子集，下一次用户再访问的时候会先从这个子集集合中查找用户要访问的对象如果找到就直接返回这个对象，如果没有找到则再去全集中查找。当然了我这里说的只是原理性的东西，缓存是有很多算法的，并且有的不止一级缓存，这里就不过多讲了。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2015-10-22T05:16:59.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:36:56.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Android内存优化之内存缓存" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/10/22/Android%E5%86%85%E5%AD%98%E4%BC%98%E5%8C%96%E4%B9%8B%E5%86%85%E5%AD%98%E7%BC%93%E5%AD%98/" class="article-date">
+  <time datetime="2015-10-22T05:16:59.000Z" itemprop="datePublished">2015-10-22</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Android/">Android</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Android内存优化之内存缓存
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <h3 id="什么是缓存？"><a href="#什么是缓存？" class="headerlink" title="什么是缓存？"></a>什么是缓存？</h3><p>缓存技术原理就是把用户访问的所有对象看作一个全集，经过算法标记哪些是用户经常访问的对象，把这些对象放到一个集合里，这个集合是全集一个子集，下一次用户再访问的时候会先从这个子集集合中查找用户要访问的对象如果找到就直接返回这个对象，如果没有找到则再去全集中查找。当然了我这里说的只是原理性的东西，缓存是有很多算法的，并且有的不止一级缓存，这里就不过多讲了。<a id="more"></a></p>
+<h3 id="为什么要用到缓存？"><a href="#为什么要用到缓存？" class="headerlink" title="为什么要用到缓存？"></a>为什么要用到缓存？</h3><p>有缓存的话可以不必每次从源地址读取文件，既节省了时间也节省了流量。尤其是手机设备，频繁的访问网络资源会消耗很多用户的流量和电量，这是用户不能忍受的，所以无论从哪个方面考虑应用程序都必须加上缓存。</p>
+<h3 id="Android中的图片缓存有哪些？各有什么特点？"><a href="#Android中的图片缓存有哪些？各有什么特点？" class="headerlink" title="Android中的图片缓存有哪些？各有什么特点？"></a>Android中的图片缓存有哪些？各有什么特点？</h3><p>Android设备的图片缓存分两种，一种是内存缓存，图片缓存在设备的内存中，一种是外部缓存，图片缓存在磁盘上，磁盘可以是内部的存储空间也可以是外部的sd卡。这两种缓存各有各的优点，内存缓存优点是快，缺点是因为也是读取到内存中所以也会消耗内存，所以不能太大，用的时候要考虑分配的空间，还有一个缺点是应用重启后就会消失。外部缓存的优点是可以长久保存大量的数据(相比较内存缓存而言)，缺点就是慢。</p>
+<p><strong>内存缓存：</strong></p>
+<p>在Android中官网推荐使用LruCache作为内存缓存，LruCache实际上就是一个LinkedHashMap( 补充知识：LinkedHashMap是一个双向循环列表，不支持线程安全，LruCache对它进行了封装添加了线程安全操作)，里面保存了一定数量的对象强引用，每次添加的新对象都是在链表的头，当分配的空间用完的时候会把末尾的对象移除，移除的对象就可以被gc回收了。这里需要注意一下LruCache的容量，这个容量既不能太大，会造成OOM，又不能太小，起不到缓存的作用。google官网给出一下意见作为参考：</p>
+<ul>
+<li>分配LruCache大小的时候考虑你的应用剩余内存有多大；</li>
+<li>一次屏幕显示多少张图片，有多少张图片是缓存起来准备显示的；</li>
+<li>考虑你的手机分辨率和尺寸， 缓存相同的图片个数，dpi越大的手机需要的内存就会越大；</li>
+<li>图片分辨率和像素质量也决定了占用内存的大小；</li>
+<li>图片访问的频繁程度是多少，是不是有一些图片是经常访问的？如果存在你可以考虑用多个·LruCache来做缓存，按照访问的频率度分配到不同的LruCache中；</li>
+<li>如何平衡一下图片质量和数量，有些时候可以考虑缓存低分辨率的图片，用到的时候再在后台请求更高质量的图片；</li>
+<li>总之你分配的LruCache大小既不能太大，又不能太小，具体到应用中还要你综合考虑。</li>
+</ul>
+<p>下面的代码是使用LruCache的例子：</p>
+<pre><code>private LruCache&lt;String, Bitmap&gt; mMemoryCache;//声明缓存空间
+final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);//获取应用在系统中的最大内存分配
+//分配1/8的应用内存作为缓存空间
+final int cacheSize = maxMemory / 8;
+
+mMemoryCache = new LruCache&lt;String, Bitmap&gt;(cacheSize) {
+    @Override
+    protected int sizeOf(String key, Bitmap bitmap) {
+        //重写sizeOf方法，返回图片的占用字节数而不是图片的个数，每次添加图片是会被调用
+        return bitmap.getByteCount() / 1024;
+     }
+};</code></pre><p><strong>注意：有同学可能会问下面的代码：</strong></p>
+<pre><code>  intcacheSize=4*1024*1024;// 4MiB
+
+  LruCachebitmapCache=newLruCache(cacheSize){
+
+      protectedintsizeOf(Stringkey,Bitmapvalue){
+        returnvalue.getByteCount();
+      }
+
+  }</code></pre><p>这两个sizeOf的计算是不一样的，这里说明一下，这个方法重写的目的是返回图片占用的缓存空间而不是图片的数目，并且这个数值的单位要和cacheSize一样。</p>
+<h3 id="总结："><a href="#总结：" class="headerlink" title="总结："></a>总结：</h3><p>综合上面的讲解，在使用内存缓存LruCache时你需要知道如下知识：</p>
+<p>LruCache封装了LinkedHashMap，提供了LRU(Least Recently Used 最近最少使用算法)缓存的功能；</p>
+<p>LruCache通过trimToSize方法自动删除最近最少访问的键值对；</p>
+<p>LruCache不允许空键值，LinkedHashMap允许；</p>
+<p>LruCache线程安全，LinkedHashMap线程不安全；</p>
+<p>继承LruCache时，必须要复写sizeOf方法，用于计算每个条目的大小。在put和get的时候会调用safeSizeOf(K key, V value)，safeSizeOf(K key, V value)会调用 sizeOf (K key, V value)，这个方法默认返回1。</p>
+<p>另外推荐一款第三方的内测工具对APP进行全方面的检测：<a href="http://www.ineice.com/" target="_blank" rel="noopener">http://www.ineice.com/</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2015/10/22/Android%E5%86%85%E5%AD%98%E4%BC%98%E5%8C%96%E4%B9%8B%E5%86%85%E5%AD%98%E7%BC%93%E5%AD%98/" data-id="ckcqdgkjy00449xlf2pyvcgcg" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/10/22/Android%E5%86%85%E5%AD%98%E4%BC%98%E5%8C%96%E4%B9%8B%E7%A3%81%E7%9B%98%E7%BC%93%E5%AD%98/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Android内存优化之磁盘缓存
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/10/22/Iterator%E4%B8%ADhasNext-next/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Iterator中hasNext(), next()</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

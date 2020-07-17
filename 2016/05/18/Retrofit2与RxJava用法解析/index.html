@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Retrofit2与RxJava用法解析 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="Retrofit2是square公司出品的一个网络请求库，目前非常流行，特别适合于rest请求。网上也有不少介绍该库的文章，但别人的终究是别人的，还需要转化为自己的才行。正所谓“纸上得来终觉浅,绝知此事要躬行”，本着学习的态度笔者对retroift2的用法进行了下列研究,主要包括以下几个方面  get请求 post请求(包括key&#x2F;value,以及body) 文件上传(进度监听) 文件下载 与Rx">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Retrofit2与RxJava用法解析">
+<meta property="og:url" content="http://moqiang02.github.io/2016/05/18/Retrofit2%E4%B8%8ERxJava%E7%94%A8%E6%B3%95%E8%A7%A3%E6%9E%90/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="Retrofit2是square公司出品的一个网络请求库，目前非常流行，特别适合于rest请求。网上也有不少介绍该库的文章，但别人的终究是别人的，还需要转化为自己的才行。正所谓“纸上得来终觉浅,绝知此事要躬行”，本着学习的态度笔者对retroift2的用法进行了下列研究,主要包括以下几个方面  get请求 post请求(包括key&#x2F;value,以及body) 文件上传(进度监听) 文件下载 与Rx">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2016-05-17T23:51:13.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:26.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Retrofit2与RxJava用法解析" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/05/18/Retrofit2%E4%B8%8ERxJava%E7%94%A8%E6%B3%95%E8%A7%A3%E6%9E%90/" class="article-date">
+  <time datetime="2016-05-17T23:51:13.000Z" itemprop="datePublished">2016-05-18</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Retrofit2与RxJava用法解析
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+<!-- 文章目录开始 -->
+
+<div id="toc" class="toc-article">
+<strong class="toc-title" style="cursor:pointer">contents</strong>
+<ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#单独使用Retrofit2"><span class="toc-number">1.</span> <span class="toc-text">单独使用Retrofit2</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#引入类库"><span class="toc-number">1.1.</span> <span class="toc-text">引入类库</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#构造http接口类"><span class="toc-number">1.2.</span> <span class="toc-text">构造http接口类</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Get请求"><span class="toc-number">1.3.</span> <span class="toc-text">Get请求</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Post请求-key-value"><span class="toc-number">1.4.</span> <span class="toc-text">Post请求(key&#x2F;value)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Post请求-body体"><span class="toc-number">1.5.</span> <span class="toc-text">Post请求(body体)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#单个文件上传"><span class="toc-number">1.6.</span> <span class="toc-text">单个文件上传</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#多文件上传"><span class="toc-number">1.7.</span> <span class="toc-text">多文件上传</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#文件下载"><span class="toc-number">1.8.</span> <span class="toc-text">文件下载</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#开启OKHttp的日志拦截"><span class="toc-number">2.</span> <span class="toc-text">开启OKHttp的日志拦截</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Retrofit2与RxJava整合"><span class="toc-number">3.</span> <span class="toc-text">Retrofit2与RxJava整合</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#引入类库-1"><span class="toc-number">3.1.</span> <span class="toc-text">引入类库</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#构造http接口类-1"><span class="toc-number">3.2.</span> <span class="toc-text">构造http接口类</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Get请求-1"><span class="toc-number">3.3.</span> <span class="toc-text">Get请求</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Post请求-key-value-1"><span class="toc-number">3.4.</span> <span class="toc-text">Post请求(key&#x2F;value)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#多文件上传-1"><span class="toc-number">3.5.</span> <span class="toc-text">多文件上传</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#文件下载-1"><span class="toc-number">3.6.</span> <span class="toc-text">文件下载</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#总结"><span class="toc-number">4.</span> <span class="toc-text">总结</span></a></li></ol>
+</div>
+
+<!-- 文章目录结束 -->	  
+
+	  
+        <p>Retrofit2是square公司出品的一个网络请求库，目前非常流行，特别适合于rest请求。网上也有不少介绍该库的文章，但别人的终究是别人的，还需要转化为自己的才行。正所谓“纸上得来终觉浅,绝知此事要躬行”，本着学习的态度笔者对retroift2的用法进行了下列研究,主要包括以下几个方面</p>
+<ul>
+<li>get请求</li>
+<li>post请求(包括key/value,以及body)</li>
+<li>文件上传(进度监听)</li>
+<li>文件下载</li>
+<li>与RxJava整合<a id="more"></a>
+<h3 id="单独使用Retrofit2"><a href="#单独使用Retrofit2" class="headerlink" title="单独使用Retrofit2"></a>单独使用Retrofit2</h3></li>
+</ul>
+<h4 id="引入类库"><a href="#引入类库" class="headerlink" title="引入类库"></a>引入类库</h4><pre><code>compile &#39;com.squareup.retrofit2:retrofit:2.0.0&#39;
+compile &#39;com.squareup.retrofit2:converter-gson:2.0.0&#39;
+compile &#39;com.squareup.okhttp3:logging-interceptor:3.2.0&#39;</code></pre><h4 id="构造http接口类"><a href="#构造http接口类" class="headerlink" title="构造http接口类"></a>构造http接口类</h4><p>Retrofit2可以根据一个服务接口类，利用jdk动态代理生成它的相应实现。</p>
+<pre><code>retrofit=new Retrofit.Builder()
+              .baseUrl(BASE_URL)
+              .addConverterFactory(GsonConverterFactory.create())
+              .build();
+ myService=retrofit.create(MyService.class);</code></pre><p>生成了代理类之后，就可以进行相应请求了</p>
+<h4 id="Get请求"><a href="#Get请求" class="headerlink" title="Get请求"></a>Get请求</h4><pre><code>@GET(&quot;rest/findUserForGet&quot;)
+Call&lt;User&gt; findUserForGet(@Query(&quot;id&quot;) int id, @Query(&quot;username&quot;) String username,@Query(&quot;address&quot;) String address);</code></pre><pre><code>Call&lt;User&gt; userCall=myService.findUserForGet(12,&quot;张明明&quot;,&quot;北京海淀区&quot;);
+ userCall.enqueue(new Callback&lt;User&gt;() {
+           @Override
+           public void onResponse(Call&lt;User&gt; call, Response&lt;User&gt; response) {
+               //主线程
+               Log.e(TAG,Thread.currentThread().getName());
+               Log.e(TAG,response.body().toString());
+
+           }
+
+           @Override
+           public void onFailure(Call&lt;User&gt; call, Throwable t) {
+               Log.e(TAG,t.getMessage());
+           }
+   });</code></pre><p>需要注意Query注解不能丢，即使形参和请求的key相同也要加上，否则报错;另外回调函数发生在主线程，可以进行UI相关的操作</p>
+<h4 id="Post请求-key-value"><a href="#Post请求-key-value" class="headerlink" title="Post请求(key/value)"></a>Post请求(key/value)</h4><pre><code>@FormUrlEncoded
+ @POST(&quot;rest/findUserForPost&quot;)
+ Call&lt;ResponseBody&gt; findUserForPost(@Field(&quot;id&quot;) int id, @Field(&quot;username&quot;) String username,@Field(&quot;address&quot;) String address);</code></pre><pre><code>Call&lt;ResponseBody&gt; userCall=myService.findUserForPost(9,&quot;陈玄功&quot;,&quot;恶人谷&quot;);
+userCall.enqueue(new Callback&lt;ResponseBody&gt;() {
+          @Override
+          public void onResponse(Call&lt;ResponseBody&gt; call, Response&lt;ResponseBody&gt; response) {
+              Log.e(TAG,getResponsString(response.body()));
+
+          }
+
+          @Override
+          public void onFailure(Call&lt;ResponseBody&gt; call, Throwable t) {
+              Log.e(TAG,t.getMessage());
+          }
+  });</code></pre><h4 id="Post请求-body体"><a href="#Post请求-body体" class="headerlink" title="Post请求(body体)"></a>Post请求(body体)</h4><pre><code>@POST(&quot;rest/postBodyJson&quot;)
+Call&lt;User&gt; postBodyJson(@Body User user);</code></pre><pre><code>User user=new User();
+user.setId(2);
+user.setUsername(&quot;李明&quot;);
+user.setBirthday(&quot;1995-09-06 09-09-08&quot;);
+user.setSex(&quot;1&quot;);
+Call&lt;User&gt; userCall=myService.postBodyJson(user);
+userCall.enqueue(new Callback&lt;User&gt;() {
+    @Override
+    public void onResponse(Call&lt;User&gt; call, Response&lt;User&gt; response) {
+        Log.e(TAG,response.body().toString());
+    }
+
+    @Override
+    public void onFailure(Call&lt;User&gt; call, Throwable t) {
+        Log.e(TAG,t.getMessage());
+    }
+});</code></pre><p>此种方式会默认加上<code>Content-Type: application/json; charset=UTF-8</code>的请求头，即以JSON格式请求，再以JSON格式响应。</p>
+<h4 id="单个文件上传"><a href="#单个文件上传" class="headerlink" title="单个文件上传"></a>单个文件上传</h4><pre><code>@Multipart
+@POST(&quot;rest/upload&quot;)
+Call&lt;ResponseBody&gt; upload(@Part(&quot;username&quot;) RequestBody username,@Part(&quot;address&quot;) RequestBody address,
+                          @Part MultipartBody.Part file);</code></pre><pre><code>File file=new File(Environment.getExternalStorageDirectory(),&quot;测试01.jpg&quot;);
+
+ //普通key/value
+ RequestBody username =
+         RequestBody.create(
+                 MediaType.parse(&quot;multipart/form-data&quot;), &quot;jim&quot;);
+
+ RequestBody address =
+         RequestBody.create(
+                 MediaType.parse(&quot;multipart/form-data&quot;), &quot;天津市&quot;);
+
+ //file
+ RequestBody requestFile =
+         RequestBody.create(MediaType.parse(&quot;multipart/form-data&quot;), file);
+
+
+ //包装RequestBody，在其内部实现上传进度监听
+ CountingRequestBody countingRequestBody=new CountingRequestBody(requestFile, new CountingRequestBody.Listener() {
+     @Override
+     public void onRequestProgress(long bytesWritten, long contentLength) {
+         Log.e(TAG,contentLength+&quot;:&quot;+bytesWritten);
+     }
+ });
+
+
+ MultipartBody.Part body =
+         MultipartBody.Part.createFormData(&quot;file&quot;, file.getName(), countingRequestBody);
+
+
+ Call&lt;ResponseBody&gt; userCall=myService.upload(username, address, body);
+ userCall.enqueue(new Callback&lt;ResponseBody&gt;() {
+     @Override
+     public void onResponse(Call&lt;ResponseBody&gt; call, Response&lt;ResponseBody&gt; response) {
+         Log.e(TAG, getResponsString(response.body()));
+
+     }
+
+     @Override
+     public void onFailure(Call&lt;ResponseBody&gt; call, Throwable t) {
+         Log.e(TAG, t.getMessage());
+     }
+ });</code></pre><h4 id="多文件上传"><a href="#多文件上传" class="headerlink" title="多文件上传"></a>多文件上传</h4><pre><code>@Multipart
+@POST(&quot;rest/upload&quot;)
+Call&lt;ResponseBody&gt; uploads(@PartMap Map&lt;String, RequestBody&gt; params);</code></pre><pre><code>//必须使用LinkedHashMap，保证文件按顺序上传
+Map&lt;String,RequestBody&gt; params=new LinkedHashMap&lt;&gt;();
+  File file1=new File(Environment.getExternalStorageDirectory(),&quot;测试01.jpg&quot;);
+  RequestBody filebody1 =RequestBody.create(MediaType.parse(&quot;multipart/form-data&quot;), file1);
+  //记录文件上传进度
+  CountingRequestBody countingRequestBody1=new CountingRequestBody(filebody1, new CountingRequestBody.Listener() {
+      @Override
+      public void onRequestProgress(long bytesWritten, long contentLength) {
+          Log.e(TAG,&quot;file1:&quot;+contentLength+&quot;:&quot;+bytesWritten);
+      }
+  });
+  //file代表服务器接收到的key,file1.getName()代表文件名
+  params.put(&quot;file\&quot;;filename=\&quot;&quot;+file1.getName(),countingRequestBody1);
+
+
+  File file2=new File(Environment.getExternalStorageDirectory(),&quot;girl.jpg&quot;);
+  RequestBody filebody2 =RequestBody.create(MediaType.parse(&quot;multipart/form-data&quot;), file2);
+  CountingRequestBody countingRequestBody2=new CountingRequestBody(filebody2, new CountingRequestBody.Listener() {
+      @Override
+      public void onRequestProgress(long bytesWritten, long contentLength) {
+          Log.e(TAG,&quot;file2:&quot;+contentLength+&quot;:&quot;+bytesWritten);
+      }
+  });
+  params.put(&quot;file\&quot;;filename=\&quot;&quot;+file2.getName(),countingRequestBody2);
+
+
+  File file3=new File(Environment.getExternalStorageDirectory(),&quot;测试02.jpg&quot;);
+  RequestBody filebody3 =RequestBody.create(MediaType.parse(&quot;multipart/form-data&quot;), file3);
+  CountingRequestBody countingRequestBody3=new CountingRequestBody(filebody3, new CountingRequestBody.Listener() {
+      @Override
+      public void onRequestProgress(long bytesWritten, long contentLength) {
+          Log.e(TAG,&quot;file3:&quot;+contentLength+&quot;:&quot;+bytesWritten);
+      }
+  });
+  params.put(&quot;file\&quot;;filename=\&quot;&quot;+file3.getName(),countingRequestBody3);
+
+  //普通key/value
+  params.put(&quot;username&quot;,   RequestBody.create(
+          MediaType.parse(&quot;multipart/form-data&quot;), &quot;jim&quot;));
+  params.put(&quot;address&quot;, RequestBody.create(
+          MediaType.parse(&quot;multipart/form-data&quot;), &quot;天津市&quot;));
+
+  Call&lt;ResponseBody&gt; userCall=myService.uploads(params);
+  userCall.enqueue(new Callback&lt;ResponseBody&gt;() {
+      @Override
+      public void onResponse(Call&lt;ResponseBody&gt; call, Response&lt;ResponseBody&gt; response) {
+           Log.e(TAG, getResponsString(response.body()));
+
+      }
+
+      @Override
+      public void onFailure(Call&lt;ResponseBody&gt; call, Throwable t) {
+          Log.e(TAG, t.getMessage());
+      }
+  });</code></pre><h4 id="文件下载"><a href="#文件下载" class="headerlink" title="文件下载"></a>文件下载</h4><pre><code>@Streaming
+@GET(&quot;image/{filename}&quot;)
+Call&lt;ResponseBody&gt; downFile(@Path(&quot;filename&quot;) String fileName);</code></pre><pre><code>Call&lt;ResponseBody&gt; userCall=myService.downFile(fname);
+       userCall.enqueue(new Callback&lt;ResponseBody&gt;() {
+           @Override
+           public void onResponse(Call&lt;ResponseBody&gt; call, Response&lt;ResponseBody&gt; response) {
+               try {
+
+                   String fileName=Environment.getExternalStorageDirectory()+&quot;/&quot;+fname;
+                   FileOutputStream fos=new FileOutputStream(fileName);
+                   InputStream is=response.body().byteStream();
+
+                   byte[] buf=new byte[1024];
+                   int len;
+                   while ((len=is.read(buf))!=-1){
+                       fos.write(buf,0,len);
+                   }
+                   is.close();
+                   fos.close();
+
+               }catch (Exception ex){
+                   Log.e(TAG,ex.getMessage());
+               }
+               Log.e(TAG,&quot;success&quot;);
+
+           }
+
+           @Override
+           public void onFailure(Call&lt;ResponseBody&gt; call, Throwable t) {
+               Log.e(TAG,t.getMessage());
+           }
+       });</code></pre><h3 id="开启OKHttp的日志拦截"><a href="#开启OKHttp的日志拦截" class="headerlink" title="开启OKHttp的日志拦截"></a>开启OKHttp的日志拦截</h3><p>Retrofit2底层还是使用的OKHttp,可以使用其相关的一些特性，比如开启日志拦截,此时就不能使用Retrofit2默认的OKHttp实例，需要自己单独构造，完整代码如下:</p>
+<pre><code>HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+
+OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
+
+httpClient.addInterceptor(logging);  
+
+retrofit=new Retrofit.Builder()
+       .baseUrl(BASE_URL)
+       .addConverterFactory(GsonConverterFactory.create())
+       .client(httpClient.build())
+       .build();</code></pre><p>开启日志后，会记录request和response的相关信息</p>
+<pre><code>05-14 03:00:42.128 5212-25519/com.bryan D/OkHttp: --&gt; POST http://192.168.1.104:8080/mobile/rest/postBodyJson http/1.1
+05-14 03:00:42.128 5212-25519/com.bryan D/OkHttp: Content-Type: application/json; charset=UTF-8
+05-14 03:00:42.128 5212-25519/com.bryan D/OkHttp: Content-Length: 71
+05-14 03:00:42.128 5212-25519/com.bryan D/OkHttp: {&quot;birthday&quot;:&quot;1995-09-06 09-09-08&quot;,&quot;id&quot;:2,&quot;sex&quot;:&quot;1&quot;,&quot;username&quot;:&quot;李明&quot;}
+05-14 03:00:42.128 5212-25519/com.bryan D/OkHttp: --&gt; END POST (71-byte body)
+05-14 03:00:42.207 5212-25519/com.bryan D/OkHttp: &lt;-- 200 OK http://192.168.1.104:8080/mobile/rest/postBodyJson (79ms)
+05-14 03:00:42.207 5212-25519/com.bryan D/OkHttp: Server: Apache-Coyote/1.1
+05-14 03:00:42.207 5212-25519/com.bryan D/OkHttp: Access-Control-Allow-Origin: *
+05-14 03:00:42.207 5212-25519/com.bryan D/OkHttp: Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept
+05-14 03:00:42.207 5212-25519/com.bryan D/OkHttp: Content-Type: application/json;charset=UTF-8
+05-14 03:00:42.207 5212-25519/com.bryan D/OkHttp: Transfer-Encoding: chunked
+05-14 03:00:42.207 5212-25519/com.bryan D/OkHttp: Date: Sat, 14 May 2016 07:00:42 GMT
+05-14 03:00:42.207 5212-25519/com.bryan D/OkHttp: OkHttp-Sent-Millis: 1463209242134
+05-14 03:00:42.207 5212-25519/com.bryan D/OkHttp: OkHttp-Received-Millis: 1463209242206
+05-14 03:00:42.208 5212-25519/com.bryan D/OkHttp: {&quot;id&quot;:2,&quot;username&quot;:&quot;李明&quot;,&quot;sex&quot;:&quot;1&quot;,&quot;birthday&quot;:&quot;1995-09-06&quot;,&quot;address&quot;:null}
+05-14 03:00:42.208 5212-25519/com.bryan D/OkHttp: &lt;-- END HTTP (77-byte body)</code></pre><h3 id="Retrofit2与RxJava整合"><a href="#Retrofit2与RxJava整合" class="headerlink" title="Retrofit2与RxJava整合"></a>Retrofit2与RxJava整合</h3><h4 id="引入类库-1"><a href="#引入类库-1" class="headerlink" title="引入类库"></a>引入类库</h4><pre><code>compile &#39;io.reactivex:rxandroid:1.1.0&#39;
+compile &#39;com.squareup.retrofit2:retrofit:2.0.0&#39;
+compile &#39;com.squareup.retrofit2:converter-gson:2.0.0&#39;
+compile &#39;com.squareup.retrofit2:adapter-rxjava:2.0.0&#39;
+compile &#39;com.squareup.okhttp3:logging-interceptor:3.2.0&#39;</code></pre><h4 id="构造http接口类-1"><a href="#构造http接口类-1" class="headerlink" title="构造http接口类"></a>构造http接口类</h4><p>Retrofit2可以根据一个服务接口类，利用jdk动态代理生成它的相应实现。</p>
+<pre><code>retrofit=new Retrofit.Builder()
+              .baseUrl(BASE_URL)
+              .addConverterFactory(GsonConverterFactory.create())
+              .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
+              .client(httpClient.build())
+              .build();
+ myService=retrofit.create(MyRxService.class);</code></pre><h4 id="Get请求-1"><a href="#Get请求-1" class="headerlink" title="Get请求"></a>Get请求</h4><pre><code>@GET(&quot;rest/findUserForGet&quot;)
+  Observable&lt;User&gt; findUserForGet(@Query(&quot;id&quot;) int id, @Query(&quot;username&quot;) String username,@Query(&quot;address&quot;) String address);</code></pre><pre><code>myService.findUserForGet(12,&quot;张明明&quot;,&quot;北京海淀区&quot;)
+         .subscribeOn(Schedulers.io())
+         .observeOn(AndroidSchedulers.mainThread())
+         .subscribe(new Subscriber&lt;User&gt;() {
+
+             @Override
+             public void onStart() {
+                 super.onStart();
+                 Log.e(TAG,&quot;onStart&quot;);
+             }
+
+             @Override
+             public void onCompleted() {
+                 Log.e(TAG,&quot;onCompleted&quot;);
+             }
+
+             @Override
+             public void onError(Throwable e) {
+                 Log.e(TAG,e.getMessage());
+             }
+
+             @Override
+             public void onNext(User user) {
+                 Log.e(TAG,user.toString());
+             }
+         });</code></pre><h4 id="Post请求-key-value-1"><a href="#Post请求-key-value-1" class="headerlink" title="Post请求(key/value)"></a>Post请求(key/value)</h4><pre><code>@FormUrlEncoded
+   @POST(&quot;rest/findUserForPost&quot;)
+   Observable&lt;ResponseBody&gt; findUserForPost(@Field(&quot;id&quot;) int id, @Field(&quot;username&quot;) String username, @Field(&quot;address&quot;) String address);</code></pre><p>实现和Get类似</p>
+<h4 id="多文件上传-1"><a href="#多文件上传-1" class="headerlink" title="多文件上传"></a>多文件上传</h4><pre><code>@Multipart
+    @POST(&quot;rest/upload&quot;)
+    Observable&lt;ResponseBody&gt; uploads(@PartMap Map&lt;String, RequestBody&gt; params);</code></pre><pre><code>//params构造部分和单独使用Retrofit2的构造相同
+myService.uploads(params)
+               .subscribeOn(Schedulers.io())
+               .observeOn(AndroidSchedulers.mainThread())
+               .subscribe(new Subscriber&lt;ResponseBody&gt;() {
+
+                   @Override
+                   public void onStart() {
+                       super.onStart();
+                       Log.e(TAG, &quot;onStart&quot;);
+                   }
+
+
+                   @Override
+                   public void onCompleted() {
+                       Log.e(TAG, &quot;onCompleted&quot;);
+                   }
+
+                   @Override
+                   public void onError(Throwable e) {
+                       Log.e(TAG, e.getMessage());
+                   }
+
+                   @Override
+                   public void onNext(ResponseBody body) {
+                       Log.e(TAG, getResponsString(body));
+                   }
+               });</code></pre><h4 id="文件下载-1"><a href="#文件下载-1" class="headerlink" title="文件下载"></a>文件下载</h4><pre><code>@Streaming
+@GET(&quot;image/{filename}&quot;)
+Observable&lt;ResponseBody&gt; downFile(@Path(&quot;filename&quot;) String fileName);</code></pre><h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>无论是单独使用Retrofit2还是整合RxJava一起使用，请求体的构造部分并没有多大变化，主要区别是RxJava支持链式写法，可以对response作更为复杂的处理。现实业务中大多数也是两者结合起来使用。</p>
+<p><a href="https://github.com/cxbiao/Android_Study_Demos/tree/master/RetrofitDemo" target="_blank" rel="noopener">Github Demo</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2016/05/18/Retrofit2%E4%B8%8ERxJava%E7%94%A8%E6%B3%95%E8%A7%A3%E6%9E%90/" data-id="ckcqdgks000uw9xlfa9196n25" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/05/18/Retrofit-2-%E5%A6%82%E4%BD%95%E4%BB%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8B%E8%BD%BD%E6%96%87%E4%BB%B6/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Retrofit 2 - 如何从服务器下载文件
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/05/16/%E8%AE%BAAndroid-Adapter-notifyDataSetChanged%E4%B8%8EnotifyDataSetInvalidated%E6%97%A0%E6%95%88%E5%8E%9F%E5%9B%A0/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">论Android Adapter notifyDataSetChanged与notifyDataSetInvalidated无效原因</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

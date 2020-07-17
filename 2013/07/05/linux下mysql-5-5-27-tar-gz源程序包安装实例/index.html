@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>linux下mysql-5.5.27.tar.gz源程序包安装实例 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="研究了好几天，终于把mysql装上了，现在来做下小结。 系统环境：fedora8 虚拟机。 1、检查安装使用的编译工具gcc是否存在，如果不存在则要下载安装 # gcc -v">
+<meta property="og:type" content="article">
+<meta property="og:title" content="linux下mysql-5.5.27.tar.gz源程序包安装实例">
+<meta property="og:url" content="http://moqiang02.github.io/2013/07/05/linux%E4%B8%8Bmysql-5-5-27-tar-gz%E6%BA%90%E7%A8%8B%E5%BA%8F%E5%8C%85%E5%AE%89%E8%A3%85%E5%AE%9E%E4%BE%8B/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="研究了好几天，终于把mysql装上了，现在来做下小结。 系统环境：fedora8 虚拟机。 1、检查安装使用的编译工具gcc是否存在，如果不存在则要下载安装 # gcc -v">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2013-07-05T14:36:32.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:16.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-linux下mysql-5-5-27-tar-gz源程序包安装实例" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2013/07/05/linux%E4%B8%8Bmysql-5-5-27-tar-gz%E6%BA%90%E7%A8%8B%E5%BA%8F%E5%8C%85%E5%AE%89%E8%A3%85%E5%AE%9E%E4%BE%8B/" class="article-date">
+  <time datetime="2013-07-05T14:36:32.000Z" itemprop="datePublished">2013-07-05</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/linux/">linux</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      linux下mysql-5.5.27.tar.gz源程序包安装实例
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <p> 研究了好几天，终于把mysql装上了，现在来做下小结。</p>
+<p>系统环境：fedora8 虚拟机。</p>
+<p>1、检查安装使用的编译工具gcc是否存在，如果不存在则要下载安装</p>
+<p># gcc -v</p>
+<a id="more"></a>
+<p>2、卸载低版本的mysql，命令如下：</p>
+<p># rpm -qa|grep -i mysql     //查询系统中已安装的mysql相关软件包</p>
+<p>mysql-devel-3.23.54a-11</p>
+<p>mysql-3.23.54a-11</p>
+<p>mysql-server-3.23.54a-11</p>
+<p># service mysqld stop     //停止mysql服务</p>
+<p># rpm -e mysql-devel-3.23.54a-11 –nodeps     //卸载mysql服务器</p>
+<p># rpm -e mysql-3.23.54a-11 –nodeps           //卸载mysql服务器</p>
+<p># rpm -e mysql-server-3.23.54a-11 –nodeps    //卸载mysql服务器</p>
+<p>3、先安装ncurses-5.9.tar.gz,否则mysql编译安装时出错，还有奇怪的是ncurses</p>
+<p>-5.6安装不了。命令如下：</p>
+<p># cd ../ncurses-5.9</p>
+<p># ./configure –with-shared –with-debug –without-ada –enable-overwrite</p>
+<p># make &amp;&amp; make install</p>
+<p>4、添加mysql用户及组</p>
+<p># groupadd mysql</p>
+<p># useradd -g mysql mysql</p>
+<p>5、将mysql-5.5.27.tar.gz及cmake-2.8.11.2.tar.gz放到/usr/local/src文件夹下并解压缩。</p>
+<p>可以在windows下下载好这另个源程序包，然后使用“SSH Secure File Transfer Client”传到虚拟机的linux中。</p>
+<p>6、解压这两个压缩包</p>
+<p># var zxvf mysql-5.5.27.tar.gz</p>
+<p># var zxvf cmake-2.8.11.2.tar.gz</p>
+<p>7、安装cmake</p>
+<p>安装cmake的目的是，自mysql5.5及以上的源程序包，不再包括configure文件，因此不能直接安装，需要使用cmake来进行安装，（这算不算强制安装软件？）cmake的安装大致步骤为：</p>
+<p># cd /usr/local/src/cmake-2.8.11.2</p>
+<p># ./configure      //cmake仍然可以用configure命令来安装,在此，最好不要指定安装路径,</p>
+<pre><code>               //以免后面安装mysql时提示找不到cmake</code></pre><p># make &amp;&amp; make install</p>
+<p>8、进入mysql解压后的源程序包</p>
+<p># cd /usr/local/src/mysql-5.5.27</p>
+<p># cmake  -DCMAKE_INSTALL_PREFIX=/usr/local/mysql  </p>
+<p># make &amp;&amp; make install</p>
+<p>9、不要以为make install后就大功告成了，后面的事情还多着——</p>
+<p>  创建mysql数据库服务器的配置文件，可以使用源代码包support-files目录中的my-medium.cnf文件作为模板，将其复制到/etc/目录下，命名为my.cnf。命令如下：</p>
+<p># cp support-files/my-medium.cnf /etc/my.cnf</p>
+<p>10、创建mysql授权表。进入到安装目录下，执行bin目录下的mysql_install_db脚本，来初始化mysql数据库的授权表，其中存储了服务器访问允许。命令如下：</p>
+<p># cd /usr/local/mysql</p>
+<p># scripts/mysql_install_db –usr=mysql               //创建授权表，有的低版本的mysql不是在 </p>
+<pre><code>                                                //scripts目录下，而是在bin目录下</code></pre><p>11、更改权限，将程序的二进制的所有权改为root用户，数据目录的所有权改为允许mysqld程序的mysql用户。</p>
+<p># cd /usr/local/mysql</p>
+<p># chown -R root .                //将文件的所有属性改为root用户</p>
+<p># chown -R mysql data             //将数据目录的所有属性改为mysql用户，老版本的是var目录</p>
+<p># chgrp -R mysql .               //将组属性改为mysql组</p>
+<p>12、启动mysql服务</p>
+<p># /usr/local/mysql/bin/mysqld_safe –user=mysql &amp;</p>
+<p># ps -le | grep mysqld                 //查看mysql进程是否启动</p>
+<p># netstat -tnl|grep 3306                //查看3306是否开启，listen状态说明mysql服务启动成功</p>
+<p>13、使用mysqladmin验证服务器在运行中。</p>
+<p># cd /usr/local/mysql</p>
+<p># bin/mysqladmin version //查看运行的mysql版本</p>
+<p># bin/mysqladmin variables //查看所有mysql参数</p>
+<p>14、设置访问权限</p>
+<p># cd /usr/local/mysql</p>
+<p># bin/mysql -u root         //启动mysql客户端控制台，连接mysql服务器</p>
+<p>15、删除匿名用户</p>
+<p>mysql&gt;DELETE FROM mysql.user WHERE Host=’localhost’AND User=’’;</p>
+<p>mysql&gt;FLUSH PRIVILEGES;</p>
+<p>16、为root账户添加密码，并使用PASSWORD()函数加密密码。</p>
+<p>mysql&gt;SET PASSWORD FOR ‘root’@’localhost’=PASSWORD(‘123456’);</p>
+<p>17、退出mysql客户端控制台</p>
+<p>mysql&gt; exit                                    //退出mysql客户端控制台</p>
+<p>mysql&gt;bin/mysql -u root -h localhost -p        //进入mysql客户端控制台</p>
+<p>18、关闭mysql数据库</p>
+<p># bin/mysqladmin -u root -p shutdown</p>
+<p>19、设置mysql数据库为开机自动启动</p>
+<p># cd /usr/local/src/mysql-5.5.27                                     //进入mysql安装包</p>
+<p># cp support-files/mysql.server /etc/rc.d/init.d/mysqld              //复制文件</p>
+<p># chown root.root /etc/rc.d/init.d/mysqld                           //修改权限</p>
+<p># chmod 755 /etc/rc.d/init.d/mysqld</p>
+<p>20、使用chkconfig 命令设置在不同系统运行级别下的自启动策略</p>
+<p># chkconfig –add mysqld                   //添加mysqld服务，让chkconfig指令得以管理它</p>
+<p># chkconfig –level 3 mysql on            //在字符模式启动时自动开启mysqld服务</p>
+<p># chkconfig –level 5 mysql on           //在图形模式启动时自动开启mysqld服务</p>
+<p># chkconfig –list mysqld               //检查设置是否生效</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2013/07/05/linux%E4%B8%8Bmysql-5-5-27-tar-gz%E6%BA%90%E7%A8%8B%E5%BA%8F%E5%8C%85%E5%AE%89%E8%A3%85%E5%AE%9E%E4%BE%8B/" data-id="ckcqdgkwj017g9xlfeyjz2zdo" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2013/07/07/mysql5-5-28-tar-gz%E7%BC%96%E8%AF%91%E5%AE%89%E8%A3%85%E6%93%8D%E4%BD%9C%E7%AC%94%E8%AE%B0/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          mysql5.5.28.tar.gz编译安装操作笔记
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2013/07/03/linux%E5%AE%89%E8%A3%85gcc%E5%92%8Cgcc-c/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">linux安装gcc和gcc-c++</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

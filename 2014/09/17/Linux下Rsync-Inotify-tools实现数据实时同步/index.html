@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Linux下Rsync+Inotify-tools实现数据实时同步 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="操作系统：CentOS 5.X 源服务器：192.168.21.129 目标服务器：192.168.21.127，192.168.21.128 目的：把源服务器上&#x2F;home&#x2F;www.osyunwei.com目录实时同步到目标服务器的&#x2F;home&#x2F;www.osyunwei.com下">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linux下Rsync+Inotify-tools实现数据实时同步">
+<meta property="og:url" content="http://moqiang02.github.io/2014/09/17/Linux%E4%B8%8BRsync-Inotify-tools%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E5%AE%9E%E6%97%B6%E5%90%8C%E6%AD%A5/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="操作系统：CentOS 5.X 源服务器：192.168.21.129 目标服务器：192.168.21.127，192.168.21.128 目的：把源服务器上&#x2F;home&#x2F;www.osyunwei.com目录实时同步到目标服务器的&#x2F;home&#x2F;www.osyunwei.com下">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2014-09-17T03:09:59.000Z">
+<meta property="article:modified_time" content="2019-11-03T08:41:10.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta property="article:tag" content="集群">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Linux下Rsync-Inotify-tools实现数据实时同步" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/09/17/Linux%E4%B8%8BRsync-Inotify-tools%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E5%AE%9E%E6%97%B6%E5%90%8C%E6%AD%A5/" class="article-date">
+  <time datetime="2014-09-17T03:09:59.000Z" itemprop="datePublished">2014-09-17</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/linux/">linux</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Linux下Rsync+Inotify-tools实现数据实时同步
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+<!-- 文章目录开始 -->
+
+<div id="toc" class="toc-article">
+<strong class="toc-title" style="cursor:pointer">contents</strong>
+<ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#第一部分：分别在两台目标服务器192-168-21-127，192-168-21-128上操作"><span class="toc-number">1.</span> <span class="toc-text">第一部分：分别在两台目标服务器192.168.21.127，192.168.21.128上操作</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、分别在两台在目标服务器安装Rsync服务端"><span class="toc-number">1.1.</span> <span class="toc-text">一、分别在两台在目标服务器安装Rsync服务端</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#第二部分：在源服务器192-168-21-129上操作"><span class="toc-number">2.</span> <span class="toc-text">第二部分：在源服务器192.168.21.129上操作</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、安装Rsync客户端"><span class="toc-number">2.1.</span> <span class="toc-text">一、安装Rsync客户端</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、安装Inotify-tools工具，实时触发rsync进行同步"><span class="toc-number">2.2.</span> <span class="toc-text">二、安装Inotify-tools工具，实时触发rsync进行同步</span></a></li></ol></li></ol>
+</div>
+
+<!-- 文章目录结束 -->	  
+
+	  
+        <p>操作系统：CentOS 5.X</p>
+<p>源服务器：192.168.21.129</p>
+<p>目标服务器：192.168.21.127，192.168.21.128</p>
+<p>目的：把源服务器上<code>/home/www.osyunwei.com</code>目录实时同步到目标服务器的<code>/home/www.osyunwei.com</code>下</p>
+<a id="more"></a>
+<p>具体操作：</p>
+<h2 id="第一部分：分别在两台目标服务器192-168-21-127，192-168-21-128上操作"><a href="#第一部分：分别在两台目标服务器192-168-21-127，192-168-21-128上操作" class="headerlink" title="第一部分：分别在两台目标服务器192.168.21.127，192.168.21.128上操作"></a>第一部分：分别在两台目标服务器192.168.21.127，192.168.21.128上操作</h2><h3 id="一、分别在两台在目标服务器安装Rsync服务端"><a href="#一、分别在两台在目标服务器安装Rsync服务端" class="headerlink" title="一、分别在两台在目标服务器安装Rsync服务端"></a>一、分别在两台在目标服务器安装Rsync服务端</h3><p>1、关闭SELINUX</p>
+<pre><code class="txt">vi /etc/selinux/config #编辑防火墙配置文件
+
+#SELINUX=enforcing #注释掉
+
+#SELINUXTYPE=targeted #注释掉
+
+SELINUX=disabled #增加
+
+:wq! #保存，退出
+
+setenforce 0  #立即生效</code></pre>
+<p>2、开启防火墙tcp 873端口（Rsync默认端口）</p>
+<pre><code class="txt">vi /etc/sysconfig/iptables #编辑防火墙配置文件
+
+-A RH-Firewall-1-INPUT -m state --state NEW -m tcp -p tcp --dport 873 -j ACCEPT
+
+:wq! #保存，退出
+
+/etc/init.d/iptables restart #最后重启防火墙使配置生效</code></pre>
+<p>3、安装Rsync服务端软件</p>
+<pre><code class="txt">yum install rsync xinetd #安装
+
+vi /etc/xinetd.d/rsync #编辑配置文件，设置开机启动rsync
+
+disable = no #修改为no
+
+:wq! #保存退出
+
+/etc/init.d/xinetd start #启动（CentOS中是以xinetd来管理Rsync服务的）</code></pre>
+<p>4、创建rsyncd.conf配置文件</p>
+<pre><code class="bash">vi /etc/rsyncd.conf #创建配置文件，添加以下代码
+
+log file = /var/log/rsyncd.log #日志文件位置，启动rsync后自动产生这个文件，无需提前创建
+
+pidfile = /var/run/rsyncd.pid  #pid文件的存放位置
+
+lock file = /var/run/rsync.lock  #支持max connections参数的锁文件
+
+secrets file = /etc/rsync.pass  #用户认证配置文件，里面保存用户名称和密码，后面会创建这个文件
+
+motd file = /etc/rsyncd.Motd  #rsync启动时欢迎信息页面文件位置（文件内容自定义）
+
+[home_www.osyunwei.com] #自定义名称
+
+path = /home/www.osyunwei.com/ #rsync服务端数据目录路径
+
+comment = home_www.osyunwei.com #模块名称与[home_www.osyunwei.com]自定义名称相同
+
+uid = root #设置rsync运行权限为root
+
+gid = root #设置rsync运行权限为root
+
+port=873  #默认端口
+
+use chroot = no #默认为true，修改为no，增加对目录文件软连接的备份
+
+read only = no  #设置rsync服务端文件为读写权限
+
+list = no #不显示rsync服务端资源列表
+
+max connections = 200 #最大连接数
+
+timeout = 600  #设置超时时间
+
+auth users = home_www.osyunwei.com_user #执行数据同步的用户名，可以设置多个，用英文状态下逗号隔开
+
+hosts allow = 192.168.21.129  #允许进行数据同步的客户端IP地址，可以设置多个，用英文状态下逗号隔开
+
+hosts deny = 192.168.21.254 #禁止数据同步的客户端IP地址，可以设置多个，用英文状态下逗号隔开
+
+:wq!  #保存,退出</code></pre>
+<p>5、创建用户认证文件</p>
+<pre><code class="txt">vi /etc/rsync.pass #配置文件，添加以下内容
+
+home_www.osyunwei.com_user:123456  #格式，用户名:密码，可以设置多个，每行一个用户名:密码
+
+:wq!  #保存，退出</code></pre>
+<p>6、设置文件权限</p>
+<pre><code class="bash">chmod 600 /etc/rsyncd.conf  #设置文件所有者读取、写入权限
+
+chmod 600 /etc/rsync.pass  #设置文件所有者读取、写入权限</code></pre>
+<p>7、启动rsync</p>
+<pre><code>/etc/init.d/xinetd start  #启动
+
+service xinetd stop   #停止
+
+service xinetd restart #重新启动</code></pre><h2 id="第二部分：在源服务器192-168-21-129上操作"><a href="#第二部分：在源服务器192-168-21-129上操作" class="headerlink" title="第二部分：在源服务器192.168.21.129上操作"></a>第二部分：在源服务器192.168.21.129上操作</h2><h3 id="一、安装Rsync客户端"><a href="#一、安装Rsync客户端" class="headerlink" title="一、安装Rsync客户端"></a>一、安装Rsync客户端</h3><p>1、关闭SELINUX</p>
+<pre><code>vi /etc/selinux/config #编辑防火墙配置文件
+
+#SELINUX=enforcing #注释掉
+
+#SELINUXTYPE=targeted #注释掉
+
+SELINUX=disabled #增加
+
+:wq! #保存，退出
+
+setenforce 0 #立即生效</code></pre><p>2、开启防火墙tcp 873端口（Rsync默认端口，做为客户端的Rsync可以不用开启873端口）</p>
+<pre><code>vi /etc/sysconfig/iptables #编辑防火墙配置文件
+
+-A RH-Firewall-1-INPUT -m state --state NEW -m tcp -p tcp --dport 873 -j ACCEPT
+
+:wq! #保存，退出
+
+/etc/init.d/iptables restart #最后重启防火墙使配置生效</code></pre><p>3、安装Rsync客户端软件</p>
+<pre><code>whereis rsync   #查看系统是否已安装rsync,出现下面的提示，说明已经安装
+
+rsync: /usr/bin/rsync /usr/share/man/man1/rsync.1.gz
+
+yum install  xinetd  #只安装xinetd即可，CentOS中是以xinetd来管理rsync服务的
+
+yum install rsync xinetd #如果默认没有rsync，运行此命令进行安装rsync和xinetd
+
+vi /etc/xinetd.d/rsync #编辑配置文件，设置开机启动rsync
+
+disable = no #修改为
+
+/etc/init.d/xinetd start #启动（CentOS中是以xinetd来管理rsync服务的）</code></pre><p>4、创建认证密码文件</p>
+<pre><code>vi /etc/passwd.txt  #编辑文件，添加以下内容
+
+123456 #密码
+
+:wq! #保存退出
+
+chmod 600 /etc/passwd.txt #设置文件权限，只设置文件所有者具有读取、写入权限即可</code></pre><p>5、测试源服务器192.168.21.129到两台目标服务器192.168.21.127，192.168.21.128之间的数据同步</p>
+<pre><code>mkdir /home/www.osyunwei.com/ceshi #在源服务器上创建测试文件夹，然后在源服务器运行下面2行命令
+
+rsync -avH --port=873 --progress --delete  /home/www.osyunwei.com/  home_www.osyunwei.com_user@192.168.21.127::home_www.osyunwei.com --password-file=/etc/passwd.txt
+
+rsync -avH --port=873 --progress --delete  /home/www.osyunwei.com/  home_www.osyunwei.com_user@192.168.21.128::home_www.osyunwei.com --password-file=/etc/passwd.txt</code></pre><p>运行完成后，分别在两台目标服务器192.168.21.127，192.168.21.128上查看，在<code>/home/www.osyunwei.com</code>目录下有ceshi文件夹，说明数据同步成功。</p>
+<h3 id="二、安装Inotify-tools工具，实时触发rsync进行同步"><a href="#二、安装Inotify-tools工具，实时触发rsync进行同步" class="headerlink" title="二、安装Inotify-tools工具，实时触发rsync进行同步"></a>二、安装Inotify-tools工具，实时触发rsync进行同步</h3><p>1、查看服务器内核是否支持inotify</p>
+<pre><code>ll /proc/sys/fs/inotify   #列出文件目录，出现下面的内容，说明服务器内核支持inotify
+
+-rw-r--r-- 1 root root 0 Mar  7 02:17 max_queued_events
+
+-rw-r--r-- 1 root root 0 Mar  7 02:17 max_user_instances
+
+-rw-r--r-- 1 root root 0 Mar  7 02:17 max_user_watches</code></pre><p>备注：Linux下支持inotify的内核最小为2.6.13，可以输入命令：<code>uname -a</code>查看内核</p>
+<p>CentOS 5.X 内核为2.6.18，默认已经支持inotify</p>
+<p>2、安装inotify-tools</p>
+<pre><code>yum install make  gcc gcc-c++  #安装编译工具</code></pre><p>inotify-tools下载地址：<a href="http://github.com/downloads/rvoicilas/inotify-tools/inotify-tools-3.14.tar.gz" target="_blank" rel="noopener">http://github.com/downloads/rvoicilas/inotify-tools/inotify-tools-3.14.tar.gz</a></p>
+<p>上传inotify-tools-3.14.tar.gz到<code>/usr/local/src</code>目录下</p>
+<pre><code>cd /usr/local/src
+
+tar zxvf inotify-tools-3.14.tar.gz  #解压
+
+cd inotify-tools-3.14 #进入解压目录
+
+./configure --prefix=/usr/local/inotify  #配置
+
+make  #编译
+
+make install  #安装</code></pre><p>3、设置系统环境变量，添加软连接</p>
+<pre><code>echo &quot;PATH=/usr/local/inotify/bin:$PATH&quot; &gt;&gt;/etc/profile.d/inotify.sh
+
+source /etc/profile.d/inotify.sh  #使设置立即生效
+
+echo &quot;/usr/local/inotify/lib&quot; &gt;/etc/ld.so.conf.d/inotify.conf
+
+ln -s /usr/local/inotify/include  /usr/include/inotify</code></pre><p>4、修改inotify默认参数（inotify默认内核参数值太小）</p>
+<p>查看系统默认参数值</p>
+<p><code>sysctl -a | grep max_queued_events</code></p>
+<p>结果是：<code>fs.inotify.max_queued_events = 16384</code></p>
+<p><code>sysctl -a | grep max_user_watches</code></p>
+<p>结果是：<code>fs.inotify.max_user_watches = 8192</code></p>
+<p><code>sysctl -a | grep max_user_instances</code></p>
+<p>结果是：<code>fs.inotify.max_user_instances = 128</code></p>
+<p>修改参数：</p>
+<pre><code>sysctl -w fs.inotify.max_queued_events=&quot;99999999&quot;
+
+sysctl -w fs.inotify.max_user_watches=&quot;99999999&quot;
+
+sysctl -w fs.inotify.max_user_instances=&quot;65535&quot;
+
+vi /etc/sysctl.conf #添加以下代码
+
+fs.inotify.max_queued_events=99999999
+
+fs.inotify.max_user_watches=99999999
+
+fs.inotify.max_user_instances=65535
+
+:wq! #保存退出</code></pre><p>参数说明：</p>
+<p>max_queued_events：</p>
+<p>inotify队列最大长度，如果值太小，会出现<strong>Event Queue Overflow</strong>错误，导致监控文件不准确</p>
+<p>max_user_watches：<br>要同步的文件包含多少目录，可以用：<code>find /home/www.osyunwei.com -type d | wc -l</code> 统计，必须保证max_user_watches值大于统计结果（这里<code>/home/www.osyunwei.com</code>为同步文件目录）</p>
+<p>max_user_instances：<br>每个用户创建inotify实例最大值</p>
+<p>5、创建脚本，实时触发rsync进行同步<br><code>vi /usr/local/inotify/rsync.sh   #编辑，添加以下代码</code></p>
+<pre><code>#!/bin/sh
+
+srcdir=/home/www.osyunwei.com/
+
+dstdir=home_www.osyunwei.com
+
+rsyncuser=home_www.osyunwei.com_user
+
+rsyncpassdir=/etc/passwd.txt
+
+dstip=&quot;192.168.21.127 192.168.21.128&quot;
+
+for ip in $dstip
+
+do
+
+rsync -avH --port=873 --progress --delete  $srcdir $rsyncuser@$ip::$dstdir --password-file=$rsyncpassdir
+
+done
+
+/usr/local/inotify/bin/inotifywait -mrq --timefmt &#39;%d/%m/%y %H:%M&#39; --format &#39;%T %w%f%e&#39; -e close_write,modify,delete,create,attrib,move $srcdir |  while read file
+
+do
+
+for ip in $dstip
+
+do
+
+rsync -avH --port=873 --progress --delete  $srcdir $rsyncuser@$ip::$dstdir --password-file=$rsyncpassdir
+
+echo &quot;  ${file} was rsynced&quot; &gt;&gt; /tmp/rsync.log 2&gt;&amp;1
+
+done
+
+done</code></pre><p><code>chmod +x /usr/local/inotify/rsync.sh   #添加脚本执行权限</code></p>
+<p>脚本参数说明：</p>
+<pre><code>srcdir=/home/www.osyunwei.com/  #源服务器同步目录
+
+dstdir=home_www.osyunwei.com    #目标服务器rsync同步目录模块名称
+
+rsyncuser=home_www.osyunwei.com_user  #目标服务器rsync同步用户名
+
+rsyncpassdir=/etc/passwd.txt  #目标服务器rsync同步用户的密码在源服务器的存放路径
+
+dstip=&quot;192.168.21.127 192.168.21.128&quot;  #目标服务器ip，多个ip用空格分开
+
+/tmp/rsync.log  #脚本运行日志记录</code></pre><p>6、设置脚本开机自动执行</p>
+<pre><code>vi /etc/rc.d/rc.local  #编辑，在最后添加一行
+
+sh /usr/local/inotify/rsync.sh &amp; ＃设置开机自动在后台运行脚本
+
+:wq!  #保存退出</code></pre><p>7、测试inotify实时触发rsync同步脚本是否正常运行</p>
+<p>在源服务器192.168.21.129上创建文件inotify_rsync_ceshi</p>
+<p><code>mkdir /home/www.osyunwei.com/inotify_rsync_ceshi</code></p>
+<p>重新启动源服务器：192.168.21.129</p>
+<p>等系统启动之后，查看两台目标服务器192.168.21.127，192.168.21.128的<code>/home/www.osyunwei.com</code>下是否有inotify_rsync_ceshi文件夹</p>
+<p>然后再在源服务器192.168.21.129创建文件夹inotify_rsync_ceshi_new</p>
+<p><code>mkdir /home/www.osyunwei.com/inotify_rsync_ceshi_new</code></p>
+<p>继续查看两台目标服务器192.168.21.127，192.168.21.128的<code>/home/www.osyunwei.com</code>下是否有inotify_rsync_ceshi_new文件夹</p>
+<p>如果以上测试都通过，说明inotify实时触发rsync同步脚本运行正常。</p>
+<p>至此，Linux下Rsync+Inotify-tools实现数据实时同步完成。</p>
+<p>扩展阅读：</p>
+<p>inotify参数</p>
+<pre><code>-m 是保持一直监听
+
+-r 是递归查看目录
+
+-q 是打印出事件
+
+-e create,move,delete,modify,attrib 是指 “监听 创建 移动 删除 写入 权限” 事件</code></pre><p>rsync参数</p>
+<pre><code>-v, --verbose 详细模式输出
+
+-q, --quiet 精简输出模式
+
+-c, --checksum 打开校验开关，强制对文件传输进行校验
+
+-a, --archive 归档模式，表示以递归方式传输文件，并保持所有文件属性，等于-rlptgoD
+
+-r, --recursive 对子目录以递归模式处理
+
+-R, --relative 使用相对路径信息
+
+-b, --backup 创建备份，也就是对于目的已经存在有同样的文件名时，将老的文件重新命名为~filename。可以使用--suffix选项来指定不同的备份文件前缀。
+
+--backup-dir 将备份文件(如~filename)存放在在目录下。
+
+-suffix=SUFFIX 定义备份文件前缀
+
+-u, --update 仅仅进行更新，也就是跳过所有已经存在于DST，并且文件时间晚于要备份的文件。(不覆盖更新的文件)
+
+-l, --links 保留软链结
+
+-L, --copy-links 想对待常规文件一样处理软链结
+
+--copy-unsafe-links 仅仅拷贝指向SRC路径目录树以外的链结
+
+--safe-links 忽略指向SRC路径目录树以外的链结
+
+-H, --hard-links 保留硬链结
+
+-p, --perms 保持文件权限
+
+-o, --owner 保持文件属主信息
+
+-g, --group 保持文件属组信息
+
+-D, --devices 保持设备文件信息
+
+-t, --times 保持文件时间信息
+
+-S, --sparse 对稀疏文件进行特殊处理以节省DST的空间
+
+-n, --dry-run现实哪些文件将被传输
+
+-W, --whole-file 拷贝文件，不进行增量检测
+
+-x, --one-file-system 不要跨越文件系统边界
+
+-B, --block-size=SIZE 检验算法使用的块尺寸，默认是700字节
+
+-e, --rsh=COMMAND 指定使用rsh、ssh方式进行数据同步
+
+--rsync-path=PATH 指定远程服务器上的rsync命令所在路径信息
+
+-C, --cvs-exclude 使用和CVS一样的方法自动忽略文件，用来排除那些不希望传输的文件
+
+--existing 仅仅更新那些已经存在于DST的文件，而不备份那些新创建的文件
+
+--delete 删除那些DST中SRC没有的文件
+
+--delete-excluded 同样删除接收端那些被该选项指定排除的文件
+
+--delete-after 传输结束以后再删除
+
+--ignore-errors 及时出现IO错误也进行删除
+
+--max-delete=NUM 最多删除NUM个文件
+
+--partial 保留那些因故没有完全传输的文件，以是加快随后的再次传输
+
+--force 强制删除目录，即使不为空
+
+--numeric-ids 不将数字的用户和组ID匹配为用户名和组名
+
+--timeout=TIME IP超时时间，单位为秒
+
+-I, --ignore-times 不跳过那些有同样的时间和长度的文件
+
+--size-only 当决定是否要备份文件时，仅仅察看文件大小而不考虑文件时间
+
+--modify-window=NUM 决定文件是否时间相同时使用的时间戳窗口，默认为0
+
+-T --temp-dir=DIR 在DIR中创建临时文件
+
+--compare-dest=DIR 同样比较DIR中的文件来决定是否需要备份
+
+-P 等同于 --partial
+
+--progress 显示备份过程
+
+-z, --compress 对备份的文件在传输时进行压缩处理
+
+--exclude=PATTERN 指定排除不需要传输的文件模式
+
+--include=PATTERN 指定不排除而需要传输的文件模式
+
+--exclude-from=FILE 排除FILE中指定模式的文件
+
+--include-from=FILE 不排除FILE指定模式匹配的文件
+
+--version 打印版本信息
+
+--address 绑定到特定的地址
+
+--config=FILE 指定其他的配置文件，不使用默认的rsyncd.conf文件
+
+--port=PORT 指定其他的rsync服务端口
+
+--blocking-io 对远程shell使用阻塞IO
+
+-stats 给出某些文件的传输状态
+
+--progress 在传输时现实传输过程
+
+--log-format=formAT 指定日志文件格式
+
+--password-file=FILE 从FILE中得到密码
+
+--bwlimit=KBPS 限制I/O带宽，KBytes per second
+
+-h, --help 显示帮助信息</code></pre><p>» 本文链接：<a href="http://www.osyunwei.com/archives/7435.html" target="_blank" rel="noopener">http://www.osyunwei.com/archives/7435.html</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/09/17/Linux%E4%B8%8BRsync-Inotify-tools%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E5%AE%9E%E6%97%B6%E5%90%8C%E6%AD%A5/" data-id="ckcqdgkoo00kj9xlf60q04l5r" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E9%9B%86%E7%BE%A4/" rel="tag">集群</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/09/17/MongoDB%E7%9A%84MapReduce%E7%94%A8%E6%B3%95%E5%8F%8Aphp%E7%A4%BA%E4%BE%8B%E4%BB%A3%E7%A0%81/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          MongoDB的MapReduce用法及php示例代码
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/09/16/%E9%80%9A%E8%BF%87rsync-inotify%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E7%9A%84%E5%AE%9E%E6%97%B6%E5%A4%87%E4%BB%BD%EF%BC%88%E5%A4%9A%E5%8F%B0%E5%A4%87%E4%BB%BD%E6%9C%BA%EF%BC%89/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">通过rsync+inotify实现数据的实时备份（多台备份机）</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

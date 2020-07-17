@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>MongoDB的MapReduce用法及php示例代码 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="MongoDB虽然不像我们常用的mysql，sqlserver，oracle等关系型数据库有group by函数那样方便分组，但是MongoDB要实现分组也有3个办法： Mongodb三种分组方式：  1、group(先筛选再分组，不支持分片，对数据量有所限制，效率不高)   http:&#x2F;&#x2F;php.net&#x2F;manual&#x2F;zh&#x2F;mongocollection.group.php  2、mapredu">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MongoDB的MapReduce用法及php示例代码">
+<meta property="og:url" content="http://moqiang02.github.io/2014/09/17/MongoDB%E7%9A%84MapReduce%E7%94%A8%E6%B3%95%E5%8F%8Aphp%E7%A4%BA%E4%BE%8B%E4%BB%A3%E7%A0%81/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="MongoDB虽然不像我们常用的mysql，sqlserver，oracle等关系型数据库有group by函数那样方便分组，但是MongoDB要实现分组也有3个办法： Mongodb三种分组方式：  1、group(先筛选再分组，不支持分片，对数据量有所限制，效率不高)   http:&#x2F;&#x2F;php.net&#x2F;manual&#x2F;zh&#x2F;mongocollection.group.php  2、mapredu">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2014-09-17T12:43:54.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:22.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-MongoDB的MapReduce用法及php示例代码" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/09/17/MongoDB%E7%9A%84MapReduce%E7%94%A8%E6%B3%95%E5%8F%8Aphp%E7%A4%BA%E4%BE%8B%E4%BB%A3%E7%A0%81/" class="article-date">
+  <time datetime="2014-09-17T12:43:54.000Z" itemprop="datePublished">2014-09-17</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/mongodb/">mongodb</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      MongoDB的MapReduce用法及php示例代码
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <p>MongoDB虽然不像我们常用的mysql，sqlserver，oracle等关系型数据库有group by函数那样方便分组，但是MongoDB要实现分组也有3个办法：</p>
+<p>Mongodb三种分组方式：</p>
+<ul>
+<li><p>1、group(先筛选再分组，不支持分片，对数据量有所限制，效率不高)   <a href="http://php.net/manual/zh/mongocollection.group.php" target="_blank" rel="noopener">http://php.net/manual/zh/mongocollection.group.php</a></p>
+</li>
+<li><p>2、mapreduce(基于js引擎，单线程执行，效率较低，适合用做后台统计等)</p>
+</li>
+<li><p>3、aggregate(推荐) (如果你的PHP的mongodb驱动版本需&gt;=1.3.0，推荐你使用aggregate，性能要高很多，并且使用上要简单些，不过1.3的目前还不支持账户认证模式，可以通过<a href="http://pecl.php.net/package/mongo查看更新日志和Bug" target="_blank" rel="noopener">http://pecl.php.net/package/mongo查看更新日志和Bug</a>)   <a href="http://php.net/manual/zh/mongocollection.aggregate.php" target="_blank" rel="noopener">http://php.net/manual/zh/mongocollection.aggregate.php</a></p>
+</li>
+</ul>
+<a id="more"></a>
+<p>下面就来看下mapreduce方式：</p>
+<p>Mongodb官网对MapReduce介绍：</p>
+<p>Map/reduce in MongoDB is useful for batch processing of data and aggregation operations. It is similar in spirit to using something like Hadoop with all input coming from a collection and output going to a collection. Often, in a situation where you would have used GROUP BY in SQL, map/reduce is the right tool in MongoDB.<br>大致意思是：Mongodb中的Map/reduce主要是用来对数据进行批量处理和聚合操作，有点类似于使用Hadoop对集合数据进行处理，所有输入数据都是从集合中获取，而MapReduce后输出的数据也都会写入到集合中。通常类似于我们在SQL中使用Group By语句一样。<br>使用MapReduce要实现两个函数：Map和Reduce。Map函数调用emit(key,value)遍历集合中所有的记录，将key与value传给Reduce函数进行处理。Map函数和Reduce函数是使用Javascript编写的，并可以通过db.runCommand或mapreduce命令来执行MapReduce操作。</p>
+<p>MapReduce命令如下：</p>
+<pre><code>    db.runCommand(  
+    { mapreduce : &lt;collection&gt;,  
+       map : &lt;mapfunction&gt;,  
+       reduce : &lt;reducefunction&gt;  
+       [, query : &lt;query filter object&gt;]  
+       [, sort : &lt;sort the query.  useful for optimization&gt;]  
+       [, limit : &lt;number of objects to return from collection&gt;]  
+       [, out : &lt;output-collection name&gt;]  
+       [, keeptemp: &lt;true|false&gt;]  
+       [, finalize : &lt;finalizefunction&gt;]  
+       [, scope : &lt;object where fields go into javascript global scope &gt;]  
+       [, verbose : true]  
+     }  
+    );  </code></pre><p>参数说明：</p>
+<p>mapreduce：要操作的目标集合</p>
+<p>map：映射函数（生成键值对序列，作为Reduce函数的参数） </p>
+<p>reduce：统计函数</p>
+<p>query：目标记录过滤</p>
+<p>sort：对目标记录排序</p>
+<p>limit：限制目标记录数量</p>
+<p>out：统计结果存放集合（如果不指定则使用临时集合，在客户端断开后自动删除）</p>
+<p>keeptemp：是否保留临时集合</p>
+<p>finalize：最终处理函数（对reduce返回结果执行最终整理后存入结果集合）</p>
+<p>scope：向map、reduce、finalize导入外部变量</p>
+<p>verbose：显示详细的时间统计信息</p>
+<p>map函数<br>map函数调用当前对象,并处里对象的属性,传值给reduce,map方法使用this来操作当前对象,最少调用一次emit(key,value)方法来向reduce提供参数,其中emit的key为最终数据的id。</p>
+<p>reduce函数<br>接收一个值和数组,根据需要对数组进行合并分组等处理,reduce的key就是emit(key,value)的key，value_array是同个key对应的多个value数组。</p>
+<p>Finalize函数<br>此函数为可选函数,可在执行完map和reduce后执行,对最后的数据进行统一处理。</p>
+<p>看完基本介绍，我们再来看一个实例：</p>
+<p>已知集合feed,测试数据如下：</p>
+<pre><code>    {  
+       &quot;_id&quot;: ObjectId(&quot;50ccb3f91e937e2927000004&quot;),  
+       &quot;feed_type&quot;: 1,  
+       &quot;to_user&quot;: 234,  
+       &quot;time_line&quot;: &quot;2012-12-16 01:26:00&quot;  
+    }  
+
+    {  
+       &quot;_id&quot;: ObjectId(&quot;50ccb3ef1e937e0727000004&quot;),  
+       &quot;feed_type&quot;: 8,  
+       &quot;to_user&quot;: 123,  
+       &quot;time_line&quot;: &quot;2012-12-16 01:26:00&quot;  
+    }  
+
+    {  
+       &quot;_id&quot;: ObjectId(&quot;50ccb3e31e937e0a27000003&quot;),  
+       &quot;feed_type&quot;: 1,  
+       &quot;to_user&quot;: 123,  
+       &quot;time_line&quot;: &quot;2012-12-16 01:26:00&quot;  
+    }  
+
+    {  
+       &quot;_id&quot;: ObjectId(&quot;50ccb3d31e937e0927000001&quot;),  
+       &quot;feed_type&quot;: 1,  
+       &quot;to_user&quot;: 123,  
+       &quot;time_line&quot;: &quot;2012-12-16 01:26:00&quot;  
+    }  </code></pre><p>我们按动态类型feed_type和用户to_user进行分组统计，实现结果：</p>
+<table>
+<thead>
+<tr>
+<th>feed_type</th>
+<th>to_user</th>
+<th>cout</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>234</td>
+<td>1</td>
+</tr>
+<tr>
+<td>8</td>
+<td>123</td>
+<td>1</td>
+</tr>
+<tr>
+<td>1</td>
+<td>123</td>
+<td>2</td>
+</tr>
+</tbody></table>
+<p>实现代码：</p>
+<pre><code>    //编写map函数  
+    $map = &#39;  
+         function() {  
+          var key = {to_user:this.to_user,feed_type:this.feed_type};  
+          var value = {count:1};  
+          emit(key,value);  
+        } &#39;;   
+
+    //reduce 函数  
+    $reduce = &#39;  
+         function(key, values) {  
+             var ret = {count:0};  
+         for(var i in values) {  
+              ret.count += 1;  
+          }  
+          return ret;  
+          }&#39;;  
+
+    //查询条件  
+    $query = null;  //本实例中没有查询条件，设置为null  </code></pre><pre><code>    $mongo = new Mongo(&#39;mongodb://root:root@127.0.0.1: 28017/&#39;); //链接mongodb,账号和密码为root,root  
+    $instance = $mongo-&gt;selectDB(&quot;testdb&quot;);  
+
+    //执行此命令后，会创建feed_temp_res的临时集合，并将统计后的数据放在该集合中  
+    $cmd = $instance-&gt;command(array(  
+            &#39;mapreduce&#39; =&gt; &#39;feed&#39;,  
+            &#39;map&#39;       =&gt; $map,  
+            &#39;reduce&#39;    =&gt; $reduce,  
+            &#39;query&#39; =&gt; $query,  
+            &#39;out&#39; =&gt; &#39;feed_temp_res&#39;  
+    ));  
+
+    //查询临时集合中的统计数据，验证统计结果是否和预期结果一致  
+    $cursor = $instance-&gt;selectCollection(&#39;feed_temp_res&#39;)-&gt;find();  
+    $result = array();  
+    try {  
+        while ($cursor-&gt;hasNext())  
+        {  
+            $result[] = $cursor-&gt;getNext();  
+        }  
+    }  
+    catch (MongoConnectionException $e)  
+    {  
+        echo $e-&gt;getMessage();  
+    }  
+    catch (MongoCursorTimeoutException $e)  
+    {  
+        echo $e-&gt;getMessage();  
+    }  
+    catch(Exception $e){  
+        echo $e-&gt;getMessage();  
+    }  
+
+    //test  
+    var_dump($result);  </code></pre><p>下面是输出的结果，和预期结果一致</p>
+<pre><code>    {  
+       &quot;_id&quot;: {  
+         &quot;to_user&quot;: 234,  
+         &quot;feed_type&quot;: 1   
+      },  
+       &quot;value&quot;: {  
+         &quot;count&quot;: 1   
+      }   
+    }  
+
+    {  
+       &quot;_id&quot;: {  
+         &quot;to_user&quot;: 123,  
+         &quot;feed_type&quot;: 8   
+      },  
+       &quot;value&quot;: {  
+         &quot;count&quot;: 1   
+      }   
+    }  
+
+    {  
+       &quot;_id&quot;: {  
+         &quot;to_user&quot;: 123,  
+         &quot;feed_type&quot;: 1   
+      },  
+       &quot;value&quot;: {  
+         &quot;count&quot;: 2   
+      }   
+    }  </code></pre><p>以上只是简单的统计实现，你可以实现复杂的条件统计编写复杂的reduce函数，可以增加查询条件，排序等等。</p>
+<p>附上mapReduce数据库处理函数（简单封装）</p>
+<pre><code>    /** 
+     * mapReduce分组 
+     *  
+     * @param string $table_name 表名(要操作的目标集合名) 
+     * @param string $map 映射函数(生成键值对序列,作为 reduce 函数参数)  
+     * @param string $reduce 统计处理函数 
+     * @param array  $query 过滤条件 如：array(&#39;uid&#39;=&gt;123) 
+     * @param array  $sort 排序 
+     * @param number $limit 限制的目标记录数 
+     * @param string $out 统计结果存放集合 (不指定则使用tmp_mr_res_$table_name, 1.8以上版本需指定) 
+     * @param bool   $keeptemp 是否保留临时集合 
+     * @param string $finalize 最终处理函数 (对reduce返回结果进行最终整理后存入结果集合) 
+     * @param string $scope 向 map、reduce、finalize 导入外部js变量 
+     * @param bool   $jsMode 是否减少执行过程中BSON和JS的转换，默认true(注：false时 BSON--&gt;JS--&gt;map--&gt;BSON--&gt;JS--&gt;reduce--&gt;BSON,可处理非常大的mapreduce,//true时BSON--&gt;js--&gt;map--&gt;reduce--&gt;BSON) 
+     * @param bool   $verbose 是否产生更加详细的服务器日志 
+     * @param bool   $returnresult 是否返回新的结果集 
+     * @param array  &amp;$cmdresult 返回mp命令执行结果 array(&quot;errmsg&quot;=&gt;&quot;&quot;,&quot;code&quot;=&gt;13606,&quot;ok&quot;=&gt;0) ok=1表示执行命令成功 
+     * @return  
+     */  
+    function mapReduce($table_name,$map,$reduce,$query=null,$sort=null,$limit=0,$out=&#39;&#39;,$keeptemp=true,$finalize=null,$scope=null,$jsMode=true,$verbose=true,$returnresult=true,&amp;$cmdresult){  
+        if(empty($table_name) || empty($map) || empty($reduce)){  
+            return null;  
+        }  
+        $map = new MongoCode($map);  
+        $reduce = new MongoCode($reduce);  
+        if(empty($out)){  
+            $out = &#39;tmp_mr_res_&#39;.$table_name;  
+        }  
+        $cmd = array(  
+                &#39;mapreduce&#39; =&gt; $table_name,  
+                &#39;map&#39;       =&gt; $map,  
+                &#39;reduce&#39;    =&gt; $reduce,  
+                &#39;out&#39;       =&gt;$out  
+        );  
+        if(!empty($query) &amp;&amp; is_array($query)){  
+            array_push($cmd, array(&#39;query&#39;=&gt;$query));  
+        }  
+        if(!empty($sort) &amp;&amp; is_array($sort)){  
+            array_push($cmd, array(&#39;sort&#39;=&gt;$query));  
+        }  
+        if(!empty($limit) &amp;&amp; is_int($limit) &amp;&amp; $limit&gt;0){  
+            array_push($cmd, array(&#39;limit&#39;=&gt;$limit));  
+        }  
+        if(!empty($keeptemp) &amp;&amp; is_bool($keeptemp)){  
+            array_push($cmd, array(&#39;keeptemp&#39;=&gt;$keeptemp));  
+        }  
+        if(!empty($finalize)){  
+            $finalize = new Mongocode($finalize);  
+            array_push($cmd, array(&#39;finalize&#39;=&gt;$finalize));  
+        }  
+        if(!empty($scope)){  
+            array_push($cmd, array(&#39;scope&#39;=&gt;$scope));  
+        }  
+        if(!empty($jsMode) &amp;&amp; is_bool($jsMode)){  
+            array_push($cmd, array(&#39;jsMode&#39;=&gt;$jsMode));  
+        }  
+        if(!empty($verbose) &amp;&amp; is_bool($verbose)){  
+            array_push($cmd, array(&#39;verbose&#39;=&gt;$verbose));  
+        }  
+        $dbname = $this-&gt;curr_db_name;  
+        $cmdresult = $this-&gt;mongo-&gt;$dbname-&gt;command($cmd);  
+        if($returnresult){  
+            if($cmdresult &amp;&amp; $cmdresult[&#39;ok&#39;]==1){  
+                $result = $this-&gt;find($out, array());  
+            }  
+        }  
+        if($keeptemp==false){  
+            //删除集合  
+            $this-&gt;mongo-&gt;$dbname-&gt;dropCollection($out);  
+        }  
+        return $result;  
+    }  </code></pre><p>MongoDB官方网站介绍：</p>
+<p>MapReduce介绍 <a href="http://docs.mongodb.org/manual/core/map-reduce/" target="_blank" rel="noopener">http://docs.mongodb.org/manual/core/map-reduce/</a></p>
+<p>Aggregation介绍 <a href="http://docs.mongodb.org/manual/aggregation/" target="_blank" rel="noopener">http://docs.mongodb.org/manual/aggregation/</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/09/17/MongoDB%E7%9A%84MapReduce%E7%94%A8%E6%B3%95%E5%8F%8Aphp%E7%A4%BA%E4%BE%8B%E4%BB%A3%E7%A0%81/" data-id="ckcqdgkp900mb9xlf5mtm7132" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/09/18/PhpExcel%E4%B8%AD%E6%96%87%E5%B8%AE%E5%8A%A9%E6%89%8B%E5%86%8C/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          PhpExcel中文帮助手册
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/09/17/Linux%E4%B8%8BRsync-Inotify-tools%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E5%AE%9E%E6%97%B6%E5%90%8C%E6%AD%A5/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Linux下Rsync+Inotify-tools实现数据实时同步</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>RxJava基本流程和lift源码分析 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="基本结构我们先来看一段最基本的代码，分析这段代码在RxJava中是如何实现的。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RxJava基本流程和lift源码分析">
+<meta property="og:url" content="http://moqiang02.github.io/2016/04/23/RxJava%E5%9F%BA%E6%9C%AC%E6%B5%81%E7%A8%8B%E5%92%8Clift%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="基本结构我们先来看一段最基本的代码，分析这段代码在RxJava中是如何实现的。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/RxJava%E5%9F%BA%E6%9C%AC%E6%B5%81%E7%A8%8B%E5%92%8Clift%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/1.gif">
+<meta property="og:image" content="http://moqiang02.github.io/images/RxJava%E5%9F%BA%E6%9C%AC%E6%B5%81%E7%A8%8B%E5%92%8Clift%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/2.gif">
+<meta property="og:image" content="http://moqiang02.github.io/images/RxJava%E5%9F%BA%E6%9C%AC%E6%B5%81%E7%A8%8B%E5%92%8Clift%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/3.gif">
+<meta property="article:published_time" content="2016-04-23T15:41:11.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:38.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/RxJava%E5%9F%BA%E6%9C%AC%E6%B5%81%E7%A8%8B%E5%92%8Clift%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/1.gif">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-RxJava基本流程和lift源码分析" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/04/23/RxJava%E5%9F%BA%E6%9C%AC%E6%B5%81%E7%A8%8B%E5%92%8Clift%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" class="article-date">
+  <time datetime="2016-04-23T15:41:11.000Z" itemprop="datePublished">2016-04-23</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      RxJava基本流程和lift源码分析
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <h3 id="基本结构"><a href="#基本结构" class="headerlink" title="基本结构"></a>基本结构</h3><p>我们先来看一段最基本的代码，分析这段代码在RxJava中是如何实现的。<a id="more"></a></p>
+<pre><code>Observable.OnSubscribe&lt;String&gt; onSubscriber1 = new Observable.OnSubscribe&lt;String&gt;() {
+    @Override
+    public void call(Subscriber&lt;? super String&gt; subscriber) {
+        subscriber.onNext(&quot;1&quot;);
+        subscriber.onCompleted();
+    }
+};
+Subscriber&lt;String&gt; subscriber1 = new Subscriber&lt;String&gt;() {
+    @Override
+    public void onCompleted() {
+
+    }
+
+    @Override
+    public void onError(Throwable e) {
+
+    }
+
+    @Override
+    public void onNext(String s) {
+
+    }
+};
+
+Observable.create(onSubscriber1)
+        .subscribe(subscriber1);</code></pre><p>首先我们来看一下Observable.create的代码</p>
+<pre><code>public final static &lt;T&gt; Observable&lt;T&gt; create(OnSubscribe&lt;T&gt; f) {
+    return new Observable&lt;T&gt;(hook.onCreate(f));
+}
+
+protected Observable(OnSubscribe&lt;T&gt; f) {
+    this.onSubscribe = f;
+}</code></pre><p>直接就是调用了Observable的构造函数来创建一个新的Observable对象，这个对象我们暂时标记为observable1，以便后面追溯。<br>同时，会将我们传入的OnSubscribe对象onSubscribe1保存在observable1的onSubscribe属性中，这个属性在后面的上下文中很重要，大家留心一下。</p>
+<p>接下来我们来看看subscribe方法。</p>
+<pre><code>public final Subscription subscribe(Subscriber&lt;? super T&gt; subscriber) {
+    return Observable.subscribe(subscriber, this);
+}
+
+private static &lt;T&gt; Subscription subscribe(Subscriber&lt;? super T&gt; subscriber, Observable&lt;T&gt; observable) {
+    ...
+    subscriber.onStart();
+    hook.onSubscribeStart(observable, observable.onSubscribe).call(subscriber);
+    return hook.onSubscribeReturn(subscriber);
+}</code></pre><p>可以看到，subscribe之后，就直接调用了observable1.onSubscribe.call方法，也就是我们代码中的onSubscribe1对象的call方法<br>，传入的参数就是我们代码中定义的subscriber1对象。call方法中所做的事情就是调用传入的subscriber1对象的onNext和onComplete方法。<br>这样就实现了观察者和被观察者之间的通讯，是不是很简单？</p>
+<pre><code>public void call(Subscriber&lt;? super String&gt; subscriber) {
+    subscriber.onNext(&quot;1&quot;);
+    subscriber.onCompleted();
+}</code></pre><p><img src="/images/RxJava%E5%9F%BA%E6%9C%AC%E6%B5%81%E7%A8%8B%E5%92%8Clift%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/1.gif" alt="subscribe基本流程"></p>
+<h3 id="lift"><a href="#lift" class="headerlink" title="lift"></a>lift</h3><p>讲之前先上一个简单的lift流程图吧</p>
+<p><img src="/images/RxJava%E5%9F%BA%E6%9C%AC%E6%B5%81%E7%A8%8B%E5%92%8Clift%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/2.gif" alt="lift简化流程图"></p>
+<p>lift方法是RxJava中实现自定义operator的关键，这里我们以最简单的map为例，来分析一下lift方法的工作原理，我们对上面的demo代码稍作修改</p>
+<pre><code>Observable.OnSubscribe&lt;String&gt; onSubscriber1 = new Observable.OnSubscribe&lt;String&gt;() {
+    @Override
+    public void call(Subscriber&lt;? super String&gt; subscriber) {
+        subscriber.onNext(&quot;1&quot;);
+        subscriber.onCompleted();
+    }
+};
+Subscriber&lt;Integer&gt; subscriber1 = new Subscriber&lt;Integer&gt;() {
+    @Override
+    public void onCompleted() {
+
+    }
+
+    @Override
+    public void onError(Throwable e) {
+
+    }
+
+    @Override
+    public void onNext(Integer i) {
+
+    }
+};
+Func1&lt;String, Integer&gt; transformer1 = new Func1&lt;String, Integer&gt;() {
+    @Override
+    public Integer call(String s) {
+        return Integer.parseInt(s);
+    }
+};
+
+Observable.create(onSubscriber1)
+        .map(transformer1)
+        .subscribe(subscriber1);</code></pre><p>和刚才不同的是我们在create之后调用了map方法，然后才调用subscribe方法。<br>map方法的代码如下:</p>
+<pre><code>public final &lt;R&gt; Observable&lt;R&gt; map(Func1&lt;? super T, ? extends R&gt; func) {
+    return lift(new OperatorMap&lt;T, R&gt;(func));
+}</code></pre><p>一堆泛型参数是不是略晕啊，别急，我们慢慢来看。</p>
+<p>首先来介绍一下Func这个接口。RxJava中有一系列Action+数字，Func+数字的接口，这些接口中都只有一个call方法，其中Action接口的call方法都没有返回值，<br>Func接口的call方法都有返回值，后面的那个数字表示call方法接受几个泛型类型的参数。</p>
+<p>其实主要是因为Java中函数不是一等公民，所以只能用接口这么啰嗦的格式，还好我们可以使用lambda简化我们的代码。（羡慕函数式语言）</p>
+<p>这里map方法接收的参数类型为<code>Func1&lt;? super T, ? extends R&gt; func</code>，表示func的call方法接收一个T类型的参数，返回一个R类型的返回值。</p>
+<p>OperatorMap又是什么鬼呢？</p>
+<pre><code>public final class OperatorMap&lt;T, R&gt; implements Operator&lt;R, T&gt;
+
+public interface Operator&lt;R, T&gt; extends Func1&lt;Subscriber&lt;? super R&gt;, Subscriber&lt;? super T&gt;&gt;</code></pre><p>这里可以看到OperatorMap继承自Operator, 而Operator又继承自Func1接口，也就是说Operator接口的call方法会接收一个Subscriber类型的参数，<br>并且返回另外一个Subscriber类型的对象。<code>Operator.call</code>方法返回一个Subscriber对象，其实我们可以这么理解，每一个operator也是一个订阅者，<br>它返回的Subscriber对象正好用来订阅Observable发出来的消息。</p>
+<p>有一点需要注意的是OperatorMap和Operator的泛型参数顺序刚好是相反的，为什么要这么做呢？其实很简单，因为Operator本身是对Observable发出的数据<br>进行转换的，所以经常会出现operator转换之后返回的数据类型变了，而OperatorMap这里刚好颠倒了一下顺序，就可以保证call方法返回的Subscriber类型<br>可以订阅Observable发出的数据。</p>
+<p>OperatorMap的代码我们先不看，先来看一下lift方法中都做了些啥吧。</p>
+<pre><code>public final &lt;R&gt; Observable&lt;R&gt; lift(final Operator&lt;? extends R, ? super T&gt; operator) {
+    return new Observable&lt;R&gt;(new OnSubscribe&lt;R&gt;() {
+        @Override
+        public void call(Subscriber&lt;? super R&gt; o) {
+            Subscriber&lt;? super T&gt; st = hook.onLift(operator).call(o);
+            st.onStart();
+            onSubscribe.call(st);
+        }
+    });
+}</code></pre><p>lift方法会返回一个新创建的Observable对象，这里我们给这个Observable一个标识observable2。observable2的onSubscribe属性就是lift中new出来的这个<br>OnSubscribe对象。</p>
+<p>对照demo中的代码，我们调用map之后，就调用了subscribe方法，也就是调用了这里的observable2的subscribe方法。<br>根据上面的介绍，调用subscribe之后，就会调用<code>observable2.onSubscribe.call</code>方法，call中首先做的事情就是调用OperatorMap的call方法</p>
+<pre><code>@Override
+public Subscriber&lt;? super T&gt; call(final Subscriber&lt;? super R&gt; o) {
+    return new Subscriber&lt;T&gt;(o) {
+        @Override
+        public void onNext(T t) {
+            o.onNext(transformer.call(t));
+        }
+    };
+}</code></pre><p>OperatorMap的call方法返回了一个Subscriber对象，这里我们标记为subscriber$map，改对象有一个transformer属性，就是我们在demo中定义的transformer1对象，<br>他是一个Func1类型，用来对每一个数据项进行变换。这里call方法中接收的Subscriber其实就是demo中的subscriber1对象。</p>
+<p>我们回到lift中创建的observable2的call方法中继续，拿到OperatorMap返回的Subscriber对象之后，接着调用了<code>onSubscribe.call</code>方法，并且将返回的Subscriber<br>对象传递进去。这里需要注意的一点就是onSubscribe对象就是我们在demo中定义的onSubscribe1变量，所以就是调用了<code>onSubscribe1.call(subscriber$map)</code>方法。</p>
+<p>现在我们就可以从<code>onSubscribe1.call</code>的调用来分析一下数据的转换过程，首先调用了<code>subscribermap.onNext</code>中会首先调用<br><code>transformer1.call(“1”)</code>,然后使用返回值1，来调用<code>onSubscribe1.onNext(1)</code>方法，最终demo中的onSubscribe1就收到了1这个值。<br><img src="/images/RxJava%E5%9F%BA%E6%9C%AC%E6%B5%81%E7%A8%8B%E5%92%8Clift%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/3.gif" alt="lift具体流程图"></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2016/04/23/RxJava%E5%9F%BA%E6%9C%AC%E6%B5%81%E7%A8%8B%E5%92%8Clift%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" data-id="ckcqdgks200v29xlf7hc33xx4" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/04/23/RxJava%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF%E5%B0%8F%E7%BB%93/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          RxJava使用场景小结
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/04/23/%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BARxJava/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">深入浅出RxJava</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

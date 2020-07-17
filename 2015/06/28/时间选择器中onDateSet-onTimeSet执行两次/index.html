@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>时间选择器中onDateSet/onTimeSet执行两次 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="一 编写目的虽然目前有很多的时间选择控件可以给开发者使用，但有的时候由于使用行业，手机页面布局，手机屏幕等因素，我们还是需要使用android自带的时间选择控件。我最近使用系统时间选择控件的时候，发现了一个问题，就是高版本的系统中onDateSet方法会调用两次，这就意味着低版本中在onDateSet中实现的逻辑在高版本中会执行两次，这样就会给我们软件的兼容问题带来一些麻烦，因此这个地方把解决方法">
+<meta property="og:type" content="article">
+<meta property="og:title" content="时间选择器中onDateSet&#x2F;onTimeSet执行两次">
+<meta property="og:url" content="http://moqiang02.github.io/2015/06/28/%E6%97%B6%E9%97%B4%E9%80%89%E6%8B%A9%E5%99%A8%E4%B8%ADonDateSet-onTimeSet%E6%89%A7%E8%A1%8C%E4%B8%A4%E6%AC%A1/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="一 编写目的虽然目前有很多的时间选择控件可以给开发者使用，但有的时候由于使用行业，手机页面布局，手机屏幕等因素，我们还是需要使用android自带的时间选择控件。我最近使用系统时间选择控件的时候，发现了一个问题，就是高版本的系统中onDateSet方法会调用两次，这就意味着低版本中在onDateSet中实现的逻辑在高版本中会执行两次，这样就会给我们软件的兼容问题带来一些麻烦，因此这个地方把解决方法">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2015-06-28T06:10:58.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:22.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-时间选择器中onDateSet-onTimeSet执行两次" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/06/28/%E6%97%B6%E9%97%B4%E9%80%89%E6%8B%A9%E5%99%A8%E4%B8%ADonDateSet-onTimeSet%E6%89%A7%E8%A1%8C%E4%B8%A4%E6%AC%A1/" class="article-date">
+  <time datetime="2015-06-28T06:10:58.000Z" itemprop="datePublished">2015-06-28</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/AndroidUI/">AndroidUI</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      时间选择器中onDateSet/onTimeSet执行两次
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <h3 id="一-编写目的"><a href="#一-编写目的" class="headerlink" title="一 编写目的"></a>一 编写目的</h3><p>虽然目前有很多的时间选择控件可以给开发者使用，但有的时候由于使用行业，手机页面布局，手机屏幕等因素，我们还是需要使用android自带的时间选择控件。我最近使用系统时间选择控件的时候，发现了一个问题，就是高版本的系统中onDateSet方法会调用两次，这就意味着低版本中在onDateSet中实现的逻辑在高版本中会执行两次，这样就会给我们软件的兼容问题带来一些麻烦，因此这个地方把解决方法记录下，方便大家学习。<a id="more"></a></p>
+<h3 id="二-问题原因"><a href="#二-问题原因" class="headerlink" title="二 问题原因"></a>二 问题原因</h3><p>我手中有几台不同系统版本的手机，发现在4.3系统后的（下面就是4.1版本，4.2没测试过）版本中运行测试代码的时候，onDateSet中打印日志执行两次，而低版本的只执行了一次，这就说明很有可能是高版本系统在这个地方做了修改，因此我去查阅了下系统源码，对比一下，发现了其中问题。<br>低版本的源码：</p>
+<pre><code>    public void onClick(DialogInterface dialog, int which) {  
+        if (mCallBack != null) {  
+            mDatePicker.clearFocus();  
+            mCallBack.onDateSet(mDatePicker, mDatePicker.getYear(),   
+                    mDatePicker.getMonth(), mDatePicker.getDayOfMonth());  
+        } }  </code></pre><p>就是说点击确定或取消按钮的时候会执行onDateSet方法。<br>高版本的源码：</p>
+<pre><code>    public void onClick(DialogInterface dialog, int which) {  
+        tryNotifyDateSet();  
+    }  
+
+    private void tryNotifyDateSet() {  
+        if (mCallBack != null) {  
+            mDatePicker.clearFocus();  
+            mCallBack.onDateSet(mDatePicker, mDatePicker.getYear(),  
+                    mDatePicker.getMonth(), mDatePicker.getDayOfMonth());  
+        }  
+    }  
+
+    @Override  
+    protected void onStop() {  
+        tryNotifyDateSet();  
+        super.onStop();  
+    }  </code></pre><p>从此源码中可以看出，相较于低版本的源码，高版本的源码中对应对话框的停止（onStop）也做了调用onDateSet方法，从而使点击确定或取消按钮时，该方法被执行了两次。</p>
+<h3 id="三-解决"><a href="#三-解决" class="headerlink" title="三 解决"></a>三 解决</h3><p>比较两份源码，我们很容易得出一个解决方法，就是把高版本的onStop干掉。对头，我就是这么处理的，重载onStop方法，将里面的super.onStop()去掉。对于无其他特殊要求的情况下，这种貌似是没有副作用的，而且，我这样用后到目前为止也没有副作用体现出来。以下是重载方法：</p>
+<pre><code>     public static class MyDatePickDialog extends DatePickerDialog {  
+
+        public MyDatePickDialog(Context context, OnDateSetListener callBack,  
+                int year, int monthOfYear, int dayOfMonth) {  
+            super(context, callBack, year, monthOfYear, dayOfMonth);  
+            // TODO Auto-generated constructor stub  
+        }  
+
+        public MyDatePickDialog(Context context, int theme,  
+                OnDateSetListener callBack, int year, int monthOfYear,  
+                int dayOfMonth) {  
+            super(context, theme, callBack, year, monthOfYear, dayOfMonth);  
+            // TODO Auto-generated constructor stub  
+        }  
+
+        @Override  
+        protected void onStop() {  
+            // TODO Auto-generated method stub  
+        }  
+
+    }  </code></pre><p>同理，TimePickerDialog的解决方式和这个一样，就不累述了。</p>
+<h3 id="四-一个自定义的时间选择示例"><a href="#四-一个自定义的时间选择示例" class="headerlink" title="四 一个自定义的时间选择示例"></a>四 一个自定义的时间选择示例</h3><p>功能：通过继承EditText，达到点击输入框（或者调用里面的触发时间），然后弹出日期供选择，选完日期后，接着弹出时间来供选择，最后将选择的时间日期填写到输入框中。以下是代码：</p>
+<pre><code>    package com.urovo.stocity.view.custom;  
+
+    import java.util.Calendar;  
+    import java.util.Date;  
+
+    import utils.DateUtil;  
+    import android.app.DatePickerDialog;  
+    import android.app.DatePickerDialog.OnDateSetListener;  
+    import android.app.Dialog;  
+    import android.app.TimePickerDialog;  
+    import android.app.TimePickerDialog.OnTimeSetListener;  
+    import android.content.Context;  
+    import android.util.AttributeSet;  
+    import android.util.Log;  
+    import android.view.View;  
+    import android.widget.DatePicker;  
+    import android.widget.EditText;  
+    import android.widget.TimePicker;  
+
+    /** 
+     * input method will need to run in a limited &quot;generate key events&quot; mode. 
+     *  
+     *  
+     * @author admin 
+     *  
+     */  
+    public class DateTimeEditText extends EditText implements OnDateSetListener,  
+            OnTimeSetListener {  
+        public MyDatePickDialog Dlg;  
+        public Dialog timeDialog;  
+        private Context context;  
+        private String timeStr;  
+
+        public DateTimeEditText(Context context) {  
+            super(context);  
+            this.context = context;  
+            setListener();  
+        }  
+
+        public DateTimeEditText(Context context, AttributeSet attrs) {  
+            super(context, attrs);  
+            this.context = context;  
+            setListener();  
+        }  
+
+        private void setListener() {  
+            this.setFocusable(false);  
+            this.setOnClickListener(new OnClickListener() {  
+
+                @Override  
+                public void onClick(View v) {  
+                    // TODO Auto-generated method stub  
+                    initCalendar();  
+                    Dlg.show();  
+                }  
+            });  
+        }  
+
+        public void dateSelect() {// 此方法为弹出时间选择对话框，可在外部调用  
+            initCalendar();  
+            Dlg.show();  
+        }  
+
+        private void initCalendar() {  
+            String dateStr = this.getText().toString().trim();  
+            Date date = DateUtil.parseCompleteDate(dateStr);  
+            if (date == null) {// 如果输入框内初始为空，则将当前时间初始为日期时间  
+                date = new Date();  
+            }  
+
+            Calendar d = Calendar.getInstance();  
+            d.setTimeInMillis(date.getTime());  
+
+            // 初始化时间选择器  
+            int year = d.get(Calendar.YEAR);  
+            int month = d.get(Calendar.MONTH);  
+            int day = d.get(Calendar.DAY_OF_MONTH);  
+            Dlg = new MyDatePickDialog(context, this, year, month, day);  
+
+            Dlg.setCanceledOnTouchOutside(false);  
+
+            timeDialog = new MyTimePickerDialog(context, this,  
+                    d.get(Calendar.HOUR_OF_DAY), d.get(Calendar.MINUTE), true);  
+            timeDialog.setTitle(&quot;请选择时间&quot;);  
+        }  
+
+        @Override  
+        public void onDateSet(DatePicker view, int year, int monthOfYear,  
+                int dayOfMonth) {  
+            // TODO Auto-generated method stub  
+            timeStr = year + &quot;-&quot;  
+                    + (monthOfYear &lt; 9 ? &quot;0&quot; + (monthOfYear + 1) : monthOfYear + 1)  
+                    + &quot;-&quot; + (dayOfMonth &lt; 10 ? &quot;0&quot; + dayOfMonth : dayOfMonth) + &quot; &quot;;  
+            timeDialog.show();  
+            Log.e(&quot;aa&quot;, &quot;onDateSet&quot;);  
+        }  
+
+        @Override  
+        public void onTimeSet(TimePicker view, int hourOfDay, int minute) {  
+            // TODO Auto-generated method stub  
+            timeStr += (hourOfDay &lt; 10 ? &quot;0&quot; + hourOfDay : hourOfDay) + &quot;:&quot;  
+                    + (minute &lt; 10 ? &quot;0&quot; + minute : minute) + &quot;:00&quot;;  
+            DateTimeEditText.this.setText(timeStr);  
+            Log.e(&quot;aa&quot;, &quot;onTimeSet&quot;);  
+        }  
+
+        // 重写DatePickerDialog以避免两次执行onDateSet方法  
+        public static class MyDatePickDialog extends DatePickerDialog {  
+
+            public MyDatePickDialog(Context context, OnDateSetListener callBack,  
+                    int year, int monthOfYear, int dayOfMonth) {  
+                super(context, callBack, year, monthOfYear, dayOfMonth);  
+                // TODO Auto-generated constructor stub  
+            }  
+
+            public MyDatePickDialog(Context context, int theme,  
+                    OnDateSetListener callBack, int year, int monthOfYear,  
+                    int dayOfMonth) {  
+                super(context, theme, callBack, year, monthOfYear, dayOfMonth);  
+                // TODO Auto-generated constructor stub  
+            }  
+
+            @Override  
+            protected void onStop() {  
+                // TODO Auto-generated method stub  
+            }  
+
+        }  
+
+        public static class MyTimePickerDialog extends TimePickerDialog {  
+
+            public MyTimePickerDialog(Context context, OnTimeSetListener callBack,  
+                    int hourOfDay, int minute, boolean is24HourView) {  
+                super(context, callBack, hourOfDay, minute, is24HourView);  
+                // TODO Auto-generated constructor stub  
+            }  
+
+            public MyTimePickerDialog(Context context, int theme,  
+                    OnTimeSetListener callBack, int hourOfDay, int minute,  
+                    boolean is24HourView) {  
+                super(context, theme, callBack, hourOfDay, minute, is24HourView);  
+                // TODO Auto-generated constructor stub  
+            }  
+
+            @Override  
+            protected void onStop() {  
+                // TODO Auto-generated method stub  
+            }  
+
+        }  
+    }  </code></pre><h3 id="五-结束"><a href="#五-结束" class="headerlink" title="五 结束"></a>五 结束</h3><p>一个小小的总结，希望能帮到大家。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2015/06/28/%E6%97%B6%E9%97%B4%E9%80%89%E6%8B%A9%E5%99%A8%E4%B8%ADonDateSet-onTimeSet%E6%89%A7%E8%A1%8C%E4%B8%A4%E6%AC%A1/" data-id="ckcqdgl7301vg9xlfcg7sds1n" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/06/28/RelativeLayout-%E7%9B%B8%E5%AF%B9%E5%B8%83%E5%B1%80-%E8%AF%A6%E8%A7%A3/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          RelativeLayout(相对布局)详解
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/06/28/%E5%AF%B9%E8%AF%9D%E6%A1%86-ProgressDialog-Date-TimePickerDialog/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">对话框:ProgressDialog,Date/TimePickerDialog</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

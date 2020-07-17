@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Laravel5.5 api token 用法 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="从 Laravel 5.2 开始， Laravel 的将路由的配置进行了分拆， 在 routes 目录下有 web.php 和 api.php 两个路由的配置。 api.php 中用来放你的api 开放接口， 用作一种无状态的认证机制。 基本上就是通过在 url 的 querystring 中带一个参数 api_token 然后到服务器端用户表中找到此用户。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Laravel5.5 api token 用法">
+<meta property="og:url" content="http://moqiang02.github.io/2017/12/08/Laravel5-5-api-token-%E7%94%A8%E6%B3%95/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="从 Laravel 5.2 开始， Laravel 的将路由的配置进行了分拆， 在 routes 目录下有 web.php 和 api.php 两个路由的配置。 api.php 中用来放你的api 开放接口， 用作一种无状态的认证机制。 基本上就是通过在 url 的 querystring 中带一个参数 api_token 然后到服务器端用户表中找到此用户。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-12-08T10:11:51.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:18.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta property="article:tag" content="Laravel">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Laravel5-5-api-token-用法" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/12/08/Laravel5-5-api-token-%E7%94%A8%E6%B3%95/" class="article-date">
+  <time datetime="2017-12-08T10:11:51.000Z" itemprop="datePublished">2017-12-08</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Laravel5.5 api token 用法
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <p>从 Laravel 5.2 开始， Laravel 的将路由的配置进行了分拆， 在 routes 目录下有 web.php 和 api.php 两个路由的配置。 api.php 中用来放你的api 开放接口， 用作一种无状态的认证机制。</p>
+<p>基本上就是通过在 url 的 querystring 中带一个参数 api_token 然后到服务器端用户表中找到此用户。<a id="more"></a></p>
+<p>在Laravel 文档中对这块基本上没有说明。下面来看下实现步骤：</p>
+<h3 id="配置步骤"><a href="#配置步骤" class="headerlink" title="配置步骤"></a>配置步骤</h3><h4 id="1-首先要在用户表中添加-api-token-字段"><a href="#1-首先要在用户表中添加-api-token-字段" class="headerlink" title="1. 首先要在用户表中添加 api_token 字段"></a>1. 首先要在用户表中添加 api_token 字段</h4><p>你可以修改Laravel自带的迁移文件</p>
+<p>打开 database/migrations/2014_10_12_000000_create_users_table.php<br>添加 api_token 字段</p>
+<pre><code>Schema::create(&#39;users&#39;, function (Blueprint $table) {
+  $table-&gt;increments(&#39;id&#39;);
+  $table-&gt;string(&#39;name&#39;);
+  $table-&gt;string(&#39;email&#39;)-&gt;unique();
+  $table-&gt;string(&#39;password&#39;);
+  //添加 api_token 字段
+  $table-&gt;string(&#39;api_token&#39;, 60)-&gt;unique();
+  $table-&gt;rememberToken();
+  $table-&gt;timestamps();
+});</code></pre><p>然后你可以重置并重新运行migration</p>
+<pre><code>php artisan migrate:reset
+php artisan migrate</code></pre><h4 id="2-设置路由"><a href="#2-设置路由" class="headerlink" title="2.设置路由"></a>2.设置路由</h4><p>在 routes/api.php 中设置我们的路由</p>
+<pre><code>Route::prefix(&#39;v1&#39;)-&gt;middleware(&#39;auth:api&#39;)-&gt;group(function() {
+    // 取单条数据
+    Route::get(&#39;notes/{id}&#39;,function($id){
+        return Note::select(&#39;title&#39;, &#39;content&#39;)-&gt;find($id);
+    });
+});</code></pre><p>使用 prefix 方法将 group 中的所有路由规则的url都加上 v1(版本号) 前缀，所以实际的请求地址是 :<code>/api/v1/notes/{id}</code></p>
+<p>middleware 使用 <code>auth:api</code>, <code>:api</code>代表使用的 Guard（看门）类， 在 config/auth.php 中可以看到 <code>api</code> Guard 的驱动设置的是 token, 这表示所有使用了 <code>auth:api</code> 中间路由规则，请求中都必须带 api_token 参数</p>
+<p>打开 config/auth.php 配置稍微解释下</p>
+<pre><code>    &#39;defaults&#39; =&gt; [
+        &#39;guard&#39; =&gt; &#39;web&#39;,
+        &#39;passwords&#39; =&gt; &#39;users&#39;,
+    ],</code></pre><p>这个配置表示 默认的 guard 是web，意思是如果直接使用 <code>meddleware(&#39;auth&#39;)</code> 其实是 <code>meddleware(&#39;auth:web&#39;)</code></p>
+<pre><code>    &#39;guards&#39; =&gt; [
+        &#39;web&#39; =&gt; [
+            &#39;driver&#39; =&gt; &#39;session&#39;,
+            &#39;provider&#39; =&gt; &#39;users&#39;,
+        ],
+
+        &#39;api&#39; =&gt; [
+            &#39;driver&#39; =&gt; &#39;token&#39;,
+            &#39;provider&#39; =&gt; &#39;users&#39;,
+        ],
+    ],</code></pre><p>指名了各个guard所使用的驱动，web的话是session，api的话就是 token。</p>
+<h4 id="3-用户注册时，需生成一个api-token"><a href="#3-用户注册时，需生成一个api-token" class="headerlink" title="3.用户注册时，需生成一个api_token"></a>3.用户注册时，需生成一个api_token</h4><p>在 App\Http\Controllers\Auth\RegisterController.php文件的创建用户中添加 api_token 字段;</p>
+<pre><code> /**
+     * Create a new user instance after a valid registration.
+     *
+     * @param  array  $data
+     * @return User
+     */
+    protected function create(array $data)
+    {
+        $user =  User::create([
+            &#39;name&#39;     =&gt; $data[&#39;name&#39;],
+            &#39;email&#39;    =&gt; $data[&#39;email&#39;],
+            &#39;password&#39; =&gt; bcrypt($data[&#39;password&#39;]),
+            &#39;api_token&#39; =&gt; str_random(60),   // api_token认证
+        ]);
+
+        $this-&gt;sendVerifyEmailTo($user);
+
+        return $user;
+    }</code></pre><p>最后，不要忘记在 App\User.php用户模型表中的 $fillable 属性当中添加api_token字段：</p>
+<pre><code>    protected $fillable = [
+        &#39;name&#39;, &#39;email&#39;, &#39;password&#39;,&#39;api_token&#39;
+    ];</code></pre><p>如何获取用户信息<br><code>Auth::guard(&#39;api&#39;)-&gt;user();</code></p>
+<h3 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h3><p>有关token认证的原理，我们可以看该目录下的底层方法：<br><code>vendor\laravel\framework\src\Illuminate\Auth\TokenGuard.php</code></p>
+<h4 id="1-重写resource-assets-js-bootstrap-js认证方法："><a href="#1-重写resource-assets-js-bootstrap-js认证方法：" class="headerlink" title="1.重写resource\assets\js\bootstrap.js认证方法："></a>1.重写resource\assets\js\bootstrap.js认证方法：</h4><pre><code>/*
+  // API token 认证-【20170321】
+window.axios.defaults.headers.common = {
+    &#39;X-CSRF-TOKEN&#39;: window.Laravel.csrfToken,
+    &#39;X-Requested-With&#39;: &#39;XMLHttpRequest&#39; # 这一句必须带上，是为了让laravel能够判断request的类型为ajax,即$request-&gt;ajax()返回true
+};
+*/
+window.axios.defaults.headers.common = {
+    &#39;X-CSRF-TOKEN&#39;: window.Laravel.csrfToken,
+    &#39;Authorization&#39;: window.Laravel.apiToken
+};</code></pre><h4 id="2-app-blade-php中增加api-token-判断"><a href="#2-app-blade-php中增加api-token-判断" class="headerlink" title="2. app.blade.php中增加api_token 判断"></a>2. app.blade.php中增加api_token 判断</h4><pre><code>&lt;!-- Scripts --&gt;
+    &lt;script&gt;
+        window.Laravel = {!! json_encode([
+            &#39;csrfToken&#39; =&gt; csrf_token(),
+        ]) !!};
+
+        Laravel.apiToken = &quot;{{ Auth::check() ? 'Bearer '.Auth::user()->api_token : 'Bearer ' }}&quot;;
+    &lt;/script&gt;</code></pre><blockquote>
+<p>相关文章：<br><a href="http://d.laravel-china.org/docs/5.4/passport" target="_blank" rel="noopener">Laravel 的 API 认证系统 Passport</a><br><a href="https://laravel-china.org/articles/3967/two-methods-of-setting-up-x-csrf-token-in-laravel54-vue-framework" target="_blank" rel="noopener">Laravel5.4 Vue 框架中 X-CSRF-TOKEN 的两种设置方法</a><br><a href="https://segmentfault.com/a/1190000008445102" target="_blank" rel="noopener">【日常填坑】之ajax请求laravel的api接口</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2017/12/08/Laravel5-5-api-token-%E7%94%A8%E6%B3%95/" data-id="ckcqdgkof00jh9xlf1pehg9iz" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Laravel/" rel="tag">Laravel</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2017/12/12/%E8%87%AA%E5%AE%9A%E4%B9%89laravel%E6%9C%AA%E6%8E%88%E6%9D%83%E9%BB%98%E8%AE%A4%E8%BF%94%E5%9B%9E%E7%9A%84%E6%B6%88%E6%81%AF%E6%8F%90%E7%A4%BA/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          自定义laravel未授权默认返回的消息提示
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2017/11/24/Vue2-%E5%87%A0%E7%A7%8D%E5%B8%B8%E8%A7%81%E5%BC%80%E5%B1%80%E6%96%B9%E5%BC%8F/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Vue2 几种常见开局方式</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

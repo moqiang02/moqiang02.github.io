@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>OkHttp使用教程 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="Android系统提供了两种HTTP通信类，HttpURLConnection和HttpClient。尽管Google在大部分安卓版本中推荐使用HttpURLConnection，但是这个类相比HttpClient实在是太难用，太弱爆了。OkHttp是一个相对成熟的解决方案，据说Android4.4的源码中可以看到HttpURLConnection已经替换成OkHttp实现了。所以我们更有理由相信">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OkHttp使用教程">
+<meta property="og:url" content="http://moqiang02.github.io/2016/06/02/OkHttp%E4%BD%BF%E7%94%A8%E6%95%99%E7%A8%8B/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="Android系统提供了两种HTTP通信类，HttpURLConnection和HttpClient。尽管Google在大部分安卓版本中推荐使用HttpURLConnection，但是这个类相比HttpClient实在是太难用，太弱爆了。OkHttp是一个相对成熟的解决方案，据说Android4.4的源码中可以看到HttpURLConnection已经替换成OkHttp实现了。所以我们更有理由相信">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2016-06-01T22:59:35.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:28.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-OkHttp使用教程" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/06/02/OkHttp%E4%BD%BF%E7%94%A8%E6%95%99%E7%A8%8B/" class="article-date">
+  <time datetime="2016-06-01T22:59:35.000Z" itemprop="datePublished">2016-06-02</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      OkHttp使用教程
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+<!-- 文章目录开始 -->
+
+<div id="toc" class="toc-article">
+<strong class="toc-title" style="cursor:pointer">contents</strong>
+<ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#入门"><span class="toc-number">1.</span> <span class="toc-text">入门</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#官方资料"><span class="toc-number">2.</span> <span class="toc-text">官方资料</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#使用范围"><span class="toc-number">3.</span> <span class="toc-text">使用范围</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#jar包准备"><span class="toc-number">4.</span> <span class="toc-text">jar包准备</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#基本使用"><span class="toc-number">5.</span> <span class="toc-text">基本使用</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#HTTP-GET"><span class="toc-number">5.1.</span> <span class="toc-text">HTTP GET</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#HTTP-POST"><span class="toc-number">5.2.</span> <span class="toc-text">HTTP POST</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#总结"><span class="toc-number">6.</span> <span class="toc-text">总结</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#高级"><span class="toc-number">7.</span> <span class="toc-text">高级</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#同步get"><span class="toc-number">8.</span> <span class="toc-text">同步get</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#异步get"><span class="toc-number">9.</span> <span class="toc-text">异步get</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#提取响应头"><span class="toc-number">10.</span> <span class="toc-text">提取响应头</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Post方式提交String"><span class="toc-number">11.</span> <span class="toc-text">Post方式提交String</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Post方式提交流"><span class="toc-number">12.</span> <span class="toc-text">Post方式提交流</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Post方式提交文件"><span class="toc-number">13.</span> <span class="toc-text">Post方式提交文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Post方式提交表单"><span class="toc-number">14.</span> <span class="toc-text">Post方式提交表单</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Post方式提交分块请求"><span class="toc-number">15.</span> <span class="toc-text">Post方式提交分块请求</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#使用Gson来解析JSON响应"><span class="toc-number">16.</span> <span class="toc-text">使用Gson来解析JSON响应</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#响应缓存"><span class="toc-number">17.</span> <span class="toc-text">响应缓存</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#扩展"><span class="toc-number">18.</span> <span class="toc-text">扩展</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Force-a-Network-Response"><span class="toc-number">18.1.</span> <span class="toc-text">Force a Network Response</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Force-a-Cache-Response"><span class="toc-number">18.2.</span> <span class="toc-text">Force a Cache Response</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#取消一个Call"><span class="toc-number">19.</span> <span class="toc-text">取消一个Call</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#超时"><span class="toc-number">20.</span> <span class="toc-text">超时</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#每个call的配置"><span class="toc-number">21.</span> <span class="toc-text">每个call的配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#处理验证"><span class="toc-number">22.</span> <span class="toc-text">处理验证</span></a></li></ol>
+</div>
+
+<!-- 文章目录结束 -->	  
+
+	  
+        <p>Android系统提供了两种HTTP通信类，HttpURLConnection和HttpClient。<br>尽管Google在大部分安卓版本中推荐使用HttpURLConnection，但是这个类相比HttpClient实在是太难用，太弱爆了。<br>OkHttp是一个相对成熟的解决方案，据说Android4.4的源码中可以看到HttpURLConnection已经替换成OkHttp实现了。所以我们更有理由相信OkHttp的强大。<a id="more"></a></p>
+<p>OkHttp 处理了很多网络疑难杂症：会从很多常用的连接问题中自动恢复。如果您的服务器配置了多个IP地址，当第一个IP连接失败的时候，OkHttp会自动尝试下一个IP。OkHttp还处理了代理服务器问题和SSL握手失败问题。</p>
+<p>使用 OkHttp 无需重写您程序中的网络代码。OkHttp实现了几乎和java.net.HttpURLConnection一样的API。如果你用了 Apache HttpClient，则OkHttp也提供了一个对应的okhttp-apache 模块。</p>
+<blockquote>
+<p>注：在国内使用OkHttp会因为这个问题导致部分酷派手机用户无法联网，所以对于大众app来说，需要等待这个bug修复后再使用。或者尝试使用OkHttp的老版本。<br>截止到目前，OkHttp一直没有修复，并把修复计划延迟到了OkHttp2.3中。不是所有设备都能重现，仅少量设备会出现这个问题。（如果问题这么明显，OkHttp早就修复了）</p>
+</blockquote>
+<h3 id="入门"><a href="#入门" class="headerlink" title="入门"></a>入门</h3><h3 id="官方资料"><a href="#官方资料" class="headerlink" title="官方资料"></a>官方资料</h3><p><a href="http://square.github.io/okhttp/" target="_blank" rel="noopener">官方介绍</a><br><a href="https://github.com/square/okhttp" target="_blank" rel="noopener">github源码</a></p>
+<h3 id="使用范围"><a href="#使用范围" class="headerlink" title="使用范围"></a>使用范围</h3><p>OkHttp支持Android 2.3及其以上版本。<br>对于Java, JDK1.7以上。</p>
+<h3 id="jar包准备"><a href="#jar包准备" class="headerlink" title="jar包准备"></a>jar包准备</h3><p>官方介绍页面有链接位置。这里把下载链接也写在下面。<br><a href="http://repository.sonatype.org/service/local/artifact/maven/redirect?r=central-proxy&g=com.squareup.okhttp&a=okhttp&v=LATEST" target="_blank" rel="noopener">OkHttp</a><br><a href="http://repository.sonatype.org/service/local/artifact/maven/redirect?r=central-proxy&g=com.squareup.okio&a=okio&v=LATEST" target="_blank" rel="noopener">Okio</a></p>
+<h3 id="基本使用"><a href="#基本使用" class="headerlink" title="基本使用"></a>基本使用</h3><h4 id="HTTP-GET"><a href="#HTTP-GET" class="headerlink" title="HTTP GET"></a>HTTP GET</h4><pre><code>OkHttpClient client = new OkHttpClient();
+
+String run(String url) throws IOException {
+    Request request = new Request.Builder().url(url).build();
+    Response response = client.newCall(request).execute();    
+    if (response.isSuccessful()) {        
+        return response.body().string();
+    } else {        
+        throw new IOException(&quot;Unexpected code &quot; + response);
+    }
+}</code></pre><p>Request是OkHttp中访问的请求，Builder是辅助类。Response即OkHttp中的响应。<br><strong>Response类：</strong></p>
+<pre><code>public boolean isSuccessful()
+Returns true if the code is in [200..300),
+ which means the request was successfully received, understood, and accepted.</code></pre><p><strong>response.body()返回ResponseBody类</strong><br>可以方便的获取string</p>
+<pre><code>public final String string() throws IOException
+Returns the response as a string decoded with the charset of the Content-Type header. If that header is either absent or lacks a charset,
+ this will attempt to decode the response body as UTF-8.Throws:
+IOException</code></pre><p>当然也能获取到流的形式：<br><code>public final InputStream byteStream()</code></p>
+<h4 id="HTTP-POST"><a href="#HTTP-POST" class="headerlink" title="HTTP POST"></a>HTTP POST</h4><p><strong>POST提交Json数据</strong></p>
+<pre><code>public static final MediaType JSON = MediaType.parse(&quot;application/json; charset=utf-8&quot;);
+OkHttpClient client = new OkHttpClient();
+String post(String url, String json) throws IOException {
+     RequestBody body = RequestBody.create(JSON, json);
+      Request request = new Request.Builder()
+      .url(url)
+      .post(body)
+      .build();
+      Response response = client.newCall(request).execute();
+    f (response.isSuccessful()) {
+        return response.body().string();
+    } else {
+        throw new IOException(&quot;Unexpected code &quot; + response);
+    }
+}</code></pre><p>使用Request的post方法来提交请求体RequestBody</p>
+<p><strong>POST提交键值对</strong><br>很多时候我们会需要通过POST方式把键值对数据传送到服务器。 OkHttp提供了很方便的方式来做这件事情。</p>
+<pre><code>OkHttpClient client = new OkHttpClient();
+String post(String url, String json) throws IOException {
+
+     RequestBody formBody = new FormEncodingBuilder()
+    .add(&quot;platform&quot;, &quot;android&quot;)
+    .add(&quot;name&quot;, &quot;bug&quot;)
+    .add(&quot;subject&quot;, &quot;XXXXXXXXXXXXXXX&quot;)
+    .build();
+
+      Request request = new Request.Builder()
+      .url(url)
+      .post(body)
+      .build();
+
+      Response response = client.newCall(request).execute();
+    if (response.isSuccessful()) {
+        return response.body().string();
+    } else {
+        throw new IOException(&quot;Unexpected code &quot; + response);
+    }
+}</code></pre><h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>通过上面的例子我们可以发现，OkHttp在很多时候使用都是很方便的，而且很多代码也有重复，因此特地整理了下面的工具类。<br>注意：</p>
+<ul>
+<li>OkHttp官方文档并不建议我们创建多个OkHttpClient，因此全局使用一个。 如果有需要，可以使用clone方法，再进行自定义。这点在后面的高级教程里会提到。</li>
+<li>enqueue为OkHttp提供的异步方法，入门教程中并没有提到，后面的高级教程里会有解释。</li>
+</ul>
+<pre><code>import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.message.BasicNameValuePair;
+import cn.wiz.sdk.constant.WizConstant;
+import com.squareup.okhttp.Callback;
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.Response; 
+
+public class OkHttpUtil {
+    private static final OkHttpClient mOkHttpClient = new OkHttpClient();
+    static{
+        mOkHttpClient.setConnectTimeout(30, TimeUnit.SECONDS);
+    }
+    /**
+     * 该不会开启异步线程。
+     * @param request
+     * @return
+     * @throws IOException
+     */
+    public static Response execute(Request request) throws IOException{
+        return mOkHttpClient.newCall(request).execute();
+    }
+    /**
+     * 开启异步线程访问网络
+     * @param request
+     * @param responseCallback
+     */
+    public static void enqueue(Request request, Callback responseCallback){
+        mOkHttpClient.newCall(request).enqueue(responseCallback);
+    }
+    /**
+     * 开启异步线程访问网络, 且不在意返回结果（实现空callback）
+     * @param request
+     */
+    public static void enqueue(Request request){
+        mOkHttpClient.newCall(request).enqueue(new Callback() {
+
+            @Override
+            public void onResponse(Response arg0) throws IOException {
+
+            }
+
+            @Override
+            public void onFailure(Request arg0, IOException arg1) {
+
+            }
+        });
+    }
+    public static String getStringFromServer(String url) throws IOException{
+        Request request = new Request.Builder().url(url).build();
+        Response response = execute(request);
+        if (response.isSuccessful()) {
+            String responseUrl = response.body().string();
+            return responseUrl;
+        } else {
+            throw new IOException(&quot;Unexpected code &quot; + response);
+        }
+    }
+    private static final String CHARSET_NAME = &quot;UTF-8&quot;;
+    /**
+     * 这里使用了HttpClinet的API。只是为了方便
+     * @param params
+     * @return
+     */
+    public static String formatParams(List&lt;BasicNameValuePair&gt; params){
+        return URLEncodedUtils.format(params, CHARSET_NAME);
+    }
+    /**
+     * 为HttpGet 的 url 方便的添加多个name value 参数。
+     * @param url
+     * @param params
+     * @return
+     */
+    public static String attachHttpGetParams(String url, List&lt;BasicNameValuePair&gt; params){
+        return url + &quot;?&quot; + formatParams(params);
+    }
+    /**
+     * 为HttpGet 的 url 方便的添加1个name value 参数。
+     * @param url
+     * @param name
+     * @param value
+     * @return
+     */
+    public static String attachHttpGetParam(String url, String name, String value){
+        return url + &quot;?&quot; + name + &quot;=&quot; + value;
+    }
+}</code></pre><hr>
+<h3 id="高级"><a href="#高级" class="headerlink" title="高级"></a>高级</h3><p>高级属性其实用的不多，这里主要是对OkHttp github官方教程进行了翻译。</p>
+<h3 id="同步get"><a href="#同步get" class="headerlink" title="同步get"></a>同步get</h3><p>下载一个文件，打印他的响应头，以string形式打印响应体。<br>响应体的 string() 方法对于小文档来说十分方便、高效。但是如果响应体太大（超过1MB），应避免适应 string()方法 ，因为他会将把整个文档加载到内存中。<br>对于超过1MB的响应body，应使用流的方式来处理body。</p>
+<pre><code>private final OkHttpClient client = new OkHttpClient();
+
+public void run() throws Exception {
+    Request request = new Request.Builder()
+        .url(&quot;http://publicobject.com/helloworld.txt&quot;)
+        .build();
+
+    Response response = client.newCall(request).execute();
+    if (!response.isSuccessful()) throw new IOException(&quot;Unexpected code &quot; + response);
+
+    Headers responseHeaders = response.headers();
+    for (int i = 0; i &lt; responseHeaders.size(); i++) {
+      System.out.println(responseHeaders.name(i) + &quot;: &quot; + responseHeaders.value(i));
+    }
+
+    System.out.println(response.body().string());
+}</code></pre><h3 id="异步get"><a href="#异步get" class="headerlink" title="异步get"></a>异步get</h3><p>在一个工作线程中下载文件，当响应可读时回调Callback接口。读取响应时会阻塞当前线程。OkHttp现阶段不提供异步api来接收响应体。</p>
+<pre><code>private final OkHttpClient client = new OkHttpClient();
+
+public void run() throws Exception {
+    Request request = new Request.Builder()
+        .url(&quot;http://publicobject.com/helloworld.txt&quot;)
+        .build();
+
+    client.newCall(request).enqueue(new Callback() {
+      @Override public void onFailure(Request request, Throwable throwable) {
+        throwable.printStackTrace();
+      }
+
+      @Override public void onResponse(Response response) throws IOException {
+        if (!response.isSuccessful()) throw new IOException(&quot;Unexpected code &quot; + response);
+
+        Headers responseHeaders = response.headers();
+        for (int i = 0; i &lt; responseHeaders.size(); i++) {
+          System.out.println(responseHeaders.name(i) + &quot;: &quot; + responseHeaders.value(i));
+        }
+
+        System.out.println(response.body().string());
+      }
+    });
+}</code></pre><h3 id="提取响应头"><a href="#提取响应头" class="headerlink" title="提取响应头"></a>提取响应头</h3><p>典型的HTTP头 像是一个 <code>Map&lt;String, String&gt;</code> :每个字段都有一个或没有值。但是一些头允许多个值，像Guava的Multimap。例如：HTTP响应里面提供的Vary响应头，就是多值的。OkHttp的api试图让这些情况都适用。<br>当写请求头的时候，使用<code>header(name, value)</code>可以设置唯一的name、value。如果已经有值，旧的将被移除，然后添加新的。使用<code>addHeader(name, value)</code>可以添加多值（添加，不移除已有的）。<br>当读取响应头时，使用<code>header(name)</code>返回最后出现的name、value。通常情况这也是唯一的name、value。如果没有值，那么<code>header(name)</code>将返回null。如果想读取字段对应的所有值，使用<code>headers(name)</code>会返回一个list。<br>为了获取所有的Header，Headers类支持按index访问。</p>
+<pre><code>private final OkHttpClient client = new OkHttpClient();
+
+public void run() throws Exception {
+    Request request = new Request.Builder()
+        .url(&quot;https://api.github.com/repos/square/okhttp/issues&quot;)
+        .header(&quot;User-Agent&quot;, &quot;OkHttp Headers.java&quot;)
+        .addHeader(&quot;Accept&quot;, &quot;application/json; q=0.5&quot;)
+        .addHeader(&quot;Accept&quot;, &quot;application/vnd.github.v3+json&quot;)
+        .build();
+
+    Response response = client.newCall(request).execute();
+    if (!response.isSuccessful()) throw new IOException(&quot;Unexpected code &quot; + response);
+
+    System.out.println(&quot;Server: &quot; + response.header(&quot;Server&quot;));
+    System.out.println(&quot;Date: &quot; + response.header(&quot;Date&quot;));
+    System.out.println(&quot;Vary: &quot; + response.headers(&quot;Vary&quot;));
+}</code></pre><h3 id="Post方式提交String"><a href="#Post方式提交String" class="headerlink" title="Post方式提交String"></a>Post方式提交String</h3><p>使用HTTP POST提交请求到服务。这个例子提交了一个markdown文档到web服务，以HTML方式渲染markdown。因为整个请求体都在内存中，因此避免使用此api提交大文档（大于1MB）。</p>
+<pre><code>public static final MediaType MEDIA_TYPE_MARKDOWN
+  = MediaType.parse(&quot;text/x-markdown; charset=utf-8&quot;);
+
+private final OkHttpClient client = new OkHttpClient();
+
+public void run() throws Exception {
+    String postBody = &quot;&quot;
+        + &quot;Releases\n&quot;
+        + &quot;--------\n&quot;
+        + &quot;\n&quot;
+        + &quot; * _1.0_ May 6, 2013\n&quot;
+        + &quot; * _1.1_ June 15, 2013\n&quot;
+        + &quot; * _1.2_ August 11, 2013\n&quot;;
+
+    Request request = new Request.Builder()
+        .url(&quot;https://api.github.com/markdown/raw&quot;)
+        .post(RequestBody.create(MEDIA_TYPE_MARKDOWN, postBody))
+        .build();
+
+    Response response = client.newCall(request).execute();
+    if (!response.isSuccessful()) throw new IOException(&quot;Unexpected code &quot; + response);
+
+    System.out.println(response.body().string());
+}</code></pre><h3 id="Post方式提交流"><a href="#Post方式提交流" class="headerlink" title="Post方式提交流"></a>Post方式提交流</h3><p>以流的方式POST提交请求体。请求体的内容由流写入产生。这个例子是流直接写入Okio的BufferedSink。你的程序可能会使用OutputStream，你可以使用<code>BufferedSink.outputStream()</code>来获取。</p>
+<pre><code>public static final MediaType MEDIA_TYPE_MARKDOWN
+      = MediaType.parse(&quot;text/x-markdown; charset=utf-8&quot;);
+
+private final OkHttpClient client = new OkHttpClient();
+
+public void run() throws Exception {
+    RequestBody requestBody = new RequestBody() {
+      @Override public MediaType contentType() {
+        return MEDIA_TYPE_MARKDOWN;
+      }
+
+      @Override public void writeTo(BufferedSink sink) throws IOException {
+        sink.writeUtf8(&quot;Numbers\n&quot;);
+        sink.writeUtf8(&quot;-------\n&quot;);
+        for (int i = 2; i &lt;= 997; i++) {
+          sink.writeUtf8(String.format(&quot; * %s = %s\n&quot;, i, factor(i)));
+        }
+      }
+
+      private String factor(int n) {
+        for (int i = 2; i &lt; n; i++) {
+          int x = n / i;
+          if (x * i == n) return factor(x) + &quot; × &quot; + i;
+        }
+        return Integer.toString(n);
+      }
+    };
+
+    Request request = new Request.Builder()
+        .url(&quot;https://api.github.com/markdown/raw&quot;)
+        .post(requestBody)
+        .build();
+
+    Response response = client.newCall(request).execute();
+    if (!response.isSuccessful()) throw new IOException(&quot;Unexpected code &quot; + response);
+
+    System.out.println(response.body().string());
+}</code></pre><h3 id="Post方式提交文件"><a href="#Post方式提交文件" class="headerlink" title="Post方式提交文件"></a>Post方式提交文件</h3><p>以文件作为请求体是十分简单的。</p>
+<pre><code>public static final MediaType MEDIA_TYPE_MARKDOWN
+  = MediaType.parse(&quot;text/x-markdown; charset=utf-8&quot;);
+
+private final OkHttpClient client = new OkHttpClient();
+
+public void run() throws Exception {
+    File file = new File(&quot;README.md&quot;);
+
+    Request request = new Request.Builder()
+        .url(&quot;https://api.github.com/markdown/raw&quot;)
+        .post(RequestBody.create(MEDIA_TYPE_MARKDOWN, file))
+        .build();
+
+    Response response = client.newCall(request).execute();
+    if (!response.isSuccessful()) throw new IOException(&quot;Unexpected code &quot; + response);
+
+    System.out.println(response.body().string());
+}</code></pre><h3 id="Post方式提交表单"><a href="#Post方式提交表单" class="headerlink" title="Post方式提交表单"></a>Post方式提交表单</h3><p>使用FormEncodingBuilder来构建和HTML<code>&lt;form&gt;</code>标签相同效果的请求体。键值对将使用一种HTML兼容形式的URL编码来进行编码。</p>
+<pre><code>private final OkHttpClient client = new OkHttpClient();
+
+public void run() throws Exception {
+    RequestBody formBody = new FormEncodingBuilder()
+        .add(&quot;search&quot;, &quot;Jurassic Park&quot;)
+        .build();
+    Request request = new Request.Builder()
+        .url(&quot;https://en.wikipedia.org/w/index.php&quot;)
+        .post(formBody)
+        .build();
+
+    Response response = client.newCall(request).execute();
+    if (!response.isSuccessful()) throw new IOException(&quot;Unexpected code &quot; + response);
+
+    System.out.println(response.body().string());
+}</code></pre><h3 id="Post方式提交分块请求"><a href="#Post方式提交分块请求" class="headerlink" title="Post方式提交分块请求"></a>Post方式提交分块请求</h3><p>MultipartBuilder可以构建复杂的请求体，与HTML文件上传形式兼容。多块请求体中每块请求都是一个请求体，可以定义自己的请求头。这些请求头可以用来描述这块请求，例如他的Content-Disposition。如果Content-Length和Content-Type可用的话，他们会被自动添加到请求头中。</p>
+<pre><code>private static final String IMGUR_CLIENT_ID = &quot;...&quot;;
+private static final MediaType MEDIA_TYPE_PNG = MediaType.parse(&quot;image/png&quot;);
+
+private final OkHttpClient client = new OkHttpClient();
+
+public void run() throws Exception {
+    // Use the imgur image upload API as documented at https://api.imgur.com/endpoints/image
+    RequestBody requestBody = new MultipartBuilder()
+        .type(MultipartBuilder.FORM)
+        .addPart(
+            Headers.of(&quot;Content-Disposition&quot;, &quot;form-data; name=\&quot;title\&quot;&quot;),
+            RequestBody.create(null, &quot;Square Logo&quot;))
+        .addPart(
+            Headers.of(&quot;Content-Disposition&quot;, &quot;form-data; name=\&quot;image\&quot;&quot;),
+            RequestBody.create(MEDIA_TYPE_PNG, new File(&quot;website/static/logo-square.png&quot;)))
+        .build();
+
+    Request request = new Request.Builder()
+        .header(&quot;Authorization&quot;, &quot;Client-ID &quot; + IMGUR_CLIENT_ID)
+        .url(&quot;https://api.imgur.com/3/image&quot;)
+        .post(requestBody)
+        .build();
+
+    Response response = client.newCall(request).execute();
+    if (!response.isSuccessful()) throw new IOException(&quot;Unexpected code &quot; + response);
+
+    System.out.println(response.body().string());
+}</code></pre><h3 id="使用Gson来解析JSON响应"><a href="#使用Gson来解析JSON响应" class="headerlink" title="使用Gson来解析JSON响应"></a>使用Gson来解析JSON响应</h3><p>Gson是一个在JSON和Java对象之间转换非常方便的api。这里我们用Gson来解析Github API的JSON响应。<br>注意：<code>ResponseBody.charStream()</code>使用响应头Content-Type指定的字符集来解析响应体。默认是UTF-8。</p>
+<pre><code>private final OkHttpClient client = new OkHttpClient();
+private final Gson gson = new Gson();
+
+public void run() throws Exception {
+    Request request = new Request.Builder()
+        .url(&quot;https://api.github.com/gists/c2a7c39532239ff261be&quot;)
+        .build();
+    Response response = client.newCall(request).execute();
+    if (!response.isSuccessful()) throw new IOException(&quot;Unexpected code &quot; + response);
+
+    Gist gist = gson.fromJson(response.body().charStream(), Gist.class);
+    for (Map.Entry&lt;String, GistFile&gt; entry : gist.files.entrySet()) {
+      System.out.println(entry.getKey());
+      System.out.println(entry.getValue().content);
+    }
+}
+
+static class Gist {
+    Map&lt;String, GistFile&gt; files;
+}
+
+static class GistFile {
+    String content;
+}</code></pre><h3 id="响应缓存"><a href="#响应缓存" class="headerlink" title="响应缓存"></a>响应缓存</h3><p>为了缓存响应，你需要一个你可以读写的缓存目录，和缓存大小的限制。这个缓存目录应该是私有的，不信任的程序应不能读取缓存内容。<br>一个缓存目录同时拥有多个缓存访问是错误的。大多数程序只需要调用一次<code>new OkHttp()</code>，在第一次调用时配置好缓存，然后其他地方只需要调用这个实例就可以了。否则两个缓存示例互相干扰，破坏响应缓存，而且有可能会导致程序崩溃。<br>响应缓存使用HTTP头作为配置。你可以在请求头中添加<code>Cache-Control: max-stale=3600</code> ,OkHttp缓存会支持。你的服务通过响应头确定响应缓存多长时间，例如使用<code>Cache-Control: max-age=9600</code>。</p>
+<pre><code>private final OkHttpClient client;
+
+public CacheResponse(File cacheDirectory) throws Exception {
+    int cacheSize = 10 * 1024 * 1024; // 10 MiB
+    Cache cache = new Cache(cacheDirectory, cacheSize);
+
+    client = new OkHttpClient();
+    client.setCache(cache);
+}
+
+public void run() throws Exception {
+    Request request = new Request.Builder()
+        .url(&quot;http://publicobject.com/helloworld.txt&quot;)
+        .build();
+
+    Response response1 = client.newCall(request).execute();
+    if (!response1.isSuccessful()) throw new IOException(&quot;Unexpected code &quot; + response1);
+
+    String response1Body = response1.body().string();
+    System.out.println(&quot;Response 1 response:          &quot; + response1);
+    System.out.println(&quot;Response 1 cache response:    &quot; + response1.cacheResponse());
+    System.out.println(&quot;Response 1 network response:  &quot; + response1.networkResponse());
+
+    Response response2 = client.newCall(request).execute();
+    if (!response2.isSuccessful()) throw new IOException(&quot;Unexpected code &quot; + response2);
+
+    String response2Body = response2.body().string();
+    System.out.println(&quot;Response 2 response:          &quot; + response2);
+    System.out.println(&quot;Response 2 cache response:    &quot; + response2.cacheResponse());
+    System.out.println(&quot;Response 2 network response:  &quot; + response2.networkResponse());
+
+    System.out.println(&quot;Response 2 equals Response 1? &quot; + response1Body.equals(response2Body));
+}</code></pre><h3 id="扩展"><a href="#扩展" class="headerlink" title="扩展"></a>扩展</h3><p>在这一节还提到了下面一句：<br>There are cache headers to force a cached response, force a network response, or force the network response to be validated with a conditional GET.</p>
+<p>我不是很懂cache，平时用到的也不多，所以把Google在Android Developers一段相关的解析放到这里吧。</p>
+<h4 id="Force-a-Network-Response"><a href="#Force-a-Network-Response" class="headerlink" title="Force a Network Response"></a>Force a Network Response</h4><p>In some situations, such as after a user clicks a ‘refresh’ button, it may be necessary to skip the cache, and fetch data directly from the server. To force a full refresh, add the no-cache directive:</p>
+<p><code>connection.addRequestProperty(&quot;Cache-Control&quot;, &quot;no-cache&quot;);</code></p>
+<p>If it is only necessary to force a cached response to be validated by the server, use the more efficient max-age=0 instead:</p>
+<p><code>connection.addRequestProperty(&quot;Cache-Control&quot;, &quot;max-age=0&quot;);</code></p>
+<h4 id="Force-a-Cache-Response"><a href="#Force-a-Cache-Response" class="headerlink" title="Force a Cache Response"></a>Force a Cache Response</h4><p>Sometimes you’ll want to show resources if they are available immediately, but not otherwise. This can be used so your application can show something while waiting for the latest data to be downloaded. To restrict a request to locally-cached resources, add the only-if-cached directive:</p>
+<pre><code>try {
+     connection.addRequestProperty(&quot;Cache-Control&quot;, &quot;only-if-cached&quot;);
+     InputStream cached = connection.getInputStream();
+     // the resource was cached! show it
+  catch (FileNotFoundException e) {
+     // the resource was not cached
+ }
+}</code></pre><p>This technique works even better in situations where a stale response is better than no response. To permit stale cached responses, use the max-stale directive with the maximum staleness in seconds:<br><code>int maxStale = 60 * 60 * 24 * 28; // tolerate 4-weeks staleconnection.addRequestProperty(&quot;Cache-Control&quot;, &quot;max-stale=&quot; + maxStale);</code></p>
+<p>以上信息来自：<a href="http://developer.android.com/reference/android/net/http/HttpResponseCache.html" target="_blank" rel="noopener">HttpResponseCache - Android SDK | Android Developers</a></p>
+<h3 id="取消一个Call"><a href="#取消一个Call" class="headerlink" title="取消一个Call"></a>取消一个Call</h3><p>使用<code>Call.cancel()</code>可以立即停止掉一个正在执行的call。如果一个线程正在写请求或者读响应，将会引发IOException。当call没有必要的时候，使用这个api可以节约网络资源。例如当用户离开一个应用时。不管同步还是异步的call都可以取消。<br>你可以通过tags来同时取消多个请求。当你构建一请求时，使用<code>RequestBuilder.tag(tag)</code>来分配一个标签。之后你就可以用<code>OkHttpClient.cancel(tag)</code>来取消所有带有这个tag的call。</p>
+<pre><code>private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+private final OkHttpClient client = new OkHttpClient();
+
+public void run() throws Exception {
+    Request request = new Request.Builder()
+        .url(&quot;http://httpbin.org/delay/2&quot;) // This URL is served with a 2 second delay.
+        .build();
+
+    final long startNanos = System.nanoTime();
+    final Call call = client.newCall(request);
+
+    // Schedule a job to cancel the call in 1 second.
+    executor.schedule(new Runnable() {
+      @Override public void run() {
+        System.out.printf(&quot;%.2f Canceling call.%n&quot;, (System.nanoTime() - startNanos) / 1e9f);
+        call.cancel();
+        System.out.printf(&quot;%.2f Canceled call.%n&quot;, (System.nanoTime() - startNanos) / 1e9f);
+      }
+    }, 1, TimeUnit.SECONDS);
+
+    try {
+      System.out.printf(&quot;%.2f Executing call.%n&quot;, (System.nanoTime() - startNanos) / 1e9f);
+      Response response = call.execute();
+      System.out.printf(&quot;%.2f Call was expected to fail, but completed: %s%n&quot;,
+          (System.nanoTime() - startNanos) / 1e9f, response);
+    } catch (IOException e) {
+      System.out.printf(&quot;%.2f Call failed as expected: %s%n&quot;,
+          (System.nanoTime() - startNanos) / 1e9f, e);
+    }
+}</code></pre><h3 id="超时"><a href="#超时" class="headerlink" title="超时"></a>超时</h3><p>没有响应时使用超时结束call。没有响应的原因可能是客户点链接问题、服务器可用性问题或者这之间的其他东西。OkHttp支持连接，读取和写入超时。</p>
+<pre><code>private final OkHttpClient client;
+
+public ConfigureTimeouts() throws Exception {
+    client = new OkHttpClient();
+    client.setConnectTimeout(10, TimeUnit.SECONDS);
+    client.setWriteTimeout(10, TimeUnit.SECONDS);
+    client.setReadTimeout(30, TimeUnit.SECONDS);
+}
+
+public void run() throws Exception {
+    Request request = new Request.Builder()
+        .url(&quot;http://httpbin.org/delay/2&quot;) // This URL is served with a 2 second delay.
+        .build();
+
+    Response response = client.newCall(request).execute();
+    System.out.println(&quot;Response completed: &quot; + response);
+}</code></pre><h3 id="每个call的配置"><a href="#每个call的配置" class="headerlink" title="每个call的配置"></a>每个call的配置</h3><p>使用OkHttpClient，所有的HTTP Client配置包括代理设置、超时设置、缓存设置。当你需要为单个call改变配置的时候，clone 一个 OkHttpClient。这个api将会返回一个浅拷贝（shallow copy），你可以用来单独自定义。下面的例子中，我们让一个请求是500ms的超时、另一个是3000ms的超时。</p>
+<pre><code>private final OkHttpClient client = new OkHttpClient();
+
+public void run() throws Exception {
+    Request request = new Request.Builder()
+        .url(&quot;http://httpbin.org/delay/1&quot;) // This URL is served with a 1 second delay.
+        .build();
+
+    try {
+      Response response = client.clone() // Clone to make a customized OkHttp for this request.
+          .setReadTimeout(500, TimeUnit.MILLISECONDS)
+          .newCall(request)
+          .execute();
+      System.out.println(&quot;Response 1 succeeded: &quot; + response);
+    } catch (IOException e) {
+      System.out.println(&quot;Response 1 failed: &quot; + e);
+    }
+
+    try {
+      Response response = client.clone() // Clone to make a customized OkHttp for this request.
+          .setReadTimeout(3000, TimeUnit.MILLISECONDS)
+          .newCall(request)
+          .execute();
+      System.out.println(&quot;Response 2 succeeded: &quot; + response);
+    } catch (IOException e) {
+      System.out.println(&quot;Response 2 failed: &quot; + e);
+    }
+}</code></pre><h3 id="处理验证"><a href="#处理验证" class="headerlink" title="处理验证"></a>处理验证</h3><p>这部分和HTTP AUTH有关。<br>相关资料：<a href="http://blog.csdn.net/wwwsq/article/details/7255062" target="_blank" rel="noopener">HTTP AUTH 那些事 - 王绍全的博客 - 博客频道 - CSDN.NET</a></p>
+<p>OkHttp会自动重试未验证的请求。当响应是401 Not Authorized时，Authenticator会被要求提供证书。Authenticator的实现中需要建立一个新的包含证书的请求。如果没有证书可用，返回null来跳过尝试。</p>
+<pre><code>public List&lt;Challenge&gt; challenges()
+Returns the authorization challenges appropriate for this response&#39;s code. 
+If the response code is 401 unauthorized, 
+this returns the &quot;WWW-Authenticate&quot; challenges.
+If the response code is 407 proxy unauthorized, this returns the &quot;Proxy-Authenticate&quot; challenges.
+Otherwise this returns an empty list of challenges.</code></pre><p>当需要实现一个Basic challenge， 使用<code>Credentials.basic(username, password)</code>来编码请求头。</p>
+<pre><code>private final OkHttpClient client = new OkHttpClient();
+
+public void run() throws Exception {
+    client.setAuthenticator(new Authenticator() {
+      @Override public Request authenticate(Proxy proxy, Response response) {
+        System.out.println(&quot;Authenticating for response: &quot; + response);
+        System.out.println(&quot;Challenges: &quot; + response.challenges());
+        String credential = Credentials.basic(&quot;jesse&quot;, &quot;password1&quot;);
+        return response.request().newBuilder()
+            .header(&quot;Authorization&quot;, credential)
+            .build();
+      }
+
+      @Override public Request authenticateProxy(Proxy proxy, Response response) {
+        return null; // Null indicates no attempt to authenticate.
+      }
+    });
+
+    Request request = new Request.Builder()
+        .url(&quot;http://publicobject.com/secrets/hellosecret.txt&quot;)
+        .build();
+
+    Response response = client.newCall(request).execute();
+    if (!response.isSuccessful()) throw new IOException(&quot;Unexpected code &quot; + response);
+
+    System.out.println(response.body().string());
+}</code></pre><p>转自 <a href="http://www.cnblogs.com/ct2011/p/4001708.html" target="_blank" rel="noopener">OkHttp使用介绍</a> 同时整合了 <a href="http://www.cnblogs.com/ct2011/p/3997368.html" target="_blank" rel="noopener">OkHttp使用进阶</a> 这篇文章以及其中的评论。</p>
+<blockquote>
+<p>扩展阅读：<br><a href="http://blog.csdn.net/lmj623565791/article/details/47911083" target="_blank" rel="noopener">OkHttp完全解析 是时候来了解OkHttp了</a><br><a href="http://blog.csdn.net/bboyfeiyu/article/details/50926934" target="_blank" rel="noopener">高效地配置okhttp</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2016/06/02/OkHttp%E4%BD%BF%E7%94%A8%E6%95%99%E7%A8%8B/" data-id="ckcqdgkq600p39xlf9s55c9dl" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/06/02/Android%E4%B8%AD%E8%B0%83%E7%94%A8System-exit-0/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Android中调用System.exit(0)
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/06/02/mysql%E5%88%86%E8%A1%A8%EF%BC%8C%E5%88%86%E5%8C%BA%E7%9A%84%E5%8C%BA%E5%88%AB%E5%92%8C%E8%81%94%E7%B3%BB/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">mysql分表，分区的区别和联系</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>varnish/pipe/pass的区别分析 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="这两天在学习varnish，在学到vcl时，不理解pipe和pass的区别以及如何区分加以应用。通过两天的搜索，总算是理清了概念。现在记录在博客上跟大家分享。 当 vcl_recv 函数接收到请求时，它要判断如何处理这个请求。有三种情况 ：  调用 pass 函数，从后端服务器调用数据。  调用 pipe 函数，建立客户端和后端服务器之间的直接连接，从后端服务器调用数据。  调用lookup函数，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="varnish&#x2F;pipe&#x2F;pass的区别分析">
+<meta property="og:url" content="http://moqiang02.github.io/2014/01/20/varnish-pipe-pass%E7%9A%84%E5%8C%BA%E5%88%AB%E5%88%86%E6%9E%90/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="这两天在学习varnish，在学到vcl时，不理解pipe和pass的区别以及如何区分加以应用。通过两天的搜索，总算是理清了概念。现在记录在博客上跟大家分享。 当 vcl_recv 函数接收到请求时，它要判断如何处理这个请求。有三种情况 ：  调用 pass 函数，从后端服务器调用数据。  调用 pipe 函数，建立客户端和后端服务器之间的直接连接，从后端服务器调用数据。  调用lookup函数，">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2014-01-20T14:28:02.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:16.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta property="article:tag" content="集群">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-varnish-pipe-pass的区别分析" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/01/20/varnish-pipe-pass%E7%9A%84%E5%8C%BA%E5%88%AB%E5%88%86%E6%9E%90/" class="article-date">
+  <time datetime="2014-01-20T14:28:02.000Z" itemprop="datePublished">2014-01-20</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      varnish/pipe/pass的区别分析
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <p>这两天在学习varnish，在学到vcl时，不理解pipe和pass的区别以及如何区分加以应用。通过两天的搜索，总算是理清了概念。现在记录在博客上跟大家分享。</p>
+<p>当 vcl_recv 函数接收到请求时，它要判断如何处理这个请求。有三种情况 ：</p>
+<ul>
+<li>调用 pass 函数，从后端服务器调用数据。 </li>
+<li>调用 pipe 函数，建立客户端和后端服务器之间的直接连接，从后端服务器调用数据。 </li>
+<li>调用lookup函数，从缓存中查找应答数据并返回，如果查找不到，则调用pass函数从后端服务器调用数据。 </li>
+</ul>
+<a id="more"></a>
+
+<p>在这里，我就有几个疑惑：</p>
+<ul>
+<li>pass和pipe都从后端服务器取数据，它们之间有什么不同呢？ </li>
+<li>什么情况下用pass，什么情况下用pipe呢？ </li>
+<li>什么样的数据会被缓存在varnish中呢？ </li>
+</ul>
+<p>在理解这几个问题前，需要先理解另外一些概念：</p>
+<ul>
+<li>http 建立连接的过程  </li>
+<li>http 请求的类型:get post head </li>
+</ul>
+<p>先说http建立连接的过程（我只写下大概，因为不是本文的重心，具体的请另外上网查）：</p>
+<ul>
+<li>当浏览器想要获得一个网页内容时，如在浏览器输入<a href="http://www.google.com。" target="_blank" rel="noopener">www.google.com。</a> </li>
+<li>这时浏览器开始跟服务器建立连接，先执行三次握手，确认建立连接。 </li>
+<li>之后浏览器会发送请求，一个网页包含多个内容，如图片，正文，html代码，css代码,js代码。</li>
+<li>如果在html 1.0版本中，请求一个文件是需要建立一次连接的，多个请求多个连接。开销是很大的。</li>
+<li>而在HTML 1.1中，具有了长连接的特性，允许在keep-live 时间内保持连接，在这段时间内无须再建立连接就可以发送多个请求。 </li>
+<li>请求完成 或 keep-live时间到限，连接断开。 </li>
+</ul>
+<p>HTTP 请求的类型，下面是主要的几种： </p>
+<ul>
+<li>GET ： 请求指定的页面信息，并返回实体主体。 </li>
+<li>HEAD： 只请求页面的首部。 </li>
+<li>POST： 请求服务器接受所指定的文档作为对所标识的URI的新的从属实体。 </li>
+</ul>
+<p>说白了，请求一个静态的HTML页面就是用get类型，而如果你在新浪微博上发一条微博，其实就是post 类型。</p>
+<p>总结来说，get是请求相关URI并接受服务器的返回数据。为了接收数据。</p>
+<p>post是发送数据给服务器，服务器需要对这些数据做相应的处理。为了发送数据。</p>
+<p>以上都明白的话，就可以解答这三个问题了：</p>
+<ul>
+<li>pass和pipe都从后端服务器取数据，它们之间有什么不同呢？  </li>
+<li>什么情况下用pass，什么情况下用pipe呢？  </li>
+<li>什么样的数据会被缓存在varnish中呢？  </li>
+</ul>
+<p>问：pass和pipe都从后端服务器取数据，它们之间有什么不同呢？<br>答：当vcl_recv调用 pass 函数时，pass将当前请求直接转发到后端服务器。而后续的请求仍然<br>通过varnish处理。<br>例如，建立了HTTP连接之后，客户端顺序请求 a.css 、a.png两个文件，“当前请求”指的是第一个<br>请求，即a.css，a.css被直接转发到后端服务器，不被缓存。而后续的a.png则再由varnish来做<br>处理，varnish会判断a.png 如何处理。<br>总结：一个连接中除了当前请求，其它请求仍然按照正常情况由varnish处理。 </p>
+<p>而pipe模式则不一样，当vcl_recv判断 需要调用 pipe 函数时，varnish会在客户端和服务器之<br>间建立一条直接的连接 ，之后客户端的所有请求都直接发送给服务器，绕过varnish,不再由varnish<br>检查请求，直到连接断开。 </p>
+<p>什么情况下用pass，什么情况下用pipe呢？<br>答：pass 通常只处理静态页面。即只在GET 和 HEAD 类型的请求中时才适合调用pass函数。<br>另外，需要注意的一点是，pass模式不能处理POST请求，为什么呢？因为POST请求一般是发送<br>数据给服务器，需要服务器接收数据，并处理数据，反馈数据 。是动态的，不作缓存。<br>示例代码如下:<br>if (req.request !=”GET” &amp;&amp; req.request != “HEAD”)<br>{<br>　　return (pipe);<br>}<br>那什么情况下用pipe?由以上陈述可以知，类型是POST时用pipe，但是也许还不太清晰。举个例子，<br>当客户端在请求一个视频文件时，或者一个大的文档，如.zip .tar 文件，就需要用pipe模式，<br>这些大的文件是不被缓存在varnish中的。 </p>
+<p>什么样的数据会被缓存在varnish中呢？<br>答:varnish只缓存静态数据。在网上搜到的varnish缓存策略，可以解答这个问题：<br>varnish缓存策略<br>缺省是根椐后端返回的http状态码决定是否缓存。可以缓存的状态码如下：<br>200<br>203<br>300<br>301<br>302<br>410<br>404<br>varnish现在还不支持ranges请求，所以不会缓存206状态的结果。<br>管理员可以在vcl的配置文件中的vcl_fetch部分，加入自已的缓存策略，方法是修改beresp.cacheable变量。下面的例子，看后端返回中如果设置了cookie，则不缓存：<br>sub fetch {<br>　　if (beresp.http.Set-Cookie) {<br>　　　　set beresp.cacheable = false;<br>　　}<br>}<br>参考文章：<a href="http://blog.sina.com.cn/s/blog_5374d6e30100tupo.html" target="_blank" rel="noopener">varnish缓存策略及缓存时间计算方法说明</a></p>
+<p>文章末尾总结：学技术不要死扣中文文档，多看英文文档会比较有帮助 。</p>
+<p>本文出自 “YEELONⒼ ” 博客，请务必保留此出处<a href="http://yeelone.blog.51cto.com/1476571/772369" target="_blank" rel="noopener">http://yeelone.blog.51cto.com/1476571/772369</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/01/20/varnish-pipe-pass%E7%9A%84%E5%8C%BA%E5%88%AB%E5%88%86%E6%9E%90/" data-id="ckcqdgl0i01h49xlf220nhrkk" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E9%9B%86%E7%BE%A4/" rel="tag">集群</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/01/22/another-app-is-currently-holding-the-yum-lock-waiting-for-it-to-exit/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          another app is currently holding the yum lock;waiting for it to exit...
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/01/20/varnish%E4%B8%8Esquid%E7%9A%84%E6%AF%94%E8%BE%83/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">varnish与squid的比较</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

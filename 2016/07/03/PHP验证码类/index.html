@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>PHP验证码类 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="一 验证码示例">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PHP验证码类">
+<meta property="og:url" content="http://moqiang02.github.io/2016/07/03/PHP%E9%AA%8C%E8%AF%81%E7%A0%81%E7%B1%BB/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="一 验证码示例">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/PHP%E9%AA%8C%E8%AF%81%E7%A0%81%E7%B1%BB/1.png">
+<meta property="article:published_time" content="2016-07-03T13:57:49.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:24.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/PHP%E9%AA%8C%E8%AF%81%E7%A0%81%E7%B1%BB/1.png">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-PHP验证码类" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/07/03/PHP%E9%AA%8C%E8%AF%81%E7%A0%81%E7%B1%BB/" class="article-date">
+  <time datetime="2016-07-03T13:57:49.000Z" itemprop="datePublished">2016-07-03</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/php/">php</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      PHP验证码类
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <h3 id="一-验证码示例"><a href="#一-验证码示例" class="headerlink" title="一 验证码示例"></a>一 验证码示例</h3><p><img src="/images/PHP%E9%AA%8C%E8%AF%81%E7%A0%81%E7%B1%BB/1.png" alt=""></p>
+<a id="more"></a>
+
+<h3 id="二-php验证码类，secoder-class-php"><a href="#二-php验证码类，secoder-class-php" class="headerlink" title="二 php验证码类，secoder.class.php"></a>二 php验证码类，secoder.class.php</h3><pre><code>    &lt;?php  
+    /** 
+     * 安全验证码 
+     *  
+     * 安全的验证码要：验证码文字扭曲、旋转，使用不同字体，添加干扰码 
+     * 
+     * @author 流水孟春 &lt;cmpan(at)qq.com&gt; 
+     * @link http://labs.yulans.cn/YL_Security_Secoder 
+     * @link http://wiki.yulans.cn/docs/yl/security/secoder 
+     */  
+    class YL_Security_Secoder {  
+        /** 
+         * 验证码的session的下标 
+         *  
+         * @var string 
+         */  
+        //public static $seKey = &#39;sid.sek ey.ylans.cn&#39;;  
+        public static $seKey = &#39;sid&#39;;  
+        public static $expire = 3000;     // 验证码过期时间（s）  
+        /** 
+         * 验证码中使用的字符，01IO容易混淆，建议不用 
+         * 
+         * @var string 
+         */  
+        public static $codeSet = &#39;346789ABCDEFGHJKLMNPQRTUVWXY&#39;;  
+        public static $fontSize = 25;     // 验证码字体大小(px)  
+        public static $useCurve = true;   // 是否画混淆曲线  
+        public static $useNoise = true;   // 是否添加杂点   
+        public static $imageH = 0;        // 验证码图片宽  
+        public static $imageL = 0;        // 验证码图片长  
+        public static $length = 4;        // 验证码位数  
+        public static $bg = array(243, 251, 254);  // 背景  
+
+        protected static $_image = null;     // 验证码图片实例  
+        protected static $_color = null;     // 验证码字体颜色  
+
+        /** 
+         * 输出验证码并把验证码的值保存的session中 
+         * 验证码保存到session的格式为： $_SESSION[self::$seKey] = array(&#39;code&#39; =&gt; &#39;验证码值&#39;, &#39;time&#39; =&gt; &#39;验证码创建时间&#39;); 
+         */  
+        public static function entry() {  
+            // 图片宽(px)  
+            self::$imageL || self::$imageL = self::$length * self::$fontSize * 1.5 + self::$fontSize*1.5;   
+            // 图片高(px)  
+            self::$imageH || self::$imageH = self::$fontSize * 2;  
+            // 建立一幅 self::$imageL x self::$imageH 的图像  
+            self::$_image = imagecreate(self::$imageL, self::$imageH);   
+            // 设置背景        
+            imagecolorallocate(self::$_image, self::$bg[0], self::$bg[1], self::$bg[2]);   
+            // 验证码字体随机颜色  
+            self::$_color = imagecolorallocate(self::$_image, mt_rand(1,120), mt_rand(1,120), mt_rand(1,120));  
+            // 验证码使用随机字体   
+            //$ttf = dirname(__FILE__) . &#39;/ttfs/&#39; . mt_rand(1, 20) . &#39;.ttf&#39;;  4  
+            $ttf = dirname(__FILE__) . &#39;/ttfs/4.ttf&#39;;    
+
+            if (self::$useNoise) {  
+                // 绘杂点  
+                self::_writeNoise();  
+            }   
+            if (self::$useCurve) {  
+                // 绘干扰线  
+                self::_writeCurve();  
+            }  
+
+            // 绘验证码  
+            $code = array(); // 验证码  
+            $codeNX = 0; // 验证码第N个字符的左边距  
+            for ($i = 0; $i&lt;self::$length; $i++) {  
+                $code[$i] = self::$codeSet[mt_rand(0, 27)];  
+                $codeNX += mt_rand(self::$fontSize*1.2, self::$fontSize*1.6);  
+                // 写一个验证码字符  
+                imagettftext(self::$_image, self::$fontSize, mt_rand(-40, 70), $codeNX, self::$fontSize*1.5, self::$_color, $ttf, $code[$i]);  
+            }  
+
+            // 保存验证码  
+            isset($_SESSION) || session_start();  
+            $_SESSION[self::$seKey][&#39;code&#39;] = join(&#39;&#39;, $code); // 把校验码保存到session  
+            $_SESSION[self::$seKey][&#39;time&#39;] = time();  // 验证码创建时间  
+
+            header(&#39;Cache-Control: private, max-age=0, no-store, no-cache, must-revalidate&#39;);  
+            header(&#39;Cache-Control: post-check=0, pre-check=0&#39;, false);        
+            header(&#39;Pragma: no-cache&#39;);       
+            header(&quot;content-type: image/png&quot;);  
+
+            // 输出图像  
+            imagepng(self::$_image);   
+            imagedestroy(self::$_image);  
+        }  
+
+        /**  
+         * 画一条由两条连在一起构成的随机正弦函数曲线作干扰线(你可以改成更帅的曲线函数)  
+         *       
+         *      高中的数学公式咋都忘了涅，写出来 
+         *      正弦型函数解析式：y=Asin(ωx+φ)+b 
+         *      各常数值对函数图像的影响： 
+         *        A：决定峰值（即纵向拉伸压缩的倍数） 
+         *        b：表示波形在Y轴的位置关系或纵向移动距离（上加下减） 
+         *        φ：决定波形与X轴位置关系或横向移动距离（左加右减） 
+         *        ω：决定周期（最小正周期T=2π/∣ω∣） 
+         * 
+         */  
+        protected static function _writeCurve() {  
+            $A = mt_rand(1, self::$imageH/2);                  // 振幅  
+            $b = mt_rand(-self::$imageH/4, self::$imageH/4);   // Y轴方向偏移量  
+            $f = mt_rand(-self::$imageH/4, self::$imageH/4);   // X轴方向偏移量  
+            $T = mt_rand(self::$imageH*1.5, self::$imageL*2);  // 周期  
+            $w = (2* M_PI)/$T;  
+
+            $px1 = 0;  // 曲线横坐标起始位置  
+            $px2 = mt_rand(self::$imageL/2, self::$imageL * 0.667);  // 曲线横坐标结束位置             
+            for ($px=$px1; $px&lt;=$px2; $px=$px+ 0.9) {  
+                if ($w!=0) {  
+                    $py = $A * sin($w*$px + $f)+ $b + self::$imageH/2;  // y = Asin(ωx+φ) + b  
+                    $i = (int) ((self::$fontSize - 6)/4);  
+                    while ($i &gt; 0) {   
+                        imagesetpixel(self::$_image, $px + $i, $py + $i, self::$_color);  // 这里画像素点比imagettftext和imagestring性能要好很多                    
+                        $i--;  
+                    }  
+                }  
+            }  
+
+            $A = mt_rand(1, self::$imageH/2);                  // 振幅          
+            $f = mt_rand(-self::$imageH/4, self::$imageH/4);   // X轴方向偏移量  
+            $T = mt_rand(self::$imageH*1.5, self::$imageL*2);  // 周期  
+            $w = (2* M_PI)/$T;        
+            $b = $py - $A * sin($w*$px + $f) - self::$imageH/2;  
+            $px1 = $px2;  
+            $px2 = self::$imageL;  
+            for ($px=$px1; $px&lt;=$px2; $px=$px+ 0.9) {  
+                if ($w!=0) {  
+                    $py = $A * sin($w*$px + $f)+ $b + self::$imageH/2;  // y = Asin(ωx+φ) + b  
+                    $i = (int) ((self::$fontSize - 8)/4);  
+                    while ($i &gt; 0) {           
+                        imagesetpixel(self::$_image, $px + $i, $py + $i, self::$_color);  // 这里(while)循环画像素点比imagettftext和imagestring用字体大小一次画出（不用这while循环）性能要好很多      
+                        $i--;  
+                    }  
+                }  
+            }  
+        }  
+
+        /** 
+         * 画杂点 
+         * 往图片上写不同颜色的字母或数字 
+         */  
+        protected static function _writeNoise() {  
+            for($i = 0; $i &lt; 10; $i++){  
+                //杂点颜色  
+                $noiseColor = imagecolorallocate(  
+                                  self::$_image,   
+                                  mt_rand(150,225),   
+                                  mt_rand(150,225),   
+                                  mt_rand(150,225)  
+                              );  
+                for($j = 0; $j &lt; 5; $j++) {  
+                    // 绘杂点  
+                    imagestring(  
+                        self::$_image,  
+                        5,   
+                        mt_rand(-10, self::$imageL),   
+                        mt_rand(-10, self::$imageH),   
+                        self::$codeSet[mt_rand(0, 27)], // 杂点文本为随机的字母或数字  
+                        $noiseColor  
+                    );  
+                }  
+            }  
+        }  
+
+        /** 
+         * 验证验证码是否正确 
+         * 
+         * @param string $code 用户验证码 
+         * @param bool 用户验证码是否正确 
+         */  
+        public static function check($code) {  
+            isset($_SESSION) || session_start();  
+            // 验证码不能为空  
+            if(empty($code) || empty($_SESSION[self::$seKey])) {  
+                //echo $_SESSION[self::$seKey][&#39;code&#39;].&#39;1&#39;;  
+                return false;  
+
+            }  
+            // session 过期  
+            if(time() - $_SESSION[self::$seKey][&#39;time&#39;] &gt; self::$expire) {  
+                unset($_SESSION[self::$seKey]);  
+                //echo $_SESSION[self::$seKey][&#39;code&#39;].&#39;2&#39;;  
+                return false;  
+                //return 0;  
+            }  
+
+    //      if($code == $_SESSION[self::$seKey][&#39;code&#39;]) {  
+            if(strtoupper($code) == $_SESSION[self::$seKey][&#39;code&#39;]) { //不区分大小写比较  
+                //echo $_SESSION[self::$seKey][&#39;code&#39;].&#39;3&#39;;  
+                return true;          
+            }  
+            //echo $_SESSION[self::$seKey][&#39;code&#39;].&#39;4&#39;;  
+            return false;  
+
+        }  
+    }  
+
+
+    // useage  
+    /* 
+    YL_Security_Secoder::$useNoise = false;  // 要更安全的话改成true 
+    YL_Security_Secoder::$useCurve = true; 
+    YL_Security_Secoder::entry(); 
+    */  
+
+    /* 
+    // 验证验证码 
+    if (!YL_Security_Secoder::check(@$_POST[&#39;secode&#39;])) { 
+        print &#39;error secode&#39;; 
+    } 
+    */  </code></pre><h3 id="三-调用方法"><a href="#三-调用方法" class="headerlink" title="三 调用方法"></a>三 调用方法</h3><p>1.显示验证码页面code.php</p>
+<pre><code>    &lt;?php    
+        session_start();  
+        require &#39;secoder.class.php&#39;;  //先把类包含进来，实际路径根据实际情况进行修改。    
+        $vcode = new YL_Security_Secoder();      //实例化一个对象    
+        $vcode-&gt;entry();    
+    ?&gt;   </code></pre><p>2.检查验证码是否正确</p>
+<pre><code>    &lt;?php    
+        session_start();  
+        require &#39;secoder.class.php&#39;;  //先把类包含进来，实际路径根据实际情况进行修改。    
+        $vcode = new YL_Security_Secoder();      //实例化一个对象    
+        //$vcode-&gt;entry();    
+        $code = $_GET[&#39;code&#39;];   
+        echo $vcode-&gt;check($code);          
+        //$_SESSION[&#39;code&#39;] = $vc-&gt;getCode();//验证码保存到SESSION中  
+    ?&gt;   </code></pre><p>3.验证码输入框调用页面</p>
+<pre><code>    &lt;img id=&quot;messageImg&quot; src=&#39;images/tishis2.gif&#39; width=&#39;16&#39; height=&#39;16&#39;&gt; 单击图片重新获取验证码&lt;br&gt;  
+    &lt;a href=&quot;#&quot;&gt;&lt;img src=&quot;code.php&quot; onclick=&quot;javascript:this.src=&#39;code.php?tm=&#39;+Math.random();&quot; /&gt;  </code></pre>
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2016/07/03/PHP%E9%AA%8C%E8%AF%81%E7%A0%81%E7%B1%BB/" data-id="ckcqdgkr800sf9xlf1prz1wzu" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/07/03/Android%E7%A8%8B%E5%BA%8Fcrash%E5%A4%84%E7%90%86/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Android程序crash处理
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/06/22/%E5%85%B3%E4%BA%8EonNewIntent%E7%9A%84%E4%BD%BF%E7%94%A8/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">关于onNewIntent的使用</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

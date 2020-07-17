@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Laravel多用户认证系统 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="自从Laravel5.2开始，自带的Auth认证系统可以支持多个角色认证了。就是说你比如果有管理员、普通用户这两种角色，都可以通过同一个Auth系统来实现认证。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Laravel多用户认证系统">
+<meta property="og:url" content="http://moqiang02.github.io/2017/01/05/Laravel%E5%A4%9A%E7%94%A8%E6%88%B7%E8%AE%A4%E8%AF%81%E7%B3%BB%E7%BB%9F/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="自从Laravel5.2开始，自带的Auth认证系统可以支持多个角色认证了。就是说你比如果有管理员、普通用户这两种角色，都可以通过同一个Auth系统来实现认证。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-01-05T02:30:09.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:18.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta property="article:tag" content="Laravel">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Laravel多用户认证系统" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/01/05/Laravel%E5%A4%9A%E7%94%A8%E6%88%B7%E8%AE%A4%E8%AF%81%E7%B3%BB%E7%BB%9F/" class="article-date">
+  <time datetime="2017-01-05T02:30:09.000Z" itemprop="datePublished">2017-01-05</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Laravel多用户认证系统
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <p>自从Laravel5.2开始，自带的Auth认证系统可以支持多个角色认证了。就是说你比如果有管理员、普通用户这两种角色，都可以通过同一个Auth系统来实现认证。<a id="more"></a></p>
+<h3 id="1、自动生成代码"><a href="#1、自动生成代码" class="headerlink" title="1、自动生成代码"></a>1、自动生成代码</h3><p>Laravel自带的Auth可以通过一行命令来生成相关的认证控制器、模版以及路由：</p>
+<p><code>php artisan make:auth</code></p>
+<p>这样就会生成一个AuthController认证控制器和HomeController通用控制器，这个控制器没什么用，就是登录成功后跳转的；还有就是一些登录注册需要的模版文件，在<code>resource/view</code>里面看看就知道了；而且还会在路由文件中生成相关认证路由，源代码在<code>\Illuminate\Routing\Router::auth();</code>，其实就是配置了一些登录注册用的：</p>
+<pre><code>public function auth() {  
+    // Authentication Routes... 
+    $this-&gt;get(&#39;login&#39;, &#39;Auth\AuthController@showLoginForm&#39;); 
+    $this-&gt;post(&#39;login&#39;, &#39;Auth\AuthController@login&#39;); 
+    $this-&gt;get(&#39;logout&#39;, &#39;Auth\AuthController@logout&#39;);  
+
+    // Registration Routes... 
+    $this-&gt;get(&#39;register&#39;, &#39;Auth\AuthController@showRegistrationForm&#39;); 
+    $this-&gt;post(&#39;register&#39;, &#39;Auth\AuthController@register&#39;);  
+
+    // Password Reset Routes... 
+    $this-&gt;get(&#39;password/reset/{token?}&#39;, &#39;Auth\PasswordController@showResetForm&#39;); 
+    $this-&gt;post(&#39;password/email&#39;, &#39;Auth\PasswordController@sendResetLinkEmail&#39;); 
+    $this-&gt;post(&#39;password/reset&#39;, &#39;Auth\PasswordController@reset&#39;); 
+}</code></pre><h3 id="2、config-auth-php文件配置"><a href="#2、config-auth-php文件配置" class="headerlink" title="2、config/auth.php文件配置"></a>2、config/auth.php文件配置</h3><p>这个是和认证相关的配置文件，估计很多人看不懂里面一些概念，比如说guard以及provider<br>这些，文档也基本上是没写。那么guard到底是什么东西呢？这个可以理解为就是一个角色，在guards<br>数组中的每一项都是一个角色，默认的有web和api两种，这就表示了当前有这两种角色会使用到认证系统。当然，这两种肯定是不会满足我们要求的，所以我们一般都会自定义一些guard。自定义也很简单，就是在guards数组增加一项，其中driver就是表示这个认证要怎么去保存用户状态，一般是保存在session中，而provider就是下面provider数组的一项，那么provider又是什么鬼呢？这个更好理解了，你要实现用户认证肯定要保存用户名密码对吧，那么provider就是告诉Laravel你的用户信息保存在哪一张表里面，driver就是告诉了要使用那种方式来操作数据库。</p>
+<h3 id="3、认证"><a href="#3、认证" class="headerlink" title="3、认证"></a>3、认证</h3><p>其实Laravel自动生成的代码已经可以满足登录注册的需求了，但是每一个guard都需要一个AuthController来，那么如何公用一个认证控制器呢？这里就是用到guard这个东西了，因为可以表示用户身份来进行不同的逻辑。但是，在认证控制器中无法获取到这guard，所以我们可以通过路由参数的方式来实现。定义一个路由群组：</p>
+<p><code>Route::group([&#39;prefix&#39;=&gt;&#39;{guard}&#39;],function(){ Route::auth();});</code></p>
+<p>在这个路由群组中我们设置前缀为guard参数，这样就可以在AuthController中获取到当前的guard了。一般情况下我们获取路由参数都是通过依赖注入Request实例来获取，但是这里也有一个坑那就是我在5.1版本之前路由参数都可以通过</p>
+<p><code>$request-&gt;input(&#39;key&#39;)</code></p>
+<p>这样来获取，但是在5.2中已经不行了，必须通过</p>
+<p><code>$request-&gt;key</code></p>
+<p>来获取，或者就是直接从路由实例中获取，不知道这是什么原因。在AuthController控制器中使用了一些trait，这些trait就是实现了认证注册的逻辑，可以通过重写一些控制器的属性来自定义逻辑。包括$redirectTo还有$guard以及$username等等，这些一看就知道第一个是登录成功后跳转，第二个就是定义当前使用的guard，第三个就是认证使用的用户名字段。所以我们可以在认证控制器中通过获取到的guard来自定义。</p>
+<h3 id="4、路由保护"><a href="#4、路由保护" class="headerlink" title="4、路由保护"></a>4、路由保护</h3><p>一般做认证系统的，都是要来保护路由的，那么如何保护路由呢？文档里面说给需要保护的路由添加一个auth中间件，那么事实是怎样的呢？事实也确实是这样，不过文档没有说的一点是，通过auth中间件保护的路由<strong>必须还要加上web中间件、必须还要加上web中间件、必须还要加上web中间件</strong>,重要的事情要说三遍啊，不然会出现什么问题呢？不管你认证成功失败都是会跳转到/这条路由，这个大坑要注意！当然你也可以在中间件中指定guard来让Laravel知道通过那个来认证，如果没指定的话就是使用配置文件里面默认的：</p>
+<p><code>Route::get(&#39;profile&#39;, [ &#39;middleware&#39; =&gt; &#39;auth:api&#39;, &#39;uses&#39; =&gt; &#39;ProfileController@show&#39;]);</code></p>
+<h3 id="5、获取用户实例"><a href="#5、获取用户实例" class="headerlink" title="5、获取用户实例"></a>5、获取用户实例</h3><p>通过认证后就可以通过Auth门面来获取到当前通过认证的用户实例。</p>
+<p><code>$user = Auth::user();</code></p>
+<p>这里还有一个要注意的是，以上的方式默认获取的是配置文件中的guard的，假如你当前登录的guard不是配置文件中的，就必须要这样子来获取：</p>
+<p><code>$user = Auth::guard(&#39;guard&#39;)-&gt;user();</code></p>
+<h3 id="6、总结"><a href="#6、总结" class="headerlink" title="6、总结"></a>6、总结</h3><p>总得来说，Laravel5.2自带的Auth系统还是很好用的，只是有一些小坑文档没说清楚，用过几次之后就可以很熟悉了，可以给我们节约很多的开发时间。</p>
+<hr>
+<h3 id="Laravel中Auth-guard-表示什么意思？"><a href="#Laravel中Auth-guard-表示什么意思？" class="headerlink" title="Laravel中Auth::guard()表示什么意思？"></a>Laravel中<code>Auth::guard()</code>表示什么意思？</h3><p>按照我的理解，每一个 Guard 代表一个用户组。</p>
+<p>在 Laravel5.3 中对于多组用户有更加完善的支持，我们可以有多组用户系统，比方说前台、后台各有一组用户系统。</p>
+<p>而 Guard 起到什么作用呢，这里可以举个栗子：</p>
+<blockquote>
+<p><code>Auth::check()</code> 是判断用户是否登录的方法，如果使用的默认用户系统，那这样使用没问题。</p>
+</blockquote>
+<blockquote>
+<p>但是使用两组用户的话，如何使用各组用户的功能呢？ <code>Auth::guard(&#39;users&#39;)-&gt;check()</code> 就是用来判断前台用户是否登录，而 <code>Auth::guard(&#39;admins&#39;)-&gt;check()</code> 就是用来判断后台用户是否登录的。</p>
+</blockquote>
+<p>一般来说，你的<code>auth.php</code>配置文件中，会配置一个default用户组，一般为users，则使用users组用户时候不用指定guard，而使用其他组用户时候，则需要使用guard来指定使用的哪组用户。</p>
+<hr>
+<p><strong>handle参数<code>$guard = null</code>何时赋值问题</strong><br>Authenticate中间件</p>
+<pre><code>public function handle($request, Closure $next, $guard = null)
+    {
+        if (Auth::guard($guard)-&gt;guest()) {
+            if ($request-&gt;ajax()) {
+                return response(&#39;Unauthorized.&#39;, 401);
+            } else {
+                return redirect()-&gt;guest($guard.&#39;/login&#39;); //注意这里的$guard
+            }
+        }
+
+        return $next($request);
+    }</code></pre><p>route.php</p>
+<pre><code>Route::group([&#39;middleware&#39; =&gt; [&#39;auth:admin&#39;]], function () {
+        Route::get(&#39;admin/index&#39;, &#39;AdminController@index&#39;);
+    });</code></pre><p><code>auth:admin</code> 调用auth中间件的时候传递一个admin，这个admin正好是被中间件的<code>$guard</code>接收，于是访问后台的时候都会被跳转导<code>admin/login</code>，同理 前台用户登陆的中间件可以是 <code>auth:user</code> , 这样会跳转到<code>user/login</code>。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2017/01/05/Laravel%E5%A4%9A%E7%94%A8%E6%88%B7%E8%AE%A4%E8%AF%81%E7%B3%BB%E7%BB%9F/" data-id="ckcqdgkog00jn9xlf1go7hnu1" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Laravel/" rel="tag">Laravel</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2017/01/05/Laravel%E4%B8%8B%E8%87%AA%E5%AE%9A%E4%B9%89Auth/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Laravel下自定义Auth
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2017/01/05/%E5%88%9B%E5%BB%BA%E8%87%AA%E5%AE%9A%E4%B9%89%20Facades%20%E7%B1%BB/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">创建自定义 Facades 类</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

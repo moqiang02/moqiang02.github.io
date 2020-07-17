@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>PHP敏感词过滤DFA算法实现 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="使用PHP借助DFA算法实现敏感词过滤功能，参照了zenghansen的代码，其中修改了原类的BUG，并增加了查找方法，并对王*八&amp;&amp;蛋这样的，中间填充了无意义的字符来混淆的词的增强匹配处理。DFA敏感词过滤的原理就是将所有的敏感词载中内存，构建一个个树结构，然后将待匹配的字符串截断成数组，匹配每个数组元素与构建的敏感字典树的节点，匹配得到终节点就说明匹配成功。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PHP敏感词过滤DFA算法实现">
+<meta property="og:url" content="http://moqiang02.github.io/2019/08/26/PHP%E6%95%8F%E6%84%9F%E8%AF%8D%E8%BF%87%E6%BB%A4DFA%E7%AE%97%E6%B3%95%E5%AE%9E%E7%8E%B0/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="使用PHP借助DFA算法实现敏感词过滤功能，参照了zenghansen的代码，其中修改了原类的BUG，并增加了查找方法，并对王*八&amp;&amp;蛋这样的，中间填充了无意义的字符来混淆的词的增强匹配处理。DFA敏感词过滤的原理就是将所有的敏感词载中内存，构建一个个树结构，然后将待匹配的字符串截断成数组，匹配每个数组元素与构建的敏感字典树的节点，匹配得到终节点就说明匹配成功。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/PHP%E6%95%8F%E6%84%9F%E8%AF%8D%E8%BF%87%E6%BB%A4DFA%E7%AE%97%E6%B3%95%E5%AE%9E%E7%8E%B0/1.jpg">
+<meta property="article:published_time" content="2019-08-26T08:14:44.000Z">
+<meta property="article:modified_time" content="2019-08-26T10:56:46.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/PHP%E6%95%8F%E6%84%9F%E8%AF%8D%E8%BF%87%E6%BB%A4DFA%E7%AE%97%E6%B3%95%E5%AE%9E%E7%8E%B0/1.jpg">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-PHP敏感词过滤DFA算法实现" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/08/26/PHP%E6%95%8F%E6%84%9F%E8%AF%8D%E8%BF%87%E6%BB%A4DFA%E7%AE%97%E6%B3%95%E5%AE%9E%E7%8E%B0/" class="article-date">
+  <time datetime="2019-08-26T08:14:44.000Z" itemprop="datePublished">2019-08-26</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/php/">php</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      PHP敏感词过滤DFA算法实现
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <p>使用PHP借助DFA算法实现敏感词过滤功能，参照了<a href="http://www.cnblogs.com/zenghansen/p/5688995.html" target="_blank" rel="noopener">zenghansen</a>的代码，其中修改了原类的BUG，并增加了查找方法，并对王*八&amp;&amp;蛋这样的，中间填充了无意义的字符来混淆的词的增强匹配处理。<br>DFA敏感词过滤的原理就是将所有的敏感词载中内存，构建一个个树结构，然后将待匹配的字符串截断成数组，匹配每个数组元素与构建的敏感字典树的节点，匹配得到终节点就说明匹配成功。<a id="more"></a><br><img src="/images/PHP%E6%95%8F%E6%84%9F%E8%AF%8D%E8%BF%87%E6%BB%A4DFA%E7%AE%97%E6%B3%95%E5%AE%9E%E7%8E%B0/1.jpg" alt=""></p>
+<p>对应PHP实现代码如下：</p>
+<pre><code class="php">&lt;?php
+
+/**
+ * 敏感词过滤工具类DFA算法
+ *
+ * @author zenghansen  http://www.cnblogs.com/zenghansen/p/5688995.html
+ */
+class SensitiveWordsUtils {
+
+    private $dict;
+
+    public function __construct($words) {
+        $this-&gt;dict = array();
+        // 构建敏感词树
+        foreach ($words as $_word) {
+            $uWord = $this-&gt;unicodeSplit($_word);
+
+            $pdict = &amp;$this-&gt;dict;
+
+            $count = count($uWord);
+            for ($i = 0; $i &lt; $count; $i++) {
+                if (!isset($pdict[$uWord[$i]])) {
+                    $pdict[$uWord[$i]] = array();
+                }
+                $pdict = &amp;$pdict[$uWord[$i]];
+            }
+
+            $pdict[&#39;end&#39;] = true;
+        }
+    }
+
+    // 判断是否包含敏感词
+    public function contains($str) {
+        $uStr = $this-&gt;unicodeSplit($str);
+        $count = count($uStr);
+
+        for ($i = 0; $i &lt; $count; $i++) {
+            $pdict = $this-&gt;dict;
+            $char = strtolower($uStr[$i]);
+            if (isset($pdict[$char])) {
+                $pdict = $pdict[$char];
+                for ($j = $i + 1; $j &lt; $count; $j++) {
+                    $char2 = strtolower($uStr[$j]);
+                    if (isset($pdict[$char2])) {
+                        if (isset($pdict[&#39;end&#39;])) {
+                            // 小串匹配，例：宝宝
+                            return true;
+                        }
+                        $pdict = $pdict[$char2];
+                    } else if (!preg_match(&quot;/[ +=*&amp;$#@\&quot;&#39;)(~_]/&quot;, $char2)) {
+                        // 以特别的字符进行分割敏感词的手段也要匹配
+                        // 例：大****麻，匹配：大麻
+                        break;
+                    }
+                }
+                if (isset($pdict[&#39;end&#39;])) {
+                    // 大串匹配，例：宝宝穿越记
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    // 替换敏感词为*号，搜索深度默认为5
+    public function filter($str, $maxDistance = 5) {
+        if ($maxDistance &lt; 1) {
+            $maxDistance = 1;
+        }
+        $uStr = $this-&gt;unicodeSplit($str, false);
+
+        $count = count($uStr);
+
+        for ($i = 0; $i &lt; $count; $i++) {
+            // 每个字符的开始，都是重新从词典开始匹配，做到不放过句子中的任何敏感词
+            $pdict = $this-&gt;dict;
+            $char = strtolower($uStr[$i]);
+            if (isset($pdict[$char])) {
+                $pdict = $pdict[$char];
+
+                $matchIndexes = array();
+
+                for ($j = $i + 1, $d = 0; $d &lt; $maxDistance &amp;&amp; $j &lt; $count; $j++, $d++) {
+                    $char2 = strtolower($uStr[$j]);
+                    if (isset($pdict[$char2])) {
+                        if (isset($pdict[&#39;end&#39;])) {
+                            // 小串匹配，例：宝宝
+                            $uStr[$i] = &#39;*&#39;;
+                            foreach ($matchIndexes as $k) {
+                                if ($k - $i == 1) {
+                                    $i = $k;
+                                }
+                                $uStr[$k] = &#39;*&#39;;
+                            }
+                            $matchIndexes = array();
+                        }
+                        $matchIndexes[] = $j;
+                        $pdict = $pdict[$char2];
+                        $d = -1;
+                    } else if (!preg_match(&quot;/[ +=*&amp;$#@\&quot;&#39;)(~_]/&quot;, $char2)) {
+                        // 以特别的字符进行分割敏感词的手段也要匹配
+                        // 例：大****麻，匹配：大麻
+                        break;
+                    }
+                }
+
+                if (isset($pdict[&#39;end&#39;])) {
+                    // 大串匹配，例：宝宝穿越记
+                    $uStr[$i] = &#39;*&#39;;
+                    foreach ($matchIndexes as $k) {
+                        if ($k - $i == 1) {
+                            $i = $k;
+                        }
+                        $uStr[$k] = &#39;*&#39;;
+                    }
+                }
+            }
+        }
+
+        return implode($uStr);
+    }
+
+    // 将字符串分割成数组
+    public function unicodeSplit($str, $caseword = true) {
+        if ($caseword)
+            $str = strtolower($str);
+        $ret = array();
+        $len = strlen($str);
+        for ($i = 0; $i &lt; $len; $i++) {
+            $c = ord($str[$i]);
+
+            if ($c &amp; 0x80) {
+                if (($c &amp; 0xf8) == 0xf0 &amp;&amp; $len - $i &gt;= 4) {
+                    if ((ord($str[$i + 1]) &amp; 0xc0) == 0x80 &amp;&amp; (ord($str[$i + 2]) &amp; 0xc0) == 0x80 &amp;&amp; (ord($str[$i + 3]) &amp; 0xc0) == 0x80) {
+                        $uc = substr($str, $i, 4);
+                        $ret[] = $uc;
+                        $i += 3;
+                    }
+                } else if (($c &amp; 0xf0) == 0xe0 &amp;&amp; $len - $i &gt;= 3) {
+                    if ((ord($str[$i + 1]) &amp; 0xc0) == 0x80 &amp;&amp; (ord($str[$i + 2]) &amp; 0xc0) == 0x80) {
+                        $uc = substr($str, $i, 3);
+                        $ret[] = $uc;
+                        $i += 2;
+                    }
+                } else if (($c &amp; 0xe0) == 0xc0 &amp;&amp; $len - $i &gt;= 2) {
+                    if ((ord($str[$i + 1]) &amp; 0xc0) == 0x80) {
+                        $uc = substr($str, $i, 2);
+                        $ret[] = $uc;
+                        $i += 1;
+                    }
+                }
+            } else {
+                $ret[] = $str[$i];
+            }
+        }
+
+        return $ret;
+    }
+}</code></pre>
+<p>使用示例：</p>
+<pre><code class="php">&lt;?php
+// 从数据库中加载敏感词数组
+function loadWords() {
+    $mysql_conf = array(
+        &#39;host&#39; =&gt; &#39;127.0.0.1:3306&#39;,
+        &#39;db&#39; =&gt; &#39;test&#39;,
+        &#39;db_user&#39; =&gt; &#39;root&#39;,
+        &#39;db_pwd&#39; =&gt; &#39;123456&#39;,
+    );
+    $pdo = new PDO(&quot;mysql:host=&quot; . $mysql_conf[&#39;host&#39;] . &quot;;dbname=&quot; . $mysql_conf[&#39;db&#39;], $mysql_conf[&#39;db_user&#39;], $mysql_conf[&#39;db_pwd&#39;]);
+    $pdo-&gt;exec(&quot;set names &#39;utf8&#39;&quot;);
+    $sql = &quot;select keyword from dtb_sensitive_words&quot;;
+    $stmt = $pdo-&gt;prepare($sql);
+    $rs = $stmt-&gt;execute();
+    $words = array();
+    if ($rs) {
+        // PDO::FETCH_ASSOC 关联数组形式
+        // PDO::FETCH_NUM 数字索引数组形式
+        while ($row = $stmt-&gt;fetch(PDO::FETCH_ASSOC)) {
+            $words[] = $row[&#39;keyword&#39;];
+        }
+    }
+    $pdo = null; //关闭连接
+    return $words;
+}
+
+$words = loadWords();
+$util = new SensitiveWordsUtils($words);
+
+$param = &quot;哪有宝宝穿越，是不是的啊大 三 元哈哈哈----&quot;;
+echo $param . &quot;\n&quot;;
+// $param = &quot;宝宝穿越记&quot;;
+if ($util-&gt;contains($param)) {
+    echo $util-&gt;filter($param, 10);
+} else{
+    echo &quot;没有敏感词&quot;;
+}</code></pre>
+<p>如下，敏感词有：宝宝、宝宝穿越记、大三元，输出的结果为：</p>
+<pre><code>哪有宝宝穿越，是不是的啊大 三 元哈哈哈----
+哪有**穿越，是不是的啊* * *哈哈哈----</code></pre>
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2019/08/26/PHP%E6%95%8F%E6%84%9F%E8%AF%8D%E8%BF%87%E6%BB%A4DFA%E7%AE%97%E6%B3%95%E5%AE%9E%E7%8E%B0/" data-id="ckcqdgkqv00rc9xlfbcuf2szx" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2019/08/26/%E5%89%8D%E7%AB%AF%E9%9B%86%E9%94%A6/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          前端集锦
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2019/08/05/php%E6%89%A7%E8%A1%8C%E6%99%AE%E9%80%9Ashell%E5%91%BD%E4%BB%A4/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">php执行普通shell命令</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

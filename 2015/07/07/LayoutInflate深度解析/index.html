@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>LayoutInflate深度解析 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="一、 题外话相信大家对LayoutInflate都不陌生，特别在ListView的Adapter的getView方法中基本都会出现，使用inflate方法去加载一个布局，用于ListView的每个Item的布局。Inflate有三个参数，我在初学Android的时候这么理解的： 对于Inflate的三个参数(int resource, ViewGroup root, boolean attachT">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LayoutInflate深度解析">
+<meta property="og:url" content="http://moqiang02.github.io/2015/07/07/LayoutInflate%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="一、 题外话相信大家对LayoutInflate都不陌生，特别在ListView的Adapter的getView方法中基本都会出现，使用inflate方法去加载一个布局，用于ListView的每个Item的布局。Inflate有三个参数，我在初学Android的时候这么理解的： 对于Inflate的三个参数(int resource, ViewGroup root, boolean attachT">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/LayoutInflate%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90/1.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/LayoutInflate%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90/2.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/LayoutInflate%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90/3.jpg">
+<meta property="article:published_time" content="2015-07-07T15:42:28.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:28.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/LayoutInflate%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90/1.jpg">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-LayoutInflate深度解析" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/07/07/LayoutInflate%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90/" class="article-date">
+  <time datetime="2015-07-07T15:42:28.000Z" itemprop="datePublished">2015-07-07</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Android/">Android</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      LayoutInflate深度解析
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <h4 id="一、-题外话"><a href="#一、-题外话" class="headerlink" title="一、 题外话"></a>一、 题外话</h4><p>相信大家对LayoutInflate都不陌生，特别在ListView的Adapter的getView方法中基本都会出现，使用inflate方法去加载一个布局，用于ListView的每个Item的布局。Inflate有三个参数，我在初学Android的时候这么理解的：</p>
+<p>对于Inflate的三个参数(int resource, ViewGroup root, boolean attachToRoot)</p>
+<p>如果<code>inflate(layoutId, null )</code>则layoutId的最外层的控件的宽高是没有效果的</p>
+<p>如果<code>inflate(layoutId, root, false )</code> 则认为和上面效果是一样的</p>
+<p>如果<code>inflate(layoutId, root, true )</code> 则认为这样的话layoutId的最外层控件的宽高才能正常显示</p>
+<p>如果你也这么认为，那么你有就必要好好阅读这篇文章，因为这篇文章首先会验证上面的理解是 错误的 ，然后从源码角度去解释，最后会从ViewGroup与View的角度去解释。<a id="more"></a></p>
+<h4 id="二、-实践是验证真理的唯一标准"><a href="#二、-实践是验证真理的唯一标准" class="headerlink" title="二、 实践是验证真理的唯一标准"></a>二、 实践是验证真理的唯一标准</h4><p>下面我写一个特别常见的例子来验证上面的理解是错误的，一个特别简单的ListView，每个Item中放一个按钮：</p>
+<p>Activity的布局文件：</p>
+<pre><code>&lt;ListView xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;
+xmlns:tools=&quot;http://schemas.android.com/tools&quot;
+android:id=&quot;@+id/id_listview&quot;
+android:layout_width=&quot;fill_parent&quot;
+android:layout_height=&quot;wrap_content&quot; &gt;
+&lt;/ListView&gt;</code></pre><p>ListView的Item的布局文件：</p>
+<pre><code>&lt;Button xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;
+  xmlns:tools=&quot;http://schemas.android.com/tools&quot;
+  android:id=&quot;@+id/id_btn&quot;
+  android:layout_width=&quot;120dp&quot;
+  android:layout_height=&quot;120dp&quot; &gt;
+&lt;/Button&gt;</code></pre><p>ListView的适配器：</p>
+<pre><code>package com.example.zhy_layoutinflater;
+
+import java.util.List;
+
+import android.content.Context;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.BaseAdapter;
+import android.widget.Button;
+
+public class MyAdapter extends BaseAdapter
+{
+
+  private LayoutInflater mInflater;
+  private List&lt;String&gt; mDatas;
+
+  public MyAdapter(Context context, List&lt;String&gt; datas)
+  {
+    mInflater = LayoutInflater.from(context);
+    mDatas = datas;
+  }
+
+  @Override
+  public int getCount()
+  {
+    return mDatas.size();
+  }
+
+  @Override
+  public Object getItem(int position)
+  {
+    return mDatas.get(position);
+  }
+
+  @Override
+  public long getItemId(int position)
+  {
+    return position;
+  }
+
+  @Override
+  public View getView(int position, View convertView, ViewGroup parent)
+  {
+
+    ViewHolder holder = null;
+    if (convertView == null)
+    {
+      holder = new ViewHolder();
+      convertView = mInflater.inflate(R.layout.item, null);
+//    convertView = mInflater.inflate(R.layout.item, parent ,false);
+//      convertView = mInflater.inflate(R.layout.item, parent ,true);
+      holder.mBtn = (Button) convertView.findViewById(R.id.id_btn);
+      convertView.setTag(holder);
+    } else
+    {
+      holder = (ViewHolder) convertView.getTag();
+    }
+
+    holder.mBtn.setText(mDatas.get(position));
+
+    return convertView;
+  }
+
+  private final class ViewHolder
+  {
+    Button mBtn;
+  }
+}</code></pre><p>主Activity:</p>
+<pre><code>package com.example.zhy_layoutinflater;
+
+import java.util.Arrays;
+import java.util.List;
+
+import android.app.Activity;
+import android.os.Bundle;
+import android.widget.ListView;
+
+public class MainActivity extends Activity
+{
+
+  private ListView mListView;
+  private MyAdapter mAdapter;
+  private List&lt;String&gt; mDatas = Arrays.asList(&quot;Hello&quot;, &quot;Java&quot;, &quot;Android&quot;);
+
+  @Override
+  protected void onCreate(Bundle savedInstanceState)
+  {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+
+    mListView = (ListView) findViewById(R.id.id_listview);
+    mAdapter = new MyAdapter(this, mDatas);
+    mListView.setAdapter(mAdapter);
+  }
+
+}</code></pre><p>好了，相信大家对这个例子都再熟悉不过了，没啥好说的，我们主要关注getView里面的inflate那行代码：下面我依次把getView里的写成：</p>
+<p>1、<code>convertView = mInflater.inflate(R.layout.item, null);</code></p>
+<p>2、<code>convertView = mInflater.inflate(R.layout.item, parent ,false);</code></p>
+<p>3、<code>convertView = mInflater.inflate(R.layout.item, parent ,true);</code></p>
+<p>分别看效果图：</p>
+<p>图1：<br><img src="/images/LayoutInflate%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90/1.jpg" alt=""><br>图2：<br><img src="/images/LayoutInflate%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90/2.jpg" alt=""><br>图3：</p>
+<pre><code class="ini">FATAL EXCEPTION: main
+java.lang.UnsupportedOperationException: 
+addView(View, LayoutParams) is not supported in AdapterView</code></pre>
+<p>嗯，没错没有图3，第三种写法会报错。</p>
+<p>由上面三行代码的变化，产生3个不同的结果，可以看到</p>
+<p><code>inflater(resId, null )</code>的确不能正确处理宽高的值，但是<code>inflater(resId,parent,false)</code>并非和<code>inflater(resId, null )</code>效果一致，它可以看出完美的显示了宽和高。</p>
+<p>而<code>inflater(resId,parent,true)</code>报错了（错误的原因在解析源码的时候说）。</p>
+<p>由此可见：文章开始提出的理解是绝对错误的。</p>
+<h4 id="三、源码解析"><a href="#三、源码解析" class="headerlink" title="三、源码解析"></a>三、源码解析</h4><p>下面我通过源码来解释，这三种写法真正的差异</p>
+<p>这三个方法，最终都会执行下面的代码：</p>
+<pre><code>public View inflate(XmlPullParser parser, ViewGroup root, boolean attachToRoot) {
+    synchronized (mConstructorArgs) {
+      final AttributeSet attrs = Xml.asAttributeSet(parser);
+      Context lastContext = (Context)mConstructorArgs[0];
+      mConstructorArgs[0] = mContext;
+      View result = root;
+
+      try {
+        // Look for the root node.
+        int type;
+        while ((type = parser.next()) != XmlPullParser.START_TAG &amp;&amp;
+            type != XmlPullParser.END_DOCUMENT) {
+          // Empty
+        }
+
+        if (type != XmlPullParser.START_TAG) {
+          throw new InflateException(parser.getPositionDescription()
+              + &quot;: No start tag found!&quot;);
+        }
+
+        final String name = parser.getName();
+
+        if (DEBUG) {
+          System.out.println(&quot;**************************&quot;);
+          System.out.println(&quot;Creating root view: &quot;
+              + name);
+          System.out.println(&quot;**************************&quot;);
+        }
+
+        if (TAG_MERGE.equals(name)) {
+          if (root == null || !attachToRoot) {
+            throw new InflateException(&quot;&lt;merge /&gt; can be used only with a valid &quot;
+                + &quot;ViewGroup root and attachToRoot=true&quot;);
+          }
+
+          rInflate(parser, root, attrs, false);
+        } else {
+          // Temp is the root view that was found in the xml
+          View temp;
+          if (TAG_1995.equals(name)) {
+            temp = new BlinkLayout(mContext, attrs);
+          } else {
+            temp = createViewFromTag(root, name, attrs);
+          }
+
+          ViewGroup.LayoutParams params = null;
+
+          if (root != null) {
+            if (DEBUG) {
+              System.out.println(&quot;Creating params from root: &quot; +
+                  root);
+            }
+            // Create layout params that match root, if supplied
+            params = root.generateLayoutParams(attrs);
+            if (!attachToRoot) {
+              // Set the layout params for temp if we are not
+              // attaching. (If we are, we use addView, below)
+              temp.setLayoutParams(params);
+            }
+          }
+
+          if (DEBUG) {
+            System.out.println(&quot;-----&gt; start inflating children&quot;);
+          }
+          // Inflate all children under temp
+          rInflate(parser, temp, attrs, true);
+          if (DEBUG) {
+            System.out.println(&quot;-----&gt; done inflating children&quot;);
+          }
+
+          // We are supposed to attach all the views we found (int temp)
+          // to root. Do that now.
+          if (root != null &amp;&amp; attachToRoot) {
+            root.addView(temp, params);
+          }
+
+          // Decide whether to return the root that was passed in or the
+          // top view found in xml.
+          if (root == null || !attachToRoot) {
+            result = temp;
+          }
+        }
+
+      } catch (XmlPullParserException e) {
+        InflateException ex = new InflateException(e.getMessage());
+        ex.initCause(e);
+        throw ex;
+      } catch (IOException e) {
+        InflateException ex = new InflateException(
+            parser.getPositionDescription()
+            + &quot;: &quot; + e.getMessage());
+        ex.initCause(e);
+        throw ex;
+      } finally {
+        // Don&#39;t retain static reference on context.
+        mConstructorArgs[0] = lastContext;
+        mConstructorArgs[1] = null;
+      }
+
+      return result;
+    }
+  }</code></pre><p>第6行：首先声明了<code>View result = root ;</code>//最终返回值为result</p>
+<p>第43行执行了：<code>temp = createViewFromTag(root, name, attrs);</code>创建了View</p>
+<p>然后直接看48-59：</p>
+<pre><code>if(root==null)
+{
+ params = root.generateLayoutParams(attrs);
+        if (!attachToRoot)
+ {
+   temp.setLayoutParams(params);
+ }
+}</code></pre><p>可以看到，当root为null,attachToRoot为false时，为temp设置了LayoutParams.</p>
+<p>继续往下，看73-75行：</p>
+<pre><code>if (root != null &amp;&amp; attachToRoot)
+{
+root.addView(temp, params);
+}</code></pre><p>当root不为null，attachToRoot为true时，将tmp按照params添加到root中。</p>
+<p>然后78-81行：</p>
+<pre><code>if (root == null || !attachToRoot) { 
+    result = temp; 
+}</code></pre><p>如果root为null，或者attachToRoot为false则，将temp赋值给result。</p>
+<p>最后返回result。</p>
+<p>从上面的分析已经可以看出：</p>
+<p><code>Inflate(resId , null )</code>只创建temp ,返回temp</p>
+<p><code>Inflate(resId , parent, false )</code>创建temp，然后执行temp.setLayoutParams(params);返回temp</p>
+<p><code>Inflate(resId , parent, true )</code> 创建temp，然后执行root.addView(temp, params);最后返回root</p>
+<p>由上面已经能够解释：</p>
+<p><code>Inflate(resId , null )</code>不能正确处理宽和高是因为：layout_width,layout_height是相对了父级设置的，必须与父级的LayoutParams一致。而此temp的getLayoutParams为null</p>
+<p><code>Inflate(resId , parent,false )</code> 可以正确处理，因为temp.setLayoutParams(params);这个params正是root.generateLayoutParams(attrs);得到的。</p>
+<blockquote>
+<p>params = root.generateLayoutParams(attrs);<br>这段的意思是：如果调用inflate方法，传入了ViewGroup root参数，则会从root中得到由layout_width和layout_height组成的LayoutParams，在attachToRoot设置为false的话，就会对我们加载的视图View设置该LayoutParams。</p>
+</blockquote>
+<p><code>Inflate(resId , parent,true )</code>不仅能够正确的处理，而且已经把resId这个view加入到了parent，并且返回的是parent，和以上两者返回值有绝对的区别，还记得文章前面的例子上，MyAdapter里面的getView报的错误:</p>
+<pre><code class="ini">java.lang.UnsupportedOperationException: 
+addView(View, LayoutParams) is not supported in AdapterView</code></pre>
+<p>这是因为源码中调用了<code>root.addView(temp, params);</code>而此时的root是我们的ListView，ListView为AdapterView的子类:</p>
+<p>直接看AdapterView的源码：</p>
+<pre><code>@Override
+  public void addView(View child) {
+        throw new UnsupportedOperationException(&quot;addView(View) is not supported in AdapterView&quot;);
+  }</code></pre><p>可以看到这个错误为啥产生了。</p>
+<h4 id="四、-进一步的解析"><a href="#四、-进一步的解析" class="headerlink" title="四、 进一步的解析"></a>四、 进一步的解析</h4><p>上面我根据源码得出的结论可能大家还是有一丝的迷惑，我再写个例子论证我们上面得出的结论：</p>
+<p>主布局文件：</p>
+<pre><code>&lt;Button xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;
+  xmlns:tools=&quot;http://schemas.android.com/tools&quot;
+  android:id=&quot;@+id/id_btn&quot;
+  android:layout_width=&quot;120dp&quot;
+  android:layout_height=&quot;120dp&quot;
+  android:text=&quot;Button&quot; &gt;
+&lt;/Button&gt;</code></pre><p>主Activity:</p>
+<pre><code>package com.example.zhy_layoutinflater;
+
+import android.app.ListActivity;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+
+public class MainActivity extends ListActivity
+{
+
+
+  private LayoutInflater mInflater;
+
+  @Override
+  protected void onCreate(Bundle savedInstanceState)
+  {
+    super.onCreate(savedInstanceState);
+
+    mInflater = LayoutInflater.from(this);
+
+    View view1 = mInflater.inflate(R.layout.activity_main, null);
+    View view2 = mInflater.inflate(R.layout.activity_main,
+        (ViewGroup)findViewById(android.R.id.content), false);
+    View view3 = mInflater.inflate(R.layout.activity_main,
+        (ViewGroup)findViewById(android.R.id.content), true);
+
+    Log.e(&quot;TAG&quot;, &quot;view1 = &quot; + view1  +&quot; , view1.layoutParams = &quot; + view1.getLayoutParams());
+    Log.e(&quot;TAG&quot;, &quot;view2 = &quot; + view2  +&quot; , view2.layoutParams = &quot; + view2.getLayoutParams());
+    Log.e(&quot;TAG&quot;, &quot;view3 = &quot; + view3  );
+
+  }
+
+}</code></pre><p>可以看到我们的主Activity并没有执行setContentView，仅仅执行了LayoutInflater的3个方法。</p>
+<p>注：parent我们用的是Activity的内容区域：即android.R.id.content，是一个FrameLayout，我们在setContentView(resId)时，其实系统会自动为了包上一层FrameLayout（id=content）。</p>
+<p>按照我们上面的说法：</p>
+<p>view1的layoutParams 应该为null</p>
+<p>view2的layoutParams 应该不为null，且为FrameLayout.LayoutParams</p>
+<p>view3为FrameLayout，且将这个button添加到Activity的内容区域了（因为R.id.content代表Actvity内容区域）</p>
+<p>下面看一下输出结果，和Activity的展示：</p>
+<pre><code class="ini">07-27 14:17:36.703: E/TAG(2911): view1 = android.widget.Button@429d1660 , view1.layoutParams = null
+07-27 14:17:36.703: E/TAG(2911): view2 = android.widget.Button@42a0e120 , view2.layoutParams = android.widget.FrameLayout$LayoutParams@42a0e9a0
+07-27 14:17:36.703: E/TAG(2911): view3 = android.widget.FrameLayout@42a0a240</code></pre>
+<p>效果图：<br><img src="/images/LayoutInflate%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90/3.jpg" alt=""><br>可见，虽然我们没有执行setContentView，但是依然可以看到绘制的控件，是因为</p>
+<p><code>View view3 = mInflater.inflate(R.layout.activity_main,(ViewGroup)findViewById(android.R.id.content), true);</code></p>
+<p>这个方法内部已经执行了<code>root.addView(temp , params);</code> 上面已经解析过了。</p>
+<p>也可以看出：和我们的推测完全一致，到此已经完全说明了inflate3个重载的方法的区别。相信大家以后在使用时也能选择出最好的方式。不过下面准备从ViewGroup和View的角度来说一下，为啥layoutParams为null，就不能这确的处理。</p>
+<h4 id="五、从ViewGroup和View的角度来解析"><a href="#五、从ViewGroup和View的角度来解析" class="headerlink" title="五、从ViewGroup和View的角度来解析"></a>五、从ViewGroup和View的角度来解析</h4><p>如果大家对自定义ViewGroup和自定义View有一定的掌握，肯定不会对onMeasure方法陌生： ViewGroup的onMeasure方法所做的是：</p>
+<p>为childView设置测量模式和测量出来的值。</p>
+<p>如何设置呢？就是根据LayoutParams。</p>
+<p>如果childView的宽为：LayoutParams. MATCH_PARENT，则设置模式为MeasureSpec.EXACTLY，且为childView计算宽度。</p>
+<p>如果childView的宽为：固定值（即大于0），则设置模式为MeasureSpec.EXACTLY，且将lp.width直接作为childView的宽度。</p>
+<p>如果childView的宽为：LayoutParams. WRAP_CONTENT，则设置模式为：MeasureSpec.AT_MOST</p>
+<p>高度与宽度类似。</p>
+<p>View的onMeasure方法：</p>
+<p>主要做的就是根据ViewGroup传入的测量模式和测量值，计算自己应该的宽和高：</p>
+<p>一般是这样的流程：</p>
+<p>如果宽的模式是AT_MOST：则自己计算宽的值。</p>
+<p>如果宽的模式是EXACTLY：则直接使用<code>MeasureSpec.getSize(widthMeasureSpec);</code></p>
+<p>对于最后一块，如果不清楚，不要紧，以后我会在自定义ViewGroup和自定义View时详细讲解的。</p>
+<p>大概就是这样的流程，真正的绘制过程肯定比这个要复杂，就是为了说明如果View的宽和高如果设置为准确值，则一定依赖于LayoutParams，所以我们的<code>inflate(resId,null)</code>才没能正确处理宽和高。</p>
+<blockquote>
+<p>参考：<br><a href="http://blog.csdn.net/lmj623565791/article/details/38171465" target="_blank" rel="noopener">Android LayoutInflater深度解析 给你带来全新的认识</a><br><a href="http://blog.csdn.net/xyz_fly/article/details/37932989" target="_blank" rel="noopener">Android编程之LayoutInflater的inflate方法实例</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2015/07/07/LayoutInflate%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90/" data-id="ckcqdgkoi00jw9xlf3hdt8w8q" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/07/09/Ajax%E8%B7%A8%E5%9F%9F%E9%97%AE%E9%A2%98%E8%A7%A3%E5%86%B3%E6%9C%80%E5%A5%BD%E6%96%B9%E6%A1%88/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Ajax跨域问题解决最好方案
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/07/05/%E7%BC%93%E5%86%B2%E5%8A%A0%E8%BD%BD%E5%9B%BE%E7%89%87%E7%9A%84-jQuery-%E6%8F%92%E4%BB%B6-lazyload-js-%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95%E8%AF%A6%E8%A7%A3/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">缓冲加载图片的 jQuery 插件 lazyload.js 使用方法详解</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

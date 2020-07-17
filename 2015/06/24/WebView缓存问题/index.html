@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>WebView缓存问题 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="本节引言：现在很多门户类信息网站，比如虎嗅，ifanr，钛媒体等等的APP，简单点说是信息阅读类的APP，很多 都是直接嵌套一个WebView用来显示相关资讯的，这可能就涉及到了WebView的缓存了！ 所谓的页面缓存 就是指：保存加载一个网页时所需的HTML，JS，CSS等页面相关的数据以及其他资源，当没网的时候或者 网络状态较差的时候，加载本地保存好的相关数据！而实现这个缓存的方式有两种，一种">
+<meta property="og:type" content="article">
+<meta property="og:title" content="WebView缓存问题">
+<meta property="og:url" content="http://moqiang02.github.io/2015/06/24/WebView%E7%BC%93%E5%AD%98%E9%97%AE%E9%A2%98/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="本节引言：现在很多门户类信息网站，比如虎嗅，ifanr，钛媒体等等的APP，简单点说是信息阅读类的APP，很多 都是直接嵌套一个WebView用来显示相关资讯的，这可能就涉及到了WebView的缓存了！ 所谓的页面缓存 就是指：保存加载一个网页时所需的HTML，JS，CSS等页面相关的数据以及其他资源，当没网的时候或者 网络状态较差的时候，加载本地保存好的相关数据！而实现这个缓存的方式有两种，一种">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/WebView%E7%BC%93%E5%AD%98%E9%97%AE%E9%A2%98/1.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/WebView%E7%BC%93%E5%AD%98%E9%97%AE%E9%A2%98/2.gif">
+<meta property="article:published_time" content="2015-06-24T12:30:07.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:26.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/WebView%E7%BC%93%E5%AD%98%E9%97%AE%E9%A2%98/1.jpg">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-WebView缓存问题" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/06/24/WebView%E7%BC%93%E5%AD%98%E9%97%AE%E9%A2%98/" class="article-date">
+  <time datetime="2015-06-24T12:30:07.000Z" itemprop="datePublished">2015-06-24</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Android/">Android</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      WebView缓存问题
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+<!-- 文章目录开始 -->
+
+<div id="toc" class="toc-article">
+<strong class="toc-title" style="cursor:pointer">contents</strong>
+<ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#本节引言："><span class="toc-number">1.</span> <span class="toc-text">本节引言：</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-缓存的分类："><span class="toc-number">2.</span> <span class="toc-text">1.缓存的分类：</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-为WebView开启缓存功能"><span class="toc-number">3.</span> <span class="toc-text">2.为WebView开启缓存功能</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-删除WebView的缓存数据"><span class="toc-number">4.</span> <span class="toc-text">3.删除WebView的缓存数据</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-示例代码下载："><span class="toc-number">5.</span> <span class="toc-text">4.示例代码下载：</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-本节小结："><span class="toc-number">6.</span> <span class="toc-text">5.本节小结：</span></a></li></ol>
+</div>
+
+<!-- 文章目录结束 -->	  
+
+	  
+        <h3 id="本节引言："><a href="#本节引言：" class="headerlink" title="本节引言："></a>本节引言：</h3><p>现在很多门户类信息网站，比如虎嗅，ifanr，钛媒体等等的APP，简单点说是信息阅读类的APP，很多 都是直接嵌套一个WebView用来显示相关资讯的，这可能就涉及到了WebView的缓存了！</p>
+<p>所谓的页面缓存 就是指：保存加载一个网页时所需的HTML，JS，CSS等页面相关的数据以及其他资源，当没网的时候或者 网络状态较差的时候，加载本地保存好的相关数据！而实现这个缓存的方式有两种，一种是后台写一个 下载的Service，将文章相关的数据按自己的需求下载到数据库或者保存到相应文件夹中，然后下次加载 对应URL前先判断是否存在本地缓存，如果存在优先加载本地缓存，不存在则执行联网请求，同时缓存 相关资源，典型的如旧版本的36Kr，在进去后会先离线文章，然后再显示！</p>
+<p>当然，本节要讲解的不是 这种自己写逻辑的方式，而是通过WebView本身自带的缓存功能来缓存页面，这种方式使用起来非常 简单，我们只需为WebView设置开启相关功能，以及设置数据库的缓存路径即可完成缓存！具体的 实现我们下面一一道来~</p>
+<a id="more"></a>
+<h3 id="1-缓存的分类："><a href="#1-缓存的分类：" class="headerlink" title="1.缓存的分类："></a>1.缓存的分类：</h3><p>首先要说的一点是缓存的分类，我们缓存的数据分为：页面缓存和数据缓存</p>
+<p><strong>页面缓存：</strong>加载一个网页时的html、JS、CSS等页面或者资源数据，这些缓存资源是由于浏览器 的行为而产生，开发者只能通过配置HTTP响应头影响浏览器的行为才能间接地影响到这些缓存数据。<br>而缓存的索引放在：<code>/data/data/&lt;包名&gt;/databases</code>对应的文件放在：<code>/data/data/package_name/cache/webviewCacheChromunm</code>下</p>
+<p><strong>数据缓存：</strong>分为AppCache和DOM Storage两种 我们开发者可以自行控制的就是这些缓存资源</p>
+<p>1) AppCache：我们能够有选择的缓冲web浏览器中所有的东西，从页面、图片到脚本、css等等。 尤其在涉及到应用于网站的多个页面上的CSS和JavaScript文件的时候非常有用。其大小目前通常是5M。 在Android上需要手动开启（setAppCacheEnabled），并设置路径（setAppCachePath）和容量 （setAppCacheMaxSize），而Android中使用ApplicationCache.db来保存AppCache数据！<br>2) DOM Storage：存储一些简单的用key/value对即可解决的数据，根据作用范围的不同，有Session Storage和Local Storage两种，分别用于会话级别的存储（页面关闭即消失）和本地化存储（除非主动 删除，否则数据永远不会过期）在Android中可以手动开启DOM Storage（setDomStorageEnabled）， 设置存储路径（setDatabasePath）Android中Webkit会为DOMStorage产生两个文件（my_path/localstorage/http_blog.csdn.net_0.localstorage和my_path/Databases.db）</p>
+<p>好吧，看完上面，是不是想说一句，卧槽，什么鬼，好复杂的样子 当然，不要去背，知道有这些东西就好了，实际开发用到再慢慢考究，而且我们一般只关心如何 为WebView设置缓存以及如何删除缓存！ 我们可以看下我们下面写的demo运行后的文件结构，打开DDMS的File Explorer：<br><img src="/images/WebView%E7%BC%93%E5%AD%98%E9%97%AE%E9%A2%98/1.jpg" alt=""><br>嘿嘿，一目了然是吧~，对了另外还要说下几种缓存的模式：</p>
+<p>LOAD_CACHE_ONLY: 不使用网络，只读取本地缓存数据<br>LOAD_DEFAULT: 根据cache-control决定是否从网络上取数据。<br>LOAD_CACHE_NORMAL: API level 17中已经废弃, 从API level 11开始作用同LOAD_DEFAULT模式<br>LOAD_NO_CACHE: 不使用缓存，只从网络获取数据.<br>LOAD_CACHE_ELSE_NETWORK，只要本地有，无论是否过期，或者no-cache，都使用缓存中的数据。</p>
+<p>总结：根据以上两种模式，建议缓存策略为，判断是否有网络，有的话，使用LOAD_DEFAULT， 无网络时，使用LOAD_CACHE_ELSE_NETWORK。</p>
+<p>接下来堆码时间！</p>
+<h3 id="2-为WebView开启缓存功能"><a href="#2-为WebView开启缓存功能" class="headerlink" title="2.为WebView开启缓存功能"></a>2.为WebView开启缓存功能</h3><p>下面我们就来为WebView开启缓存功能，先来看下实现的效果图：</p>
+<p>运行效果图：<br><img src="/images/WebView%E7%BC%93%E5%AD%98%E9%97%AE%E9%A2%98/2.gif" alt=""><br>流程解析： 1.进入页面后默认加载url，然后随便点击一个链接跳到第二个页面，退出APP 2.关闭wifi以及移动网络，然后重新进入，发现无网络的情况下，页面还是加载了， 打开第一个链接也可以加载，打开其他链接就发现找不到网页！ 3.点击清除缓存，把应用关闭，重新进入，发现页面已经打不开！</p>
+<p>接下来是代码实现：MainActivity.java:</p>
+<pre><code>public class MainActivity extends AppCompatActivity {
+
+    private WebView wView;
+    private Button btn_clear_cache;
+    private Button btn_refresh;
+    private static final String APP_CACHE_DIRNAME = &quot;/webcache&quot;; // web缓存目录
+    private static final String URL = &quot;http://blog.csdn.net/coder_pig&quot;;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        wView = (WebView) findViewById(R.id.wView);
+        btn_clear_cache = (Button) findViewById(R.id.btn_clear_cache);
+        btn_refresh = (Button) findViewById(R.id.btn_refresh);
+        wView.loadUrl(URL);
+        wView.setWebViewClient(new WebViewClient() {
+            //设置在webView点击打开的新网页在当前界面显示,而不跳转到新的浏览器中
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                view.loadUrl(url);
+                return true;
+            }
+        });
+        WebSettings settings = wView.getSettings();
+        settings.setJavaScriptEnabled(true);
+        //设置缓存模式
+        settings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
+        // 开启DOM storage API 功能
+        settings.setDomStorageEnabled(true);
+        // 开启database storage API功能
+        settings.setDatabaseEnabled(true);
+        String cacheDirPath = getFilesDir().getAbsolutePath() + APP_CACHE_DIRNAME;
+        Log.i(&quot;cachePath&quot;, cacheDirPath);
+        // 设置数据库缓存路径
+        settings.setAppCachePath(cacheDirPath);
+        settings.setAppCacheEnabled(true);
+        Log.i(&quot;databasepath&quot;, settings.getDatabasePath());
+
+        btn_clear_cache.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                wView.clearCache(true);
+            }
+        });
+
+        btn_refresh.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                wView.reload();
+            }
+        });
+    }
+
+    //重写回退按钮的点击事件
+    @Override
+    public void onBackPressed() {
+        if(wView.canGoBack()){
+            wView.goBack();
+        }else{
+            super.onBackPressed();
+        }
+    }
+}</code></pre><p>代码很简单，我们做的仅仅是开启缓存的功能，以及设置缓存模式以及缓存的数据的路径而已！</p>
+<h3 id="3-删除WebView的缓存数据"><a href="#3-删除WebView的缓存数据" class="headerlink" title="3.删除WebView的缓存数据"></a>3.删除WebView的缓存数据</h3><p>上面的示例，我们通过调用WebView的clearCache(true)方法，已经实现了对缓存的删除！ 除了这种方法外，还有下述方法：</p>
+<pre><code>    setting.setCacheMode(WebSettings.LOAD_NO_CACHE);
+    deleteDatabase(&quot;WebView.db&quot;);和deleteDatabase(&quot;WebViewCache.db&quot;);
+    webView.clearHistory();
+    webView.clearFormData();
+    getCacheDir().delete();
+    手动写delete方法，循环迭代删除缓存文件夹！</code></pre><p>当然，前面也说，我们能这直接操作的只是数据部分，而页面缓存是由于浏览器 的行为而产生，我们只能通过配置HTTP响应头影响浏览器的行为才能间接地影响到 这些缓存数据。所以上述的方法仅仅是删除的数据部分的缓存！</p>
+<h3 id="4-示例代码下载："><a href="#4-示例代码下载：" class="headerlink" title="4.示例代码下载："></a>4.示例代码下载：</h3><p>WebViewDemo7.zip：<a href="http://www.runoob.com/try/download/WebViewDemo7.zip" target="_blank" rel="noopener">下载 WebViewDemo7.zip</a></p>
+<h3 id="5-本节小结："><a href="#5-本节小结：" class="headerlink" title="5.本节小结："></a>5.本节小结：</h3><p>好的，本节关于WebView缓存问题就到这里，这里只是写了如何为WebView开启缓存， 以及删除缓存，以后遇到再慢慢考究，这里有个映像先<del>嗯，就说这么多</del>谢谢</p>
+<p>对了，差点忘了贴下本节的参考链接：<br><a href="http://87426628.blog.163.com/blog/static/6069361820139183417725/" target="_blank" rel="noopener">Android webView 缓存 Cache + HTML5离线功能 解决</a><br><a href="http://blog.csdn.net/wwj_748/article/details/44835865" target="_blank" rel="noopener">Android记录25-WebView实现离线缓存阅读</a><br><a href="http://whitelaning.github.io/2015/05/07/Clear_the_WebView_Cache.html" target="_blank" rel="noopener">Android 清除WebView缓存</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2015/06/24/WebView%E7%BC%93%E5%AD%98%E9%97%AE%E9%A2%98/" data-id="ckcqdgktl00zj9xlfgbzn2frq" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/06/24/WebView%E6%96%87%E4%BB%B6%E4%B8%8B%E8%BD%BD/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          WebView文件下载
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/06/24/macOS%E4%B8%8BRabbitMq%E4%BB%A5%E5%8F%8APHP%20amqp%E6%89%A9%E5%B1%95%E5%AE%89%E8%A3%85%E8%AE%B0%E5%BD%95/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">macOS下RabbitMq以及PHP amqp扩展安装记录</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

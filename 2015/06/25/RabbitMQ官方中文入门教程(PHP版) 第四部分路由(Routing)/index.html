@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>RabbitMQ官方中文入门教程(PHP版) 第四部分:路由(Routing) | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="路由(Routing)在前面的教程中，我们实现了一个简单的日志系统。可以把日志消息广播给多个接收者。 本篇教程中我们打算新增一个功能——使得它能够只订阅消息的一个字集。例如，我们只需要把严重的错误日志信息写入日志文件（存储到磁盘），但同时仍然把所有的日志信息输出到控制台中。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RabbitMQ官方中文入门教程(PHP版) 第四部分:路由(Routing)">
+<meta property="og:url" content="http://moqiang02.github.io/2015/06/25/RabbitMQ%E5%AE%98%E6%96%B9%E4%B8%AD%E6%96%87%E5%85%A5%E9%97%A8%E6%95%99%E7%A8%8B(PHP%E7%89%88)%20%E7%AC%AC%E5%9B%9B%E9%83%A8%E5%88%86%E8%B7%AF%E7%94%B1(Routing)/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="路由(Routing)在前面的教程中，我们实现了一个简单的日志系统。可以把日志消息广播给多个接收者。 本篇教程中我们打算新增一个功能——使得它能够只订阅消息的一个字集。例如，我们只需要把严重的错误日志信息写入日志文件（存储到磁盘），但同时仍然把所有的日志信息输出到控制台中。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/RabbitMQ%E5%AE%98%E6%96%B9%E4%B8%AD%E6%96%87%E5%85%A5%E9%97%A8%E6%95%99%E7%A8%8B/9.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/RabbitMQ%E5%AE%98%E6%96%B9%E4%B8%AD%E6%96%87%E5%85%A5%E9%97%A8%E6%95%99%E7%A8%8B/10.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/RabbitMQ%E5%AE%98%E6%96%B9%E4%B8%AD%E6%96%87%E5%85%A5%E9%97%A8%E6%95%99%E7%A8%8B/11.png">
+<meta property="article:published_time" content="2015-06-25T12:30:22.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:12.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta property="article:tag" content="消息队列">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/RabbitMQ%E5%AE%98%E6%96%B9%E4%B8%AD%E6%96%87%E5%85%A5%E9%97%A8%E6%95%99%E7%A8%8B/9.png">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-RabbitMQ官方中文入门教程(PHP版) 第四部分路由(Routing)" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/06/25/RabbitMQ%E5%AE%98%E6%96%B9%E4%B8%AD%E6%96%87%E5%85%A5%E9%97%A8%E6%95%99%E7%A8%8B(PHP%E7%89%88)%20%E7%AC%AC%E5%9B%9B%E9%83%A8%E5%88%86%E8%B7%AF%E7%94%B1(Routing)/" class="article-date">
+  <time datetime="2015-06-25T12:30:22.000Z" itemprop="datePublished">2015-06-25</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      RabbitMQ官方中文入门教程(PHP版) 第四部分:路由(Routing)
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <h3 id="路由-Routing"><a href="#路由-Routing" class="headerlink" title="路由(Routing)"></a>路由(Routing)</h3><p>在前面的教程中，我们实现了一个简单的日志系统。可以把日志消息广播给多个接收者。</p>
+<p>本篇教程中我们打算新增一个功能——使得它能够只订阅消息的一个字集。例如，我们只需要把严重的错误日志信息写入日志文件（存储到磁盘），但同时仍然把所有的日志信息输出到控制台中。<a id="more"></a></p>
+<h3 id="绑定（Bindings）"><a href="#绑定（Bindings）" class="headerlink" title="绑定（Bindings）"></a>绑定（Bindings）</h3><p>前面的例子，我们已经创建过绑定（bindings），代码如下：</p>
+<p><code>$exchange-&gt;publish($message, &#39;&#39;);</code></p>
+<p>绑定（binding）是指交换器（exchange）和队列（queue）的关系。可以简单理解为：这个队列（queue）对这个交换器（exchange）的消息感兴趣。</p>
+<p>绑定的时候可以带上一个额外的routingkey参数。为了避免与basicpublish的参数混淆，我们把它叫做binding key。以下是如何创建一个带binding key的绑定。</p>
+<p><code>$exchange-&gt;publish($message, $routeKey);</code></p>
+<p>binding key的含义取决于交换器（exchange）的类型。我们之前使用过的fanout类型会忽略这个值。</p>
+<h3 id="Direct类型的交换器（exchange）"><a href="#Direct类型的交换器（exchange）" class="headerlink" title="Direct类型的交换器（exchange）"></a>Direct类型的交换器（exchange）</h3><p>我们的日志系统广播所有的消息给所有的消费者（consumers）。我们打算扩展它，使其可以能够精确的过滤消息。例如我们也许值是希望当接收到一个严重的错误的时候才把消息写入磁盘，以免浪费磁盘空间。</p>
+<p>我们使用的fanout类型的交换器（exchange）扩展性不够——它能做的仅仅是广播。</p>
+<p>我们将会使用direct类型的交换器（exchange）来代替。路由的算法很简单——交换器将会对binding key和routing key进行精确匹配，从而确定消息该分发到哪个队列。</p>
+<p>下图能够很好的描述这个场景：<br><img src="/images/RabbitMQ%E5%AE%98%E6%96%B9%E4%B8%AD%E6%96%87%E5%85%A5%E9%97%A8%E6%95%99%E7%A8%8B/9.png" alt=""><br>在这个场景中，我们可以看到direct exchange X和两个队列绑定了。第一个队列使用orange作为binding key，第二个队列有两个绑定，一个使用black作为binding key，另外一个是green。</p>
+<p>这样以来，当routing key为orange的消息发布到交换器（exchange），就会被路由到队列Q1。routing key为black或者green的消息就会路由到Q2。其他的所有消息都将会被丢弃。</p>
+<h3 id="多个绑定（Multiple-bindings）"><a href="#多个绑定（Multiple-bindings）" class="headerlink" title="多个绑定（Multiple bindings）"></a>多个绑定（Multiple bindings）</h3><p><img src="/images/RabbitMQ%E5%AE%98%E6%96%B9%E4%B8%AD%E6%96%87%E5%85%A5%E9%97%A8%E6%95%99%E7%A8%8B/10.png" alt=""><br>多个队列使用相同的binding key是合法的。我们的这个例子，我们可以添加一个X和Q1之间的绑定，使用blackbinding key。这样一来，direct交换器就和fanout交换器的行为一样，将会广播消息到所有匹配的队列。带有routing key为black的消息都会发送到Q1和Q2。</p>
+<h3 id="Emitting-logs"><a href="#Emitting-logs" class="headerlink" title="Emitting logs"></a>Emitting logs</h3><p>我们将会发送消息到一个direct exchange，把日志级别作为routing key。这样子负责处理接收的脚本就可以选择它要处理的日志级别。我们先看看触发日志。</p>
+<p>我们需要创建一个交换器（exchange）：</p>
+<p><code>$exchange-&gt;setName(&#39;direct_logs&#39;);</code></p>
+<p>然后我们发送一则消息：</p>
+<p><code>$exchange-&gt;publish($message, $severity);</code></p>
+<p>我们先假设“severity”的值是info、warning、error中的一个。</p>
+<h3 id="订阅（Subscribing）"><a href="#订阅（Subscribing）" class="headerlink" title="订阅（Subscribing）"></a>订阅（Subscribing）</h3><p>处理接收消息的方式和之前差不多，但是我们为每一个日志级别创建了一个新的绑定。</p>
+<pre><code>foreach ($severities as $item) {  
+    $queue-&amp;gt;bind($exchangeName, $item);
+}</code></pre><h3 id="整合"><a href="#整合" class="headerlink" title="整合"></a>整合</h3><p><img src="/images/RabbitMQ%E5%AE%98%E6%96%B9%E4%B8%AD%E6%96%87%E5%85%A5%E9%97%A8%E6%95%99%E7%A8%8B/11.png" alt=""><br>emitlogdirect.php的代码：</p>
+<pre><code>&lt;?php
+
+/**
+ * PHP amqp(RabbitMQ) Demo-4
+ * @author  yuansir &amp;amp;lt;yuansir@live.cn/yuansir-web.com&gt;
+ */
+$severity = count($argv) &gt; 2 ? $argv[1] : &#39;info&#39;;
+$message = empty($argv[2]) ? &#39;Hello World!&#39; : &#39; &#39; . $argv[2];
+
+$connection = new AMQPConnection(array(&#39;host&#39; =&gt; &#39;127.0.0.1&#39;, &#39;port&#39; =&gt; &#39;5672&#39;, &#39;vhost&#39; =&gt; &#39;/&#39;, &#39;login&#39; =&gt; &#39;guest&#39;, &#39;password&#39; =&gt; &#39;guest&#39;));
+$connection-&gt;connect() or die(&quot;Cannot connect to the broker!\n&quot;);
+
+$channel = new AMQPChannel($connection);
+$exchange = new AMQPExchange($channel);
+$exchange-&gt;setName(&#39;direct_logs&#39;);
+$exchange-&gt;setType(AMQP_EX_TYPE_DIRECT);
+$exchange-&gt;declare();
+
+$exchange-&gt;publish($message, $severity);
+var_dump(&quot;[x] Sent $message&quot;);
+
+$connection-&gt;disconnect();</code></pre><p>receivelogsdirect.php的代码：</p>
+<pre><code>&lt;?php
+
+/**
+ * PHP amqp(RabbitMQ) Demo-4
+ * @author  yuansir &amp;amp;lt;yuansir@live.cn/yuansir-web.com&gt;
+ */
+$exchangeName = &#39;direct_logs&#39;;
+
+$connection = new AMQPConnection(array(&#39;host&#39; =&gt; &#39;127.0.0.1&#39;, &#39;port&#39; =&gt; &#39;5672&#39;, &#39;vhost&#39; =&gt; &#39;/&#39;, &#39;login&#39; =&gt; &#39;guest&#39;, &#39;password&#39; =&gt; &#39;guest&#39;));
+$connection-&gt;connect() or die(&quot;Cannot connect to the broker!\n&quot;);
+$channel = new AMQPChannel($connection);
+$exchange = new AMQPExchange($channel);
+$exchange-&gt;setName($exchangeName);
+$exchange-&gt;setType(AMQP_EX_TYPE_DIRECT);
+$exchange-&gt;declare();
+$queue = new AMQPQueue($channel);
+$queue-&gt;setFlags(AMQP_EXCLUSIVE);
+$queue-&gt;declare();
+
+$severities = $argv;
+$file = $severities[0];
+unset($severities[0]);  
+if (!$severities) {  
+        var_dump(&quot;Usage:$file [info] [warning] [error]&quot;);
+        exit();
+} else {
+        foreach ($severities as $item) {
+                $queue-&gt;bind($exchangeName, $item);
+        }
+}
+
+var_dump(&#39;[*] Waiting for messages. To exit press CTRL+C&#39;);  
+while (TRUE) {  
+        $queue-&gt;consume(&#39;callback&#39;);
+}
+$connection-&gt;disconnect();
+
+function callback($envelope, $queue) {  
+        $msg = $envelope-&gt;getBody();
+        var_dump(&#39;[x]&#39; . $envelope-&gt;getRoutingKey() . &#39;:&#39; . $msg);
+        $queue-&gt;nack($envelope-&gt;getDeliveryTag());
+}</code></pre><p>如果你希望只是保存warning和error级别的日志到磁盘，只需要打开控制台并输入：</p>
+<p><code>$ php receive_logs_direct.php warning error &amp;gt; logs_from_rabbit.log</code></p>
+<p>如果你希望所有的日志信息都输出到屏幕中，打开一个新的终端，然后输入：</p>
+<pre><code>$ php receive_logs_direct.php info warning error
+ [*] Waiting for logs. To exit press CTRL+C</code></pre><p>如果要触发一个error级别的日志，只需要输入：</p>
+<pre><code>$ php emit_log_direct.php error &quot;Run. Run. Or it will explode.&quot;
+ [x] Sent &#39;error&#39;:&#39;Run. Run. Or it will explode.&#39;</code></pre><blockquote>
+<p>转载请注明： <a href="https://yuansir-web.com/tag/rabbitmq/" target="_blank" rel="noopener">转载自Ryan是菜鸟 | LNMP技术栈笔记</a><br>项目代码：<a href="https://github.com/yuansir/rabbitmq-tutorial-php-demo" target="_blank" rel="noopener">https://github.com/yuansir/rabbitmq-tutorial-php-demo</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2015/06/25/RabbitMQ%E5%AE%98%E6%96%B9%E4%B8%AD%E6%96%87%E5%85%A5%E9%97%A8%E6%95%99%E7%A8%8B(PHP%E7%89%88)%20%E7%AC%AC%E5%9B%9B%E9%83%A8%E5%88%86%E8%B7%AF%E7%94%B1(Routing)/" data-id="ckcqdgkrt00uc9xlfhvqdh8lq" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" rel="tag">消息队列</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/06/26/Adapter%E7%B1%BBFour%E4%B9%8BGallery%E7%94%BB%E5%BB%8A%E8%A7%86%E5%9B%BE/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Adapter类Four之Gallery画廊视图
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/06/25/RabbitMQ%E5%AE%98%E6%96%B9%E4%B8%AD%E6%96%87%E5%85%A5%E9%97%A8%E6%95%99%E7%A8%8B(PHP%E7%89%88)%20%E7%AC%AC%E4%B8%89%E9%83%A8%E5%88%86%E5%8F%91%E5%B8%83%EF%BC%8F%E8%AE%A2%E9%98%85%EF%BC%88PublishSubscribe%EF%BC%89/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">RabbitMQ官方中文入门教程(PHP版) 第三部分:发布/订阅</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Laravel 5.3 新特性系列 —— 深入探讨 Laravel Echo 使用：实时聊天室 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="什么是 Laravel EchoEcho是一个让我们在Laravel应用中轻松实现WebSockets（关于WebSockets工作原理和机制可参考这篇文章：WebSocket 实战）功能的工具，同时简化了构建复杂WebSockets交互中更加通用、复杂的部分。  注：Echo 还处于开发阶段，本教程代码和最终发布版本可能会有出入，望知悉。  Echo 由两部分组成：针对Laravel事件广播系统">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Laravel 5.3 新特性系列 —— 深入探讨 Laravel Echo 使用：实时聊天室">
+<meta property="og:url" content="http://moqiang02.github.io/2017/02/03/Laravel-5-3-%E6%96%B0%E7%89%B9%E6%80%A7%E7%B3%BB%E5%88%97-%E2%80%94%E2%80%94-%E6%B7%B1%E5%85%A5%E6%8E%A2%E8%AE%A8-Laravel-Echo-%E4%BD%BF%E7%94%A8%EF%BC%9A%E5%AE%9E%E6%97%B6%E8%81%8A%E5%A4%A9%E5%AE%A4/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="什么是 Laravel EchoEcho是一个让我们在Laravel应用中轻松实现WebSockets（关于WebSockets工作原理和机制可参考这篇文章：WebSocket 实战）功能的工具，同时简化了构建复杂WebSockets交互中更加通用、复杂的部分。  注：Echo 还处于开发阶段，本教程代码和最终发布版本可能会有出入，望知悉。  Echo 由两部分组成：针对Laravel事件广播系统">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-02-03T15:03:07.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:32.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta property="article:tag" content="Laravel">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Laravel-5-3-新特性系列-——-深入探讨-Laravel-Echo-使用：实时聊天室" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/02/03/Laravel-5-3-%E6%96%B0%E7%89%B9%E6%80%A7%E7%B3%BB%E5%88%97-%E2%80%94%E2%80%94-%E6%B7%B1%E5%85%A5%E6%8E%A2%E8%AE%A8-Laravel-Echo-%E4%BD%BF%E7%94%A8%EF%BC%9A%E5%AE%9E%E6%97%B6%E8%81%8A%E5%A4%A9%E5%AE%A4/" class="article-date">
+  <time datetime="2017-02-03T15:03:07.000Z" itemprop="datePublished">2017-02-03</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Laravel 5.3 新特性系列 —— 深入探讨 Laravel Echo 使用：实时聊天室
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+<!-- 文章目录开始 -->
+
+<div id="toc" class="toc-article">
+<strong class="toc-title" style="cursor:pointer">contents</strong>
+<ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#什么是-Laravel-Echo"><span class="toc-number">1.</span> <span class="toc-text">什么是 Laravel Echo</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#什么时候使用Echo"><span class="toc-number">2.</span> <span class="toc-text">什么时候使用Echo</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#实现一个简单的广播事件"><span class="toc-number">3.</span> <span class="toc-text">实现一个简单的广播事件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#通过Echo实现广播事件"><span class="toc-number">4.</span> <span class="toc-text">通过Echo实现广播事件</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#安装Echo-JS库"><span class="toc-number">4.1.</span> <span class="toc-text">安装Echo JS库</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#通过Echo订阅公共频道"><span class="toc-number">4.2.</span> <span class="toc-text">通过Echo订阅公共频道</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#通过Echo订阅私有频道"><span class="toc-number">5.</span> <span class="toc-text">通过Echo订阅私有频道</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Echo-基本认证和授权"><span class="toc-number">5.1.</span> <span class="toc-text">Echo 基本认证和授权</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#编写私有频道认证权限"><span class="toc-number">5.2.</span> <span class="toc-text">编写私有频道认证权限</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#通过Echo订阅存在频道"><span class="toc-number">6.</span> <span class="toc-text">通过Echo订阅存在频道</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#排除当前用户"><span class="toc-number">7.</span> <span class="toc-text">排除当前用户</span></a></li></ol>
+</div>
+
+<!-- 文章目录结束 -->	  
+
+	  
+        <h3 id="什么是-Laravel-Echo"><a href="#什么是-Laravel-Echo" class="headerlink" title="什么是 Laravel Echo"></a>什么是 Laravel Echo</h3><p>Echo是一个让我们在Laravel应用中轻松实现WebSockets（关于WebSockets工作原理和机制可参考这篇文章：<a href="http://www.ibm.com/developerworks/cn/java/j-lo-WebSocket/" target="_blank" rel="noopener">WebSocket 实战</a>）功能的工具，同时简化了构建复杂WebSockets交互中更加通用、复杂的部分。</p>
+<blockquote>
+<p>注：Echo 还处于开发阶段，本教程代码和最终发布版本可能会有出入，望知悉。</p>
+</blockquote>
+<p>Echo 由两部分组成：针对Laravel事件广播系统的一系列优化，以及一个新的JavaScript包。</p>
+<a id="more"></a>
+<p>在 Laravel 5.3 中，Echo 后端组件已经集成到Laravel核心库，不需要额外引入（不同于<a href="http://laravelacademy.org/post/3114.html" target="_blank" rel="noopener">Cashier</a>扩展包），你需要和前端JavaScript配合使用这些组件，而不仅仅是使用Echo JavaScript库，还会看到 Laravel 在处理 WebSockets时在易用性上的显著优化。</p>
+<p><a href="https://www.npmjs.com/package/laravel-echo" target="_blank" rel="noopener">Echo JavaScript库</a>可以通过NPM引入，这个库基于<a href="https://github.com/pusher/pusher-js" target="_blank" rel="noopener">Pusher JS</a>（JavaScript Pusher SDK）或者Socket.io（JavaScript Redis WebSockets SDK）。</p>
+<h3 id="什么时候使用Echo"><a href="#什么时候使用Echo" class="headerlink" title="什么时候使用Echo"></a>什么时候使用Echo</h3><p>当你需要发送异步实时消息给用户时WebSockets很有用 —— 不管这些消息是通知还是页面更新数据，同时保持用户在同一页面无需刷新。当然，你可以使用长轮询，或者某些定期的JavaScript ping来实现这样的功能，但是这样做在服务端没有更新的情况下对带宽造成浪费，造成一些不必要的请求。相比之下，Websockets功能强大，不会对服务器造成额外负载，可伸缩，速度极快。</p>
+<p>如果你想要在Laravel应用中使用WebSockets，Echo提供了干净、简洁的语法来实现各种功能，简单如公共频道，复杂如认证、授权、私有和存在频道。</p>
+<blockquote>
+<p>注：WebSockets实现提供了三种频道：public，意味着所有人可以订阅；private，认证且经过授权的用户才能订阅；presense，不允许发送消息，只通知用户在频道中是否已存在。</p>
+</blockquote>
+<h3 id="实现一个简单的广播事件"><a href="#实现一个简单的广播事件" class="headerlink" title="实现一个简单的广播事件"></a>实现一个简单的广播事件</h3><p>假设我们想要实现一个有多个房间的聊天室系统，这样我们就需要在每次接收到新的聊天室消息时触发一个事件。</p>
+<blockquote>
+<p>注：你需要熟悉Laravel的事件广播机制以便能更好的理解这篇教程。</p>
+</blockquote>
+<p>因此，首先我们创建这个事件：</p>
+<p><code>php artisan make:event ChatMessageWasReceived</code></p>
+<p>打开这个新生成的类<code>app/Events/ChatMessageWasReceived.php</code>并确保其实现了 ShouldBroadcast，接下来我们让其广播到一个名为<code>chat-room.1</code>的公共（public）频道。</p>
+<p>然后我们为聊天室消息创建一个模型和对应的迁移，该模型包含user_id和message字段：</p>
+<p><code>php artisan make:model ChatMessage --migration</code></p>
+<p>最终，事件类ChatMessageWasReceived 的代码如下：</p>
+<pre><code>...
+class ChatMessageWasReceived extends Event implements ShouldBroadcast
+{
+    use InteractsWithSockets, SerializesModels;
+
+    public $chatMessage;
+    public $user;
+
+    public function __construct($chatMessage, $user)
+    {
+        $this-&gt;chatMessage = $chatMessage;
+        $this-&gt;user = $user;
+    }
+
+    public function broadcastOn()
+    {
+        return [
+            &quot;chat-room.1&quot;
+        ];
+    }
+
+}</code></pre><p>编辑生成的迁移类代码如下：</p>
+<pre><code>...
+class CreateChatMessagesTable extends Migration
+{
+    public function up()
+    {
+        Schema::create(&#39;chat_messages&#39;, function (Blueprint $table) {
+            $table-&gt;increments(&#39;id&#39;);
+            $table-&gt;string(&#39;message&#39;);
+            $table-&gt;integer(&#39;user_id&#39;)-&gt;unsigned();
+            $table-&gt;timestamps();
+        });
+    }
+
+    public function down()
+    {
+        Schema::drop(&#39;chat_messages&#39;); 
+    }
+}</code></pre><p>还要确保模型中的新增字段在白名单中：</p>
+<pre><code>...
+class ChatMessage extends Model
+{
+    public $fillable = [&#39;user_id&#39;, &#39;message&#39;];
+}</code></pre><p>再然后，在具体场景中触发该事件。为了测试方便，我通常会创建一个Artisan命令来创建事件，让我们来试试。</p>
+<p><code>php artisan make:command SendChatMessage</code></p>
+<p>打开新创建的命令类<code>app/Console/Commands/SendChatMessage.php</code>，编辑该文件内容如下：</p>
+<pre><code>...
+class SendChatMessage extends Command
+{
+    protected $signature = &#39;chat:message {message}&#39;;
+
+    protected $description = &#39;Send chat message.&#39;;
+
+    public function handle()
+    {
+        // Fire off an event, just randomly grabbing the first user for now
+        $user = \App\User::first();
+        $message = \App\ChatMessage::create([
+            &#39;user_id&#39; =&gt; $user-&gt;id,
+            &#39;message&#39; =&gt; $this-&gt;argument(&#39;message&#39;)
+        ]);
+
+        event(new \App\Events\ChatMessageWasReceived($message, $user));
+    }
+}</code></pre><p>打开<code>app/Console/Kernel.php</code>，将刚创建的命令添加<code>$commands</code>属性以将其注册为有效的Artisan命令：</p>
+<pre><code>...
+class Kernel extends ConsoleKernel
+{
+    protected $commands = [
+        Commands\SendChatMessage::class,
+    ];
+...</code></pre><p>至此，这个事件代码基本完成，你需要注册一个<a href="https://pusher.com/" target="_blank" rel="noopener">Pusher</a>帐号（Echo也可以处理Redis和Socket.io，但是本例中我们使用Pusher），在该Pusher帐号中创建一个新的应用并获取key、secret以及App ID，然后将这些值设置到<code>.env</code>文件对应的 PUSHER_KEY， PUSHER_SECRET以及 PUSHER_APP_ID。</p>
+<p>最后，引入Pusher库：<br><code>composer require pusher/pusher-php-server:~2.0</code></p>
+<p>现在你可以通过运行如下命令发送事件到Pusher账户：<br><code>php artisan chat:message &quot;Howdy everyone&quot;</code></p>
+<p>如果一切顺利，你应该可以进入到Pusher调试控制台，触发这个事件，看到如下效果：</p>
+<p>![](/images/Laravel 53 新特性系列 —— 深入探讨 Laravel Echo 使用：实时聊天室/pusher-debug.png)</p>
+<h3 id="通过Echo实现广播事件"><a href="#通过Echo实现广播事件" class="headerlink" title="通过Echo实现广播事件"></a>通过Echo实现广播事件</h3><p>刚刚我们实现了一个简单的推送事件到Pusher的系统，下面我们来看看Echo为我们提供了些什么。</p>
+<h4 id="安装Echo-JS库"><a href="#安装Echo-JS库" class="headerlink" title="安装Echo JS库"></a>安装Echo JS库</h4><p>将Echo JavaScript库引入项目最简单的方式就是通过NPM和Elixir。首先，我们引入Pusher JS：</p>
+<pre><code># Install the basic Elixir requirements
+npm install
+# Install Pusher JS and Echo, and add to package.json
+npm install pusher-js --save
+npm install laravel-echo --save</code></pre><p>接下来，修改<code>resouces/assets/js/app.js</code>来导入相应文件：</p>
+<pre><code>window.Pusher = require(&#39;pusher-js&#39;);
+
+import Echo from &quot;laravel-echo&quot;
+
+window.echo = new Echo(&#39;your pusher key here&#39;);
+// @todo: Set up Echo bindings here</code></pre><p>然后，设置Elixir的gulpfile.js文件让其生效：</p>
+<pre><code>var elixir = require(&#39;laravel-elixir&#39;);
+
+elixir(function (mix) {
+    mix.browserify(&#39;app.js&#39;);
+});</code></pre><p>最后运行<code>gulp</code>或<code>gulp watch</code>命令将结果文件导入HTML模板，此外还需要添加CSRF令牌输入：</p>
+<pre><code>&lt;html&gt;
+    &lt;head&gt;
+        ...
+        &lt;meta name=&quot;csrf-token&quot; content=&quot;{{ csrf_token() }}&quot;&gt;
+        ...
+    &lt;/head&gt;
+    &lt;body&gt;
+        ...
+
+        &lt;script src=&quot;js/app.js&quot;&gt;&lt;/script&gt;
+    &lt;/body&gt;
+&lt;/html&gt;</code></pre><blockquote>
+<p>注：如果是新安装的Laravel应用，需要在编写所有HTML之前运行<code>php artisan make:auth</code>，因为后续的功能需要用到Laravel的认证。</p>
+</blockquote>
+<h4 id="通过Echo订阅公共频道"><a href="#通过Echo订阅公共频道" class="headerlink" title="通过Echo订阅公共频道"></a>通过Echo订阅公共频道</h4><p>回到 <code>resources/assets/js/app.js</code>，让我们来监听Echo广播到的公共频道<code>chat-room.1</code>，并将所有收到的信息记录到用户控制台：</p>
+<pre><code>window.Pusher = require(&#39;pusher-js&#39;);
+
+import Echo from &quot;laravel-echo&quot;
+
+window.echo = new Echo(&#39;your pusher key here&#39;);
+
+echo.channel(&#39;chat-room.1&#39;)
+    .listen(&#39;ChatMessageWasReceived&#39;, function (data) {
+        console.log(data.user, data.chatMessage);
+    });</code></pre><p>我们告诉Echo：订阅的公共频道名字叫做<code>chat-room.1</code>，监听的事件是 ChatMessageWasReceived，当事件发生时，将其传递给这个匿名函数并执行其中的代码。具体显示如下：</p>
+<p>![](/images/Laravel 53 新特性系列 —— 深入探讨 Laravel Echo 使用：实时聊天室/echo-public-console-log.png)</p>
+<p>这样通过短短几行代码，我们就可以访问到JSON格式的聊天信息以及相应用户，这些数据不仅可以用来通知用户，还可以用于更新内存数据，从而让每个WebSockets消息实现当前页面数据的更新。</p>
+<h3 id="通过Echo订阅私有频道"><a href="#通过Echo订阅私有频道" class="headerlink" title="通过Echo订阅私有频道"></a>通过Echo订阅私有频道</h3><p>接下来我们让<code>chat-room.1</code>变成私有的。要实现这一目的首先我们需要在频道名称前加上<code>private-</code>前缀，然后编辑事件类ChatMessageWasReceived上的<code>broadcastsOn()</code>方法，设置频道名称为<code>private-chat-room.1</code>。</p>
+<p>接下来，使用app.js中的<code>echo.private()</code>替代之前的<code>echo.channel()</code>。</p>
+<p>其他保持不变，但是现在运行脚本会报错：</p>
+<p>![](/images/Laravel 53 新特性系列 —— 深入探讨 Laravel Echo 使用：实时聊天室/echo-socket-not-found.png)</p>
+<p>这就是Echo为我们提供的又一个强大功能：认证和授权。</p>
+<h4 id="Echo-基本认证和授权"><a href="#Echo-基本认证和授权" class="headerlink" title="Echo 基本认证和授权"></a>Echo 基本认证和授权</h4><p>认证系统由两部分组成，首先，当你第一次打开应用的时候，Echo会发送POST请求到<code>/broadcasting/socket</code>路由，当我们在Laravel端设置好Echo工具后，这个路由会通过你的Laravel session ID关联到相应到Pusher socket ID，这样Laravel和Pusher都知道如何标识给定的Pusher socket连接是否连接到特定的Laravel session。</p>
+<blockquote>
+<p>注：每个JavaScript发起的请求，不管是Vue还是jQuery，都会包含一个对应到socket ID的X-Socket-Id头，但是没有它应用也能正常工作——可以通过更早与session关联的socket ID获取。</p>
+</blockquote>
+<p>其次，Echo的认证和授权功能指的是，当你想要访问一个受保护的资源时，Echo会<code>ping /broadcasting/auth</code>来检查你是否可以访问这个频道，由于你的socket ID会被关联到对应的Laravel session，我们可以为这个路由编写一个简单清晰的ACL规则。</p>
+<p>首先，打开<code>config/app.php</code>取消这一行的注释：<br><code>// App\Providers\BroadcastServiceProvider::class,</code></p>
+<p>打开这个服务提供者文件<code>app/Providers/BroadcastServiceProvider.php</code>，内容如下：</p>
+<pre><code>...
+class BroadcastServiceProvider extends ServiceProvider
+{
+    public function boot()
+    {
+        Broadcast::route([&#39;middleware&#39; =&gt; [&#39;web&#39;]]);
+
+        Broadcast::auth(&#39;channel-name.*&#39;, function ($user, $id) {
+            return true;
+        });
+    }</code></pre><p>其中有两个地方需要注意，首先，<code>Broadcast::route()</code>允许你定义要应用到<code>/broadcasting/socket</code>和<code>/broadcasting/auth</code>的中间件，你可以将其保持为web不变。其次，<code>Broadcast::auth()</code>让我们可以定义指定频道或频道组的权限。</p>
+<h4 id="编写私有频道认证权限"><a href="#编写私有频道认证权限" class="headerlink" title="编写私有频道认证权限"></a>编写私有频道认证权限</h4><p>现在我们有一个名为<code>private-chat-room.1</code>的频道，以后可能还有多个频道，如<code>private-chat-room.2</code>等，所以我们这里为所有频道定义权限：</p>
+<pre><code>Broadcast::auth(&#39;chat-room.*&#39;, function ($user, $chatroomId) {
+    // return whether or not this current user is authorized to visit this chat room
+});</code></pre><p>正如你所看到的，传递到闭包的第一个值是当前用户，如果有任何<code>＊</code>被匹配到，就会作为第二个参数传进来。</p>
+<blockquote>
+<p>注：尽管我们重命名了private-chat-room.1，你可以看到在定义访问权限的时候没必要加上<code>private-</code>前缀。</p>
+</blockquote>
+<p>在这篇博客教程中，我们只是简单演示授权代码，你还需要为聊天室创建一个模型和迁移，以及与用户之间的多对多关联，然后在闭包中检查当前用户是否连接到这个聊天室，现在我们只是简单返回true：</p>
+<pre><code>Broadcast::auth(&#39;chat-room.*&#39;, function ($user, $chatroomId) {
+    if (true) { // Replace with real ACL
+        return true;
+    }
+});</code></pre><p>测试一下看你会看到什么。</p>
+<p>你应该能看到一个空的控制台日志，然后你可以触发Artisan命令，这样会看到用户和聊天室消息，和之前一样，只不过现在需要是经过授权的认证用户。</p>
+<p>如果你看到如下消息，也是没有问题的，意思是一切工作正常，只不过你的系统判定你无权访问该聊天室：</p>
+<p>![](/images/Laravel 53 新特性系列 —— 深入探讨 Laravel Echo 使用：实时聊天室/echo-403.png)</p>
+<h3 id="通过Echo订阅存在频道"><a href="#通过Echo订阅存在频道" class="headerlink" title="通过Echo订阅存在频道"></a>通过Echo订阅存在频道</h3><p>现在，我们可以在后台判断哪些用户可以访问聊天室，当用户发送消息到聊天室（类似于通过AJAX发送请求到服务器，只不过在我们的案例中通过Artisan命令取代用户请求），会触发ChatMessageWasReceived事件然后进行广播，将消息通过WebSockets发送给所有认证且授权的用户，下一步，我们要做什么？</p>
+<p>假设，我们想要在聊天室中显示哪些用户在线，或者在用户进入或离开时做下提示，这可以通过存在频道来实现。</p>
+<p>我们需要做两件事：一个新的<code>Broadcast::auth()</code>权限定义以及一个新的以<code>presence-</code>前缀开头的频道。有趣的是，由于认证定义不需要<code>private-</code>和<code>presence-</code>前缀，所以<code>private-chat-room.1</code>和<code>presence-chat-room.1</code>在<code>Broadcast::auth()</code>中可以共用同一份代码：<code>chat-room.*</code>，这没有什么问题，只要两者认证规则一致。但是这会给大家带来困惑，所以我准备添加一个新的命名，使用<code>presence-chat-room-presence.1</code>。</p>
+<p>由于我们只是讨论是否存在，没必要将这个频道绑定到事件，取而代之，只需要在app.js中将我们直接加入到这个频道即可：</p>
+<pre><code>echo.join(&#39;chat-room-presence.1&#39;)
+    .here(function (members) {
+        // runs when you join, and when anyone else leaves or joins
+        console.table(members);
+    });</code></pre><p>我们加入一个存在频道，然后提供一个回调在用户加载页面或者当有其他用户加入或离开时触发。here会在这三个事件时都触发，此外，还可以进行更加细粒度的控制，可以监听then（当前用户加入），joining（其他用户加入）以及leaving（其他用户离开）：</p>
+<pre><code>echo.join(&#39;chat-room-presence.1&#39;)
+    .then(function (members) {
+        // runs when you join
+        console.table(members);
+    })
+    .joining(function (joiningMember, members) {
+        // runs when another member joins
+        console.table(joiningMember);
+    })
+    .leaving(function (leavingMember, members) {
+        // runs when another member leaves
+        console.table(leavingMember);
+    });</code></pre><p>再次提醒你可以不在频道名称前加<code>presence-</code>前缀，据我所知，Echo中唯一必须加上<code>presence-</code>前缀的场景，是事件类的<code>broadcastOn()</code>方法中定义事件在私有频道广播。其他所有地方都可以去掉这些前缀，Echo 会自动处理（比如BroadcastServiceProvider中的认证定义），或者通过方法名（JavaScript包中的<code>echo.channel()</code>和<code>echo.private()</code>方法）。</p>
+<p>接下来，在BroadcastServiceProvider中为这个频道设置权限：</p>
+<pre><code>Broadcast::auth(&#39;chat-room-presence.*&#39;, function ($user, $roomId) {
+    if (true) { // Replace with real authorization
+        return [
+            &#39;id&#39; =&gt; $user-&gt;id,
+            &#39;name&#39; =&gt; $user-&gt;name
+        ];
+    }
+});</code></pre><p>正如你所看到的，当用户认证后存在频道并不仅仅返回true，而是返回一个包含用户信息的数组，这些用户信息可用于在线用户之类的侧边栏。</p>
+<p>如果一切正常，现在你可以在不同浏览器中打开应用，在控制台查看更新的会员列表：</p>
+<p>![](/images/Laravel 53 新特性系列 —— 深入探讨 Laravel Echo 使用：实时聊天室/echo-members-in-and-out-table.png)</p>
+<h3 id="排除当前用户"><a href="#排除当前用户" class="headerlink" title="排除当前用户"></a>排除当前用户</h3><p>Echo还提供了一个功能：如果你不想让当前用户获取通知怎么做？</p>
+<p>也许你所在的聊天室每次都会弹出各种各样的新消息，而你只想在屏幕顶部弹出少量消息，你也不想让发送消息的人收到消息，对不对？</p>
+<p>要从接收消息列表中排除当前用户，需要在事件类的构造函数中调用<code>$this-&gt;dontBroadcastToCurrentUser()</code>方法：</p>
+<pre><code>...
+class ChatMessageWasReceived extends Event implements ShouldBroadcast
+{
+    ...
+    public function __construct($chatMessage, $user)
+    {
+        $this-&gt;chatMessage = $chatMessage;
+        $this-&gt;user = $user;
+
+        $this-&gt;dontBroadcastToCurrentUser();
+    }</code></pre>
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2017/02/03/Laravel-5-3-%E6%96%B0%E7%89%B9%E6%80%A7%E7%B3%BB%E5%88%97-%E2%80%94%E2%80%94-%E6%B7%B1%E5%85%A5%E6%8E%A2%E8%AE%A8-Laravel-Echo-%E4%BD%BF%E7%94%A8%EF%BC%9A%E5%AE%9E%E6%97%B6%E8%81%8A%E5%A4%A9%E5%AE%A4/" data-id="ckcqdgkod00j89xlfeovpgekd" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Laravel/" rel="tag">Laravel</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2017/02/05/Composer%E4%B8%ADrequire%E8%88%87require-dev%E7%9A%84%E5%B7%AE%E5%88%A5/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Composer中require與require-dev的差別
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2017/02/03/Laravel-Echo-%E6%A6%82%E8%BF%B0%E7%AF%87/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Laravel Echo 概述篇</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

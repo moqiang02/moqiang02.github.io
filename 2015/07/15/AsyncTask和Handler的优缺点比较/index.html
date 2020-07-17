@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>AsyncTask和Handler的优缺点比较 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="1 AsyncTask实现的原理,和适用的优缺点 AsyncTask,是android提供的轻量级的异步类,可以直接继承AsyncTask,在类中实现异步操作,并提供接口反馈当前异步执行的程度(可以通过接口实现UI进度更新),最后反馈执行的结果给UI主线程.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="AsyncTask和Handler的优缺点比较">
+<meta property="og:url" content="http://moqiang02.github.io/2015/07/15/AsyncTask%E5%92%8CHandler%E7%9A%84%E4%BC%98%E7%BC%BA%E7%82%B9%E6%AF%94%E8%BE%83/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="1 AsyncTask实现的原理,和适用的优缺点 AsyncTask,是android提供的轻量级的异步类,可以直接继承AsyncTask,在类中实现异步操作,并提供接口反馈当前异步执行的程度(可以通过接口实现UI进度更新),最后反馈执行的结果给UI主线程.">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2015-07-14T22:43:08.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:18.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-AsyncTask和Handler的优缺点比较" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/07/15/AsyncTask%E5%92%8CHandler%E7%9A%84%E4%BC%98%E7%BC%BA%E7%82%B9%E6%AF%94%E8%BE%83/" class="article-date">
+  <time datetime="2015-07-14T22:43:08.000Z" itemprop="datePublished">2015-07-15</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Android/">Android</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      AsyncTask和Handler的优缺点比较
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <p><strong>1 AsyncTask实现的原理,和适用的优缺点</strong></p>
+<p>AsyncTask,是android提供的轻量级的异步类,可以直接继承AsyncTask,在类中实现异步操作,并提供接口反馈当前异步执行的程度(可以通过接口实现UI进度更新),最后反馈执行的结果给UI主线程.<a id="more"></a></p>
+<p>使用的优点:</p>
+<ul>
+<li>简单,快捷</li>
+<li>过程可控</li>
+</ul>
+<p>使用的缺点:</p>
+<ul>
+<li>在使用多个异步操作和并需要进行Ui变更时,就变得复杂起来.</li>
+</ul>
+<p><strong>2 Handler异步实现的原理和适用的优缺点</strong></p>
+<p>在Handler 异步实现时,涉及到 Handler, Looper, Message,Thread四个对象，实现异步的流程是主线程启动Thread（子线程）àthread(子线程)运行并生成Message- àLooper获取Message并传递给HandleràHandler逐个获取Looper中的Message，并进行UI变更。</p>
+<p>使用的优点：</p>
+<ul>
+<li>结构清晰，功能定义明确</li>
+<li>对于多个后台任务时，简单，清晰</li>
+</ul>
+<p>AsyncTask这个类感觉使用比较简单，就是实现其中几个方法，onPreExecute()方法是在任务刚开始运行时执行的一些初始化操作，比如初 始化一个进度条等等，然后就执行doInBackground()方法这里面主要放业务操作，比如查询数据库等，在这个方法执行的时候会调用 onProgressUpdate()，可以在这个方法中更新UI界面，最后是调用onPostExecute()方法，当得到业务结果后就可以在这个方 法中返回给UI线程，也可以关闭一些执行这个业务时开的一些资源。大家可以看得出AsyncTask这个类是一个泛型类，这个类的三个参数以此对应 doInBackground(String… params)，onProgressUpdate(String… values)，onPostExecute(String result)的参数，很形象的···如果不需要传参和返回值，可以用Void代替。而doInBackground(String… params)方法的返回值也就是onPostExecute(String result)方法的参数值，因为doInBackground方法执行后返回的值是在onPostExecute(String result)中处理的。</p>
+<p>用handler方式处理需要知道与handler相关的几个组件，Looper和Queue,其实Looper的作用就是把handler发送的消息放 到Queue中，并把消息广播给所有与这个Queue相关的handler，而Queue一般是主线程开启的时候就给这个线程分配了一个，所以你要与UI 主线程通信必须用于这个Queue相关联的handler对象才行，一般handler对象在那个线程中创建的就与那个线程的queue关联，所以在UI 线程中创建的handler对象就与UI线程通讯，这样我们就可以在子线程中发送消息给主线程，实现更新UI的功能。那主线程又是怎么处理子线程发送的消 息的呢？其实在生成handler对象的时候我们就要实现handler对象的handleMessage()方法这个方法就是主线程接受并处理子线程发送过来的消息的方法，从而实现更新UI线程的功能。</p>
+<p>综上所述：数据简单使用AsyncTask:实现代码简单，数据量多且复杂使用handler+thread:相比较AsyncTask来说能更好的利用系统资源且高效</p>
+<p><strong>本文主要讲解下AsyncTask的使用以及Handler的应用</strong></p>
+<p>首先，我们得明确下一个概念，什么是UI线程。顾名思义，ui线程就是管理着用户界面的那个线程！</p>
+<p>android的ui线程操作并不是安全的，并且和用户直接进行界面交互的操作都必须在ui线程中进行才可以。这种模式叫做单线程模式。</p>
+<p>我们在单线程模式下编程一定要注意：不要阻塞ui线程、确保只在ui线程中访问ui组件</p>
+<p>当我们要执行一个复杂耗时的算法并且最终要将计算结果反映到ui上时，我们会发现，我们根本没办法同时保证上面的两点要求；我们肯定会想到开启一个新的线程，让这个复杂耗时的任务到后台去执行，但是执行完毕了呢？我们发现，我们无法再与ui进行交互了。</p>
+<p>为了解决这种情况，android为我们提供了很多办法。</p>
+<p>1）handler和message机制：通过显示的抛出、捕获消息与ui进行交互；</p>
+<p>2）Activity.runOnUiThread(Runnable)：如果当前线程为ui线程，则立即执行；否则，将参数中的线程操作放入到ui线程的事件队列中，等待执行。</p>
+<p>3）View.post(Runnable)：将操作放入到message队列中，如果放入成功，该操作将会在ui线程中执行，并返回true，否则返回false</p>
+<p>4）View.postDelayed(Runnable, long)跟第三条基本一样，只不过添加了一个延迟时间。</p>
+<p>5）android1.5以后为我们提供了一个工具类来搞定这个问题AsyncTask.</p>
+<p>AsyncTask是抽象类，定义了三种泛型类型 Params，Progress，Result。</p>
+<p>Params 启动任务执行的输入参数，比如HTTP请求的URL</p>
+<p>Progress 后台任务执行的百分比。</p>
+<p>Result 后台执行任务最终返回的结果，比如String</p>
+<p>用程序调用，开发者需要做的就是实现这些方法。</p>
+<p>1) 子类化AsyncTask</p>
+<p>2) 实现AsyncTask中定义的下面一个或几个方法</p>
+<p>onPreExecute()，该方法将在执行实际的后台操作前被UI thread调用。可以在该方法中做一些准备工作，如在界面上显示一个进度条。</p>
+<p>doInBackground(Params…)，将在onPreExecute 方法执行后马上执行，该方法运行在后台线程中。这里将主要负责执行那些很耗时的后台计算工作。可以调用 publishProgress方法来更新实时的任务进度。该方法是抽象方法，子类必须实现。</p>
+<p>onProgressUpdate(Progress…)，在publishProgress方法被调用后，UI thread将调用这个方法从而在界面上展示任务的进展情况，例如通过一个进度条进行展示。</p>
+<p>onPostExecute(Result)，在doInBackground 执行完成后，onPostExecute 方法将被UI thread调用，后台的计算结果将通过该方法传递到UI thread.</p>
+<p>为了正确的使用AsyncTask类，以下是几条必须遵守的准则：</p>
+<p>1) Task的实例必须在UI thread中创建</p>
+<p>2) execute方法必须在UI thread中调用</p>
+<p>3) 不要手动的调用onPreExecute(), onPostExecute(Result)，doInBackground(Params…), onProgressUpdate(Progress…)这几个方法</p>
+<p>4) 该task只能被执行一次，否则多次调用时将会出现异常</p>
+<pre><code class="java">package cn.com.chenzheng_java;
+
+import android.os.AsyncTask;
+/** 
+*  
+* @author chenzheng_java 
+* @description 异步任务AcyncTask示例 
+*     
+*/
+public class MyAsyncTask extends AsyncTask&lt;String, Integer, Object&gt; {
+
+    /** 
+    * 该方法由ui线程进行调用，用户可以在这里尽情的访问ui组件。 
+    * 很多时候，我们会在这里显示一个进度条啥的，以示后台正在 
+    * 执行某项功能。 
+    */
+    @Override
+    protected void onPreExecute() {
+        super.onPreExecute();
+    }
+
+    /** 
+    * 该方法由后台进程进行调用，进行主要的耗时的那些计算。 
+    * 该方法在onPreExecute方法之后进行调用。当然在执行过程中 
+    * 我们可以每隔多少秒就调用一次publishProgress方法，更新 
+    * 进度信息 
+    */
+    @Override
+    protected Object doInBackground(String... params) {
+        return null;
+    }
+
+    /** 
+    * doInBackground中调用了publishProgress之后，ui线程就会 
+    * 调用该方法。你可以在这里动态的改变进度条的进度，让用户知道 
+    * 当前的进度。 
+    */
+    @Override
+    protected void onProgressUpdate(Integer... values) {
+        super.onProgressUpdate(values);
+    }
+
+    /** 
+    * 当doInBackground执行完毕之后，由ui线程调用。可以在这里 
+    * 返回我们计算的最终结果给用户。 
+    */
+    @Override
+    protected void onPostExecute(Object result) {
+        super.onPostExecute(result);
+    }
+}</code></pre>
+<p><strong>下面介绍最本质的多线程：hanlder和message机制：</strong></p>
+<p>为何需要多线程：</p>
+<p>在日常应用中，我们通常需要处理一些“后台，用户不可见”的操作，例如说，我们需要下载一个音乐，要是你的应用必须等用户下载完成之后才可以进行别的操 作，那肯定让用户非常的不爽。这时候，我们通常的做法是，让这些操作去后台执行，然后等后台执行完毕之后，再给用户弹出相应的提示信息。这时候，我们就需要使用多线程机制，然后通过创建一个新的线程来执行这些操作。</p>
+<p>明白了，实现需求，我们就准备着手实现了。但是，经过进一步的了解，我们悲剧的发现，android中的线程机制是，只能在UI线程中和用户进行交互。当 我们创建了一个新线程，执行了一些后台操作，执行完成之后，我们想要给用户弹出对话框以确认，但是却悲剧的发现，我们根本无法返回UI主线程了。</p>
+<p>（说明：何为UI线程：UI线程就是你当前看到的这些交互界面所属的线程）。</p>
+<p>这时候，我们如果想要实现这些功能，我们就需要一个android为我们提供的handler和message机制。</p>
+<p>先讲解下编程机制：</p>
+<p>我们通常在UI线程中创建一个handler，handler相当于一个处理器，它主要负责处理和绑定到该handler的线程中的message。每一 个handler都必须关联一个looper，并且两者是一一对应的，注意，这点很重要哦！此外，looper负责从其内部的messageQueue中 拿出一个个的message给handler进行处理。因为我们这里handler是在UI线程中实现的，所以经过这么一个handler、 message机制，我们就可以回到UI线程中了。</p>
+<p>何为handler：处理后台进程返回数据的工作人员。</p>
+<p>何为message：后台进程返回的数据，里面可以存储bundle等数据格式</p>
+<p>何为messageQueue：是线程对应looper的一部分，负责存储从后台进程中抛回的和当前handler绑定的message，是一个队列。</p>
+<p>何为looper：looper相当于一个messageQueue的管理人员，它会不停的循环的遍历队列，然后将符合条件的message一个个的拿出来交给handler进行处理。</p>
+<p>注意，handler是在UI线程中声明的，如果我们直接用类似代码执行一个线程的话，实际上并没有创建一个新的线程，因为handler已经跟默认的UI线程中的looper绑定了。</p>
+<p>如果有兴趣的话，可以去看下Handler的默认空构造函数便知道原因了，里面直接绑定了当前UI线程的looper。</p>
+<p>下面给出一个比较简单，并且实用的实例。</p>
+<pre><code class="java">package cn.com.src;
+
+import cn.com.chenzheng_java.utils.R;
+import android.app.Activity;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Looper;
+import android.os.Message;
+import android.util.Log;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+
+/** 
+* @author chenzheng_java 
+* handler和message测试用例 
+*/
+public class HanlderMessageTest extends Activity implements OnClickListener{
+    Button button ;
+    MyHandler handler ;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.main);
+        button = (Button) this.findViewById(R.id.button1);
+        button.setOnClickListener(this);
+
+    }
+
+    // 声明自己的handler  
+    private class MyHandler extends Handler{
+    /** 
+    * 使用默认的构造函数，会将handler绑定当前UI线程的looper。 
+    * 如果想使用多线程这里是不能使用默认的构造方法的。 
+    */
+    public MyHandler() {
+        super();
+    }
+
+    public MyHandler(Looper looper){
+        super(looper);
+    }
+
+    // 处理具体的message,该方法由父类中进行继承.  
+    @Override
+    public void handleMessage(Message msg) {
+            int whatNumber = msg.what;
+            Bundle bundle = (Bundle)msg.obj;
+            Log.i(&quot;what&quot;, whatNumber+&quot;&quot;);
+            Log.i(&quot;名称&quot;, bundle.getString(&quot;name&quot;));
+            Log.i(&quot;性别&quot;, bundle.getString(&quot;sex&quot;));
+            Log.i(&quot;年龄&quot;, bundle.getString(&quot;age&quot;));
+            super.handleMessage(msg);
+        }
+    }
+
+    // 我自定义的任务,一般都会实现Runnable  
+    private class MyThread implements Runnable {
+        /** 
+        * 该方法的内部进行具体的任务实现，比如 下载. 
+        * Message中包含着想和ui线程交互的数据，原则上，在线程内部是 
+        * 最好不要直接调用handler的。 
+        * */
+        @Override
+        public void run() {
+
+            try {
+                Thread.sleep(6000);
+                Message message = Message.obtain(handler);
+                message.what = 10 ;
+                Bundle bundle = new Bundle();
+                bundle.putString(&quot;name&quot;, &quot;chenzheng&quot;);
+                bundle.putString(&quot;sex&quot;, &quot;纯爷们&quot;);
+                bundle.putString(&quot;age&quot;, &quot;生卒年不详&quot;);
+                message.obj = bundle ;
+                Log.i(&quot;通知&quot;, &quot;开始发message了哦&quot;);
+                Log.i(&quot;通知thread_id:&quot;, &quot;&quot;+Thread.currentThread().getId());
+                message.sendToTarget();
+            } catch (Exception e) {
+                Log.i(&quot;通知&quot;, &quot;线程sleep时出错了！&quot;);
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public void onClick(View v) {
+        Log.i(&quot;通知thread_id:&quot;, &quot;&quot;+Thread.currentThread().getId());
+
+        // 创建一个包含Looper的线程，这里如果没有HandlerThread的调用，会直接将后边的MyThread放到UI线程队列  
+        HandlerThread myHandlerThread = new HandlerThread(&quot;chenzheng_java&quot;);
+        // 启动新线程  
+        myHandlerThread.start();
+        // 将handler绑定到新线程  
+        handler = new MyHandler(myHandlerThread.getLooper());
+        // 在新线程中执行任务   
+        handler.post(new MyThread());
+    }
+}</code></pre>
+<blockquote>
+<p>参考：<a href="http://blog.csdn.net/onlyonecoder/article/details/8484200" target="_blank" rel="noopener">AsyncTask和Handler的优缺点比较</a><br><a href="http://www.open-open.com/lib/view/open1413796240122.html" target="_blank" rel="noopener">AsyncTask和Handler两种异步方式的实现和区别比较</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2015/07/15/AsyncTask%E5%92%8CHandler%E7%9A%84%E4%BC%98%E7%BC%BA%E7%82%B9%E6%AF%94%E8%BE%83/" data-id="ckcqdgkkt006v9xlf6gm03rqy" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/07/15/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Java线程池使用说明
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/07/15/%E5%AE%89%E5%8D%93%E9%A6%96%E9%A1%B5%E5%9B%BE%E7%89%87%E8%BD%AE%E6%92%AD%E6%95%88%E6%9E%9C-%E6%B7%98%E5%AE%9D%E3%80%81%E4%BA%AC%E4%B8%9C%E9%A6%96%E9%A1%B5%E5%B9%BF%E5%91%8A%E6%95%88%E6%9E%9C/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">安卓首页图片轮播效果(淘宝、京东首页广告效果)</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Retrofit 2 - 如何从服务器下载文件 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="如何声明Retrofit请求如果你在阅读本文前没有写过任何一行Retrofit请求代码，那么最好看一下前面几篇博客。对于很多Retrofit使用者来说：定义一个下载文件的请求与其他请求几乎无异： &#x2F;&#x2F; option 1: a resource relative to your base URL @GET(&quot;&#x2F;resource&#x2F;example.zip&quot;) Call&lt;Resp">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Retrofit 2 - 如何从服务器下载文件">
+<meta property="og:url" content="http://moqiang02.github.io/2016/05/18/Retrofit-2-%E5%A6%82%E4%BD%95%E4%BB%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8B%E8%BD%BD%E6%96%87%E4%BB%B6/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="如何声明Retrofit请求如果你在阅读本文前没有写过任何一行Retrofit请求代码，那么最好看一下前面几篇博客。对于很多Retrofit使用者来说：定义一个下载文件的请求与其他请求几乎无异： &#x2F;&#x2F; option 1: a resource relative to your base URL @GET(&quot;&#x2F;resource&#x2F;example.zip&quot;) Call&lt;Resp">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2016-05-18T00:06:01.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:32.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Retrofit-2-如何从服务器下载文件" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/05/18/Retrofit-2-%E5%A6%82%E4%BD%95%E4%BB%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8B%E8%BD%BD%E6%96%87%E4%BB%B6/" class="article-date">
+  <time datetime="2016-05-18T00:06:01.000Z" itemprop="datePublished">2016-05-18</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Retrofit 2 - 如何从服务器下载文件
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <h4 id="如何声明Retrofit请求"><a href="#如何声明Retrofit请求" class="headerlink" title="如何声明Retrofit请求"></a>如何声明Retrofit请求</h4><p>如果你在阅读本文前没有写过任何一行Retrofit请求代码，那么最好看一下前面几篇博客。对于很多Retrofit使用者来说：定义一个下载文件的请求与其他请求几乎无异：</p>
+<pre><code>// option 1: a resource relative to your base URL
+@GET(&quot;/resource/example.zip&quot;)
+Call&lt;ResponseBody&gt; downloadFileWithFixedUrl();
+
+// option 2: using a dynamic URL
+@GET
+Call&lt;ResponseBody&gt; downloadFileWithDynamicUrlSync(@Url String fileUrl);</code></pre><a id="more"></a>
+<p>如果你要下载的文件是一个静态资源（存在于服务器上的同一个地点），Base URL指向的就是所在的服务器，这种情况下可以选择使用方案一。正如你所看到的,它看上去就像一个普通的Retrofit 2请求。值得注意的是，我们将ResponseBody作为了返回类型。Retrofit会试图解析并转换它，所以你不能使用任何其他返回类型，否则当你下载文件的时候，是毫无意义的。</p>
+<p>第二种方案是Retrofit 2的新特性。现在你可以轻松构造一个动态地址来作为全路径请求。这对于一些特殊文件的下载是非常有用的，也就是说这个请求可能要依赖一些参数，比如用户信息或者时间戳等。你可以在运行时构造URL地址，并精确的请求文件。如果你还没有试过动态URL方式，可以翻到开头，看看这篇专题博客<a href="https://futurestud.io/blog/retrofit-2-how-to-use-dynamic-urls-for-requests" target="_blank" rel="noopener">Retrofit 2中的动态URL</a>。</p>
+<p>哪一种方案对你有用呢，我们接着往下看。</p>
+<h4 id="如何调用请求"><a href="#如何调用请求" class="headerlink" title="如何调用请求"></a>如何调用请求</h4><p>声明请求后，实际调用方式如下：</p>
+<pre><code>FileDownloadService downloadService = ServiceGenerator.create(FileDownloadService.class);
+
+Call&lt;ResponseBody&gt; call = downloadService.downloadFileWithDynamicUrlSync(fileUrl);
+
+call.enqueue(new Callback&lt;ResponseBody&gt;() {  
+    @Override
+    public void onResponse(Call&lt;ResponseBody&gt; call, Response&lt;ResponseBody&gt; response) {
+        if (response.isSuccess()) {
+            Log.d(TAG, &quot;server contacted and has file&quot;);
+
+            boolean writtenToDisk = writeResponseBodyToDisk(response.body());
+
+            Log.d(TAG, &quot;file download was a success? &quot; + writtenToDisk);
+        } else {
+            Log.d(TAG, &quot;server contact failed&quot;);
+        }
+    }
+
+    @Override
+    public void onFailure(Call&lt;ResponseBody&gt; call, Throwable t) {
+        Log.e(TAG, &quot;error&quot;);
+    }
+});</code></pre><p>如果你对<code>ServiceGenerator.create()</code>感到困惑，可以阅读我们的<a href="https://futurestud.io/blog/retrofit-getting-started-and-android-client" target="_blank" rel="noopener">第一篇博客</a> 。一旦创建了service，我们就能像其他Retrofit调用一样做网络请求了。</p>
+<p>还剩下一件很重要的事，隐藏在代码块中的<code>writeResponseBodyToDisk()</code>函数：负责将文件写进磁盘。</p>
+<h4 id="如何保存文件"><a href="#如何保存文件" class="headerlink" title="如何保存文件"></a>如何保存文件</h4><p><code>writeResponseBodyToDisk()</code>方法持有ResponseBody对象，通过读取它的字节，并写入磁盘。代码看起来比实际略复杂：</p>
+<pre><code>private boolean writeResponseBodyToDisk(ResponseBody body) {  
+    try {
+        // todo change the file location/name according to your needs
+        File futureStudioIconFile = new File(getExternalFilesDir(null) + File.separator + &quot;Future Studio Icon.png&quot;);
+
+        InputStream inputStream = null;
+        OutputStream outputStream = null;
+
+        try {
+            byte[] fileReader = new byte[4096];
+
+            long fileSize = body.contentLength();
+            long fileSizeDownloaded = 0;
+
+            inputStream = body.byteStream();
+            outputStream = new FileOutputStream(futureStudioIconFile);
+
+            while (true) {
+                int read = inputStream.read(fileReader);
+
+                if (read == -1) {
+                    break;
+                }
+
+                outputStream.write(fileReader, 0, read);
+
+                fileSizeDownloaded += read;
+
+                Log.d(TAG, &quot;file download: &quot; + fileSizeDownloaded + &quot; of &quot; + fileSize);
+            }
+
+            outputStream.flush();
+
+            return true;
+        } catch (IOException e) {
+            return false;
+        } finally {
+            if (inputStream != null) {
+                inputStream.close();
+            }
+
+            if (outputStream != null) {
+                outputStream.close();
+            }
+        }
+    } catch (IOException e) {
+        return false;
+    }
+}</code></pre><p>大部分都是一般Java I/O流的样板代码。你只需要关心第一行代码就行了，也就是文件最终以什么命名被保存。当你做完这些工作，就能够用Retrofit来下载文件了。</p>
+<p>但是我们并没有完全做好准备。而且这里存在一个大问题：默认情况下，Retrofit在处理结果前会将整个Server Response读进内存，这在JSON或者XML等Response上表现还算良好，但如果是一个非常大的文件，就可能造成OutofMemory异常。</p>
+<p>如果你的应用需要下载略大的文件，我们强烈建议阅读下一节内容。</p>
+<h4 id="当心大文件：请使用-Streaming！"><a href="#当心大文件：请使用-Streaming！" class="headerlink" title="当心大文件：请使用@Streaming！"></a>当心大文件：请使用@Streaming！</h4><p>如果下载一个非常大的文件，Retrofit会试图将整个文件读进内存。为了避免这种现象的发生，我们添加了一个特殊的注解来声明请求。</p>
+<pre><code>@Streaming
+@GET
+Call&lt;ResponseBody&gt; downloadFileWithDynamicUrlAsync(@Url String fileUrl);</code></pre><p>声明<code>@Streaming</code>并不是意味着你需要观察一个Netflix文件。它意味着立刻传递字节码，而不需要把整个文件读进内存。值得注意的是，如果你使用了<code>@Streaming</code>，并且依然使用以上的代码片段来进行处理。Android将会抛出<code>android.os.NetworkOnMainThreadException</code>异常。</p>
+<p>因此，最后一步就是把这些操作放进一个单独的工作线程中，例如ASyncTask：</p>
+<pre><code>final FileDownloadService downloadService =  
+                ServiceGenerator.create(FileDownloadService.class);
+
+new AsyncTask&lt;Void, Long, Void&gt;() {  
+   @Override
+   protected Void doInBackground(Void... voids) {
+       Call&lt;ResponseBody&gt; call = downloadService.downloadFileWithDynamicUrlSync(fileUrl);
+       call.enqueue(new Callback&lt;ResponseBody&gt;() {
+           @Override
+           public void onResponse(Call&lt;ResponseBody&gt; call, Response&lt;ResponseBody&gt; response) {
+               if (response.isSuccess()) {
+                   Log.d(TAG, &quot;server contacted and has file&quot;);
+
+                   boolean writtenToDisk = writeResponseBodyToDisk(response.body());
+
+                   Log.d(TAG, &quot;file download was a success? &quot; + writtenToDisk);
+               }
+               else {
+                   Log.d(TAG, &quot;server contact failed&quot;);
+               }
+           }
+       return null;
+   }
+}.execute();</code></pre><p>至此，如果你能够记住<code>@Streaming</code>的使用和以上代码片段，那么就能够使用Retrofit高效下载大文件了。</p>
+<blockquote>
+<p>文／小鄧子（简书作者）<br>原文链接：<a href="http://www.jianshu.com/p/92bb85fc07e8" target="_blank" rel="noopener">http://www.jianshu.com/p/92bb85fc07e8</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2016/05/18/Retrofit-2-%E5%A6%82%E4%BD%95%E4%BB%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8B%E8%BD%BD%E6%96%87%E4%BB%B6/" data-id="ckcqdgkrz00us9xlf54x6gb4p" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/06/02/mysql%E5%88%86%E8%A1%A8%EF%BC%8C%E5%88%86%E5%8C%BA%E7%9A%84%E5%8C%BA%E5%88%AB%E5%92%8C%E8%81%94%E7%B3%BB/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          mysql分表，分区的区别和联系
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/05/18/Retrofit2%E4%B8%8ERxJava%E7%94%A8%E6%B3%95%E8%A7%A3%E6%9E%90/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Retrofit2与RxJava用法解析</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

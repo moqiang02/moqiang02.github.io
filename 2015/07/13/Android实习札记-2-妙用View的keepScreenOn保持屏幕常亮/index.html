@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Android实习札记(2)---妙用View的keepScreenOn保持屏幕常亮 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="1)什么是屏幕常亮?直译就是让我们的屏幕一直亮着呗,手机通常都带有省电模式什么的,比如设置无操作后,15秒 屏幕自动关闭,如果恰好我们的程序正在执行一些操作的话,突然的屏幕关闭可能会带来一些问题; 比如,应用正在安装或者应用正在更新,下载,处理数据等,于是乎,我们在特定的时候,需要让手机屏幕 保持光亮,那么要怎么让屏幕常亮呢?">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android实习札记(2)---妙用View的keepScreenOn保持屏幕常亮">
+<meta property="og:url" content="http://moqiang02.github.io/2015/07/13/Android%E5%AE%9E%E4%B9%A0%E6%9C%AD%E8%AE%B0-2-%E5%A6%99%E7%94%A8View%E7%9A%84keepScreenOn%E4%BF%9D%E6%8C%81%E5%B1%8F%E5%B9%95%E5%B8%B8%E4%BA%AE/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="1)什么是屏幕常亮?直译就是让我们的屏幕一直亮着呗,手机通常都带有省电模式什么的,比如设置无操作后,15秒 屏幕自动关闭,如果恰好我们的程序正在执行一些操作的话,突然的屏幕关闭可能会带来一些问题; 比如,应用正在安装或者应用正在更新,下载,处理数据等,于是乎,我们在特定的时候,需要让手机屏幕 保持光亮,那么要怎么让屏幕常亮呢?">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2015-07-13T00:00:58.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:30.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Android实习札记-2-妙用View的keepScreenOn保持屏幕常亮" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/07/13/Android%E5%AE%9E%E4%B9%A0%E6%9C%AD%E8%AE%B0-2-%E5%A6%99%E7%94%A8View%E7%9A%84keepScreenOn%E4%BF%9D%E6%8C%81%E5%B1%8F%E5%B9%95%E5%B8%B8%E4%BA%AE/" class="article-date">
+  <time datetime="2015-07-13T00:00:58.000Z" itemprop="datePublished">2015-07-13</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Android/">Android</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Android实习札记(2)---妙用View的keepScreenOn保持屏幕常亮
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <h4 id="1-什么是屏幕常亮"><a href="#1-什么是屏幕常亮" class="headerlink" title="1)什么是屏幕常亮?"></a>1)什么是屏幕常亮?</h4><p>直译就是让我们的屏幕一直亮着呗,手机通常都带有省电模式什么的,比如设置无操作后,15秒</p>
+<p>屏幕自动关闭,如果恰好我们的程序正在执行一些操作的话,突然的屏幕关闭可能会带来一些问题;</p>
+<p>比如,应用正在安装或者应用正在更新,下载,处理数据等,于是乎,我们在特定的时候,需要让手机屏幕</p>
+<p>保持光亮,那么要怎么让屏幕常亮呢?</p>
+<a id="more"></a>
+
+
+<h4 id="2-怎么让屏幕常亮"><a href="#2-怎么让屏幕常亮" class="headerlink" title="2)怎么让屏幕常亮?"></a>2)怎么让屏幕常亮?</h4><p>主流的两个方法:</p>
+<p>①通过PowerManager.WakeLock实现:</p>
+<p>step 1:获得系统PowerManager对象,接着通过newWakeLock方法,创建WakeLock实例</p>
+<p>step 2:为了不影响其他app,我们通常把保持常亮方法onResume()方法中,而把取消常亮方法放到onPause()方法中</p>
+<p>step 3:还需要在AndroidManifest.xml文件中添加权限,另外安装的时候会提示,是否允许使用禁止休眠功能!权限如下:<br><code>&lt;uses-permission android:name=&quot;android.permission.WAKE_LOCK&quot; /&gt;</code></p>
+<p>简单使用代码如下:</p>
+<pre><code>    //获得系统POWER_SERVICE对象  
+    PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);   
+    //通过newWakeLock()方法创建WakeLock实例    
+    PowerManager.WakeLock wl = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, &quot;这里随便你写,一个TAG而已&quot;);    
+    //最好是放到onReusme方法调用  
+    wl.acquire();  
+    //最好是放到onPause方法调用      
+    wl.release();   </code></pre><p>对于newWakeLock的第一个参数,有以下选择:</p>
+<p>PARTIAL_WAKE_LOCK:保持CPU 运转，屏幕和键盘灯有可能是关闭的。<br>SCREEN_DIM_WAKE_LOCK：保持CPU 运转，允许保持屏幕显示但有可能是灰的，允许关闭键盘灯<br>SCREEN_BRIGHT_WAKE_LOCK：保持CPU 运转，允许保持屏幕高亮显示，允许关闭键盘灯<br>FULL_WAKE_LOCK：保持CPU 运转，保持屏幕高亮显示，键盘灯也保持亮度</p>
+<p>②直接通过getWindow().addFlags实现</p>
+<p>这个的话就比较简单了,哪个activity要用,就在onCreate()方法中添加下面的代码:<br><code>getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);</code></p>
+<p>而且不需要添加权限,网上很多都是坑,只有设置常亮,怎么关都不说,越来越发现谷哥比度娘好用了!</p>
+<p>addFlags()直译添加标记,那么,要取消常亮不就只需要我们清除标记么,所以只需要把addFlags改为</p>
+<p>clearFlags()即可!参考代码如下:</p>
+<pre><code>    package com.jay.example.keepscreenondemo;  
+
+    import android.os.Bundle;  
+    import android.app.Activity;  
+    import android.view.View;  
+    import android.view.View.OnClickListener;  
+    import android.view.WindowManager;  
+    import android.widget.Button;  
+
+    public class MainActivity extends Activity {  
+
+        private Button btnclose;  
+        @Override  
+        protected void onCreate(Bundle savedInstanceState) {  
+            super.onCreate(savedInstanceState);  
+            setContentView(R.layout.activity_main);  
+            btnclose = (Button) findViewById(R.id.btnclose);  
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);   
+            //点击按钮后,清除标记,屏幕常亮效果就消失了  
+            btnclose.setOnClickListener(new OnClickListener() {           
+                @Override  
+                public void onClick(View view) {  
+                    getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);               
+                }  
+            });  
+        }  
+    }  </code></pre><p>3)妙用View组件的keepScreenOn实现屏幕常亮:</p>
+<p>前面啰啰嗦嗦地介绍了两种保持屏幕常亮的方法,好像偏题了哈,这节要讲的是KeepScreenOn属性;</p>
+<p>不过也没什么啦,顺道学多2个方法哈!使用keepScreenOn属性非常简单</p>
+<p>step 1:在你需要常亮的Activity对应的布局文件中,随便给一个UI组件设置:android:keepScreenOn=”true”,然后,只要Activity不被停止的话,那么屏幕会一直保持常亮哦!</p>
+<p>step 2:怎么关闭常亮么?也很简单啊~在你需要关闭常亮的时候,修改UI组件的属性,把他设置为false就可以了,相比起前面的两个来说,这个是不是更加方便呢?见仁见智了!</p>
+<p>也贴下简单的使用代码吧:</p>
+<p>main.xml:</p>
+<pre><code>    &lt;LinearLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;  
+        xmlns:tools=&quot;http://schemas.android.com/tools&quot;  
+        android:id=&quot;@+id/LinearLayout1&quot;  
+        android:layout_width=&quot;match_parent&quot;  
+        android:layout_height=&quot;match_parent&quot;  
+        android:orientation=&quot;vertical&quot;  
+        tools:context=&quot;.MainActivity&quot; &gt;  
+
+        &lt;Button  
+            android:id=&quot;@+id/btnclose&quot;  
+            android:layout_width=&quot;wrap_content&quot;  
+            android:layout_height=&quot;wrap_content&quot;  
+            android:text=&quot;关闭常亮&quot; /&gt;  
+
+        &lt;TextView  
+            android:id=&quot;@+id/txtliang&quot;  
+            android:layout_width=&quot;wrap_content&quot;  
+            android:layout_height=&quot;wrap_content&quot;  
+            android:keepScreenOn=&quot;true&quot;  
+            android:text=&quot;我就是这么亮&quot; /&gt;  
+
+    &lt;/LinearLayout&gt;  </code></pre><p>MainActvitiy.java</p>
+<pre><code class="java">    package com.jay.example.keepscreenondemo;  
+
+    import android.os.Bundle;  
+    import android.app.Activity;  
+    import android.view.View;  
+    import android.view.View.OnClickListener;  
+    import android.view.WindowManager;  
+    import android.widget.Button;  
+    import android.widget.TextView;  
+
+    public class MainActivity extends Activity {  
+
+        private Button btnclose;  
+        private TextView txtliang;  
+        private int flag = -1;  
+        @Override  
+        protected void onCreate(Bundle savedInstanceState) {  
+            super.onCreate(savedInstanceState);  
+            setContentView(R.layout.activity_main);  
+            btnclose = (Button) findViewById(R.id.btnclose);  
+            txtliang = (TextView) findViewById(R.id.txtliang);  
+
+            btnclose.setOnClickListener(new OnClickListener() {  
+
+                @Override  
+                public void onClick(View v) {  
+                    if(flag == -1)  
+                    {  
+                        txtliang.setKeepScreenOn(false);  
+                        txtliang.setText(&quot;我亮不起来了=-=&quot;);  
+                        btnclose.setText(&quot;亮&quot;);  
+                    }  
+                    else   
+                    {  
+                        txtliang.setKeepScreenOn(true);  
+                        txtliang.setText(&quot;我又亮了^-^&quot;);  
+                        btnclose.setText(&quot;不亮&quot;);  
+                    }  
+                }  
+            });   
+        }  
+    }  </code></pre>
+<p>4)最后说几句:</p>
+<p>①常亮的前提是你不按电源键哈,一按肯定黑屏</p>
+<p>②代码比较简单,就不贴了,另外上面的多是屏幕常亮的,效果图就不贴了</p>
+<p>自己手机调省电模式,屏幕超时调成15s,接着晾一边,接着自己测测就知道了!</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2015/07/13/Android%E5%AE%9E%E4%B9%A0%E6%9C%AD%E8%AE%B0-2-%E5%A6%99%E7%94%A8View%E7%9A%84keepScreenOn%E4%BF%9D%E6%8C%81%E5%B1%8F%E5%B9%95%E5%B8%B8%E4%BA%AE/" data-id="ckcqdgkk5004n9xlfgsmocpri" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/07/13/Android%E5%AE%9E%E4%B9%A0%E6%9C%AD%E8%AE%B0-3-Fragment%E7%94%A8app%E5%8C%85%E8%BF%98%E6%98%AFv4%E5%8C%85%E8%A7%A3%E6%9E%90/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Android实习札记(3)---Fragment用app包还是v4包解析
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/07/13/Android%E5%AE%9E%E4%B9%A0%E6%9C%AD%E8%AE%B0-1-EditText%E5%B1%9E%E6%80%A7%E4%B9%8BImeOption%E8%AF%A6%E8%A7%A3/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Android实习札记(1)---EditText属性之ImeOption详解</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

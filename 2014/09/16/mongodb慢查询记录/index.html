@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>mongodb慢查询记录 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="在 MySQL中，慢查询日志是经常作为我们优化数据库的依据，那在MongoDB中是否有类似的功能呢?答案是肯定的，那就是Mongo Database Profiler.不仅有，而且还有一些比MySQL的Slow Query Log更详细的信息。它就是我们这篇文章的主题。 开启 Profiling 功能 有两种方式可以控制 Profiling 的开关和级别，第一种是直接在启动参数里直接进行设置。 启">
+<meta property="og:type" content="article">
+<meta property="og:title" content="mongodb慢查询记录">
+<meta property="og:url" content="http://moqiang02.github.io/2014/09/16/mongodb%E6%85%A2%E6%9F%A5%E8%AF%A2%E8%AE%B0%E5%BD%95/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="在 MySQL中，慢查询日志是经常作为我们优化数据库的依据，那在MongoDB中是否有类似的功能呢?答案是肯定的，那就是Mongo Database Profiler.不仅有，而且还有一些比MySQL的Slow Query Log更详细的信息。它就是我们这篇文章的主题。 开启 Profiling 功能 有两种方式可以控制 Profiling 的开关和级别，第一种是直接在启动参数里直接进行设置。 启">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2014-09-16T12:43:30.000Z">
+<meta property="article:modified_time" content="2020-03-01T02:57:10.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-mongodb慢查询记录" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/09/16/mongodb%E6%85%A2%E6%9F%A5%E8%AF%A2%E8%AE%B0%E5%BD%95/" class="article-date">
+  <time datetime="2014-09-16T12:43:30.000Z" itemprop="datePublished">2014-09-16</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/mongodb/">mongodb</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      mongodb慢查询记录
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <p>在 MySQL中，慢查询日志是经常作为我们优化数据库的依据，那在MongoDB中是否有类似的功能呢?答案是肯定的，那就是Mongo Database Profiler.不仅有，而且还有一些比MySQL的Slow Query Log更详细的信息。它就是我们这篇文章的主题。</p>
+<p><strong>开启 Profiling 功能</strong></p>
+<p>有两种方式可以控制 Profiling 的开关和级别，第一种是直接在启动参数里直接进行设置。</p>
+<p>启动MongoDB时加上 <code>–profile=级别</code> 即可。</p>
+<p>也可以在客户端调用db.setProfilingLevel(级别) 命令来实时配置。可以通过db.getProfilingLevel()命令来获取当前的Profile级别。</p>
+<a id="more"></a>
+<pre><code>&gt; db.setProfilingLevel(2); 
+{&quot;was&quot; : 0 , &quot;ok&quot; : 1} 
+&gt; db.getProfilingLevel()</code></pre><p>上面斜体的级别可以取0，1，2 三个值，他们表示的意义如下：<br>0 – 不开启<br>1 – 记录慢命令 (默认为&gt;100ms)<br>2 – 记录所有命令</p>
+<p>Profile 记录在级别1时会记录慢命令，那么这个慢的定义是什么?上面我们说到其默认为100ms，当然有默认就有设置，其设置方法和级别一样有两种，一种是通过添加–slowms启动参数配置。第二种是调用db.setProfilingLevel时加上第二个参数：</p>
+<pre><code>db.setProfilingLevel( level , slowms ) 
+db.setProfilingLevel( 1 , 10 );</code></pre><p><strong>查询 Profiling 记录</strong></p>
+<p>与MySQL的慢查询日志不同，Mongo Profile 记录是直接存在系统db里的，记录位置 system.profile ，所以，我们只要查询这个Collection的记录就可以获取到我们的 Profile 记录了。</p>
+<pre><code>&gt; db.system.profile.find() 
+{&quot;ts&quot; : &quot;Thu Jan 29 2009 15:19:32 GMT-0500 (EST)&quot; , &quot;info&quot; : &quot;query test.$cmd ntoreturn:1 reslen:66 nscanned:0 
+query: { profile: 2 } nreturned:1 bytes:50&quot; , &quot;millis&quot; : 0} 
+&gt;db.system.profile.find( { info: /test.foo/ } ) 
+{&quot;ts&quot; : &quot;Thu Jan 29 2009 15:19:40 GMT-0500 (EST)&quot; , &quot;info&quot; : &quot;insert test.foo&quot; , &quot;millis&quot; : 0} 
+{&quot;ts&quot; : &quot;Thu Jan 29 2009 15:19:42 GMT-0500 (EST)&quot; , &quot;info&quot; : &quot;insert test.foo&quot; , &quot;millis&quot; : 0} 
+{&quot;ts&quot; : &quot;Thu Jan 29 2009 15:19:45 GMT-0500 (EST)&quot; , &quot;info&quot; : &quot;query test.foo ntoreturn:0 reslen:102 nscanned:2 
+query: {} nreturned:2 bytes:86&quot; , &quot;millis&quot; : 0} 
+{&quot;ts&quot; : &quot;Thu Jan 29 2009 15:21:17 GMT-0500 (EST)&quot; , &quot;info&quot; : &quot;query test.foo ntoreturn:0 reslen:36 nscanned:2 
+query: { $not: { x: 2 } } nreturned:0 bytes:20&quot; , &quot;millis&quot; : 0} 
+{&quot;ts&quot; : &quot;Thu Jan 29 2009 15:21:27 GMT-0500 (EST)&quot; , &quot;info&quot; : &quot;query test.foo ntoreturn:0 exception bytes:53&quot; , &quot;millis&quot; : 88}</code></pre><p>列出执行时间长于某一限度(5ms)的 Profile 记录：</p>
+<pre><code>&gt; db.system.profile.find( { millis : { $gt : 5 } } ) 
+{&quot;ts&quot; : &quot;Thu Jan 29 2009 15:21:27 GMT-0500 (EST)&quot; , &quot;info&quot; : &quot;query test.foo ntoreturn:0 exception bytes:53&quot; , &quot;millis&quot; : 88}</code></pre><p>查看最新的 Profile 记录：<br><code>db.system.profile.find().sort({$natural:-1})</code></p>
+<p>Mongo Shell 还提供了一个比较简洁的命令show profile，可列出最近5条执行时间超过1ms的 Profile 记录。</p>
+<p>Profile 信息内容详解：</p>
+<pre><code>ts-该命令在何时执行.
+
+millis Time-该命令执行耗时，以毫秒记.
+
+info-本命令的详细信息.
+
+query-表明这是一个query查询操作.
+
+ntoreturn-本次查询客户端要求返回的记录数.比如, findOne()命令执行时 ntoreturn 为 1.有limit(n) 条件时ntoreturn为n.
+
+query-具体的查询条件(如x&gt;3).
+
+nscanned-本次查询扫描的记录数.
+
+reslen-返回结果集的大小.
+
+nreturned-本次查询实际返回的结果集.
+
+update-表明这是一个update更新操作.
+
+fastmod-表示该操作不需要等待执行完毕就可以返回了（离弦之箭）.
+
+fastmodinsert -表示该操作是insert操作，而且无需等待执行完毕就可以返回，可以认为是异步（离弦之箭）.
+
+upsert-表明update的upsert参数为true.此参数的功能是如果update的记录不存在，则用update的条件insert一条记录.
+
+moved-表明本次update是否移动了硬盘上的数据，如果新记录比原记录短，通常不会移动当前记录，如果新记录比原记录长，那么可能会移动记录到其它位置，这时候会导致相关索引的更新.磁盘操作更多，加上索引更新，会使得这样的操作比较慢.
+
+insert-这是一个insert插入操作.
+
+getmore-这是一个getmore 操作，getmore通常发生在结果集比较大的查询时，第一个query返回了部分结果，后续的结果是通过getmore来获取的。</code></pre><p><strong>MongoDB 查询优化</strong></p>
+<p>如果nscanned(扫描的记录数)远大于nreturned(返回结果的记录数)的话，那么我们就要考虑通过加索引来优化记录定位了。</p>
+<p>reslen 如果过大，那么说明我们返回的结果集太大了，这时请查看find函数的第二个参数是否只写上了你需要的属性名。(类似 于MySQL中不要总是<code>select *</code>)</p>
+<p>对于创建索引的建议是：如果很少读，那么尽量不要添加索引，因为索引越多，写操作会越慢。如果读量很大，那么创建索引还是比较划算的。(和RDBMS一样，貌似是废话 -_-!!)</p>
+<p><strong>MongoDB 更新优化</strong></p>
+<p>如果写查询量或者update量过大的话，多加索引是会有好处的。以及～～～～(省略N字，和RDBMS差不多的道理)</p>
+<p>Use fast modify operations when possible (and usually with these, an index). See Updates.</p>
+<p><strong>Profiler 的效率</strong></p>
+<p>Profiling 功能肯定是会影响效率的，但是不太严重，原因是他使用的是system.profile 来记录，而system.profile 是一个capped collection 这种collection 在操作上有一些限制和特点，但是效率更高。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/09/16/mongodb%E6%85%A2%E6%9F%A5%E8%AF%A2%E8%AE%B0%E5%BD%95/" data-id="ckcqdgkx0018i9xlfe0pnaoq5" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/09/16/%E8%AE%B0%E4%B8%80%E6%AC%A1MongoDB%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          记一次MongoDB性能问题
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/09/15/PHP%E6%93%8D%E4%BD%9CMongoDB%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">PHP操作MongoDB学习笔记</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

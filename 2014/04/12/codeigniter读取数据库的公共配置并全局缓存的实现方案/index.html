@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>codeigniter读取数据库的公共配置并全局缓存的实现方案 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="引言学习CodeIgniter大概有几天了。从第一天了解后，对CI情有独钟，比较符合我的风格。其实一直以来对框架这块不太敏感。自己长时间的开发，也有一套自己的开发风格和习惯。但是这年头，你说你不会框架，你都不好意思说你是做开发的。所以就选择一个框架来弥补这个缺点了。去年也接触过thinkPHP，但是对于分组这块，始终感觉理解和掌握不到位，由于时间关系，也就没有深入下去。这次也是因为在国庆节前有位客">
+<meta property="og:type" content="article">
+<meta property="og:title" content="codeigniter读取数据库的公共配置并全局缓存的实现方案">
+<meta property="og:url" content="http://moqiang02.github.io/2014/04/12/codeigniter%E8%AF%BB%E5%8F%96%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84%E5%85%AC%E5%85%B1%E9%85%8D%E7%BD%AE%E5%B9%B6%E5%85%A8%E5%B1%80%E7%BC%93%E5%AD%98%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%96%B9%E6%A1%88/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="引言学习CodeIgniter大概有几天了。从第一天了解后，对CI情有独钟，比较符合我的风格。其实一直以来对框架这块不太敏感。自己长时间的开发，也有一套自己的开发风格和习惯。但是这年头，你说你不会框架，你都不好意思说你是做开发的。所以就选择一个框架来弥补这个缺点了。去年也接触过thinkPHP，但是对于分组这块，始终感觉理解和掌握不到位，由于时间关系，也就没有深入下去。这次也是因为在国庆节前有位客">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2014-04-12T03:15:53.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:32.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta property="article:tag" content="CI">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-codeigniter读取数据库的公共配置并全局缓存的实现方案" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/04/12/codeigniter%E8%AF%BB%E5%8F%96%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84%E5%85%AC%E5%85%B1%E9%85%8D%E7%BD%AE%E5%B9%B6%E5%85%A8%E5%B1%80%E7%BC%93%E5%AD%98%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%96%B9%E6%A1%88/" class="article-date">
+  <time datetime="2014-04-12T03:15:53.000Z" itemprop="datePublished">2014-04-12</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      codeigniter读取数据库的公共配置并全局缓存的实现方案
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <h3 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h3><p>学习CodeIgniter大概有几天了。从第一天了解后，对CI情有独钟，比较符合我的风格。其实一直以来对框架这块不太敏感。自己长时间的开发，也有一套自己的开发风格和习惯。但是这年头，你说你不会框架，你都不好意思说你是做开发的。所以就选择一个框架来弥补这个缺点了。去年也接触过thinkPHP，但是对于分组这块，始终感觉理解和掌握不到位，由于时间关系，也就没有深入下去。这次也是因为在国庆节前有位客户要求用框架开发。所以，也到了不得不掌握一门框架的地步了。于是国庆期间，在家偶尔看了一下官方文档，甚是喜欢。这不，为了一展身手，决定将以前的一个项目转为CI框架模式。一切顺利，只是有一个问题让我一时无法解决，于是在“CI中国论坛”上求助，经过百度与GOOGLE的帮助，终于解决了这个心病，于是在此做个记录，以做纪念。</p>
+<a id="more"></a>
+<h3 id="问题来源"><a href="#问题来源" class="headerlink" title="问题来源"></a>问题来源</h3><p>在一般的开发模式中，网站都有一个全局配置，而正常情况下，这些配置都保存在数据库中的一个表中。我的项目是通过一个公共文件里，从数据库表中读取配置信息，并存到缓存中（memcache），在需要的位置都包含这个文件，也就是说，只要第一次从数据库读取数据，那么该数据就被缓存了，以后就可以直接在缓存中取数据，而不需要每次读数据库。除非该缓存已清空（机器重启的情况下）。</p>
+<p>这个公共文件内容如下（为了节约篇幅，代码做了修改，只体现这个思路）</p>
+<pre><code>    $mem=new Memcache;  
+    $mem-&gt;connect(&quot;127.0.0.1&quot;,11211);  
+    $_config_arr=$mem-&gt;get(&#39;config&#39;);  
+    //$_config_arr=&#39;&#39;;  
+    if(!is_array($_config_arr)){  
+      //从数据库读取配置文件  
+      $query=mysql_query(&#39;select webname,domain,default_lang from config where id=1&#39;);  
+      if(mysql_num_rows($query)){  
+        $arr=mysql_fetch_array($query);  
+        $mem-&gt;set(&#39;config&#39;,$arr,0,0);  
+        $_config_arr=$mem-&gt;get(&#39;config&#39;);  
+      }  
+    }  
+
+    if(is_array($_config_arr)){  
+      $_webname=$_config_arr[webname];  
+      $_domain=$_config_arr[domain];  
+      $_default_lang=$_config_arr[default_lang];  
+    }  </code></pre><h3 id="解决过程"><a href="#解决过程" class="headerlink" title="解决过程"></a>解决过程</h3><p>那么在CI中我该如何实现呢？</p>
+<p>可能想到的有几个办法，但这些办法要么行不通，要么太繁琐。</p>
+<p>1、在入口文件index.php中实现。后了解，在此文件中实现无法加载数据库。总不能单独写个连接数据库这样的东西吧，就跟一坨屎一样。</p>
+<p>2、在helper中写，helper其实就是 include，但是helper仍然在数据库加载之前就已加载。</p>
+<p>3、写一个模型中，然后自动加载该模型，并在模型中将数据写到缓存中？</p>
+<p>4、疯狂百度GOOGLE中….</p>
+<p>在“CI中国论坛”了解到，CI只支持memcached，而不支持memcache，而memcached是在unix中的，windows系统上只有memcache。而遗憾的是，我用的就是windows，犹如晴天霹雳。我想，如果CI不支持，也只有通过$mem=new Memcache;这样的方式写了。就是感觉别扭。幸好，找到了解决办法。具体访问：</p>
+<p>CI system/libraries/Cache/drivers/memcached.php 兼容 memcache,memcached扩展</p>
+<p>解决了CI不支持memcache的问题。解决方案：将上面链接中的代码整理好覆盖原文件内容。（为什么要整理？如果直接复制，由于网页原因，有一段本是注释程序却未被注释，将会导致出错。本篇末尾提供memcached.php代码，你也可以直接拷贝并替换原文件。）</p>
+<p>5、发贴寻求帮助，在尝试测试下终于理顺思路，解决如本篇文章标题所示的问题。在此提供解决方案，欢迎交流，如果有更好方案，也希望与我分享。感谢。</p>
+<h3 id="寻求帮助"><a href="#寻求帮助" class="headerlink" title="寻求帮助"></a>寻求帮助</h3><p>网友提供帮助内容如下：</p>
+<blockquote>
+<p>通过扩展CI_Controller类，增加一个或多个方法，这样在所有的控制器都可以使用这些方法了，就像公用方法了。在这些方法中对数据库进行操作。<br>例如<br>MY_Controller类继承于CI_Controller，你的控制器继承于MY_Controller。在MY_Controller中增加个options方法,这个方法对数据库进行操作,以后在每个控制器的方法中都可以使用options()方法获取你需要的信息了。<br>(扩展核心类)请看手册,恕我无法一一细说:<a href="http://codeigniter.org.cn/user_guide/general/core_classes.html" target="_blank" rel="noopener">http://codeigniter.org.cn/user_guide/general/core_classes.html</a>  </p>
+</blockquote>
+<h3 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h3><p>我的解决方案是：扩展CI_Controller类（文件名：MY_Controller），在该类的构造函数中读取数据库的表的配置信息。将信息通过$this-&gt;load-&gt;vars($data);设为全局变量。这样只要加载视图，无需传递该$data值即可使用$data里的所有变量信息。（$data是一对象）</p>
+<h3 id="实现代码"><a href="#实现代码" class="headerlink" title="实现代码"></a>实现代码</h3><p>MY_Controller代码如下：</p>
+<pre><code>    &lt;?php if ( ! defined(&#39;BASEPATH&#39;)) exit(&#39;No direct script access allowed&#39;);  
+
+    class MY_Controller extends CI_Controller{  
+        public function __construct(){  
+            parent::__construct();  
+            $this-&gt;load-&gt;driver(&#39;cache&#39;);  
+            $this-&gt;load-&gt;model(&#39;manager_model&#39;);  
+
+            $_config_arr=$this-&gt;cache-&gt;memcached-&gt;get(&#39;config&#39;);  
+            if(!is_object($_config_arr)){  
+                $_config_arr=$this-&gt;manager_model-&gt;get_config();  
+                $this-&gt;cache-&gt;memcached-&gt;save(&#39;config&#39;,$_config_arr,0);  
+            }  
+
+            if(is_object($_config_arr)){  
+              $data[&#39;_webname&#39;]=$_config_arr-&gt;webname;  
+              $data[&#39;_domain&#39;]=$_config_arr-&gt;domain;  
+              $data[&#39;_default_lang&#39;]=$_config_arr-&gt;default_lang;  
+              $this-&gt;load-&gt;vars($data);  
+            }  
+
+        }  
+    }  </code></pre><p>manager_model模型中get_config()方法代码如下：</p>
+<pre><code>    function get_config(){  
+        $query = $this-&gt;db-&gt;query(&#39;select id,webname,domain,default_lang from config where id=1&#39;);  
+        if($query-&gt;num_rows())  
+        {  
+            return $query-&gt;row();  
+        }  
+    }  </code></pre><p>控制器中加载config.php视图方法如下：</p>
+<pre><code>    public function config(){  
+        $this-&gt;load-&gt;view(&#39;public/config&#39;);//这里无需传递第二个参数。  
+    }  </code></pre><p>config方法中，如果有其它参数，也以通过第二个参数传递。不影响传递$data的值。比如：</p>
+<pre><code>    public function config(){  
+        $data1[&#39;title&#39;]=&#39;这是标题&#39;;  
+        $data1[&#39;keyword&#39;]=&#39;这是关键字&#39;;  
+        $this-&gt;load-&gt;view(&#39;public/config&#39;,$data1);  
+    }  </code></pre><p>在视图public/config.php文件中，即可以使用$data中所有变量，也可以使用$title和$keyword变量。</p>
+<h3 id="相关问题描述"><a href="#相关问题描述" class="headerlink" title="相关问题描述"></a>相关问题描述</h3><p>CodeIgniter 用户指南 版本 2.1.0 关于Memcached缓存的使用说明</p>
+<blockquote>
+<p>Memcached 缓存<br>使用分布式 Memcached 服务器 可以通过配置文件： memcached.php 来配置,该文件在 application/config/ 目录下.<br>All of the functions listed above can be accessed without passing a specific adapter to the driver loader as follows:<br>$this-&gt;load-&gt;driver(‘cache’);<br>$this-&gt;cache-&gt;memcached-&gt;save(‘foo’, ‘bar’, 10);<br>若想了解更多关于 Memcached的信息, 请参考 <a href="http://php.net/memcached" target="_blank" rel="noopener">http://php.net/memcached</a>  </p>
+</blockquote>
+<p>来源：<a href="http://codeigniter.org.cn/user_guide/drivers/caching.html#dummy" target="_blank" rel="noopener">http://codeigniter.org.cn/user_guide/drivers/caching.html#dummy</a></p>
+<p>我的CodeIgniter 版本 2.1.2，却在application/config中找不到memcached.php这个配置文件</p>
+<p>其实，需要手工在该目录创建，内容默认如下：</p>
+<pre><code>    $config[&#39;memcached&#39;] = array(  
+        &#39;hostname&#39;  =&gt; &#39;127.0.0.1&#39;,  
+        &#39;port&#39;      =&gt; 11211,  
+        &#39;weight&#39;    =&gt; 1  
+    );  </code></pre><p>说明：上面的“Cache_memcached.php”中已经有默认的值，该值与上面这个配置文件内容相同。如果你的设置与默认值恰好相同，也可以不用建立memcached.php这个配置文件。如果不同，你也可以直接更改 Cache_memcached.php 文件中的配置值。但是，你一旦建立memcached.php这个配置文件，那么该值将会覆盖 Cache_memcached.php 中的默认值。<br>Cache_memcached.php代码</p>
+<pre><code>    &lt;?php if ( ! defined(&#39;BASEPATH&#39;)) exit(&#39;No direct script access allowed&#39;);  
+    /** 
+     * CodeIgniter 
+     * 
+     * An open source application development framework for PHP 4.3.2 or newer 
+     * 
+     * @package  CodeIgniter 
+     * @author  ExpressionEngine Dev Team 
+     * @copyright Copyright (c) 2006 - 2012 EllisLab, Inc. 
+     * @license  http://codeigniter.com/user_guide/license.html 
+     * @link  http://codeigniter.com 
+     * @since  Version 2.0 
+     * @filesource 
+     */  
+
+    // ------------------------------------------------------------------------  
+
+    /** 
+     * CodeIgniter Memcached Caching Class 
+     * 
+     * @package  CodeIgniter 
+     * @subpackage Libraries 
+     * @category Core 
+     * @author  ExpressionEngine Dev Team 
+     * @link 
+     */  
+
+    class CI_Cache_memcached extends CI_Driver {  
+
+     private $_memcached; // Holds the memcached object  
+
+     protected $_memcache_conf  = array(  
+          &#39;default&#39; =&gt; array(  
+          &#39;default_host&#39;  =&gt; &#39;127.0.0.1&#39;,  
+          &#39;default_port&#39;  =&gt; 11211,  
+          &#39;default_weight&#39; =&gt; 1  
+         )  
+        );  
+
+     // ------------------------------------------------------------------------  
+
+     /** 
+      * Fetch from cache 
+      * 
+      * @param  mixed  unique key id 
+      * @return  mixed  data on success/false on failure 
+      */  
+     public function get($id)  
+     {  
+      $data = $this-&gt;_memcached-&gt;get($id);  
+      return (is_array($data)) ? $data[0] : FALSE;  
+     }  
+
+     // ------------------------------------------------------------------------  
+
+     /** 
+      * Save 
+      * 
+      * @param  string  unique identifier 
+      * @param  mixed  data being cached 
+      * @param  int   time to live 
+      * @return  boolean  true on success, false on failure 
+      */  
+     public function save($id, $data, $ttl = 60)  
+     {  
+      if (get_class($this-&gt;_memcached) == &#39;Memcached&#39;)  
+      {  
+       return $this-&gt;_memcached-&gt;set($id, array($data, time(), $ttl), $ttl);  
+      }  
+      else if (get_class($this-&gt;_memcached) == &#39;Memcache&#39;)  
+      {  
+       return $this-&gt;_memcached-&gt;set($id, array($data, time(), $ttl), 0, $ttl);  
+      }  
+      return FALSE;  
+     }  
+
+     // ------------------------------------------------------------------------  
+
+     /** 
+      * Delete from Cache 
+      * 
+      * @param  mixed  key to be deleted. 
+      * @return  boolean  true on success, false on failure 
+      */  
+     public function delete($id)  
+     {  
+      return $this-&gt;_memcached-&gt;delete($id);  
+     }  
+
+     // ------------------------------------------------------------------------  
+
+     /** 
+      * Clean the Cache 
+      * 
+      * @return  boolean  false on failure/true on success 
+      */  
+     public function clean()  
+     {  
+      return $this-&gt;_memcached-&gt;flush();  
+     }  
+
+     // ------------------------------------------------------------------------  
+
+     /** 
+      * Cache Info 
+      * 
+      * @param  null  type not supported in memcached 
+      * @return  mixed   array on success, false on failure 
+      */  
+     public function cache_info($type = NULL)  
+     {  
+      return $this-&gt;_memcached-&gt;getStats();  
+     }  
+
+     // ------------------------------------------------------------------------  
+
+     /** 
+      * Get Cache Metadata 
+      * 
+      * @param  mixed  key to get cache metadata on 
+      * @return  mixed  FALSE on failure, array on success. 
+      */  
+     public function get_metadata($id)  
+     {  
+      $stored = $this-&gt;_memcached-&gt;get($id);  
+
+      if (count($stored) !== 3)  
+      {  
+       return FALSE;  
+      }  
+
+      list($data, $time, $ttl) = $stored;  
+
+      return array(  
+       &#39;expire&#39; =&gt; $time + $ttl,  
+       &#39;mtime&#39;  =&gt; $time,  
+       &#39;data&#39;  =&gt; $data  
+      );  
+     }  
+
+     // ------------------------------------------------------------------------  
+
+     /** 
+      * Setup memcached. 
+      */  
+     private function _setup_memcached()  
+     {  
+      // Try to load memcached server info from the config file.  
+      $CI =&amp; get_instance();  
+      if ($CI-&gt;config-&gt;load(&#39;memcached&#39;, TRUE, TRUE))  
+      {  
+       if (is_array($CI-&gt;config-&gt;config[&#39;memcached&#39;]))  
+       {  
+        $this-&gt;_memcache_conf = NULL;  
+
+        foreach ($CI-&gt;config-&gt;config[&#39;memcached&#39;] as $name =&gt; $conf)  
+        {  
+         $this-&gt;_memcache_conf[$name] = $conf;  
+        }  
+       }  
+      }  
+      if (extension_loaded(&#39;memcached&#39;)){  
+       $this-&gt;_memcached = new Memcached();  
+      }else{  
+       $this-&gt;_memcached = new Memcache();  
+      }  
+
+
+     foreach ($this-&gt;_memcache_conf as $name =&gt; $cache_server)  
+     {  
+               if ( ! array_key_exists(&#39;hostname&#39;, $cache_server))  
+                {  
+
+                   // $cache_server[&#39;hostname&#39;] = $this-&gt;_default_options[&#39;default_host&#39;]; //坑爹的原代码,没有_default_options属性  
+                    $cache_server[&#39;hostname&#39;] = $this-&gt;_memcache_conf[&#39;default&#39;][&#39;default_host&#39;];  
+                }  
+
+                if ( ! array_key_exists(&#39;port&#39;, $cache_server))  
+                {  
+
+                   // $cache_server[&#39;port&#39;] = $this-&gt;_default_options[&#39;default_port&#39;];//坑爹的原代码,没有_default_options属性  
+                    $cache_server[&#39;port&#39;] = $this-&gt;_memcache_conf[&#39;default&#39;][&#39;default_port&#39;];  
+                }  
+
+                if ( ! array_key_exists(&#39;weight&#39;, $cache_server))  
+                {  
+
+                  //  $cache_server[&#39;weight&#39;] = $this-&gt;_default_options[&#39;default_weight&#39;];//坑爹的原代码,没有_default_options属性  
+                    $cache_server[&#39;weight&#39;] = $this-&gt;_memcache_conf[&#39;default&#39;][&#39;default_weight&#39;];  
+                }  
+                 //导致如果不配置 config/memcache.php文件，执行到$this-&gt;_memcached-&gt;addServer($cache_server[&#39;hostname&#39;],$cache_server[&#39;port&#39;]);出错（因为此时语句，相当于$this-&gt;_memcached-&gt;addServer(‘’,&#39;&#39;);然后机器木反应了~  
+
+                if (extension_loaded(&#39;memcached&#39;)){  
+                    $this-&gt;_memcached-&gt;addServer(  
+                        $cache_server[&#39;hostname&#39;], $cache_server[&#39;port&#39;], $cache_server[&#39;weight&#39;]  
+                    );  
+                }else{  
+                    $this-&gt;_memcached-&gt;addServer($cache_server[&#39;hostname&#39;],$cache_server[&#39;port&#39;],TRUE, $cache_server[&#39;weight&#39;]);  
+                }  
+        }  
+     }  
+
+     // ------------------------------------------------------------------------  
+
+     /** 
+      * Is supported 
+      * 
+      * Returns FALSE if memcached is not supported on the system. 
+      * If it is, we setup the memcached object &amp; return TRUE 
+      */  
+     public function is_supported()  
+     {  
+
+      if ( !extension_loaded(&#39;memcached&#39;) &amp;&amp; !extension_loaded(&#39;memcache&#39;))  
+      {  
+       log_message(&#39;error&#39;, &#39;The Memcached Extension must be loaded to use Memcached Cache.&#39;);  
+
+       return FALSE;  
+      }  
+
+      $this-&gt;_setup_memcached();  
+      return TRUE;  
+     }  
+
+     // ------------------------------------------------------------------------  
+
+    }  
+    // End Class  
+
+    /* End of file Cache_memcached.php */  
+    /* Location: ./system/libraries/Cache/drivers/Cache_memcached.php */  </code></pre><h3 id="代码分析摘要"><a href="#代码分析摘要" class="headerlink" title="代码分析摘要"></a>代码分析摘要</h3><p>一、memcached-&gt;addServer与memcache-&gt;addServer区别</p>
+<p><a href="http://www.php.net/manual/zh/memcached.addserver.php" target="_blank" rel="noopener">http://www.php.net/manual/zh/memcached.addserver.php</a></p>
+<p><a href="http://www.php.net/manual/zh/memcache.addserver.php" target="_blank" rel="noopener">http://www.php.net/manual/zh/memcache.addserver.php</a><br>二、与原文件改动部分</p>
+<p>1、_setup_memcached()方法修改</p>
+<p>原内容：（因为只考虑了memcached）</p>
+<pre><code>    $this-&gt;_memcached = new Memcached();  </code></pre><p>修改为：</p>
+<pre><code>    if (extension_loaded(&#39;memcached&#39;)){  
+      $this-&gt;_memcached = new Memcached();  
+    }else{  
+      $this-&gt;_memcached = new Memcache();  
+    }  </code></pre><p>2、原类中没有_default_options属性</p>
+<p>由于没有_default_options属性，所以导致_setup_memcached()方法中所有关于此句的代码都要换个方式。也可以建立个_default_options属性。上面代码中是将</p>
+<pre><code>    $cache_server[&#39;hostname&#39;] = $this-&gt;_default_options[&#39;default_host&#39;];  </code></pre><p>更改为</p>
+<pre><code>    $cache_server[&#39;hostname&#39;] = $this-&gt;_memcache_conf[&#39;default&#39;][&#39;default_host&#39;];  </code></pre><p>还包括port 和 weight的取值。</p>
+<p>3、is_supported() 方法</p>
+<p>将原内容：</p>
+<pre><code>    if ( ! extension_loaded(&#39;memcached&#39;))  </code></pre><p>修改为：</p>
+<pre><code>    if ( !extension_loaded(&#39;memcached&#39;) &amp;&amp; !extension_loaded(&#39;memcache&#39;))  </code></pre><p>这些改动内容都不用多做解释。在这只是将改动部分与原内容做一个说明。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/04/12/codeigniter%E8%AF%BB%E5%8F%96%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84%E5%85%AC%E5%85%B1%E9%85%8D%E7%BD%AE%E5%B9%B6%E5%85%A8%E5%B1%80%E7%BC%93%E5%AD%98%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%96%B9%E6%A1%88/" data-id="ckcqdgkuv012r9xlf5jj2gadj" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/CI/" rel="tag">CI</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/04/13/%E8%B0%88PHP%E4%B8%AD%E7%9A%84%E9%92%A9%E5%AD%90/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          谈PHP中的钩子
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/04/11/php%E9%94%81%E5%AE%9A%E6%96%87%E6%9C%AC%E6%A1%86%E5%86%85%E5%AE%B9%E7%9A%84%E6%96%B9%E6%B3%95/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">php锁定文本框内容的方法(disabled/readonly的区别)</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

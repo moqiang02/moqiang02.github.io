@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>WebView和JavaScrip交互基础 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="本节引言：在上一节中我们对Android的WebView(网页视图)进行了学习，相信已经了解了WebView的基本用法；而本节我们要学习的就是通过：HTML -&gt; JS -&gt;Java来完成HTML5端与Android手机间的 互访！好的，话不多说，有吗有真相，让我们通过编写代码来体验这种微妙的联系吧~PS：为了方便，本节用到的HTML都是以文件的形式放到assets目录下，只需通过 l">
+<meta property="og:type" content="article">
+<meta property="og:title" content="WebView和JavaScrip交互基础">
+<meta property="og:url" content="http://moqiang02.github.io/2015/06/24/WebView%E5%92%8CJavaScrip%E4%BA%A4%E4%BA%92%E5%9F%BA%E7%A1%80/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="本节引言：在上一节中我们对Android的WebView(网页视图)进行了学习，相信已经了解了WebView的基本用法；而本节我们要学习的就是通过：HTML -&gt; JS -&gt;Java来完成HTML5端与Android手机间的 互访！好的，话不多说，有吗有真相，让我们通过编写代码来体验这种微妙的联系吧~PS：为了方便，本节用到的HTML都是以文件的形式放到assets目录下，只需通过 l">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/WebView%E5%92%8CJavaScrip%E4%BA%A4%E4%BA%92%E5%9F%BA%E7%A1%80/1.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/WebView%E5%92%8CJavaScrip%E4%BA%A4%E4%BA%92%E5%9F%BA%E7%A1%80/2.gif">
+<meta property="og:image" content="http://moqiang02.github.io/images/WebView%E5%92%8CJavaScrip%E4%BA%A4%E4%BA%92%E5%9F%BA%E7%A1%80/3.jpg">
+<meta property="article:published_time" content="2015-06-24T12:30:07.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:32.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/WebView%E5%92%8CJavaScrip%E4%BA%A4%E4%BA%92%E5%9F%BA%E7%A1%80/1.jpg">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-WebView和JavaScrip交互基础" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/06/24/WebView%E5%92%8CJavaScrip%E4%BA%A4%E4%BA%92%E5%9F%BA%E7%A1%80/" class="article-date">
+  <time datetime="2015-06-24T12:30:07.000Z" itemprop="datePublished">2015-06-24</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Android/">Android</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      WebView和JavaScrip交互基础
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+<!-- 文章目录开始 -->
+
+<div id="toc" class="toc-article">
+<strong class="toc-title" style="cursor:pointer">contents</strong>
+<ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#本节引言："><span class="toc-number">1.</span> <span class="toc-text">本节引言：</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-核心步骤讲解："><span class="toc-number">2.</span> <span class="toc-text">1.核心步骤讲解：</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-使用示例讲解："><span class="toc-number">3.</span> <span class="toc-text">2.使用示例讲解：</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1）HTML通过JS显示Toast与普通列表的对话框"><span class="toc-number">3.1.</span> <span class="toc-text">1）HTML通过JS显示Toast与普通列表的对话框</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2）HTML通过JS调用三种不同的对话框"><span class="toc-number">3.2.</span> <span class="toc-text">2）HTML通过JS调用三种不同的对话框</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-HTML通过JS读取Android联系人并显示"><span class="toc-number">4.</span> <span class="toc-text">3.HTML通过JS读取Android联系人并显示</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#本节小结："><span class="toc-number">5.</span> <span class="toc-text">本节小结：</span></a></li></ol>
+</div>
+
+<!-- 文章目录结束 -->	  
+
+	  
+        <h3 id="本节引言："><a href="#本节引言：" class="headerlink" title="本节引言："></a>本节引言：</h3><p>在上一节中我们对Android的WebView(网页视图)进行了学习，相信已经了解了WebView的基本用法；<br>而本节我们要学习的就是通过：HTML -&gt; JS -&gt;Java来完成HTML5端与Android手机间的 互访！好的，话不多说，有吗有真相，让我们通过编写代码来体验这种微妙的联系吧~<br>PS：为了方便，本节用到的HTML都是以文件的形式放到assets目录下，只需通过 <code>loadUrl(&quot;file:///android_asset/~&quot;)</code>即可加载对应的HTML~</p>
+<a id="more"></a>
+<h3 id="1-核心步骤讲解："><a href="#1-核心步骤讲解：" class="headerlink" title="1.核心步骤讲解："></a>1.核心步骤讲解：</h3><p>首先，我们定义一个类，用于将数据暴露出来，JS通过该类暴露的方法(Public)来调用Android！</p>
+<p>接着，我们在WebView所在页面Activity，使用下述代码:<br><code>webview.getSettings().setJavaScriptEnabled(true);</code><br><code>webview.addJavascriptInterface(object,&quot;name&quot;);</code></p>
+<p>然后js或者html中调用name.xxx调用对象里的暴露的方法：<br>比如： <code>&lt; input type=&quot;button&quot; value=&quot;Toast提示&quot; onclick=&quot;name.showToast(&#39;呵呵&#39;);&quot;/&gt;</code><br>另外，setJavaScriptEnabled是在<strong>Android 4.4以前的系统</strong>才有效！！！下一节我们会来讲解Android 4.4后 WebKit的变化以及要注意的地方！</p>
+<h3 id="2-使用示例讲解："><a href="#2-使用示例讲解：" class="headerlink" title="2.使用示例讲解："></a>2.使用示例讲解：</h3><h4 id="1）HTML通过JS显示Toast与普通列表的对话框"><a href="#1）HTML通过JS显示Toast与普通列表的对话框" class="headerlink" title="1）HTML通过JS显示Toast与普通列表的对话框"></a>1）HTML通过JS显示Toast与普通列表的对话框</h4><p>运行效果图：<br><img src="/images/WebView%E5%92%8CJavaScrip%E4%BA%A4%E4%BA%92%E5%9F%BA%E7%A1%80/1.jpg" alt=""><br>代码实现：</p>
+<p>先准备我们的HTML文件，创建好后放到assets目录下：</p>
+<p>demo1.html:</p>
+<pre><code>&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;Js调用Android&lt;/title&gt;
+&lt;/head&gt;
+
+&lt;body&gt;
+    &lt;input type=&quot;button&quot; value=&quot;Toast提示&quot; onclick=&quot;myObj.showToast(&#39;曹神前来日狗~&#39;);&quot;/&gt;
+    &lt;input type=&quot;button&quot; value=&quot;列表对话框&quot; onclick=&quot;myObj.showDialog();&quot;/&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre><p>自定义一个Object对象，js通过该类暴露的方法来调用Android</p>
+<p>MyObject.java:</p>
+<pre><code class="java">/**
+ * Created by Jay on 2015/9/11 0011.
+ */
+public class MyObject {
+    private Context context;
+    public MyObject(Context context) {
+        this.context = context;
+    }
+
+    //将显示Toast和对话框的方法暴露给JS脚本调用
+    public void showToast(String name) {
+        Toast.makeText(context, name, Toast.LENGTH_SHORT).show();
+    }
+
+    public void showDialog() {
+        new AlertDialog.Builder(context)
+                .setTitle(&quot;联系人列表&quot;).setIcon(R.mipmap.ic_lion_icon)
+                .setItems(new String[]{&quot;基神&quot;, &quot;B神&quot;, &quot;曹神&quot;, &quot;街神&quot;, &quot;翔神&quot;}, null)
+                .setPositiveButton(&quot;确定&quot;, null).create().show();
+    }
+}</code></pre>
+<p>最后是MainActivity.java，启用JavaScript支持，然后通过addJavascriptInterface暴露对象~</p>
+<pre><code class="java">public class MainActivity extends AppCompatActivity {
+    private WebView wView;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        wView = (WebView) findViewById(R.id.wView);
+        wView.loadUrl(&quot;file:///android_asset/demo1.html&quot;);
+        WebSettings webSettings = wView.getSettings();
+        //①设置WebView允许调用js
+        webSettings.setJavaScriptEnabled(true);
+        webSettings.setDefaultTextEncodingName(&quot;UTF-8&quot;);
+        //②将object对象暴露给Js,调用addjavascriptInterface
+        wView.addJavascriptInterface(new MyObject(MainActivity.this), &quot;myObj&quot;);
+    }
+}</code></pre>
+<h4 id="2）HTML通过JS调用三种不同的对话框"><a href="#2）HTML通过JS调用三种不同的对话框" class="headerlink" title="2）HTML通过JS调用三种不同的对话框"></a>2）HTML通过JS调用三种不同的对话框</h4><p>运行效果图：<br><img src="/images/WebView%E5%92%8CJavaScrip%E4%BA%A4%E4%BA%92%E5%9F%BA%E7%A1%80/2.gif" alt=""><br>实现代码：</p>
+<p>先往assets目录下塞一个html文件： demo2.html：</p>
+<pre><code>&lt;html&gt;
+&lt;head&gt;
+    &lt;meta http-equiv = &quot;Content-Type&quot; content=&quot;text/html;charset=UTF-8&quot;
+    &lt;title&gt;测试Js的三种不同对话框&lt;/title&gt;
+    &lt;script language=&quot;JavaScript&quot;&gt;
+        function alertFun()
+        {
+            alert(&quot;Alert警告对话框!&quot;);
+        }
+        function confirmFun()
+        {
+            if(confirm(&quot;访问百度?&quot;))
+            {location.href = &quot;http://www.baidu.com&quot;;}
+            else alert(&quot;取消访问!&quot;);
+        }
+        function promptFun()
+        {
+            var word = prompt(&quot;Prompt对话框&quot;,&quot;请输入点什么...:&quot;);
+            if(word)
+            {
+                alert(&quot;你输入了:&quot;+word)
+            }else{alert(&quot;呵呵,你什么都没写!&quot;);}
+        }
+    &lt;/script&gt;
+&lt;/head&gt;
+
+&lt;body&gt;
+&lt;p&gt;三种对话框的使用&lt;/p&gt;
+
+&lt;p&gt;Alert对话框&lt;/p&gt;
+&lt;p&gt;
+    &lt;input type=&quot;submit&quot; name = &quot;Submit1&quot; value=&quot;展示1&quot; onclick=&quot;alertFun()&quot;/&gt;
+&lt;/p&gt;
+&lt;p&gt;Confirm对话框&lt;/p&gt;
+&lt;p&gt;
+    &lt;input type=&quot;submit&quot; name = &quot;Submit2&quot; value=&quot;展示2&quot; onclick=&quot;confirmFun()&quot;/&gt;
+&lt;/p&gt;
+&lt;p&gt;Prompt对话框&lt;/p&gt;
+&lt;p&gt;
+    &lt;input type=&quot;submit&quot; name = &quot;Submit3&quot; value=&quot;展示3&quot; onclick=&quot;promptFun()&quot;/&gt;
+&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre><p>PS：主布局和prompt布局这里就不贴了！ 直接上MainActivity.java:</p>
+<pre><code class="java">public class MainActivity extends AppCompatActivity {
+
+    private WebView wView;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        wView = (WebView) findViewById(R.id.wView);
+
+        //获得WebSetting对象,支持js脚本,可访问文件,支持缩放,以及编码方式
+        WebSettings webSettings = wView.getSettings();
+        webSettings.setJavaScriptEnabled(true);
+        webSettings.setAllowFileAccess(true);
+        webSettings.setBuiltInZoomControls(true);
+        webSettings.setDefaultTextEncodingName(&quot;UTF-8&quot;);
+        //设置WebChromeClient,处理网页中的各种js事件
+        wView.setWebChromeClient(new MyWebChromeClient());
+        wView.loadUrl(&quot;file:///android_asset/demo2.html&quot;);
+    }
+
+    //这里需要自定义一个类实现WebChromeClient类,并重写三种不同对话框的处理方法
+    //分别重写onJsAlert,onJsConfirm,onJsPrompt方法
+    class MyWebChromeClient extends WebChromeClient {
+        @Override
+        public boolean onJsAlert(WebView view, String url, String message,
+                                 final JsResult result) {
+            //创建一个Builder来显示网页中的对话框
+            new Builder(MainActivity.this).setTitle(&quot;Alert对话框&quot;).setMessage(message)
+                    .setPositiveButton(&quot;确定&quot;, new OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            result.confirm();
+                        }
+                    }).setCancelable(false).show();
+            return true;
+        }
+
+        @Override
+        public boolean onJsConfirm(WebView view, String url, String message,
+                                   final JsResult result) {
+            new Builder(MainActivity.this).setTitle(&quot;Confirm对话框&quot;).setMessage(message)
+                    .setPositiveButton(&quot;确定&quot;, new OnClickListener() {
+
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            result.confirm();
+                        }
+                    })
+                    .setNegativeButton(&quot;取消&quot;, new DialogInterface.OnClickListener() {
+
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            result.cancel();
+                        }
+                    }).setCancelable(false).show();
+            return true;
+        }
+
+        @Override
+        public boolean onJsPrompt(WebView view, String url, String message,
+                                  String defaultValue, final JsPromptResult result) {
+            //①获得一个LayoutInflater对象factory,加载指定布局成相应对象
+            final LayoutInflater inflater = LayoutInflater.from(MainActivity.this);
+            final View myview = inflater.inflate(R.layout.prompt_view, null);
+            //设置TextView对应网页中的提示信息,edit设置来自于网页的默认文字
+            ((TextView) myview.findViewById(R.id.text)).setText(message);
+            ((EditText) myview.findViewById(R.id.edit)).setText(defaultValue);
+            //定义对话框上的确定按钮
+            new Builder(MainActivity.this).setTitle(&quot;Prompt对话框&quot;).setView(myview)
+                    .setPositiveButton(&quot;确定&quot;, new OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            //单击确定后取得输入的值,传给网页处理
+                            String value = ((EditText) myview.findViewById(R.id.edit)).getText().toString();
+                            result.confirm(value);
+                        }
+                    })
+                    .setNegativeButton(&quot;取消&quot;, new OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            result.cancel();
+                        }
+                    }).show();
+            return true;
+        }
+
+    }
+}</code></pre>
+<h3 id="3-HTML通过JS读取Android联系人并显示"><a href="#3-HTML通过JS读取Android联系人并显示" class="headerlink" title="3.HTML通过JS读取Android联系人并显示"></a>3.HTML通过JS读取Android联系人并显示</h3><p>该代码实现的是通过js读取Android手机中联系列表,然后显示到HTML中 当我们点击某个电话号码时,会直接跳转到拨号页面 实现关键： 利用onload()在网页加载的时候加载相应的js脚本,而js脚本中定义的一个函数是 取出传递过来的对象,获取里面的数据,通过for循环以单元行的形式打印出来！</p>
+<p>运行效果图：<br><img src="/images/WebView%E5%92%8CJavaScrip%E4%BA%A4%E4%BA%92%E5%9F%BA%E7%A1%80/3.jpg" alt=""><br>实现代码：</p>
+<p>往assets文件夹下编写要给demo3.html文件，内容如下：</p>
+<pre><code>&lt;html&gt;
+&lt;head&gt;
+    &lt;meta http-equiv=&quot;Content-Type&quot; content=&quot;text/html; charset=utf-8&quot; /&gt;
+    &lt;title&gt;显示获取的联系人列表&lt;/title&gt;
+    &lt;script language=&quot;JavaScript&quot;&gt;
+        function show(jsondata)  
+        {  
+            //将传递过来的Json转换为对象  
+            var jsonobjs = eval(jsondata);  
+            //获取下面定义的表格  
+            var table = document.getElementById(&quot;PersonTable&quot;);  
+            //遍历上面创建的Json对象,将每个对象添加为  
+            //表格中的一行,而它的每个属性作为一列  
+            for(var i = 0;i &lt; jsonobjs.length;i++)  
+            {  
+                //添加一行,三个单元格:  
+                var tr = table.insertRow(table.rows.length);  
+                var td1 = tr.insertCell(0);  
+                var td2 = tr.insertCell(1);  
+                td2.align = &quot;center&quot;;  
+                var td3 = tr.insertCell(2);  
+                //设置单元格的内容和属性  
+                //其中innerHTML为设置或者获取位于对象起始和结束标签内的HTML  
+                //jsonobjs[i]为对象数组中的第i个对象  
+                td1.innerHTML = jsonobjs[i].id;  
+                td2.innerHTML = jsonobjs[i].name;  
+                //为现实的内容添加超链接,超链接会调用Java代码中的  
+                //call方法并且把内容作为参数传递过去  
+                td3.innerHTML = &quot;&lt;a href = &#39;javascript:sharp.call(\&quot;&quot;+jsonobjs[i].phone + &quot;\&quot;)&#39;&gt;&quot;  
+                +jsonobjs[i].phone + &quot;&lt;/a&gt;&quot;;;  
+            }  
+        }  
+    &lt;/script&gt;
+&lt;/head&gt;
+
+&lt;!-- onload指定该页面被加载时调用的方法,这里调用的是Java代码中的contactlist方法--&gt;
+&lt;body style=&quot;margin:0px; background-color:#FFFFFF; color:#000000;&quot; onload = &quot;javascript:sharp.contactlist()&quot;&gt;
+&lt;!--定义一个表格--&gt;
+&lt;table border = &quot;0&quot; width = &quot;100%&quot; id = &quot;PersonTable&quot; cellspacing = &quot;0&quot;&gt;
+    &lt;tr&gt;
+        &lt;td width = &quot;15%&quot;&gt;用户id&lt;/td&gt;
+        &lt;td align = &quot;center&quot;&gt;姓名&lt;/td&gt;
+        &lt;td width = &quot;15%&quot;&gt;号码&lt;/td&gt;
+    &lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;  </code></pre><p>再写一个业务类Contact.java：</p>
+<pre><code class="java">/**
+ * Created by Jay on 2015/9/11 0011.
+ */
+public class Contact {
+    private String id;
+    private String name;
+    private String phone;
+
+    public Contact(){}
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    @Override
+    public String toString() {
+        return this.id + &quot;~&quot; + this.name + &quot;~&quot; + this.phone;
+    }
+}</code></pre>
+<p>再写一个业务类Contact.java：</p>
+<pre><code class="java">public class MainActivity extends AppCompatActivity {
+
+    private WebView wView;
+
+    @SuppressLint(&quot;JavascriptInterface&quot;)
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        //设置WebView的相关设置,依次是:
+        //支持js,不保存表单,不保存密码,不支持缩放
+        //同时绑定Java对象
+        wView = (WebView) findViewById(R.id.wView);
+        wView.getSettings().setJavaScriptEnabled(true);
+        wView.getSettings().setSaveFormData(false);
+        wView.getSettings().setSavePassword(false);
+        wView.getSettings().setSupportZoom(false);
+        wView.getSettings().setDefaultTextEncodingName(&quot;UTF-8&quot;);
+        wView.addJavascriptInterface(new SharpJS(), &quot;sharp&quot;);
+        wView.loadUrl(&quot;file:///android_asset/demo3.html&quot;);
+    }
+
+    //自定义一个Js的业务类,传递给JS的对象就是这个,调用时直接javascript:sharp.contactlist()
+    public class SharpJS {
+        public void contactlist() {
+            try {
+                System.out.println(&quot;contactlist()方法执行了！&quot;);
+                String json = buildJson(getContacts());
+                wView.loadUrl(&quot;javascript:show(&#39;&quot; + json + &quot;&#39;)&quot;);
+            } catch (Exception e) {
+                System.out.println(&quot;设置数据失败&quot; + e);
+            }
+        }
+
+        public void call(String phone) {
+            System.out.println(&quot;call()方法执行了！&quot;);
+            Intent it = new Intent(Intent.ACTION_CALL, Uri.parse(&quot;tel:&quot; + phone));
+            startActivity(it);
+        }
+    }
+
+    //将获取到的联系人集合写入到JsonObject对象中,再添加到JsonArray数组中
+    public String buildJson(List&lt;Contact&gt; contacts)throws Exception
+    {
+        JSONArray array = new JSONArray();
+        for(Contact contact:contacts)
+        {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put(&quot;id&quot;, contact.getId());
+            jsonObject.put(&quot;name&quot;, contact.getName());
+            jsonObject.put(&quot;phone&quot;, contact.getPhone());
+            array.put(jsonObject);
+        }
+        return array.toString();
+    }
+
+    //定义一个获取联系人的方法,返回的是List&lt;Contact&gt;的数据
+    public List&lt;Contact&gt; getContacts()
+    {
+        List&lt;Contact&gt; Contacts = new ArrayList&lt;Contact&gt;();
+        //①查询raw_contacts表获得联系人的id
+        ContentResolver resolver = getContentResolver();
+        Uri uri = ContactsContract.CommonDataKinds.Phone.CONTENT_URI;
+        //查询联系人数据
+        Cursor cursor = resolver.query(uri, null, null, null, null);
+        while(cursor.moveToNext())
+        {
+            Contact contact = new Contact();
+            //获取联系人姓名,手机号码
+            contact.setId(cursor.getString(cursor.getColumnIndex(ContactsContract.Contacts._ID)));
+            contact.setName(cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)));
+            contact.setPhone(cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)));
+            Contacts.add(contact);
+        }
+        cursor.close();
+        return Contacts;
+    }
+}</code></pre>
+<p>好的，就是那么简单，但是，当你看到效果示意图，我祭出的是我大联想而非N5，就说明了，上述代码 在N5中执行不了，因为在4.4以后addJavascriptInterface()就不可以用了<del>至于为什么，我们会在下节课 中对WebView在4.4后的注意事项跟大家说下</del><br>代码下载：</p>
+<p>WebViewDemo4：<a href="http://www.runoob.com/try/download/WebViewDemo4.zip" target="_blank" rel="noopener">下载 WebViewDemo4.zip</a></p>
+<p>WebViewDemo5：<a href="http://www.runoob.com/try/download/WebViewDemo5.zip" target="_blank" rel="noopener">下载 WebViewDemo5.zip</a></p>
+<h3 id="本节小结："><a href="#本节小结：" class="headerlink" title="本节小结："></a>本节小结：</h3><p>好的，本节我们对WebView和JavaScrip交互进行了简单的学习，有点意思是吧<del>，如果你会 HTML + CSS + JS，那么你可以尝试着自己创建一个HTML5端的移动APP试试</del>本节就说这么多， 谢谢~</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2015/06/24/WebView%E5%92%8CJavaScrip%E4%BA%A4%E4%BA%92%E5%9F%BA%E7%A1%80/" data-id="ckcqdgkti00zb9xlf6fqv3k7w" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/06/24/WebView(%E7%BD%91%E9%A1%B5%E8%A7%86%E5%9B%BE)%E5%9F%BA%E6%9C%AC%E7%94%A8%E6%B3%95/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          WebView(网页视图)基本用法
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/06/24/WebView%E5%A4%84%E7%90%86%E7%BD%91%E9%A1%B5%E8%BF%94%E5%9B%9E%E7%9A%84%E9%94%99%E8%AF%AF%E7%A0%81%E4%BF%A1%E6%81%AF/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">WebView处理网页返回的错误码信息</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

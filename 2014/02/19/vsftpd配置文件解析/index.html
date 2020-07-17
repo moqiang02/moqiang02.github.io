@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>vsftpd配置文件解析 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="对vsftpd配置文件详细解答.  默认配置：1&gt;允许匿名用户和本地用户登陆。anonymous_enable&#x3D;YESlocal_enable&#x3D;YES2&gt;匿名用户使用的登陆名为ftp或anonymous，口令为空；匿名用户不能离开匿名用户家目录&#x2F;var&#x2F;ftp,且只能下载不能上传。3&gt;本地用户的登录名为本地用户名，口令为此本地用户的口令；本地用户可以在自 己家目录中进行读写操作；">
+<meta property="og:type" content="article">
+<meta property="og:title" content="vsftpd配置文件解析">
+<meta property="og:url" content="http://moqiang02.github.io/2014/02/19/vsftpd%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E8%A7%A3%E6%9E%90/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="对vsftpd配置文件详细解答.  默认配置：1&gt;允许匿名用户和本地用户登陆。anonymous_enable&#x3D;YESlocal_enable&#x3D;YES2&gt;匿名用户使用的登陆名为ftp或anonymous，口令为空；匿名用户不能离开匿名用户家目录&#x2F;var&#x2F;ftp,且只能下载不能上传。3&gt;本地用户的登录名为本地用户名，口令为此本地用户的口令；本地用户可以在自 己家目录中进行读写操作；">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2014-02-19T03:10:42.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:40.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-vsftpd配置文件解析" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/02/19/vsftpd%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E8%A7%A3%E6%9E%90/" class="article-date">
+  <time datetime="2014-02-19T03:10:42.000Z" itemprop="datePublished">2014-02-19</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/linux/">linux</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      vsftpd配置文件解析
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <p>对vsftpd配置文件详细解答.</p>
+<ol>
+<li><p>默认配置：<br>1&gt;允许匿名用户和本地用户登陆。<br>anonymous_enable=YES<br>local_enable=YES<br>2&gt;匿名用户使用的登陆名为ftp或anonymous，口令为空；匿名用户不能离开匿名用户家目录/var/ftp,且只能下载不能上传。<br>3&gt;本地用户的登录名为本地用户名，口令为此本地用户的口令；本地用户可以在自 己家目录中进行读写操作；本地用户可以离开自家目录切换至有权限访问的其他目录，并在权限允许的情况下进行上传/下载。<br>write_enable=YES<br>4&gt;写在文件/etc/vsftpd.ftpusers中的本地用户禁止登陆。</p>
+<a id="more"></a></li>
+<li><p>配置文件格式：<br>vsftpd.conf 的内容非常单纯，每一行即为一项设定。若是空白行或是开头为#的一行，将会被忽略。内容的格式只有一种，如下所示<br>option=value<br>要注意的是，等号两边不能加空白。</p>
+</li>
+<li><p>匿名用户（anonymous）设置<br>anonymous_enable=YES/NO（YES）<br>控制是否允许匿名用户登入，YES 为允许匿名登入，NO 为不允许。默认值为YES。<br>write_enable=YES/NO（YES）<br>是否允许登陆用户有写权限。属于全局设置，默认值为YES。<br>no_anon_password=YES/NO（NO）<br>若是启动这项功能，则使用匿名登入时，不会询问密码。默认值为NO。<br>ftp_username=ftp<br>定义匿名登入的使用者名称。默认值为ftp。<br>anon_root=/var/ftp<br>使用匿名登入时，所登入的目录。默认值为/var/ftp。注意ftp目录不能是777的权限属性，即匿名用户的家目录不能有777的权限。<br>anon_upload_enable=YES/NO（NO）<br>如果设为YES，则允许匿名登入者有上传文件（非目录）的权限，只有在write_enable=YES时，此项才有效。当然，匿名用户必须要有对上层目录的写入权。默认值为NO。<br>anon_world_readable_only=YES/NO（YES）<br>如果设为YES，则允许匿名登入者下载可阅读的档案（可以下载到本机阅读，不能直接在FTP服务器中打开阅读）。默认值为YES。<br>anon_mkdir_write_enable=YES/NO（NO）<br>如果设为YES，则允许匿名登入者有新增目录的权限，只有在write_enable=YES时，此项才有效。当然，匿名用户必须要有对上层目录的写入权。默认值为NO。<br>anon_other_write_enable=YES/NO（NO）<br>如果设为YES，则允许匿名登入者更多于上传或者建立目录之外的权限，譬如删除或者重命名。（如果anon_upload_enable=NO，则匿名用户不能上传文件，但可以删除或者重命名已经存在的文件；如果anon_mkdir_write_enable=NO，则匿名用户不能上传或者新建文件夹，但可以删除或者重命名已经存在的文件夹。）默认值为NO。<br>chown_uploads=YES/NO（NO）<br>设置是否改变匿名用户上传文件（非目录）的属主。默认值为NO。<br>chown_username=username<br>设置匿名用户上传文件（非目录）的属主名。建议不要设置为root。<br>anon_umask=077<br>设置匿名登入者新增或上传档案时的umask 值。默认值为077，则新建档案的对应权限为700。<br>deny_email_enable=YES/NO（NO）<br>若是启动这项功能，则必须提供一个档案/etc/vsftpd/banner_emails，内容为email address。若是使用匿名登入，则会要求输入email address，若输入的email address 在此档案内，则不允许进入。默认值为NO。<br>banned_email_file=/etc/vsftpd/banner_emails<br>此文件用来输入email address，只有在deny_email_enable=YES时，才会使用到此档案。若是使用匿名登入，则会要求输入email address，若输入的email address 在此档案内，则不允许进入。</p>
+</li>
+<li><p>本地用户设置<br>local_enable=YES/NO（YES）<br>控制是否允许本地用户登入，YES 为允许本地用户登入，NO为不允许。默认值为YES。<br>local_root=/home/username<br>当本地用户登入时，将被更换到定义的目录下。默认值为各用户的家目录。<br>write_enable=YES/NO（YES）<br>是否允许登陆用户有写权限。属于全局设置，默认值为YES。<br>local_umask=022<br>本地用户新增档案时的umask 值。默认值为077。<br>file_open_mode=0755<br>本地用户上传档案后的档案权限，与chmod 所使用的数值相同。默认值为0666。</p>
+</li>
+<li><p>欢迎语设置<br>dirmessage_enable=YES/NO（YES）<br>如果启动这个选项，那么使用者第一次进入一个目录时，会检查该目录下是否有.message这个档案，如果有，则会出现此档案的内容，通常这个档案会放置欢迎话语，或是对该目录的说明。默认值为开启。<br>message_file=.message<br>设置目录消息文件，可将要显示的信息写入该文件。默认值为.message。<br>banner_file=/etc/vsftpd/banner<br>当使用者登入时，会显示此设定所在的档案内容，通常为欢迎话语或是说明。默认值为无。如果欢迎信息较多，则使用该配置项。<br>ftpd_banner=Welcome to BOB’s FTP server<br>这里用来定义欢迎话语的字符串，banner_file是档案的形式，而ftpd_banner 则是字符串的形式。预设为无。</p>
+</li>
+<li><p>控制用户是否允许切换到上级目录<br>在默认配置下，本地用户登入FTP后可以使用cd命令切换到其他目录，这样会对系统带来安全隐患。可以通过以下三条配置文件来控制用户切换目录。<br>chroot_list_enable=YES/NO（NO）<br>设置是否启用chroot_list_file配置项指定的用户列表文件。默认值为NO。<br>chroot_list_file=/etc/vsftpd.chroot_list<br>用于指定用户列表文件，该文件用于控制哪些用户可以切换到用户家目录的上级目录。<br>chroot_local_user=YES/NO（NO）<br>用于指定用户列表文件中的用户是否允许切换到上级目录。默认值为NO。<br>通过搭配能实现以下几种效果：<br>①当chroot_list_enable=YES，chroot_local_user=YES时，在/etc/vsftpd.chroot_list文件中列出的用户，可以切换到其他目录；未在文件中列出的用户，不能切换到其他目录。<br>②当chroot_list_enable=YES，chroot_local_user=NO时，在/etc/vsftpd.chroot_list文件中列出的用户，不能切换到其他目录；未在文件中列出的用户，可以切换到其他目录。<br>③当chroot_list_enable=NO，chroot_local_user=YES时，所有的用户均不能切换到其他目录。<br>④当chroot_list_enable=NO，chroot_local_user=NO时，所有的用户均可以切换到其他目录。</p>
+</li>
+<li><p>数据传输模式设置<br>FTP在传输数据时，可以使用二进制方式，也可以使用ASCII模式来上传或下载数据。<br>ascii_upload_enable=YES/NO（NO）<br>设置是否启用ASCII 模式上传数据。默认值为NO。<br>ascii_download_enable=YES/NO（NO）<br>设置是否启用ASCII 模式下载数据。默认值为NO。</p>
+</li>
+<li><p>访问控制设置<br>两种控制方式：一种控制主机访问，另一种控制用户访问。<br>①控制主机访问：<br>tcp_wrappers=YES/NO（YES）<br>设置vsftpd是否与tcp wrapper相结合来进行主机的访问控制。默认值为YES。如果启用，则vsftpd服务器会检查/etc/hosts.allow 和/etc/hosts.deny 中的设置，来决定请求连接的主机，是否允许访问该FTP服务器。这两个文件可以起到简易的防火墙功能。<br>比如：若要仅允许192.168.0.1—192.168.0.254的用户可以连接FTP服务器，则在/etc/hosts.allow文件中添加以下内容：<br>vsftpd:192.168.0. :allow<br>all:all :deny<br>②控制用户访问：<br>对于用户的访问控制可以通过/etc目录下的vsftpd.user_list和ftpusers文件来实现。<br>userlist_file=/etc/vsftpd.user_list<br>控制用户访问FTP的文件，里面写着用户名称。一个用户名称一行。<br>userlist_enable=YES/NO（NO）<br>是否启用vsftpd.user_list文件。<br>userlist_deny=YES/NO（YES）<br>决定vsftpd.user_list文件中的用户是否能够访问FTP服务器。若设置为YES，则vsftpd.user_list文件中的用户不允许访问FTP，若设置为NO，则只有vsftpd.user_list文件中的用户才能访问FTP。<br>/etc/vsftpd/ftpusers文件专门用于定义不允许访问FTP服务器的用户列表（注意:如果userlist_enable=YES,userlist_deny=NO,此时如果在vsftpd.user_list和ftpusers中都有某个用户时，那么这个用户是不能够访问FTP的，即ftpusers的优先级要高）。默认情况下vsftpd.user_list和ftpusers，这两个文件已经预设置了一些不允许访问FTP服务器的系统内部账户。如果系统没有这两个文件，那么新建这两个文件，将用户添加进去即可。</p>
+</li>
+<li><p>访问速率设置<br>anon_max_rate=0<br>设置匿名登入者使用的最大传输速度，单位为B/s，0 表示不限制速度。默认值为0。<br>local_max_rate=0<br>本地用户使用的最大传输速度，单位为B/s，0 表示不限制速度。预设值为0。</p>
+</li>
+<li><p>超时时间设置<br>accept_timeout=60<br>设置建立FTP连接的超时时间，单位为秒。默认值为60。<br>connect_timeout=60<br>PORT 方式下建立数据连接的超时时间，单位为秒。默认值为60。<br>data_connection_timeout=120<br>设置建立FTP数据连接的超时时间，单位为秒。默认值为120。<br>idle_session_timeout=300<br>设置多长时间不对FTP服务器进行任何操作，则断开该FTP连接，单位为秒。默认值为300 。</p>
+</li>
+<li><p>日志文件设置<br>xferlog_enable= YES/NO（YES）<br>是否启用上传/下载日志记录。如果启用，则上传与下载的信息将被完整纪录在xferlog_file 所定义的档案中。预设为开启。<br>xferlog_file=/var/log/vsftpd.log<br>设置日志文件名和路径，默认值为/var/log/vsftpd.log。<br>xferlog_std_format=YES/NO（NO）<br>如果启用，则日志文件将会写成xferlog的标准格式，如同wu-ftpd 一般。默认值为关闭。<br>log_ftp_protocol=YES|NO（NO）<br>如果启用此选项，所有的FTP请求和响应都会被记录到日志中，默认日志文件在/var/log/vsftpd.log。启用此选项时，xferlog_std_format不能被激活。这个选项有助于调试。默认值为NO。</p>
+</li>
+<li><p>定义用户配置文件<br>在vsftpd中，可以通过定义用户配置文件来实现不同的用户使用不同的配置。<br>user_config_dir=/etc/vsftpd/userconf<br>设置用户配置文件所在的目录。当设置了该配置项后，用户登陆服务器后，系统就会到/etc/vsftpd/userconf目录下，读取与当前用户名相同的文件，并根据文件中的配置命令，对当前用户进行更进一步的配置。<br>例如：定义user_config_dir=/etc/vsftpd/userconf，且主机上有使用者 test1,test2，那么我们就在user_config_dir 的目录新增文件名为test1和test2两个文件。若是test1 登入，则会读取user_config_dir 下的test1 这个档案内的设定。默认值为无。利用用户配置文件，可以实现对不同用户进行访问速度的控制，在各用户配置文件中定义local_max_rate=XX，即可。</p>
+</li>
+<li><p>FTP的工作方式与端口设置<br>FTP有两种工作方式：PORT FTP（主动模式）和PASV FTP（被动模式）<br>listen_port=21<br>设置FTP服务器建立连接所监听的端口，默认值为21。<br>connect_from_port_20=YES/NO<br>指定FTP使用20端口进行数据传输，默认值为YES。<br>ftp_data_port=20<br>设置在PORT方式下，FTP数据连接使用的端口，默认值为20。<br>pasv_enable=YES/NO（YES）<br>若设置为YES，则使用PASV工作模式；若设置为NO，则使用PORT模式。默认值为YES，即使用PASV工作模式。<br>pasv_max_port=0<br>在PASV工作模式下，数据连接可以使用的端口范围的最大端口，0 表示任意端口。默认值为0。<br>pasv_min_port=0<br>在PASV工作模式下，数据连接可以使用的端口范围的最小端口，0 表示任意端口。默认值为0。</p>
+</li>
+<li><p>与连接相关的设置<br>listen=YES/NO（YES）<br>设置vsftpd服务器是否以standalone模式运行。以standalone模式运行是一种较好的方式，此时listen必须设置为YES，此为默认值。建议不要更改，有很多与服务器运行相关的配置命令，需要在此模式下才有效。若设置为NO，则vsftpd不是以独立的服务运行，要受到xinetd服务的管控，功能上会受到限制。<br>max_clients=0<br>设置vsftpd允许的最大连接数，默认值为0，表示不受限制。若设置为100时，则同时允许有100个连接，超出的将被拒绝。只有在standalone模式运行才有效。<br>max_per_ip=0<br>设置每个IP允许与FTP服务器同时建立连接的数目。默认值为0，表示不受限制。只有在standalone模式运行才有效。<br>listen_address=IP地址<br>设置FTP服务器在指定的IP地址上侦听用户的FTP请求。若不设置，则对服务器绑定的所有IP地址进行侦听。只有在standalone模式运行才有效。<br>setproctitle_enable=YES/NO（NO）<br>设置每个与FTP服务器的连接，是否以不同的进程表现出来。默认值为NO，此时使用ps aux |grep ftp只会有一个vsftpd的进程。若设置为YES，则每个连接都会有一个vsftpd的进程。</p>
+</li>
+<li><p>虚拟用户设置<br>虚拟用户使用PAM认证方式。<br>pam_service_name=vsftpd<br>设置PAM使用的名称，默认值为/etc/pam.d/vsftpd。<br>guest_enable= YES/NO（NO）<br>启用虚拟用户。默认值为NO。<br>guest_username=ftp<br>这里用来映射虚拟用户。默认值为ftp。<br>virtual_use_local_privs=YES/NO（NO）<br>当该参数激活（YES）时，虚拟用户使用与本地用户相同的权限。当此参数关闭（NO）时，虚拟用户使用与匿名用户相同的权限。默认情况下此参数是关闭的（NO）。</p>
+</li>
+<li><p>其他设置<br>text_userdb_names= YES/NO（NO）<br>设置在执行ls –la之类的命令时，是显示UID、GID还是显示出具体的用户名和组名。默认值为NO，即以UID和GID方式显示。若希望显示用户名和组名，则设置为YES。<br>ls_recurse_enable=YES/NO（NO）<br>若是启用此功能，则允许登入者使用ls –R（可以查看当前目录下子目录中的文件）这个指令。默认值为NO。<br>hide_ids=YES/NO（NO）<br>如果启用此功能，所有档案的拥有者与群组都为ftp，也就是使用者登入使用ls -al之类的指令，所看到的档案拥有者跟群组均为ftp。默认值为关闭。<br>download_enable=YES/NO（YES）<br>如果设置为NO，所有的文件都不能下载到本地，文件夹不受影响。默认值为YES。</p>
+</li>
+</ol>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/02/19/vsftpd%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E8%A7%A3%E6%9E%90/" data-id="ckcqdgl0m01hf9xlf12a2ei7w" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/02/19/Vsftp%E8%AE%BE%E7%BD%AE%E4%B8%BAPASV-mode%EF%BC%88%E8%A2%AB%E5%8A%A8%E6%A8%A1%E5%BC%8F%E4%BC%A0%E9%80%81%EF%BC%89/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Vsftp设置为PASV mode（被动模式传送）
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/02/19/PHP%E8%8E%B7%E5%8F%96%E5%BD%93%E5%89%8Durl%E8%B7%AF%E5%BE%84%E7%9A%84%E5%87%BD%E6%95%B0%E5%8F%8A%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%8F%98%E9%87%8F/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">PHP获取当前url路径的函数及服务器变量</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

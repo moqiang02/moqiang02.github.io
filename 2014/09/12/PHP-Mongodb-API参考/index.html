@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>PHP Mongodb API参考 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="&#96;&#96;&#96;php selectDb(&quot;test_db&quot;);  * 创建索引  * $mongo-&gt;ensureIndex(&quot;test_table&quot;, array(&quot;id&quot;&#x3D;&gt;1), array(&#39;unique&#39;&#x3D;&gt;true));  * 获取表的记录  * $mongo-&gt;count(&quot;test_table&quot;);  * 插入记录  * $mongo-&gt;insert(&quot;test_table&quot;, arra">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PHP Mongodb API参考">
+<meta property="og:url" content="http://moqiang02.github.io/2014/09/12/PHP-Mongodb-API%E5%8F%82%E8%80%83/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="&#96;&#96;&#96;php selectDb(&quot;test_db&quot;);  * 创建索引  * $mongo-&gt;ensureIndex(&quot;test_table&quot;, array(&quot;id&quot;&#x3D;&gt;1), array(&#39;unique&#39;&#x3D;&gt;true));  * 获取表的记录  * $mongo-&gt;count(&quot;test_table&quot;);  * 插入记录  * $mongo-&gt;insert(&quot;test_table&quot;, arra">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2014-09-12T12:31:16.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:32.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-PHP-Mongodb-API参考" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/09/12/PHP-Mongodb-API%E5%8F%82%E8%80%83/" class="article-date">
+  <time datetime="2014-09-12T12:31:16.000Z" itemprop="datePublished">2014-09-12</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/mongodb/">mongodb</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      PHP Mongodb API参考
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <br>
+```php
+<?php  
+/*** Mongodb类** examples:   
+* $mongo = new HMongodb("127.0.0.1:11223"); 
+* $mongo->selectDb("test_db"); 
+* 创建索引 
+* $mongo->ensureIndex("test_table", array("id"=>1), array('unique'=>true)); 
+* 获取表的记录 
+* $mongo->count("test_table"); 
+* 插入记录 
+* $mongo->insert("test_table", array("id"=>2, "title"=>"asdqw")); 
+* 更新记录 
+* $mongo->update("test_table", array("id"=>1),array("id"=>1,"title"=>"bbb")); 
+* 更新记录-存在时更新，不存在时添加-相当于set 
+* $mongo->update("test_table", array("id"=>1),array("id"=>1,"title"=>"bbb"),array("upsert"=>1)); 
+* 查找记录 
+* $mongo->find("c", array("title"=>"asdqw"), array("start"=>2,"limit"=>2,"sort"=>array("id"=>1))) 
+* 查找一条记录 
+* $mongo->findOne("$mongo->findOne("ttt", array("id"=>1))", array("id"=>1)); 
+* 删除记录 
+* $mongo->remove("ttt", array("title"=>"bbb")); 
+* 仅删除一条记录 
+* $mongo->remove("ttt", array("title"=>"bbb"), array("justOne"=>1)); 
+* 获取Mongo操作的错误信息 
+* $mongo->getError(); 
+*/  
+
+<p>class HMongodb {  </p>
+<pre><code>//Mongodb连接  
+var $mongo;  
+
+var $curr_db_name;  
+var $curr_table_name;  
+var $error;  
+
+/** 
+* 构造函数 
+* 支持传入多个mongo_server(1.一个出问题时连接其它的server 2.自动将查询均匀分发到不同server) 
+* 
+* 参数： 
+* $mongo_server:数组或字符串-array(&quot;127.0.0.1:1111&quot;, &quot;127.0.0.1:2222&quot;)-&quot;127.0.0.1:1111&quot; 
+* $connect:初始化mongo对象时是否连接，默认连接 
+* $auto_balance:是否自动做负载均衡，默认是 
+* 
+* 返回值： 
+* 成功：mongo object 
+* 失败：false 
+*/  
+function __construct($mongo_server, $connect=true, $auto_balance=true)  
+{  
+    if (is_array($mongo_server))  
+    {  
+        $mongo_server_num = count($mongo_server);  
+        if ($mongo_server_num &gt; 1 &amp;&amp; $auto_balance)  
+        {  
+            $prior_server_num = rand(1, $mongo_server_num);  
+            $rand_keys = array_rand($mongo_server,$mongo_server_num);  
+            $mongo_server_str = $mongo_server[$prior_server_num-1];  
+            foreach ($rand_keys as $key)  
+            {  
+                if ($key != $prior_server_num - 1)  
+                {  
+                    $mongo_server_str .= &#39;,&#39; . $mongo_server[$key];  
+                }  
+            }  
+        }  
+        else  
+        {  
+            $mongo_server_str = implode(&#39;,&#39;, $mongo_server);  
+        }                  }  
+    else  
+    {  
+        $mongo_server_str = $mongo_server;  
+    }  
+    try {  
+        $this-&gt;mongo = new Mongo($mongo_server, array(&#39;connect&#39;=&gt;$connect));  
+    }  
+    catch (MongoConnectionException $e)  
+    {  
+        $this-&gt;error = $e-&gt;getMessage();  
+        return false;  
+    }  
+}  
+
+function getInstance($mongo_server, $flag=array())  
+{  
+    static $mongodb_arr;  
+    if (emptyempty($flag[&#39;tag&#39;]))  
+    {  
+        $flag[&#39;tag&#39;] = &#39;default&#39;;          }  
+    if (isset($flag[&#39;force&#39;]) &amp;&amp; $flag[&#39;force&#39;] == true)  
+    {  
+        $mongo = new HMongodb($mongo_server);  
+        if (emptyempty($mongodb_arr[$flag[&#39;tag&#39;]]))  
+        {  
+            $mongodb_arr[$flag[&#39;tag&#39;]] = $mongo;  
+        }  
+        return $mongo;  
+    }  
+    else if (isset($mongodb_arr[$flag[&#39;tag&#39;]]) &amp;&amp; is_resource($mongodb_arr[$flag[&#39;tag&#39;]]))  
+    {  
+        return $mongodb_arr[$flag[&#39;tag&#39;]];  
+    }  
+    else  
+    {  
+        $mongo = new HMongodb($mongo_server);  
+        $mongodb_arr[$flag[&#39;tag&#39;]] = $mongo;  
+        return $mongo;                  }          }  
+
+/** 
+* 连接mongodb server 
+* 
+* 参数：无 
+* 
+* 返回值： 
+* 成功：true 
+* 失败：false 
+*/  
+function connect()  
+{  
+    try {  
+        $this-&gt;mongo-&gt;connect();  
+        return true;  
+    }  
+    catch (MongoConnectionException $e)  
+    {  
+        $this-&gt;error = $e-&gt;getMessage();  
+        return false;  
+    }  
+}  
+
+/** 
+* select db 
+* 
+* 参数：$dbname 
+* 
+* 返回值：无 
+*/  
+function selectDb($dbname)  
+{  
+    $this-&gt;curr_db_name = $dbname;  
+}  
+
+/** 
+* 创建索引：如索引已存在，则返回。 
+* 
+* 参数： 
+* $table_name:表名 
+* $index:索引-array(&quot;id&quot;=&gt;1)-在id字段建立升序索引 
+* $index_param:其它条件-是否唯一索引等 
+* 
+* 返回值： 
+* 成功：true 
+* 失败：false 
+*/  
+function ensureIndex($table_name, $index, $index_param=array())  
+{  
+    $dbname = $this-&gt;curr_db_name;  
+    $index_param[&#39;safe&#39;] = 1;  
+    try {  
+        $this-&gt;mongo-&gt;$dbname-&gt;$table_name-&gt;ensureIndex($index, $index_param);  
+        return true;  
+    }  
+    catch (MongoCursorException $e)  
+    {  
+        $this-&gt;error = $e-&gt;getMessage();  
+        return false;  
+    }  
+}  
+
+/** 
+* 插入记录 
+* 
+* 参数： 
+* $table_name:表名 
+* $record:记录 
+* 
+* 返回值： 
+* 成功：true 
+* 失败：false 
+*/  
+function insert($table_name, $record)  
+{  
+    $dbname = $this-&gt;curr_db_name;  
+    try {  
+        $this-&gt;mongo-&gt;$dbname-&gt;$table_name-&gt;insert($record, array(&#39;safe&#39;=&gt;true));  
+        return true;  
+    }  
+    catch (MongoCursorException $e)  
+    {  
+        $this-&gt;error = $e-&gt;getMessage();  
+        return false;  
+    }  
+}  
+
+/** 
+* 查询表的记录数 
+* 
+* 参数： 
+* $table_name:表名 
+* 
+* 返回值：表的记录数 
+*/  
+function count($table_name)  
+{  
+    $dbname = $this-&gt;curr_db_name;  
+    return $this-&gt;mongo-&gt;$dbname-&gt;$table_name-&gt;count();  
+}  
+
+/** 
+* 更新记录 
+* 
+* 参数： 
+* $table_name:表名 
+* $condition:更新条件 
+* $newdata:新的数据记录 
+* $options:更新选择-upsert/multiple 
+* 
+* 返回值： 
+* 成功：true 
+* 失败：false 
+*/  
+function update($table_name, $condition, $newdata, $options=array())  
+{  
+    $dbname = $this-&gt;curr_db_name;  
+    $options[&#39;safe&#39;] = 1;  
+    if (!isset($options[&#39;multiple&#39;]))  
+    {  
+        $options[&#39;multiple&#39;] = 0;          }  
+    try {  
+        $this-&gt;mongo-&gt;$dbname-&gt;$table_name-&gt;update($condition, $newdata, $options);  
+        return true;  
+    }  
+    catch (MongoCursorException $e)  
+    {  
+        $this-&gt;error = $e-&gt;getMessage();  
+        return false;  
+    }          }  
+
+/** 
+* 删除记录 
+* 
+* 参数： 
+* $table_name:表名 
+* $condition:删除条件 
+* $options:删除选择-justOne 
+* 
+* 返回值： 
+* 成功：true 
+* 失败：false 
+*/  
+function remove($table_name, $condition, $options=array())  
+{  
+    $dbname = $this-&gt;curr_db_name;  
+    $options[&#39;safe&#39;] = 1;  
+    try {  
+        $this-&gt;mongo-&gt;$dbname-&gt;$table_name-&gt;remove($condition, $options);  
+        return true;  
+    }  
+    catch (MongoCursorException $e)  
+    {  
+        $this-&gt;error = $e-&gt;getMessage();  
+        return false;  
+    }          }  
+
+/** 
+* 查找记录 
+* 
+* 参数： 
+* $table_name:表名 
+* $query_condition:字段查找条件 
+* $result_condition:查询结果限制条件-limit/sort等 
+* $fields:获取字段 
+* 
+* 返回值： 
+* 成功：记录集 
+* 失败：false 
+*/  
+function find($table_name, $query_condition, $result_condition=array(), $fields=array())  
+{  
+    $dbname = $this-&gt;curr_db_name;  
+    $cursor = $this-&gt;mongo-&gt;$dbname-&gt;$table_name-&gt;find($query_condition, $fields);  
+    if (!emptyempty($result_condition[&#39;start&#39;]))  
+    {  
+        $cursor-&gt;skip($result_condition[&#39;start&#39;]);  
+    }  
+    if (!emptyempty($result_condition[&#39;limit&#39;]))  
+    {  
+        $cursor-&gt;limit($result_condition[&#39;limit&#39;]);  
+    }  
+    if (!emptyempty($result_condition[&#39;sort&#39;]))  
+    {  
+        $cursor-&gt;sort($result_condition[&#39;sort&#39;]);  
+    }  
+    $result = array();  
+    try {  
+        while ($cursor-&gt;hasNext())  
+        {  
+            $result[] = $cursor-&gt;getNext();  
+        }  
+    }  
+    catch (MongoConnectionException $e)  
+    {  
+        $this-&gt;error = $e-&gt;getMessage();  
+        return false;  
+    }  
+    catch (MongoCursorTimeoutException $e)  
+    {  
+        $this-&gt;error = $e-&gt;getMessage();  
+        return false;  
+    }  
+    return $result;  
+}  
+
+/** 
+* 查找一条记录 
+* 
+* 参数： 
+* $table_name:表名 
+* $condition:查找条件 
+* $fields:获取字段 
+* 
+* 返回值： 
+* 成功：一条记录 
+* 失败：false 
+*/  
+function findOne($table_name, $condition, $fields=array())  
+{  
+    $dbname = $this-&gt;curr_db_name;  
+    return $this-&gt;mongo-&gt;$dbname-&gt;$table_name-&gt;findOne($condition, $fields);  
+}  
+
+/** 
+* 获取当前错误信息 
+* 
+* 参数：无 
+* 
+* 返回值：当前错误信息 
+*/  
+function getError()  
+{  
+    return $this-&gt;error;  
+}  </code></pre><p>}  </p>
+<p>?&gt;<br>```</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/09/12/PHP-Mongodb-API%E5%8F%82%E8%80%83/" data-id="ckcqdgkq900pb9xlfhzr46lz8" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/09/12/%E4%BD%BF%E7%94%A8PHP%E5%AF%BC%E5%85%A5Excel%E5%92%8C%E5%AF%BC%E5%87%BA%E6%95%B0%E6%8D%AE%E4%B8%BAExcel%E6%96%87%E4%BB%B6/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          使用PHP导入Excel和导出数据为Excel文件
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/09/12/%E5%8E%BB%E6%8E%89wget%E7%83%A6%E4%BA%BA%E7%9A%84-%E2%80%9Ceta-%E8%8B%B1%E5%9B%BD%E4%B8%AD%E9%83%A8%E6%97%B6%E9%97%B4-%E2%80%9D-%E6%8F%90%E7%A4%BA/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">去掉wget烦人的 “eta(英国中部时间)” 提示</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

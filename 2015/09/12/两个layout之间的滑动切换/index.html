@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>两个layout之间的滑动切换 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="如何在两个layout之间切换，就是一个activity中 两个LinearLayout，一个可见，一个不可见，然后从可见的那个切换到不可见那个，中间实现个滑动效果。 一、利用ViewFlipper实现1、屏幕切换指的是在同一个Activity内屏幕见的切换，最长见的情况就是在一个FrameLayout内有多个页面，比如一个系统设置页面；一个个性化设置页面。2、介绍ViewFilpper类View">
+<meta property="og:type" content="article">
+<meta property="og:title" content="两个layout之间的滑动切换">
+<meta property="og:url" content="http://moqiang02.github.io/2015/09/12/%E4%B8%A4%E4%B8%AAlayout%E4%B9%8B%E9%97%B4%E7%9A%84%E6%BB%91%E5%8A%A8%E5%88%87%E6%8D%A2/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="如何在两个layout之间切换，就是一个activity中 两个LinearLayout，一个可见，一个不可见，然后从可见的那个切换到不可见那个，中间实现个滑动效果。 一、利用ViewFlipper实现1、屏幕切换指的是在同一个Activity内屏幕见的切换，最长见的情况就是在一个FrameLayout内有多个页面，比如一个系统设置页面；一个个性化设置页面。2、介绍ViewFilpper类View">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2015-09-12T07:41:19.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:32.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-两个layout之间的滑动切换" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/09/12/%E4%B8%A4%E4%B8%AAlayout%E4%B9%8B%E9%97%B4%E7%9A%84%E6%BB%91%E5%8A%A8%E5%88%87%E6%8D%A2/" class="article-date">
+  <time datetime="2015-09-12T07:41:19.000Z" itemprop="datePublished">2015-09-12</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/AndroidUI/">AndroidUI</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      两个layout之间的滑动切换
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+<!-- 文章目录开始 -->
+
+<div id="toc" class="toc-article">
+<strong class="toc-title" style="cursor:pointer">contents</strong>
+<ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、利用ViewFlipper实现"><span class="toc-number">1.</span> <span class="toc-text">一、利用ViewFlipper实现</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、普通实现"><span class="toc-number">2.</span> <span class="toc-text">二、普通实现</span></a></li></ol>
+</div>
+
+<!-- 文章目录结束 -->	  
+
+	  
+        <p>如何在两个layout之间切换，就是一个activity中 两个LinearLayout，一个可见，一个不可见，然后从可见的那个切换到不可见那个，中间实现个滑动效果。</p>
+<h3 id="一、利用ViewFlipper实现"><a href="#一、利用ViewFlipper实现" class="headerlink" title="一、利用ViewFlipper实现"></a>一、利用ViewFlipper实现</h3><p>1、屏幕切换指的是在同一个Activity内屏幕见的切换，最长见的情况就是在一个FrameLayout内有多个页面，比如一个系统设置页面；一个个性化设置页面。<br>2、介绍ViewFilpper类<br><strong>ViewFlipper</strong><br>extends ViewAnimator<br>java.lang.Object<br>　↳android.view.View<br>　　↳android.view.ViewGroup<br>　　　↳android.widget.FrameLayout<br>　　　　↳android.widget.ViewAnimator<br>　　　　　↳android.widget.ViewFlipper</p>
+<a id="more"></a>
+<p><strong>Class Overview</strong><br>Simple ViewAnimator that will animate between two or more views that have been added to it. Only one child is shown at a time. If requested, can automatically flip between each child at a regular interval.<br>意思是：简单的ViewAnimator之间,两个或两个以上的view加上动画效果。只有一个小孩会显示在一个时间。如果需要,每个孩子能自动翻转之间在固定的时间间隔。</p>
+<p>该类继承了Framelayout类，ViewAnimator类的作用是为FrameLayout里面的View切换提供动画效果。</p>
+<p>该类有如下几个和动画相关的函数：<br>setInAnimation：设置View进入屏幕时候使用的动画，该函数有两个版本，一个接受单个参数，类型为android.view.animation.Animation；一个接受两个参数，类型为Context和int，分别为Context对象和定义Animation的resourceID。<br>setOutAnimation: 设置View退出屏幕时候使用的动画，参数setInAnimation函数一样。<br>showNext： 调用该函数来显示FrameLayout里面的下一个View。<br>showPrevious： 调用该函数来显示FrameLayout里面的上一个View。</p>
+<blockquote>
+<p>Translate动画非常好理解，就是定义一个开始的位置和一个结束位置，定义移动时间，然后就能自动产生移动动画。Android的translate移动方向有 横向(X) 竖向(Y), 左右滑动使用了横向移动效果。</p>
+</blockquote>
+<p>3、首选看一下定义四个动画的xml文件：<br>in_leftright.xml——从左到右进入屏幕</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;set xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot; &gt;
+    &lt;translate
+        android:duration=&quot;3000&quot;
+        android:fromXDelta=&quot;-100%p&quot;
+        android:toXDelta=&quot;0&quot; /&gt;
+&lt;/set&gt;</code></pre><p>out_leftright.xml——从左到右出去屏幕</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;set xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot; &gt;
+    &lt;translate
+        android:duration=&quot;3000&quot;
+        android:fromXDelta=&quot;0&quot;
+        android:toXDelta=&quot;100%p&quot; /&gt;
+&lt;/set&gt;</code></pre><p>in_rightleft.xml——从右到左进入屏幕</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;set xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot; &gt;
+    &lt;translate
+        android:duration=&quot;3000&quot;
+        android:fromXDelta=&quot;100%p&quot;
+        android:toXDelta=&quot;0&quot; /&gt;
+&lt;/set&gt;</code></pre><p>out_rightleft.xml——从右到左出去屏幕</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;set xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot; &gt;
+    &lt;translate
+        android:duration=&quot;3000&quot;
+        android:fromXDelta=&quot;100%p&quot;
+        android:toXDelta=&quot;0&quot; /&gt;
+&lt;/set&gt;</code></pre><p>4、定义main.xml文件</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;LinearLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;
+    android:layout_width=&quot;fill_parent&quot; android:layout_height=&quot;fill_parent&quot;
+    android:orientation=&quot;vertical&quot;&gt;
+    &lt;ViewFlipper android:id=&quot;@+id/viewFlipper&quot;
+        android:layout_width=&quot;fill_parent&quot; android:layout_height=&quot;fill_parent&quot;&gt;
+        &lt;!-- 第一个页面 --&gt;
+        &lt;LinearLayout android:layout_width=&quot;fill_parent&quot;
+            android:layout_height=&quot;fill_parent&quot; android:gravity=&quot;center&quot;&gt;
+            &lt;ImageView android:layout_width=&quot;wrap_content&quot;
+                android:layout_height=&quot;wrap_content&quot; android:src=&quot;@drawable/a1&quot; /&gt;
+        &lt;/LinearLayout&gt;
+        &lt;!-- 第二个页面 --&gt;
+        &lt;LinearLayout android:layout_width=&quot;fill_parent&quot;
+            android:layout_height=&quot;fill_parent&quot; android:gravity=&quot;center&quot;&gt;
+            &lt;ImageView android:layout_width=&quot;wrap_content&quot;
+                android:layout_height=&quot;wrap_content&quot; android:src=&quot;@drawable/a2&quot;
+                android:gravity=&quot;center&quot; /&gt;
+        &lt;/LinearLayout&gt;
+        &lt;!-- 第三个页面 --&gt;
+        &lt;LinearLayout android:layout_width=&quot;fill_parent&quot;
+            android:layout_height=&quot;fill_parent&quot; android:gravity=&quot;center&quot;&gt;
+
+            &lt;ImageView android:layout_width=&quot;wrap_content&quot;
+                android:layout_height=&quot;wrap_content&quot; android:src=&quot;@drawable/a3&quot;
+                android:gravity=&quot;center&quot; /&gt;
+        &lt;/LinearLayout&gt;
+        &lt;!-- 第四个页面 --&gt;
+        &lt;LinearLayout android:layout_width=&quot;fill_parent&quot;
+            android:layout_height=&quot;fill_parent&quot; android:gravity=&quot;center&quot;&gt;
+
+            &lt;ImageView android:layout_width=&quot;wrap_content&quot;
+                android:layout_height=&quot;wrap_content&quot; android:src=&quot;@drawable/a4&quot;
+                android:gravity=&quot;center&quot; /&gt;
+        &lt;/LinearLayout&gt;
+    &lt;/ViewFlipper&gt;
+&lt;/LinearLayout&gt;</code></pre><p>5、java代码实现：</p>
+<pre><code>public class SwitchTest2Activity extends Activity {
+
+    ViewFlipper viewFlipper = null;
+    float startX;
+
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.main);
+
+        init();
+    }
+
+    private void init() {
+        viewFlipper = (ViewFlipper) this.findViewById(R.id.viewFlipper);
+    }
+
+    public boolean onTouchEvent(MotionEvent event) {
+        switch (event.getAction()) {
+        case MotionEvent.ACTION_DOWN:
+            startX = event.getX();
+            break;
+        case MotionEvent.ACTION_UP:
+
+            if (event.getX() &gt; startX) { // 向右滑动
+                viewFlipper.setInAnimation(this, R.anim.in_leftright);
+                viewFlipper.setOutAnimation(this, R.anim.out_leftright);
+                viewFlipper.showNext();
+            } else if (event.getX() &lt; startX) { // 向左滑动
+                viewFlipper.setInAnimation(this, R.anim.in_rightleft);
+                viewFlipper.setOutAnimation(this, R.anim.out_rightleft);
+                viewFlipper.showPrevious();
+            }
+            break;
+        }
+
+        return super.onTouchEvent(event);
+    }
+
+}</code></pre><h3 id="二、普通实现"><a href="#二、普通实现" class="headerlink" title="二、普通实现"></a>二、普通实现</h3><p>Activity:</p>
+<pre><code>public void JumpToSecondView(View v) {
+        /*
+         * 效果1，覆盖效果
+         */
+//      secondView.setVisibility(View.VISIBLE);   
+//      secondView.setClickable(true);
+//      secondView.setAnimation(AnimationUtils.loadAnimation(this, R.anim.push_right_in));   
+
+        /*
+         * 效果2,平滑效果
+         */       
+        secondView.setVisibility(View.VISIBLE);   
+        secondView.setClickable(true);
+        secondView.setAnimation(AnimationUtils.loadAnimation(this, R.anim.in_rightleft));
+        firstView.setVisibility(View.GONE);   
+        firstView.setAnimation(AnimationUtils.loadAnimation(this, R.anim.out_rightleft));
+
+}</code></pre><p>main.xml:</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;FrameLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;
+    android:id=&quot;@+id/mainView&quot;
+    android:layout_width=&quot;fill_parent&quot;
+    android:layout_height=&quot;fill_parent&quot;&gt;
+
+    &lt;LinearLayout
+        android:id=&quot;@+id/FirstView&quot;
+        android:layout_width=&quot;fill_parent&quot;
+        android:layout_height=&quot;fill_parent&quot;
+        android:background=&quot;#ffffff&quot;
+        android:visibility=&quot;visible&quot;&gt;
+
+        &lt;Button
+            android:id=&quot;@+id/ButtonNext&quot;
+            android:layout_width=&quot;wrap_content&quot;
+            android:layout_height=&quot;wrap_content&quot;
+            android:text=&quot;showNext&quot;
+            android:onClick=&quot;JumpToSecondView&quot;&gt;&lt;/Button&gt;
+
+    &lt;/LinearLayout&gt;
+
+    &lt;LinearLayout
+        android:id=&quot;@+id/SecondView&quot;
+        android:layout_width=&quot;fill_parent&quot;
+        android:layout_height=&quot;fill_parent&quot;
+        android:background=&quot;#000000&quot;
+        android:visibility=&quot;invisible&quot;&gt;
+
+        &lt;Button
+            android:id=&quot;@+id/ButtonBack&quot;
+            android:layout_width=&quot;wrap_content&quot;
+            android:layout_height=&quot;wrap_content&quot;
+            android:text=&quot;Back&quot;
+            android:onClick=&quot;JumpToFirstView&quot;&gt;&lt;/Button&gt;
+    &lt;/LinearLayout&gt;
+&lt;/FrameLayout&gt;</code></pre><blockquote>
+<p>参考：<a href="http://www.open-open.com/lib/view/open1326371644030.html" target="_blank" rel="noopener">Android利用ViewFlipper实现屏幕切换动画效果</a><br><a href="http://www.cnblogs.com/bavariama/archive/2013/01/29/2881225.html" target="_blank" rel="noopener">http://www.cnblogs.com/bavariama/archive/2013/01/29/2881225.html</a><br><a href="http://www.eoeandroid.com/thread-27271-1-1.html" target="_blank" rel="noopener">http://www.eoeandroid.com/thread-27271-1-1.html</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2015/09/12/%E4%B8%A4%E4%B8%AAlayout%E4%B9%8B%E9%97%B4%E7%9A%84%E6%BB%91%E5%8A%A8%E5%88%87%E6%8D%A2/" data-id="ckcqdgl1k01jo9xlfapho9h72" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/09/12/Android%E7%9A%84Activity%E5%B1%8F%E5%B9%95%E5%88%87%E6%8D%A2%E5%8A%A8%E7%94%BB-%E4%B8%80-%E5%B7%A6%E5%8F%B3%E6%BB%91%E5%8A%A8%E5%88%87%E6%8D%A2/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Android的Activity屏幕切换动画(一)-左右滑动切换
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/09/12/App%E7%BC%93%E5%AD%98%E7%AE%A1%E7%90%86/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">App缓存管理</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

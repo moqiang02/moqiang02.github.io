@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>使用PHP导入和导出CSV文件 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="项目开发中，很多时候要将外部CSV文件导入到数据库中或者将数据导出为CSV文件，那么具体该如何实现呢？本文将使用PHP并结合mysql，实现了CSV格式数据的导入和导出功能。下载源码 我们先准备mysql数据表，假设项目中有一张记录学生信息的表student，并有id，name，sex，age分别记录学生的姓名、性别、年龄等信息。 CREATE TABLE &#96;student&#96; (    &#96;id&#96;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用PHP导入和导出CSV文件">
+<meta property="og:url" content="http://moqiang02.github.io/2014/09/10/%E4%BD%BF%E7%94%A8PHP%E5%AF%BC%E5%85%A5%E5%92%8C%E5%AF%BC%E5%87%BACSV%E6%96%87%E4%BB%B6/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="项目开发中，很多时候要将外部CSV文件导入到数据库中或者将数据导出为CSV文件，那么具体该如何实现呢？本文将使用PHP并结合mysql，实现了CSV格式数据的导入和导出功能。下载源码 我们先准备mysql数据表，假设项目中有一张记录学生信息的表student，并有id，name，sex，age分别记录学生的姓名、性别、年龄等信息。 CREATE TABLE &#96;student&#96; (    &#96;id&#96;">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2014-09-10T14:27:04.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:08.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-使用PHP导入和导出CSV文件" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/09/10/%E4%BD%BF%E7%94%A8PHP%E5%AF%BC%E5%85%A5%E5%92%8C%E5%AF%BC%E5%87%BACSV%E6%96%87%E4%BB%B6/" class="article-date">
+  <time datetime="2014-09-10T14:27:04.000Z" itemprop="datePublished">2014-09-10</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/php/">php</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      使用PHP导入和导出CSV文件
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <p>项目开发中，很多时候要将外部CSV文件导入到数据库中或者将数据导出为CSV文件，那么具体该如何实现呢？本文将使用PHP并结合mysql，实现了CSV格式数据的导入和导出功能。<br><a href="http://www.helloweba.com/down-171.html" target="_blank" rel="noopener">下载源码</a></p>
+<p>我们先准备mysql数据表，假设项目中有一张记录学生信息的表student，并有id，name，sex，age分别记录学生的姓名、性别、年龄等信息。</p>
+<pre><code>CREATE TABLE `student` ( 
+  `id` int(11) NOT NULL auto_increment, 
+  `name` varchar(50) NOT NULL, 
+  `sex` varchar(10) NOT NULL, 
+  `age` smallint(3) NOT NULL default &#39;0&#39;, 
+  PRIMARY KEY  (`id`) 
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8; </code></pre><a id="more"></a>
+<p>我们还需要一个html交互页面，放置导入表单和导出按钮。</p>
+<pre><code>&lt;form id=&quot;addform&quot; action=&quot;do.php?action=import&quot; method=&quot;post&quot; enctype=&quot;multipart/form-data&quot;&gt; 
+    &lt;p&gt;请选择要导入的CSV文件：&lt;br/&gt;&lt;input type=&quot;file&quot; name=&quot;file&quot;&gt; &lt;input type=&quot;submit&quot; 
+    class=&quot;btn&quot; value=&quot;导入CSV&quot;&gt; 
+    &lt;input type=&quot;button&quot; class=&quot;btn&quot; value=&quot;导出CSV&quot; onclick=&quot;window.location.href=&#39;do.php? 
+    action=export&#39;&quot;&gt;&lt;/p&gt; 
+&lt;/form&gt; </code></pre><p>选择好本地csv文件后，点击导入，提交到do.php?action=import处理，而点击导出按钮则请求地址do.php?action=export进行数据导出处理。</p>
+<h3 id="1-导入CSV"><a href="#1-导入CSV" class="headerlink" title="1.导入CSV"></a>1.导入CSV</h3><p>do.php需要根据get过来的参数，分别处理导入和导出过程，php结构如下：</p>
+<pre><code>include_once (&quot;connect.php&quot;); //连接数据库 
+
+$action = $_GET[&#39;action&#39;]; 
+if ($action == &#39;import&#39;) { //导入CSV 
+   //导入处理 
+} elseif ($action==&#39;export&#39;) { //导出CSV 
+   //导出处理 
+} </code></pre><p>导入CSV处理流程：校验csv文件合法性（本文忽略）-&gt;打开读入并解析csv文件中的字段-&gt;循环获取各字段值-&gt;批量添加到数据表中-&gt;完成。</p>
+<pre><code>if ($action == &#39;import&#39;) { //导入CSV 
+    $filename = $_FILES[&#39;file&#39;][&#39;tmp_name&#39;]; 
+    if (empty ($filename)) { 
+        echo &#39;请选择要导入的CSV文件！&#39;; 
+        exit; 
+    } 
+    $handle = fopen($filename, &#39;r&#39;); 
+    $result = input_csv($handle); //解析csv 
+    $len_result = count($result); 
+    if($len_result==0){ 
+        echo &#39;没有任何数据！&#39;; 
+        exit; 
+    } 
+    for ($i = 1; $i &lt; $len_result; $i++) { //循环获取各字段值 
+        $name = iconv(&#39;gb2312&#39;, &#39;utf-8&#39;, $result[$i][0]); //中文转码 
+        $sex = iconv(&#39;gb2312&#39;, &#39;utf-8&#39;, $result[$i][1]); 
+        $age = $result[$i][2]; 
+        $data_values .= &quot;(&#39;$name&#39;,&#39;$sex&#39;,&#39;$age&#39;),&quot;; 
+    } 
+    $data_values = substr($data_values,0,-1); //去掉最后一个逗号 
+    fclose($handle); //关闭指针 
+    $query = mysql_query(&quot;insert into student (name,sex,age) values $data_values&quot;);//批量插入数据表中 
+    if($query){ 
+        echo &#39;导入成功！&#39;; 
+    }else{ 
+        echo &#39;导入失败！&#39;; 
+    } 
+} </code></pre><p>注意php自带的fgetcsv函数可以轻松处理csv，使用该函数可以从文件指针中读入一行并解析CSV字段。下面的函数将csv文件字段解析并以数组的形式返回。</p>
+<pre><code>function input_csv($handle) { 
+    $out = array (); 
+    $n = 0; 
+    while ($data = fgetcsv($handle, 10000)) { 
+        $num = count($data); 
+        for ($i = 0; $i &lt; $num; $i++) { 
+            $out[$n][$i] = $data[$i]; 
+        } 
+        $n++; 
+    } 
+    return $out; 
+} </code></pre><p>此外在导入到数据库中时，我们采用的是批量插入而不是一条条插入的，因此在构建SQL语句时，要稍作处理，见代码。</p>
+<h3 id="2-导出CSV"><a href="#2-导出CSV" class="headerlink" title="2.导出CSV"></a>2.导出CSV</h3><p>我们知道csv文件是由逗号分割符组成的纯文本文件，你可以用excel打开，效果跟xls表个一样。</p>
+<p>导出CSV处理流程：读取学生信息表-&gt;循环记录构建逗号分隔的字段信息-&gt;设置header信息-&gt;导出文件（下载）到本地</p>
+<pre><code>... 
+} elseif ($action==&#39;export&#39;) { //导出CSV 
+    $result = mysql_query(&quot;select * from student order by id asc&quot;); 
+    $str = &quot;姓名,性别,年龄\n&quot;; 
+    $str = iconv(&#39;utf-8&#39;,&#39;gb2312&#39;,$str); 
+    while($row=mysql_fetch_array($result)){ 
+        $name = iconv(&#39;utf-8&#39;,&#39;gb2312&#39;,$row[&#39;name&#39;]); //中文转码 
+        $sex = iconv(&#39;utf-8&#39;,&#39;gb2312&#39;,$row[&#39;sex&#39;]); 
+        $str .= $name.&quot;,&quot;.$sex.&quot;,&quot;.$row[&#39;age&#39;].&quot;\n&quot;; //用引文逗号分开 
+    } 
+    $filename = date(&#39;Ymd&#39;).&#39;.csv&#39;; //设置文件名 
+    export_csv($filename,$str); //导出 
+} </code></pre><p>要将数据导出到本地即下在，需要修改header信息，代码如下：</p>
+<pre><code>function export_csv($filename,$data) { 
+    header(&quot;Content-type:text/csv&quot;); 
+    header(&quot;Content-Disposition:attachment;filename=&quot;.$filename); 
+    header(&#39;Cache-Control:must-revalidate,post-check=0,pre-check=0&#39;); 
+    header(&#39;Expires:0&#39;); 
+    header(&#39;Pragma:public&#39;); 
+    echo $data; 
+} </code></pre><p>注意导入和导出的过程中，因为我们使用的是统一UTF-8编码，遇到中文字符一定要记得转码，否则可能会出现中文乱码的情况。</p>
+<p>好了，本文讲解到此，后面我还会有文章介绍PHP结合mysql导入导出excel，以及xml的导入导出，敬请关注。</p>
+<blockquote>
+<p>声明：本文为原创文章，helloweba.com和作者拥有版权，如需转载，请注明来源于helloweba.com并保留原文链接，否则视为侵权。<a href="http://www.helloweba.com/view-blog-171.html" target="_blank" rel="noopener">http://www.helloweba.com/view-blog-171.html</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/09/10/%E4%BD%BF%E7%94%A8PHP%E5%AF%BC%E5%85%A5%E5%92%8C%E5%AF%BC%E5%87%BACSV%E6%96%87%E4%BB%B6/" data-id="ckcqdgl2h01ll9xlf27zy7aon" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/09/11/php%E4%B9%8Bmongodb%E6%8F%92%E5%85%A5%E6%95%B0%E6%8D%AE%E5%90%8E%E5%A6%82%E4%BD%95%E8%BF%94%E5%9B%9E%E5%BD%93%E5%89%8D%E6%8F%92%E5%85%A5%E8%AE%B0%E5%BD%95ID/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          php之mongodb插入数据后如何返回当前插入记录ID
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/09/09/mongodb-insert-%E3%80%81save-%E7%9A%84%E5%8C%BA%E5%88%AB/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">mongodb insert()、save()的区别</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

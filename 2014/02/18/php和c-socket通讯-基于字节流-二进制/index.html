@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>php和c++socket通讯(基于字节流,二进制) | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="研究了一下PHP和C++socket通讯,用C++作为服务器端,php作为客户端进行. socket通讯是基于协议的,因此,只要双方协议一致就行. 关于协议的选择:我看过网上大部分协议都是在应用层的协议,选用这样的协议很方便,基本上就是字符串传过来,传过去 本次研究的协议算是当今国际化的一个标准做法.length+flag+body(长度+类型+内容)的方式,    total_length co">
+<meta property="og:type" content="article">
+<meta property="og:title" content="php和c++socket通讯(基于字节流,二进制)">
+<meta property="og:url" content="http://moqiang02.github.io/2014/02/18/php%E5%92%8Cc-socket%E9%80%9A%E8%AE%AF-%E5%9F%BA%E4%BA%8E%E5%AD%97%E8%8A%82%E6%B5%81-%E4%BA%8C%E8%BF%9B%E5%88%B6/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="研究了一下PHP和C++socket通讯,用C++作为服务器端,php作为客户端进行. socket通讯是基于协议的,因此,只要双方协议一致就行. 关于协议的选择:我看过网上大部分协议都是在应用层的协议,选用这样的协议很方便,基本上就是字符串传过来,传过去 本次研究的协议算是当今国际化的一个标准做法.length+flag+body(长度+类型+内容)的方式,    total_length co">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/php%E5%92%8Cc++socket%E9%80%9A%E8%AE%AF-%E5%9F%BA%E4%BA%8E%E5%AD%97%E8%8A%82%E6%B5%81,%E4%BA%8C%E8%BF%9B%E5%88%B6/SouthEast.jpg">
+<meta property="article:published_time" content="2014-02-18T06:11:32.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:14.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta property="article:tag" content="socket">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/php%E5%92%8Cc++socket%E9%80%9A%E8%AE%AF-%E5%9F%BA%E4%BA%8E%E5%AD%97%E8%8A%82%E6%B5%81,%E4%BA%8C%E8%BF%9B%E5%88%B6/SouthEast.jpg">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-php和c-socket通讯-基于字节流-二进制" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/02/18/php%E5%92%8Cc-socket%E9%80%9A%E8%AE%AF-%E5%9F%BA%E4%BA%8E%E5%AD%97%E8%8A%82%E6%B5%81-%E4%BA%8C%E8%BF%9B%E5%88%B6/" class="article-date">
+  <time datetime="2014-02-18T06:11:32.000Z" itemprop="datePublished">2014-02-18</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/php/">php</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      php和c++socket通讯(基于字节流,二进制)
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <p>研究了一下PHP和C++socket通讯,用C++作为服务器端,php作为客户端进行.</p>
+<p>socket通讯是基于协议的,因此,只要双方协议一致就行.</p>
+<p>关于协议的选择:我看过网上大部分协议都是在应用层的协议,选用这样的协议很方便,基本上就是字符串传过来,传过去</p>
+<p>本次研究的协议算是当今国际化的一个标准做法.length+flag+body(长度+类型+内容)的方式,</p>
+<table>
+<thead>
+<tr>
+<th>total_length</th>
+<th>code</th>
+<th>flag</th>
+<th>length1</th>
+<th>string1</th>
+<th>length2</th>
+<th>string2</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>总长度</td>
+<td>操作类型</td>
+<td>标志</td>
+<td>字符串1长度</td>
+<td>字符串1</td>
+<td>字符串2长度</td>
+<td>字符串2</td>
+</tr>
+<tr>
+<td>4字节</td>
+<td>2字节</td>
+<td>4字节(暂时无用)</td>
+<td>2字节</td>
+<td>x字节</td>
+<td>2字节</td>
+<td>x字节</td>
+</tr>
+</tbody></table>
+<p>php实现方式,也很容易,通过pack打包成二进制进行通讯.下面贴一下代码</p>
+<a id="more"></a>
+<p>本地测试主要应用为:发送账号和密码给服务器端</p>
+<pre><code>    &lt;?php    
+    class Byte{    
+        //长度     
+        private $length=0;    
+
+        private $byte=&#39;&#39;;    
+        //操作码     
+        private $code;    
+        public function setBytePrev($content){    
+            $this-&gt;byte=$content.$this-&gt;byte;    
+        }    
+        public function getByte(){    
+            return $this-&gt;byte;    
+        }    
+        public function getLength(){    
+            return $this-&gt;length;    
+        }    
+        public function writeChar($string){    
+            $this-&gt;length+=strlen($string);    
+            $str=array_map(&#39;ord&#39;,str_split($string));    
+            foreach($str as $vo){    
+                $this-&gt;byte.=pack(&#39;c&#39;,$vo);    
+            }    
+            $this-&gt;byte.=pack(&#39;c&#39;,&#39;0&#39;);    
+            $this-&gt;length++;    
+        }    
+        public function writeInt($str){    
+            $this-&gt;length+=4;    
+            $this-&gt;byte.=pack(&#39;L&#39;,$str);    
+        }    
+        public function writeShortInt($interge){    
+            $this-&gt;length+=2;    
+            $this-&gt;byte.=pack(&#39;v&#39;,$interge);    
+        }    
+    }    
+    class GameSocket{    
+        private $socket;    
+        private $port=9991;    
+        private $host=&#39;192.168.211.231&#39;;    
+        private $byte;    
+        private $code;    
+        const CODE_LENGTH=2;    
+        const FLAG_LENGTH=4;    
+        public function __set($name,$value){    
+            $this-&gt;$name=$value;    
+        }    
+        public function __construct($host=&#39;192.168.211.231&#39;,$port=9991){    
+            $this-&gt;host=$host;    
+            $this-&gt;port=$port;    
+            $this-&gt;socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);    
+            if(!$this-&gt;socket){    
+                exit(&#39;创建socket失败&#39;);    
+            }    
+            $result = socket_connect($this-&gt;socket,$this-&gt;host,$this-&gt;port);    
+            if(!$result){    
+                exit(&#39;连接不上目标主机&#39;.$this-&gt;host);    
+            }    
+            $this-&gt;byte=new Byte();    
+        }    
+        public function write($data){    
+            if(is_string($data)||is_int($data)||is_float($data)){    
+                $data[]=$data;    
+            }    
+            if(is_array($data)){    
+                foreach($data as $vo){    
+                    $this-&gt;byte-&gt;writeShortInt(strlen($vo));    
+                    $this-&gt;byte-&gt;writeChar($vo);    
+                }    
+            }    
+            $this-&gt;setPrev();    
+            $this-&gt;send();    
+        }    
+        /*   
+         *设置表头部分   
+         *表头=length+code+flag   
+         *length是总长度(4字节)  code操作标志(2字节)  flag暂时无用(4字节)   
+         */    
+        private function getHeader(){    
+            $length=$this-&gt;byte-&gt;getLength();    
+            $length=intval($length)+self::CODE_LENGTH+self::FLAG_LENGTH;    
+            return pack(&#39;L&#39;,$length);    
+        }    
+        private function getCode(){    
+            return pack(&#39;v&#39;,$this-&gt;code);    
+        }    
+        private function getFlag(){    
+            return pack(&#39;L&#39;,24);    
+        }    
+
+        private function setPrev(){    
+            $this-&gt;byte-&gt;setBytePrev($this-&gt;getHeader().$this-&gt;getCode().$this-&gt;getFlag());    
+        }    
+
+        private function send(){    
+            $result=socket_write($this-&gt;socket,$this-&gt;byte-&gt;getByte());    
+            if(!$result){    
+                exit(&#39;发送信息失败&#39;);    
+            }    
+        }    
+        public function __desctruct(){    
+            socket_close($this-&gt;socket);    
+        }    
+    }    
+
+    $data[]=&#39;testzouhao&#39;;    
+    $data[]=&#39;a&#39;;    
+    $gameSocket=new GameSocket();    
+    $gameSocket-&gt;code=11;    
+    $gameSocket-&gt;write($data);    </code></pre><p>通过抓包分析,得到本次的包内容<br><img src="/images/php%E5%92%8Cc++socket%E9%80%9A%E8%AE%AF-%E5%9F%BA%E4%BA%8E%E5%AD%97%E8%8A%82%E6%B5%81,%E4%BA%8C%E8%BF%9B%E5%88%B6/SouthEast.jpg" alt=""><br>包头等等都不用看了,主要看蓝色部分.</p>
+<p>根据协议分析,前4个字节为表头,代表的是长度</p>
+<p>因此:</p>
+<p>17 00 00 00代表的是表头长度,17为16进制,转换为十进制为23,代表其余部分全部加为23字节.</p>
+<p>0b 00代表的是操作码为11,代表是登录操作</p>
+<p>18 00 00 00代表的是flag,暂时无用,不去理会</p>
+<p>0a 00 代表的字符串1的长度,转为十进制为10</p>
+<p>74 65 73 74 7a 6f 75 68 61 6f 分别转为十进制之后,是ascii码对应的字符,结果为:testzouhao,</p>
+<p>由于C++字符串的机制是末尾是\0,所以在字符串后,00字节就是\0</p>
+<p>然后是第二个字符串长度为01 00,也就是为1</p>
+<p>61同理,十进制转ascii码,为a,之后的00为c++机制的\0</p>
+<p>完美解析,发送包无措,之后c++服务器也返回了相应的包,我在按照同理进行解包就可以了!</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/02/18/php%E5%92%8Cc-socket%E9%80%9A%E8%AE%AF-%E5%9F%BA%E4%BA%8E%E5%AD%97%E8%8A%82%E6%B5%81-%E4%BA%8C%E8%BF%9B%E5%88%B6/" data-id="ckcqdgkyu01d39xlf4k7w3stl" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/socket/" rel="tag">socket</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/02/18/%E5%AF%86%E7%A0%81%E5%BC%BA%E5%BA%A6%E6%A3%80%E6%B5%8B/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          密码强度检测
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/02/18/PHP-%E9%AD%94%E6%9C%AF%E6%96%B9%E6%B3%95-set-get-%E6%96%B9%E6%B3%95%E8%AF%A6%E8%A7%A3/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">PHP 魔术方法__set() __get() 方法详解</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

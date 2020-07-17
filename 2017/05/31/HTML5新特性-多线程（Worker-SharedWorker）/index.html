@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>HTML5新特性 多线程（Worker SharedWorker） | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="There is no doubt that JavaScript是没有多线程之说的，他只能一件事一件事的做，做完一件事再做下一件事，假如你的js要花一段比较长的时间做一件事的话，那么浏览器将会卡顿一段时间，不对用户的操作产生响应，这可咋办呢？谢天谢地，HTML5为我们提供了实现多线程的机制，这么好的东西，想必你早就再用了，不过没关系啊，咱们一块儿复习一下咯！">
+<meta property="og:type" content="article">
+<meta property="og:title" content="HTML5新特性 多线程（Worker SharedWorker）">
+<meta property="og:url" content="http://moqiang02.github.io/2017/05/31/HTML5%E6%96%B0%E7%89%B9%E6%80%A7-%E5%A4%9A%E7%BA%BF%E7%A8%8B%EF%BC%88Worker-SharedWorker%EF%BC%89/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="There is no doubt that JavaScript是没有多线程之说的，他只能一件事一件事的做，做完一件事再做下一件事，假如你的js要花一段比较长的时间做一件事的话，那么浏览器将会卡顿一段时间，不对用户的操作产生响应，这可咋办呢？谢天谢地，HTML5为我们提供了实现多线程的机制，这么好的东西，想必你早就再用了，不过没关系啊，咱们一块儿复习一下咯！">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/HTML5%E6%96%B0%E7%89%B9%E6%80%A7%E5%A4%9A%E7%BA%BF%E7%A8%8BSharedWorker/1.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/HTML5%E6%96%B0%E7%89%B9%E6%80%A7%E5%A4%9A%E7%BA%BF%E7%A8%8BSharedWorker/2.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/HTML5%E6%96%B0%E7%89%B9%E6%80%A7%E5%A4%9A%E7%BA%BF%E7%A8%8BSharedWorker/3.png">
+<meta property="article:published_time" content="2017-05-31T14:37:52.000Z">
+<meta property="article:modified_time" content="2018-03-21T13:40:26.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta property="article:tag" content="WebSocket">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/HTML5%E6%96%B0%E7%89%B9%E6%80%A7%E5%A4%9A%E7%BA%BF%E7%A8%8BSharedWorker/1.png">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-HTML5新特性-多线程（Worker-SharedWorker）" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/05/31/HTML5%E6%96%B0%E7%89%B9%E6%80%A7-%E5%A4%9A%E7%BA%BF%E7%A8%8B%EF%BC%88Worker-SharedWorker%EF%BC%89/" class="article-date">
+  <time datetime="2017-05-31T14:37:52.000Z" itemprop="datePublished">2017-05-31</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/html-css/">html+css</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      HTML5新特性 多线程（Worker SharedWorker）
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <p>There is no doubt that JavaScript是没有多线程之说的，他只能一件事一件事的做，做完一件事再做下一件事，假如你的js要花一段比较长的时间做一件事的话，那么浏览器将会卡顿一段时间，不对用户的操作产生响应，这可咋办呢？谢天谢地，HTML5为我们提供了实现多线程的机制，这么好的东西，想必你早就再用了，不过没关系啊，咱们一块儿复习一下咯！<a id="more"></a></p>
+<h3 id="一、Worker类"><a href="#一、Worker类" class="headerlink" title="一、Worker类"></a>一、Worker类</h3><p>方法介绍<br>（1）构造函数 new Worker(arg)  :参数表示你的线程要执行的代码所在的js文件，例如‘myworker.js’,构造函数当然是返回一个Worker类的实例<br>（2）worker.postMessage(message):这个方法表示从主线程向子线程发送消息或者子线程向主线程发送消息，message一般是一个字符串，也可以将一个js对象转成字符串发过去<br>（3）worker上还有一个message事件，当有人向这个worker实例发送消息时，该事件被触发，我们可以从他的事件对象的data属性中获得post过来的值</p>
+<p>可以看到Woker类的API是相当简洁的，只有两个最常用的方法，一个事件，下面我们来通过实际的例子看看。</p>
+<p>main.html</p>
+<pre><code class="html">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot;&gt;
+    &lt;title&gt;main&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;div id=&quot;out&quot;&gt;&lt;/div&gt;
+    &lt;input type=&quot;text&quot; name=&quot;&quot; id=&quot;txt&quot;&gt;
+    &lt;button id=&quot;btn&quot;&gt;发送&lt;/button&gt;
+    &lt;script type=&quot;text/javascript&quot;&gt;
+        var out = document.getElementById(&quot;out&quot;);
+        var btn = document.getElementById(&quot;btn&quot;);
+        var txt = document.getElementById(&quot;txt&quot;);
+        var worker = new Worker(&quot;thread1.js&quot;);
+        btn.addEventListener(&quot;click&quot;,function(){
+            var postData = txt.value;
+            worker.postMessage(postData);
+        },false);
+        worker.addEventListener(&#39;message&#39;,function(e){
+            out.innerText = e.data;
+        },false);
+    &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+<p>thread1.js</p>
+<pre><code class="js">onmessage = function(event){
+    var res = event.data+&quot;帅气！&quot;;
+    postMessage(res);
+}</code></pre>
+<p>当我在文本框输入“大～熊”点击发送按钮就会出现如下效果<br><img src="/images/HTML5%E6%96%B0%E7%89%B9%E6%80%A7%E5%A4%9A%E7%BA%BF%E7%A8%8BSharedWorker/1.png" alt=""><br>简单分析分析，我在主线程由thead1.js创建了一个Worker的实例worker，当点击按钮时会调用他的postMessage方法，将文本框中的内容发送到thread1.js，我们的thread1.js怎么做的呢？是这样，他侦听message事件，主线程发送消息过来就触发这个事件，执行回调函数，回调函数从事件对象取得发送来的值，然后将这个值加上“帅气！”,然后在发送回去。主线程呢也侦听了worker的message事件，所以有消息过去时会触发，将消息内容显示在div中，如此就看到了上面的效果。</p>
+<p>或许你会将这有什么用呢？这里确实没什么用，这里我们大可以在主线程还总完成加“帅气！”的操作，因为他的复杂度为O(1)(哈哈，最近在学算法！)，但是假如不是做这么简单的操作呢？这种方法的好处就是不过你的子线程做多么复杂的工作，都不会让主线程停下来，主线程改干嘛还干嘛，等到子线程把数据处理好了他直接拿过来就好了。</p>
+<p>陆老师将可以在子线程中在调用<code>new Worker()</code>创建新的子线程，我发现这样是不可以的，会报undefined错误，也就是说子线程中是不能调用Worker构造函数的，一开始以为是自己错了，后来查阅了官方文档，发现也没有相关的描述。</p>
+<p>下面看一个在主线程调用多个子线程的例子：<br>main.html</p>
+<pre><code class="html">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot;&gt;
+    &lt;title&gt;main&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;div id=&quot;out&quot;&gt;&lt;/div&gt;
+    &lt;input type=&quot;text&quot; name=&quot;&quot; id=&quot;txt&quot;&gt;
+    &lt;button id=&quot;btn&quot;&gt;发送&lt;/button&gt;
+    &lt;script type=&quot;text/javascript&quot;&gt;
+        var out = document.getElementById(&quot;out&quot;);
+        var btn = document.getElementById(&quot;btn&quot;);
+        var txt = document.getElementById(&quot;txt&quot;);
+        var worker1 = new Worker(&quot;thread1.js&quot;);
+        var worker2 = new Worker(&quot;thread2.js&quot;);
+        btn.addEventListener(&quot;click&quot;,function(){
+            var postData = txt.value;
+            worker1.postMessage(postData);
+        },false);
+        worker1.addEventListener(&#39;message&#39;,function(e){
+            worker2.postMessage(e.data);
+        },false);
+        worker2.addEventListener(&#39;message&#39;,function(e){
+            out.innerText = e.data;
+        },false);
+    &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+<p>thread1.js</p>
+<pre><code class="js">onmessage = function(event){
+    var res = event.data+&quot;帅气！&quot;;
+        postMessage(res);    
+}
+//thread2.js
+onmessage = function(event){
+    var res = event.data+&quot;没骗你哟！&quot;;
+    postMessage(res);
+    close();
+}</code></pre>
+<p>主线程要完成一个任务需要两个线程，它创建了两个线程worker1,2,先向worker1请求，得到返回的数据后，再请求worker2,同时将worker1处理之后的数据交给worder2处理，然后拿到最终结果，显示在页面上。</p>
+<p>在子线程中可以引入其他的js文件然后调用，比如下边这个例子。<br>main.html</p>
+<pre><code class="html">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot;&gt;
+    &lt;title&gt;main&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;div id=&quot;out&quot;&gt;&lt;/div&gt;
+    &lt;input type=&quot;text&quot; name=&quot;&quot; id=&quot;txt&quot;&gt;
+    &lt;button id=&quot;btn&quot;&gt;发送&lt;/button&gt;
+    &lt;script type=&quot;text/javascript&quot;&gt;
+
+        var out = document.getElementById(&quot;out&quot;);
+        var btn = document.getElementById(&quot;btn&quot;);
+        var txt = document.getElementById(&quot;txt&quot;);
+        var worker1 = new Worker(&quot;thread1.js&quot;);
+        btn.addEventListener(&quot;click&quot;,function(){
+            var postData = txt.value;
+            worker1.postMessage(postData);
+        },false);
+        worker1.addEventListener(&#39;message&#39;,function(e){
+            out.innerText = e.data;
+
+        },false);
+    &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+<p>thread1.js</p>
+<pre><code class="js">importScripts(&#39;tools.js&#39;)
+onmessage = function(event){
+    var res = handler(event.data);
+        postMessage(res);    
+}
+//tools.js
+function handler(data){
+    return data+&quot;加油加油！&quot;
+}</code></pre>
+<p>可以看到我们的thread1.js并没有一个叫做tools.js的文件，但是它通过importScripts()导入了一个js文件，然后就可以调用里边暴露出来的方法了。</p>
+<h3 id="二、SharedWorker类"><a href="#二、SharedWorker类" class="headerlink" title="二、SharedWorker类"></a>二、SharedWorker类</h3><p>SharedWorker的实质在于share，不同的线程可以共享一个线程，他们的数据也是共享的。</p>
+<p>直接用例子来探讨。</p>
+<p>使用方法一：<br>main.html</p>
+<pre><code class="html">&lt;!DOCTYPE HTML&gt;
+&lt;head&gt;
+    &lt;title&gt;Shared workers: demo 1&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;div id=&quot;log&quot;&gt;&lt;/div&gt;
+&lt;script&gt;
+  var worker = new SharedWorker(&#39;shared.js&#39;);
+  var log = document.getElementById(&#39;log&#39;);
+  worker.port.onmessage = function(e) { // note: not worker.onmessage!
+    log.textContent += &#39;\n&#39; + e.data;
+  }
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+<p>shared.js</p>
+<pre><code class="js">onconnect = function(e) {
+  var port = e.ports[0];
+  port.postMessage(&#39;Hello World!&#39;);
+}</code></pre>
+<p>这是从w3c拿得一个例子，下面先看第二种方法，再做分析</p>
+<pre><code class="html">&lt;!DOCTYPE HTML&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;Shared workers: demo 2&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div id=&quot;log&quot;&gt;&lt;/div&gt;
+&lt;script&gt;
+  var worker = new SharedWorker(&#39;shared.js&#39;);
+  var log = document.getElementById(&#39;log&#39;);
+  worker.port.addEventListener(&#39;message&#39;, function(e) {
+    log.textContent += &#39;\n&#39; + e.data;
+  }, false);
+  worker.port.start(); // note: need this when using addEventListener
+  worker.port.postMessage(&#39;ping&#39;);
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;　　</code></pre>
+<p>shared.js</p>
+<pre><code class="js">onconnect = function(e) {
+  var port = e.ports[0];
+  port.postMessage(&#39;Hello World!&#39;);
+  port.onmessage = function(e) {
+    port.postMessage(&#39;pong&#39;); // not e.ports[0].postMessage!
+    // e.target.postMessage(&#39;pong&#39;); would work also
+  }
+}</code></pre>
+<p>第一种方法中是使用事件句柄的方式将听message事件，不需要调用<code>worker.port.start()</code>,第二种方法是通过addEventListener()方法监听message事件，需要<code>worker.port.start()</code>方法激活端口。他们不同于worker，当有人和他通信时触发connect事件，然后他的message事件是绑定在messagePort对象上的，不想worker那样，你可以回头看看worker是怎么做的。</p>
+<p>那么sharedWorker是怎么共享数据的呢？请看下面的例子。<br>main1 和main2都是这样</p>
+<pre><code class="html">&lt;!DOCTYPE HTML&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;Shared workers: demo 2&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div id=&quot;log&quot;&gt;&lt;/div&gt;
+&lt;input type=&quot;text&quot; name=&quot;&quot; id=&quot;txt&quot;&gt;
+&lt;button id=&quot;get&quot;&gt;get&lt;/button&gt;
+&lt;button id=&quot;set&quot;&gt;set&lt;/button&gt;
+&lt;script&gt;
+  var worker = new SharedWorker(&#39;shared.js&#39;);
+  var get = document.getElementById(&#39;get&#39;);
+  var set = document.getElementById(&#39;set&#39;);
+  var txt = document.getElementById(&#39;txt&#39;);
+  var log = document.getElementById(&#39;log&#39;);
+  worker.port.addEventListener(&#39;message&#39;, function(e) {
+    log.innerText = e.data;
+  }, false);
+  worker.port.start(); // note: need this when using addEventListener
+  set.addEventListener(&#39;click&#39;,function(e){
+      worker.port.postMessage(txt.value);
+  },false);
+  get.addEventListener(&#39;click&#39;,function(e){
+      worker.port.postMessage(&#39;get&#39;);
+  },false);
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+<p>shared.js</p>
+<pre><code class="js">var data;
+onconnect = function(e) {
+  var port = e.ports[0];
+  port.onmessage = function(e) {
+    if(e.data==&#39;get&#39;){
+        port.postMessage(data);
+    }else{
+        data=e.data;
+    }
+  }
+}</code></pre>
+<p>这里分析一波，我们在main1.html的文本框输入数据，点击set，然后在main2.html中点击get法现能够获取到我们在main1.html中设置的数据，这说明我们的sharedWorker事实上是单例的，就像java中的static类一样，不管new多少个，实际上只有一个，这样我们的不同线程就可以共享到sharedWorker中的数据了。这里把图给上，记得有篇文章没给图，然后有人给我建议了，问能不能给图。<br><img src="/images/HTML5%E6%96%B0%E7%89%B9%E6%80%A7%E5%A4%9A%E7%BA%BF%E7%A8%8BSharedWorker/2.png" alt=""><br><img src="/images/HTML5%E6%96%B0%E7%89%B9%E6%80%A7%E5%A4%9A%E7%BA%BF%E7%A8%8BSharedWorker/3.png" alt=""><br>最后来小结一下，worker和sharedWorker没有什么悬糊的，就是把台前的工作搬到幕后去做，不打断台前的工作。正所谓台上十分钟，台下十年功，如果你把台下的十年供放到台上做，观众的唾沫星子早就把你淹死了，所以说那些费事费力的工作还是放到台下去，台上只用展示你最好的一面的好了，十分钟足以！</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2017/05/31/HTML5%E6%96%B0%E7%89%B9%E6%80%A7-%E5%A4%9A%E7%BA%BF%E7%A8%8B%EF%BC%88Worker-SharedWorker%EF%BC%89/" data-id="ckcqdgkn400fa9xlf748b8z37" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/WebSocket/" rel="tag">WebSocket</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2017/07/20/Android%E4%B8%ADadjustResize%E5%A4%B1%E6%95%88%E7%9A%84%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95%E4%B9%8B%E4%B8%80/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Android中adjustResize失效的解决办法之一
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2017/05/31/SharedWorker%E7%9A%84%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF%E4%B8%8E%E5%89%8D%E6%99%AF/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">SharedWorker的使用场景与前景</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

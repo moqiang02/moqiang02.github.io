@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>php使用websocket示例详解 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="下面我画了一个图演示 client 和 server 之间建立 websocket 连接时握手部分，这个部分在 node 中可以十分轻松的完成，因为 node 提供的 net 模块已经对 socket 套接字做了封装处理，开发者使用的时候只需要考虑数据的交互而不用处理连接的建立。而 php 没有，从 socket 的连接、建立、绑定、监听等，这些都需要我们自己去操作，所以有必要拿出来再说一说。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="php使用websocket示例详解">
+<meta property="og:url" content="http://moqiang02.github.io/2016/10/28/php%E4%BD%BF%E7%94%A8websocket%E7%A4%BA%E4%BE%8B%E8%AF%A6%E8%A7%A3/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="下面我画了一个图演示 client 和 server 之间建立 websocket 连接时握手部分，这个部分在 node 中可以十分轻松的完成，因为 node 提供的 net 模块已经对 socket 套接字做了封装处理，开发者使用的时候只需要考虑数据的交互而不用处理连接的建立。而 php 没有，从 socket 的连接、建立、绑定、监听等，这些都需要我们自己去操作，所以有必要拿出来再说一说。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/php%E4%BD%BF%E7%94%A8websocket%E7%A4%BA%E4%BE%8B%E8%AF%A6%E8%A7%A3/1.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/php%E4%BD%BF%E7%94%A8websocket%E7%A4%BA%E4%BE%8B%E8%AF%A6%E8%A7%A3/2.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/php%E4%BD%BF%E7%94%A8websocket%E7%A4%BA%E4%BE%8B%E8%AF%A6%E8%A7%A3/3.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/php%E4%BD%BF%E7%94%A8websocket%E7%A4%BA%E4%BE%8B%E8%AF%A6%E8%A7%A3/4.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/php%E4%BD%BF%E7%94%A8websocket%E7%A4%BA%E4%BE%8B%E8%AF%A6%E8%A7%A3/5.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/php%E4%BD%BF%E7%94%A8websocket%E7%A4%BA%E4%BE%8B%E8%AF%A6%E8%A7%A3/6.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/php%E4%BD%BF%E7%94%A8websocket%E7%A4%BA%E4%BE%8B%E8%AF%A6%E8%A7%A3/7.jpg">
+<meta property="article:published_time" content="2016-10-28T14:47:01.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:36.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta property="article:tag" content="WebSocket">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/php%E4%BD%BF%E7%94%A8websocket%E7%A4%BA%E4%BE%8B%E8%AF%A6%E8%A7%A3/1.jpg">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-php使用websocket示例详解" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/10/28/php%E4%BD%BF%E7%94%A8websocket%E7%A4%BA%E4%BE%8B%E8%AF%A6%E8%A7%A3/" class="article-date">
+  <time datetime="2016-10-28T14:47:01.000Z" itemprop="datePublished">2016-10-28</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/php/">php</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      php使用websocket示例详解
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <p>下面我画了一个图演示 client 和 server 之间建立 websocket 连接时握手部分，这个部分在 node 中可以十分轻松的完成，因为 node 提供的 net 模块已经对 socket 套接字做了封装处理，开发者使用的时候只需要考虑数据的交互而不用处理连接的建立。而 php 没有，从 socket 的连接、建立、绑定、监听等，这些都需要我们自己去操作，所以有必要拿出来再说一说。</p>
+<a id="more"></a>
+
+<p><img src="/images/php%E4%BD%BF%E7%94%A8websocket%E7%A4%BA%E4%BE%8B%E8%AF%A6%E8%A7%A3/1.jpg" alt=""><br>① 和 ② 实际上就是一个 HTTP 的请求和响应，只不过我们在处理的过程中我们拿到的是没有经过解析的字符串。如：</p>
+<pre><code>GET /chat HTTP/1.1
+Host: server.example.com
+Origin: http://www.jb51.com</code></pre><p>我们往常看到的请求是这个样子，当这东西到了服务器端，我们可以通过一些代码库直接拿到这些信息。</p>
+<h3 id="一、php-中处理-websocket"><a href="#一、php-中处理-websocket" class="headerlink" title="一、php 中处理 websocket"></a>一、php 中处理 websocket</h3><p>WebSocket 连接是由客户端主动发起的，所以一切要从客户端出发。第一步是要解析拿到客户端发过来的 Sec-WebSocket-Key 字符串。</p>
+<pre><code>GET /chat HTTP/1.1
+Host: server.example.com
+Upgrade: websocket
+Connection: Upgrade
+Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
+Origin: http://www.jb51.com
+Sec-WebSocket-Protocol: chat, superchat
+Sec-WebSocket-Version: 13</code></pre><p>client 请求的格式<br>首先 php 建立一个 socket 连接，监听端口的信息。</p>
+<p>1.socket 连接的建立</p>
+<p>关于 socket 套接字的建立，相信很多大学修过计算机网络的人都知道了，下面是一张连接建立的过程：<br><img src="/images/php%E4%BD%BF%E7%94%A8websocket%E7%A4%BA%E4%BE%8B%E8%AF%A6%E8%A7%A3/2.jpg" alt=""></p>
+<pre><code>// 建立一个 socket 套接字
+$master = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+socket_set_option($master, SOL_SOCKET, SO_REUSEADDR, 1);
+socket_bind($master, $address, $port);
+socket_listen($master);</code></pre><p>相比 node，这个地方的处理实在是太麻烦了，上面几行代码并未建立连接，只不过这些代码是建立一个socket 套接字必须要写的东西。由于处理过程稍微有复杂，所以我把各种处理写进了一个类中，方便管理和调用。</p>
+<pre><code>//demo.php
+Class WS {
+    var $master;  // 连接 server 的 client
+    var $sockets = array(); // 不同状态的 socket 管理
+    var $handshake = false; // 判断是否握手
+
+    function __construct($address, $port){
+        // 建立一个 socket 套接字
+        $this-&gt;master = socket_create(AF_INET, SOCK_STREAM, SOL_TCP)  
+            or die(&quot;socket_create() failed&quot;);
+        socket_set_option($this-&gt;master, SOL_SOCKET, SO_REUSEADDR, 1) 
+            or die(&quot;socket_option() failed&quot;);
+        socket_bind($this-&gt;master, $address, $port)                   
+            or die(&quot;socket_bind() failed&quot;);
+        socket_listen($this-&gt;master, 2)                              
+            or die(&quot;socket_listen() failed&quot;);
+
+        $this-&gt;sockets[] = $this-&gt;master;
+
+        // debug
+        echo(&quot;Master socket  : &quot;.$this-&gt;master.&quot;\n&quot;);
+
+        while(true) {
+            //自动选择来消息的 socket 如果是握手 自动选择主机
+            $write = NULL;
+            $except = NULL;
+            socket_select($this-&gt;sockets, $write, $except, NULL);
+
+            foreach ($this-&gt;sockets as $socket) {
+                //连接主机的 client
+                if ($socket == $this-&gt;master){
+                    $client = socket_accept($this-&gt;master);
+                    if ($client &lt; 0) {
+                        // debug
+                        echo &quot;socket_accept() failed&quot;;
+                        continue;
+                    } else {
+                        //connect($client);
+                        array_push($this-&gt;sockets, $client);
+                        echo &quot;connect client\n&quot;;
+                    }
+                } else {
+                    $bytes = @socket_recv($socket,$buffer,2048,0);
+                    if($bytes == 0) return;
+                    if (!$this-&gt;handshake) {
+                        // 如果没有握手，先握手回应
+                        //doHandShake($socket, $buffer);
+                        echo &quot;shakeHands\n&quot;;
+                    } else {
+                        // 如果已经握手，直接接受数据，并处理
+                        $buffer = decode($buffer);
+                        //process($socket, $buffer);
+                        echo &quot;send file\n&quot;;
+                    }
+                }
+            }
+        }
+    }
+}</code></pre><p>上面这段代码是经过我调试了的，没太大的问题，如果想测试的话，可以在 cmd 命令行中键入 php /path/to/demo.php;当然，上面只是一个类，如果要测试的话，还得新建一个实例。</p>
+<p><code>$ws = new WS(&#39;localhost&#39;, 4000);</code></p>
+<p>客户端代码可以稍微简单点：</p>
+<pre><code>var ws = new WebSocket(&quot;ws://localhost:4000&quot;);
+ws.onopen = function(){
+    console.log(&quot;握手成功&quot;);
+};
+ws.onerror = function(){
+    console.log(&quot;error&quot;);
+};</code></pre><p>运行服务器代码，当客户端连接的时候，我们可以看到：<br><img src="/images/php%E4%BD%BF%E7%94%A8websocket%E7%A4%BA%E4%BE%8B%E8%AF%A6%E8%A7%A3/3.jpg" alt=""></p>
+<p>2.提取 Sec-WebSocket-Key 信息</p>
+<pre><code>function getKey($req) {
+    $key = null;
+    if (preg_match(&quot;/Sec-WebSocket-Key: (.*)\r\n/&quot;, $req, $match)) {
+        $key = $match[1];
+    }
+    return $key;
+}</code></pre><p>这里比较简单，直接正则匹配，websocket 信息头一定包含 Sec-WebSocket-Key，所以我们匹配起来也比较快捷~</p>
+<p>3.加密 Sec-WebSocket-Key</p>
+<pre><code>function encry($req){
+    $key = $this-&gt;getKey($req);
+    $mask = &quot;258EAFA5-E914-47DA-95CA-C5AB0DC85B11&quot;;
+
+    return base64_encode(sha1($key . &#39;258EAFA5-E914-47DA-95CA-C5AB0DC85B11&#39;, true));
+}</code></pre><p>将 SHA-1 加密后的字符串再进行一次base64加密。如果加密算法错误，客户端在进行校检的时候会直接报错：<br><img src="/images/php%E4%BD%BF%E7%94%A8websocket%E7%A4%BA%E4%BE%8B%E8%AF%A6%E8%A7%A3/4.jpg" alt=""></p>
+<p>4.应答 Sec-WebSocket-Accept</p>
+<pre><code>function dohandshake($socket, $req){
+    // 获取加密key
+    $acceptKey = $this-&gt;encry($req);
+    $upgrade = &quot;HTTP/1.1 101 Switching Protocols\r\n&quot; .
+               &quot;Upgrade: websocket\r\n&quot; .
+               &quot;Connection: Upgrade\r\n&quot; .
+               &quot;Sec-WebSocket-Accept: &quot; . $acceptKey . &quot;\r\n&quot; .
+               &quot;\r\n&quot;;
+
+    // 写入socket
+    socket_write(socket,$upgrade.chr(0), strlen($upgrade.chr(0)));
+    // 标记握手已经成功，下次接受数据采用数据帧格式
+    $this-&gt;handshake = true;
+}</code></pre><p>这里千万要注意，每一个请求和相应的格式，最后有一个空行，也就是 <code>\r\n</code>，开始测试的时候把这东西给弄丢了，纠结了半天。<br><img src="/images/php%E4%BD%BF%E7%94%A8websocket%E7%A4%BA%E4%BE%8B%E8%AF%A6%E8%A7%A3/5.jpg" alt=""><br>当客户端成功校检key后，会触发 onopen 函数：<br><img src="/images/php%E4%BD%BF%E7%94%A8websocket%E7%A4%BA%E4%BE%8B%E8%AF%A6%E8%A7%A3/6.jpg" alt=""></p>
+<p>5.数据帧处理</p>
+<pre><code>// 解析数据帧
+function decode($buffer)  {
+    $len = $masks = $data = $decoded = null;
+    $len = ord($buffer[1]) &amp; 127;
+
+    if ($len === 126)  {
+        $masks = substr($buffer, 4, 4);
+        $data = substr($buffer, 8);
+    } else if ($len === 127)  {
+        $masks = substr($buffer, 10, 4);
+        $data = substr($buffer, 14);
+    } else  {
+        $masks = substr($buffer, 2, 4);
+        $data = substr($buffer, 6);
+    }
+    for ($index = 0; $index &lt; strlen($data); $index++) {
+        $decoded .= $data[$index] ^ $masks[$index % 4];
+    }
+    return $decoded;
+}</code></pre><p>这里涉及的编码问题在前文中已经提到过了，这里就不赘述，php对字符处理的函数太多了，也记得不是特别清楚，这里就没有详细的介绍解码程序，直接把客户端发送的数据原样返回，可以算是一个聊天室的模式吧。</p>
+<pre><code>// 返回帧信息处理
+function frame($s) {
+    $a = str_split($s, 125);
+    if (count($a) == 1) {
+        return &quot;\x81&quot; . chr(strlen($a[0])) . $a[0];
+    }
+    $ns = &quot;&quot;;
+    foreach ($a as $o) {
+        $ns .= &quot;\x81&quot; . chr(strlen($o)) . $o;
+    }
+    return $ns;
+}
+
+// 返回数据
+function send($client, $msg){
+    $msg = $this-&gt;frame($msg);
+    socket_write($client, $msg, strlen($msg));
+}</code></pre><p>客户端代码：</p>
+<pre><code>var ws = new WebSocket(&quot;ws://localhost:4000&quot;);
+ws.onopen = function(){
+    console.log(&quot;握手成功&quot;);
+};
+ws.onmessage = function(e){
+    console.log(&quot;message:&quot; + e.data);
+};
+ws.onerror = function(){
+    console.log(&quot;error&quot;);
+};
+ws.send(&quot;李靖&quot;);</code></pre><p>在连通之后发送数据，服务器原样返回：<br><img src="/images/php%E4%BD%BF%E7%94%A8websocket%E7%A4%BA%E4%BE%8B%E8%AF%A6%E8%A7%A3/7.jpg" alt=""></p>
+<h3 id="二、注意问题"><a href="#二、注意问题" class="headerlink" title="二、注意问题"></a>二、注意问题</h3><p>1.websocket 版本问题</p>
+<p>客户端在握手时的请求中有Sec-WebSocket-Version: 13，这样的版本标识，这个是一个升级版本，现在的浏览器都是使用的这个版本。而以前的版本在数据加密的部分更加麻烦，它会发送两个key：</p>
+<pre><code>GET /chat HTTP/1.1
+Host: server.example.com
+Upgrade: websocket
+Connection: Upgrade
+Origin: http://www.jb51.net
+Sec-WebSocket-Protocol: chat, superchat
+Sec-WebSocket-Key1: xxxx
+Sec-WebSocket-Key2: xxxx</code></pre><p>如果是这种版本（比较老，已经没在使用了），需要通过下面的方式获取</p>
+<pre><code>function encry($key1,$key2,$l8b){ //Get the numbers preg_match_all(&#39;/([\d]+)/&#39;, $key1, $key1_num); preg_match_all(&#39;/([\d]+)/&#39;, $key2, $key2_num);
+
+$key1_num = implode($key1_num[0]);
+$key2_num = implode($key2_num[0]);
+//Count spaces
+preg_match_all(&#39;/([ ]+)/&#39;, $key1, $key1_spc);
+preg_match_all(&#39;/([ ]+)/&#39;, $key2, $key2_spc);
+
+if($key1_spc==0|$key2_spc==0){ $this-&gt;log(&quot;Invalid key&quot;);return; }
+//Some math
+$key1_sec = pack(&quot;N&quot;,$key1_num / $key1_spc);
+$key2_sec = pack(&quot;N&quot;,$key2_num / $key2_spc);
+
+return md5($key1_sec.$key2_sec.$l8b,1);
+}</code></pre><p>只能无限吐槽这种验证方式！相比 nodeJs 的 websocket 操作方式：</p>
+<pre><code>//服务器程序
+var crypto = require(&#39;crypto&#39;);
+var WS = &#39;258EAFA5-E914-47DA-95CA-C5AB0DC85B11&#39;;
+require(&#39;net&#39;).createServer(function(o){
+    var key;
+    o.on(&#39;data&#39;,function(e){
+        if(!key){
+            //握手
+            key = e.toString().match(/Sec-WebSocket-Key: (.+)/)[1];
+            key = crypto.createHash(&#39;sha1&#39;).update(key + WS).digest(&#39;base64&#39;);
+            o.write(&#39;HTTP/1.1 101 Switching Protocols\r\n&#39;);
+            o.write(&#39;Upgrade: websocket\r\n&#39;);
+            o.write(&#39;Connection: Upgrade\r\n&#39;);
+            o.write(&#39;Sec-WebSocket-Accept: &#39; + key + &#39;\r\n&#39;);
+            o.write(&#39;\r\n&#39;);
+        }else{
+            console.log(e);
+        };
+    });
+}).listen(8000);</code></pre><p>2.数据帧解析代码</p>
+<p>本文没有给出 decodeFrame 这样数据帧解析代码，前文中给出了数据帧的格式，解析纯属体力活。</p>
+<blockquote>
+<p>转自：<a href="http://www.jb51.net/article/48019.htm" target="_blank" rel="noopener">http://www.jb51.net/article/48019.htm</a><br>扩展：<a href="http://www.ruanyifeng.com/blog/2017/05/websocket.html" target="_blank" rel="noopener">阮一峰websocket教程</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2016/10/28/php%E4%BD%BF%E7%94%A8websocket%E7%A4%BA%E4%BE%8B%E8%AF%A6%E8%A7%A3/" data-id="ckcqdgkyp01cq9xlfewtvftel" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/WebSocket/" rel="tag">WebSocket</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/10/28/%E4%BD%BF%E7%94%A8Node-js-Socket-IO%E6%90%AD%E5%BB%BAWebSocket%E5%AE%9E%E6%97%B6%E5%BA%94%E7%94%A8/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          使用Node.js+Socket.IO搭建WebSocket实时应用
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/10/28/%E6%88%91%E5%81%9A%E7%9A%84%E4%B8%80%E4%B8%AAwebsocket%E7%9A%84demo-php-server/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">我做的一个websocket的demo(php server)</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

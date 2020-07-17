@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Vue 表单验证插件的写作过程 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="前言前段时间，老大搭好了Vue的开发环境，于是我们愉快地从JQ来到了Vue。这中间做的时候，在表单验证上做的不开心，看到vue的插件章节，感觉自己也能写一个，因此就自己开始写了一个表单验证插件va.js。当然为什么不找个插件呢？ vue-validator呀。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Vue 表单验证插件的写作过程">
+<meta property="og:url" content="http://moqiang02.github.io/2017/01/09/Vue%20%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81%E6%8F%92%E4%BB%B6%E7%9A%84%E5%86%99%E4%BD%9C%E8%BF%87%E7%A8%8B/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="前言前段时间，老大搭好了Vue的开发环境，于是我们愉快地从JQ来到了Vue。这中间做的时候，在表单验证上做的不开心，看到vue的插件章节，感觉自己也能写一个，因此就自己开始写了一个表单验证插件va.js。当然为什么不找个插件呢？ vue-validator呀。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/Vue%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81%E6%8F%92%E4%BB%B6%E7%9A%84%E5%86%99%E4%BD%9C%E8%BF%87%E7%A8%8B/1.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/Vue%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81%E6%8F%92%E4%BB%B6%E7%9A%84%E5%86%99%E4%BD%9C%E8%BF%87%E7%A8%8B/2.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/Vue%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81%E6%8F%92%E4%BB%B6%E7%9A%84%E5%86%99%E4%BD%9C%E8%BF%87%E7%A8%8B/3.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/Vue%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81%E6%8F%92%E4%BB%B6%E7%9A%84%E5%86%99%E4%BD%9C%E8%BF%87%E7%A8%8B/4.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/Vue%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81%E6%8F%92%E4%BB%B6%E7%9A%84%E5%86%99%E4%BD%9C%E8%BF%87%E7%A8%8B/5.jpg">
+<meta property="article:published_time" content="2017-01-09T02:30:07.000Z">
+<meta property="article:modified_time" content="2019-03-09T14:05:32.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta property="article:tag" content="Vue">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/Vue%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81%E6%8F%92%E4%BB%B6%E7%9A%84%E5%86%99%E4%BD%9C%E8%BF%87%E7%A8%8B/1.jpg">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Vue 表单验证插件的写作过程" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/01/09/Vue%20%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81%E6%8F%92%E4%BB%B6%E7%9A%84%E5%86%99%E4%BD%9C%E8%BF%87%E7%A8%8B/" class="article-date">
+  <time datetime="2017-01-09T02:30:07.000Z" itemprop="datePublished">2017-01-09</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/javascript/">javascript</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Vue 表单验证插件的写作过程
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>前段时间，老大搭好了Vue的开发环境，于是我们愉快地从JQ来到了Vue。这中间做的时候，在表单验证上做的不开心，看到vue的插件章节，感觉自己也能写一个，因此就自己开始写了一个表单验证插件va.js。当然为什么不找个插件呢？ vue-validator呀。</p>
+<a id="more"></a>
+<p>我想了下，一个是表单验证是个高度定制化的东西，这种网上找到的插件为了兼顾各个公司的需求，所以加了很多功能，这些我们不需要。事实证明，vue-validator有50kb，而我写的va.js只有8kb。</p>
+<p>另一个是，vue-validator的api我真的觉得长, 动不动就<code>v-validate:username=&quot;[&#39;required&#39;]&quot;</code>，这么一长串，而我设计的调用大概如——<code>v-va:Money</code></p>
+<p>当然，本文仅是展示下，如何写个满足自己公司需求的vue表单验证插件。下面介绍下思路。</p>
+<h3 id="一、表单验证模块的构成"><a href="#一、表单验证模块的构成" class="headerlink" title="一、表单验证模块的构成"></a>一、表单验证模块的构成</h3><p>任何表单验证模块都是由 配置——校验——报错——取值 这几部分构成的。</p>
+<ol>
+<li>配置： 配置规则 和配置报错，以及优先级</li>
+<li>校验： 有在 change 事件校验， 在点击提交按钮的时候校验， 当然也有在input事件取值的</li>
+<li>报错： 报错方式一般要分，报错的文字有模板，也有自定义的</li>
+<li>取值： 将通过验证的数据返还给开发者调用</li>
+</ol>
+<p>下面是我老大针对公司项目给我提出的要求</p>
+<ol>
+<li>集中式的管理 校验规则 和 报错模板。</li>
+<li>报错时机可选</li>
+<li>校验正确后的数据，已经打包成对象，可以直接用</li>
+<li>允许各个页面对规则进行覆盖，对报错信息进行自定义修改，以及允许ajax获取数据后，再对规则进行补充</li>
+<li>按顺序来校验，在第一个报错的框弹出错误</li>
+</ol>
+<p>我就很好奇地问， 为什么要这样子呢？然后老大就跟我一条一条解答：</p>
+<ol>
+<li>集中式管理规则，和报错模板的好处，就是规则可以全局通用，一改全改。老大跟我说，光是昵称的正则就改了三次。如果这些正则写在各个页面，o(￣ヘ￣o#)哼，你就要改N个页面了</li>
+<li>pc和移动的流程不一样，pc很多校验都要在change事件或者input事件就校验并报错了，而移动则一般是要到提交按钮再进行校验。所以写插件的时候要做好两手准备。然后，报错用的ui要可以支持我们现在用的layer插件。当然以后这个报错的ui也可能变，所以你懂滴。</li>
+<li>当然原来jq时代，我们的公用表单验证，就能验证完了，把数据都集合到一个对象里。这样ajax的时候，就不用再去取值了。你这个插件耶要达到这个效果</li>
+<li>原来jq的那个公用脚本，正则和报错都集中到一个地方去了，在很多地方已经很方便了。但是在一些页面需要改东西的时候还不够灵活。像RealName这个规则，最早是针对某个页面配置的，用的是后端接口上的字段名。另一个支付页，后端接口上的字段名改成了PayUser了，但是正则还是RealName的，原来我们是要复写一下RealName。这个就不太方便也不好看了。另外一个，支付金额，有最大值和最小值的限制，这个需要从后端获取的。你也要考虑这个情况。要做到各个页面上也能有一些灵活的地方可以修改规则，自定义报错等等。</li>
+<li>为什么要按顺序校验啊？你忘了上次牛哥让我们输入框，从上到下，按顺序报错。不然用户都不知道哪个地方错了。还有规则也是要按顺序的。哦哦哦。看来这次我放东西的时候，要用下数组了。尽量保持顺序。</li>
+</ol>
+<p>我听了之后，大致懂了，原来之前自己写的jq表单验证还有这么多不舒服的点。-_-|||接下来，是看看vue给我的好东西。让我来写</p>
+<h3 id="二、Vue-的插件怎么写"><a href="#二、Vue-的插件怎么写" class="headerlink" title="二、Vue 的插件怎么写"></a>二、Vue 的插件怎么写</h3><p>我一个vue小白，怎么就开始写vue插件了呢？那是因为想解决方案的时候，翻Vue文档翻到了这里<br><img src="/images/Vue%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81%E6%8F%92%E4%BB%B6%E7%9A%84%E5%86%99%E4%BD%9C%E8%BF%87%E7%A8%8B/1.jpg" alt=""><br>这些东东，等我写完va.js的时候，感觉尤大写的真的是很清楚了。</p>
+<p>其实我是想写个指令来完成表单验证的事的。结果发现可能有2-3个指令，而且要再<code>Vue.prototype</code>上定义些方法，好让各个子实例内部也能拓展规则。于是老大说，这就相当于插件了。这让我很是吃鲸。</p>
+<h4 id="va-js主要用的是-Vue指令"><a href="#va-js主要用的是-Vue指令" class="headerlink" title="va.js主要用的是 Vue指令"></a>va.js主要用的是 Vue指令</h4><p><img src="/images/Vue%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81%E6%8F%92%E4%BB%B6%E7%9A%84%E5%86%99%E4%BD%9C%E8%BF%87%E7%A8%8B/2.jpg" alt=""><br><img src="/images/Vue%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81%E6%8F%92%E4%BB%B6%E7%9A%84%E5%86%99%E4%BD%9C%E8%BF%87%E7%A8%8B/3.jpg" alt=""><br>Vue 文档真的写得很用心，但是我再补充一点吧<br><strong>vnode.context 就是Vue的实例</strong><br>我们做项目的时候，经常一个根组件上挂着N个子组件，子组件上又可能挂着N个子组件。<strong>vnode.context获取的实例，是绑定该指令的组件的实例。</strong>这个就相当好用了。你可以做很多事情</p>
+<h4 id="当然还用了点Vue-prototype"><a href="#当然还用了点Vue-prototype" class="headerlink" title="当然还用了点Vue.prototype"></a>当然还用了点Vue.prototype</h4><p><code>Vue.prototype.$method</code> 就是可以在各个组件上调用的方法。可以在组件内部用 <code>this.$method</code>调用的</p>
+<h3 id="三、具体实现的思路"><a href="#三、具体实现的思路" class="headerlink" title="三、具体实现的思路"></a>三、具体实现的思路</h3><p>核心思路如下图：<br><img src="/images/Vue%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81%E6%8F%92%E4%BB%B6%E7%9A%84%E5%86%99%E4%BD%9C%E8%BF%87%E7%A8%8B/4.jpg" alt=""><br>规则的构造函数</p>
+<pre><code>//va配置的构造函数
+function VaConfig(type, typeVal, errMsg, name, tag){
+    this.type = type, this.typeVal = typeVal, this.errMsg = errMsg, this.name = name, this.tag = tag
+}</code></pre><ol>
+<li>type: nonvoid(非空), reg(正则), limit(区间), equal(与某个input相等)，unique(不能相同)</li>
+<li>typeVal: 根据不同type设置不同的值</li>
+<li>errMsg: 自定义的报错信息</li>
+<li>name: 用来传ajax的字段，如Password, Username</li>
+<li>tag：用来报错的名字，如‘银行账号’，‘姓名’</li>
+</ol>
+<h4 id="设置了三种规则"><a href="#设置了三种规则" class="headerlink" title="设置了三种规则"></a>设置了三种规则</h4><p>1.默认规则： 只要绑定指令，就默认有的校验。 比如非空的校验。 可以额外加修饰符来去除<br>2.选项规则： 通过Vue指令的修饰符添加的规则。<br>3.自定义规则： Vue指令属性值上添加的规则。<br>同一个type的规则只存在一个，也就是说，如果type为reg(正则),那么会互相覆盖。<br>覆盖的优先级： 自定义规则 &gt; 选项规则 &gt; 默认规则</p>
+<p>思路讲的多了。也不知道怎么讲了，下面大家直接看源码把。</p>
+<h3 id="源码"><a href="#源码" class="headerlink" title="源码"></a>源码</h3><pre><code>/*
+*     流程： 绑定指令-&gt; 设置配置(vaConfig) -&gt; 校验(check) -&gt; 报错(showErr) 或 自定义报错
+ */
+
+var va = {};
+
+function unique(arr){
+    var hashTable = {}, newArr = [];
+    for(var i = 0;i &lt; arr.length;i++){
+        if(!hashTable[arr[i]]){
+            hashTable[arr[i]] = true;
+            newArr.push(arr[i]);
+        }
+    }
+    return newArr;
+}
+
+function addClass(dom, _class){
+    var hasClass = !!dom.className.match(new RegExp(&#39;(\\s|^)&#39; + _class + &#39;(\\s|$)&#39;))
+    if(!hasClass){
+        dom.className += &#39; &#39; + _class
+    }
+}
+
+//校验函数
+function check(v, conditions){
+    var res = 0;                                        //0代表OK, 若为数组代表是某个字段的错误
+    //验证函数
+    var cfg = {
+        //非空
+        nonvoid: (v, bool)=&gt;{
+            if(bool){
+                return v.trim() ? 0 : [&#39;nonvoid&#39;];
+            }else{
+                return 0;
+            }
+        },
+        reg:(v, reg)=&gt; reg.test(v) ? 0 : [&#39;reg&#39;],                //正则
+        limit:(v, interval)=&gt; (+v &gt;= interval[0] &amp;&amp; +v &lt;= interval[1]) ? 0 : [&#39;limit&#39;, interval],
+        equal: (v, target)=&gt;{                                                        //和什么相等
+            var _list = document.getElementsByName(target), _target
+            for(var i = 0;i &lt; _list.length;i++){
+                if(_list[i].className.indexOf(&#39;va&#39;) &gt; -1){
+                    _target = _list[i];
+                }
+            }
+            return (_target.value === v) ? 0 : [&#39;equal&#39;, _target.getAttribute(&#39;tag&#39;)]
+        },
+        unique:(v)=&gt;{
+            var _list = document.getElementsByClassName(&#39;unique&#39;),
+                    valList = [].map.call(_list, item=&gt;item.value)
+            return (unique(valList).length === valList.length) ? 0 : [&#39;unique&#39;]
+        }
+    }
+
+    for(var i = 0;i &lt; conditions.length;i++){
+        var condi = conditions[i],
+                type = condi.type,
+                typeVal = condi.typeVal
+        res = cfg[type](v, typeVal)
+        // console.log(res, v, type,typeVal)
+        //如果有自定义报错信息， 返回自定义的报错信息
+    console.log(res)
+        if(res){
+            res = condi.errMsg || res
+            break
+        }
+    }
+
+    return res;
+}
+
+function showErr(name, checkResult){
+    var type = checkResult[0],
+            ext = checkResult[1] || []
+
+    var ERR_MSG = {
+        nonvoid: `${name}不能为空`,
+        reg: `${name}格式错误`,
+        limit: `${name}必须在${ext[0]}与${ext[1]}之间`,
+        equal: `两次${ext}不相同`,
+        unique: `${name}重复`
+    }
+    //使用layer来报错，如果需要自定义报错方式，要把全文的layer集中起来包一层。
+    layer.msgWarn(ERR_MSG[type])
+}
+
+/**
+ * [VaConfig va配置的构造函数]
+ * @param {[string]} type    [校验类型，如reg, limit等等]
+ * @param {[*]} typeVal             [根据校验类型配置的值]
+ * @param {[string]} errMsg  [报错信息]
+ * @param {[string]} name    [用以ajax的字段名]
+ * @param {[string]} tag     [中文名，用以报错]
+ */
+function VaConfig(type, typeVal, errMsg, name, tag){
+    this.type = type, this.typeVal = typeVal, this.errMsg = errMsg, this.name = name, this.tag = tag
+}
+//用来剔除重复的规则，以及规则的覆盖。默认后面的取代前面
+Array.prototype.uConcat = function(arr){
+    var comb = this.concat(arr)
+            ,unique = {}
+            ,result = []
+
+    for(var i = 0;i &lt; comb.length;i++){
+        // console.log(i, comb[i])
+        var type = comb[i].type
+        if(unique[type]){
+            var index = unique[type].index
+            unique[type] = comb[i]
+            unique[type].index = index;
+        }else{
+            unique[type] = comb[i]
+            unique[type].index = i;
+        }
+    }
+
+    for(var i= 0;i &lt; 100;i++){
+        for(var item in unique){
+            if(unique[item].index === i){
+                delete unique[item].index
+                result.push(unique[item])
+            }
+        }
+    }
+    return result
+}
+
+//正则表
+var regList = {
+    ImgCode: /^[0-9a-zA-Z]{4}$/,
+    SmsCode: /^\d{4}$/,
+    MailCode: /^\d{4}$/,
+    UserName: /^[\w|\d]{4,16}$/,
+    Password: /^[\w!@#$%^&amp;*.]{6,16}$/,
+    Mobile: /^1[3|5|8]\d{9}$/,
+    RealName: /^[\u4e00-\u9fa5 ]{2,10}$/,
+    BankNum: /^\d{10,19}$/,
+    Money: /^([1-9]\d*|0)$/,
+    Answer: /^\S+$/,
+    Mail: /^([a-zA-Z0-9_\.\-])+\@(([a-zA-Z0-9\-])+\.)+([a-zA-Z0-9]{2,4})+$/
+}
+
+va.install = function(Vue, options){
+    Vue.directive(&#39;va&#39;,{
+        bind:function(el, binding, vnode){
+          var vm = vnode.context
+               ,name = binding.arg === &#39;EXTEND&#39; ? el.getAttribute(&#39;name&#39;) : binding.arg
+               ,tag = el.getAttribute(&#39;tag&#39;)
+               ,baseCfg = []                                        //默认的校验规则                         --不用写，默认存在的规则（如非空）
+               ,optionalConfig = []                                //用户选择的配置成套         --与name相关
+               ,customConfig = []                                    //用户自定义的规则（组件中） --bingding.value
+               ,option = binding.modifiers
+               ,regMsg = el.getAttribute(&#39;regMsg&#39;) || &#39;&#39;
+
+            var eazyNew = (type, typeVal) =&gt;{return new VaConfig(type, typeVal, &#39;&#39;, name, tag)}
+            var regNew = (typeVal) =&gt;{return new VaConfig(&#39;reg&#39;, typeVal, regMsg, name, tag)}    //正则的新建
+
+          el.className = &#39;va&#39; + vm._uid
+          el.name = name
+
+          vm.vaConfig || (vm.vaConfig = {})
+          var NON_VOID = eazyNew(&#39;nonvoid&#39;, true)
+
+          //默认非空,如果加了canNull的修饰符就允许为空
+          if(!option.canNull){
+              baseCfg.push(NON_VOID)
+          }
+
+          //需要立即校验的框
+          if(option.vanow){
+              el.addEventListener(&#39;change&#39;, function(){
+                    vm.vaResult || (vm.vaResult = {})
+                    vm.vaVal || (vm.vaVal = {})
+                    var value = el.value,
+                            conditions = vm.vaConfig[name],
+                            para = el.getAttribute(&#39;va-para&#39;)                //传给回调的参数
+
+                    //如果允许为空的此时为空，不校验
+                    if(value === &#39;&#39; &amp;&amp; option.canNull){
+                        vm.vaVal[name] = value
+                        return
+                    }
+
+                    vm.vaResult[name] = check(value, conditions);
+                    var _result = vm.vaResult[name]
+                    if(_result){
+                        //如果返回的是字符串，则为自定义报错； 如果是数组，则使用showErr 报错
+                        typeof _result === &#39;string&#39; ? layer.msgWarn(_result) : showErr(conditions[0].tag, _result)
+                        el.value = vm.vaVal[name] = &#39;&#39;
+                        return
+                    }
+                    vm.vaVal[name] = value
+                    vm.$vanow(para)                    //写在实例内部method的回调
+              })
+          }
+
+          //不能重复的
+          if(option.unique){
+              optionalConfig.push(eazyNew(&#39;unique&#39;, name))
+          }
+
+          //如果有在正则表里
+          var regOptions = Object.keys(option);
+          for(var i = 0;i &lt; regOptions.length;i++){
+              var regOption = regOptions[i]
+              if(regList[regOptions[i]]){
+                  optionalConfig.push(regNew(regList[regOption]))
+              }
+          }
+
+          //如果regList里有name对应的，直接就加进optionalConfig
+          if(regList[name]){
+              optionalConfig.push(regNew(regList[name]))
+          }
+
+          //用户自定义的规则
+          if(binding.value){
+              customConfig = binding.value.map(item=&gt;{
+                  let type = Object.keys(item)[0];
+                  if(type === &#39;reg&#39;){
+                      return regNew(item[type])
+                  }else{
+                      if(type === &#39;unique&#39;){
+                          addClass(el, &#39;unique&#39;)
+                      }
+                      return eazyNew(type, item[type])
+                  }
+              })
+          }
+
+          //规则由 默认规则 + 修饰符规则 + 写在属性的自定义规则 + 用户直接加到vm.vaConfig里的规则 合并（后面的同type规则会覆盖前面的）
+          vm.vaConfig[name] || (vm.vaConfig[name] = [])
+          vm.vaConfig[name] = baseCfg.uConcat(optionalConfig).uConcat(customConfig).uConcat(vm.vaConfig[name])
+      },
+    })
+
+    Vue.directive(&#39;va-check&#39;, {
+        bind:function(el, binding, vnode){
+            var vm = vnode.context
+            el.addEventListener(&#39;click&#39;, function(){
+                var domList = document.getElementsByClassName(&#39;va&#39; + vm._uid);
+                vm.vaResult || (vm.vaResult = {})
+                vm.vaVal || (vm.vaVal = {})
+
+                for(var i = 0;i &lt; domList.length;i++){
+                    var dom = domList[i],
+                            name = dom.name,
+                            value = dom.value,
+                            conditions = vm.vaConfig[name]
+
+                    var _result = check(value, conditions)
+                    //如果返回不为0,则有报错
+                    if(_result){
+                        //如果返回的是字符串，则为自定义报错； 如果是数组，则使用showErr 报错
+                        typeof _result === &#39;string&#39; ? layer.msgWarn(_result) : showErr(conditions[0].tag, _result)
+                        return
+                    }
+                    vm.vaVal[name] = value
+                }
+                //校验通过的回调
+                vm.$vaSubmit()
+                // layer.msgWarn(&#39;全部校验成功&#39;)
+                console.log(vm.vaVal)
+            })
+
+        }
+    })
+
+    Vue.directive(&#39;va-test&#39;,{
+        bind: function(el, binding, vnode){
+            var vm = vnode.context
+            el.addEventListener(&#39;click&#39;, function(){
+                vm.vaResult || (vm.vaResult = {})
+                vm.vaVal || (vm.vaVal = {})
+
+                var dom = document.getElementsByName(binding.arg)[0],
+                        name = dom.name,
+                      value = dom.value,
+                      conditions = vm.vaConfig[name]
+
+                var _result = check(value, conditions)
+                //如果返回不为0，则有报错
+        console.log(_result)
+                if(_result){
+                    //如果返回的是字符串，则为自定义报错； 如果是数组，则使用showErr 报错
+                    typeof _result === &#39;string&#39; ? layer.msgWarn(_result) : showErr(conditions[0].tag, _result)
+                    return
+                }
+
+                vm.vaVal[name] = value
+                var callback = Object.keys(binding.modifiers)[0]
+                vm[callback]()
+            })
+        }
+    })
+
+
+    /**
+   **  在实例的monuted周期使用 api设置自定义配置
+     */
+    Vue.prototype.VaConfig = VaConfig
+}
+
+module.exports = va</code></pre><p>现在项目已经用起来了。当然表单验证这种是高度定制化的。纯粹分享个过程和思路。也算我这个vue新手的一次阶段性成果吧。哈哈~</p>
+<h3 id="使用实例"><a href="#使用实例" class="headerlink" title="使用实例"></a>使用实例</h3><p><img src="/images/Vue%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81%E6%8F%92%E4%BB%B6%E7%9A%84%E5%86%99%E4%BD%9C%E8%BF%87%E7%A8%8B/5.jpg" alt=""><br>第一个框，加了两条指令</p>
+<ol>
+<li><code>v-va:Password</code> 这个代表使用配置表中password对应的配置（包括非空和正则，默认规则），同时应用Password作为校验成功获取的 数据对象的key</li>
+<li>tag为报错显示中此输入框的名字</li>
+</ol>
+<p>第二个框，为确认框，也加了两个指令<br>1.<code>v-va:checkPassword.Password = &quot;[{&#39;equal&#39;:&#39;Password&#39;}]&quot;</code><br>一般<code>v-va</code>后面的第一个字段为数据对象的key，他和正则对应的名字有可能不同。<br>这个字段如果和配置表中的配置匹配，那么自然应用配置。<br>如果不匹配，就要自己在后面用.的方式加配置（选项规则）。像这里的Password。</p>
+<p>最后面还有一个 属性值 <code>&quot;[{&#39;equal&#39;:&#39;Password&#39;}]&quot;</code>（自定义规则）。<br>这个地方用了数组，即会按这个数组的配置来进行校验。<br>同时这个数组有顺序，顺序代表规则的优先级。<br>这个配置代表，这个框必须和上面那个Password的框值相等，否则报错。<br>另外确认框不加入最后的结果数据对象。</p>
+<p>2.tag 用来作为报错信息的名字</p>
+<p>校验触发按钮 上面有一个指令 <code>v-va-check</code><br>1)用来触发校验<br>2)校验成功后，将数据对象存在实例的vaVal属性下</p>
+<h4 id="根据上面的实例"><a href="#根据上面的实例" class="headerlink" title="根据上面的实例"></a>根据上面的实例</h4><p>规则的优先级：<br>1.自定义规则 &gt; 选项规则 &gt; 默认规则<br>2.规则中的优先级依照数组顺序</p>
+<p>另外，可以看到为了使用者方便，我在我们团队中事先做了一些约定，并可能会用到 <code>v-va</code>、<code>v-va-check</code>、<code>tag</code>等指令，占用了实例的两个属性名<code>vaConfig</code>、<code>vaVal</code>。这些约定和设置可以使使用者使用方便（通过配置控制校验时机， 校验成功后自然生成通过的数据对象，自定义报错信息等等）。但是也减少了这个插件的普适性。</p>
+<p>此方案仅提供各位做思路参考。个人认为，表单验证是高度定制化的需求，尽量根据各个业务情况进行取舍。在我的方案中，并不像vue-validator一样做了脏校验。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2017/01/09/Vue%20%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81%E6%8F%92%E4%BB%B6%E7%9A%84%E5%86%99%E4%BD%9C%E8%BF%87%E7%A8%8B/" data-id="ckcqdgkt900yk9xlf3q562h7p" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Vue/" rel="tag">Vue</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2017/01/09/CentOS7%E5%AE%89%E8%A3%85LNMP%E7%8E%AF%E5%A2%83%EF%BC%88PHP7-MySQL5-7-Nginx1-10%EF%BC%89/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          CentOS7安装LNMP环境（PHP7+MySQL5.7+Nginx1.10）
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2017/01/05/%E5%A4%9A%E7%94%A8%E6%88%B7%E8%AE%A4%E8%AF%81%E5%8A%9F%E8%83%BD%E5%AE%9E%E7%8E%B0%E8%AF%A6%E8%A7%A3/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">多用户认证功能实现详解</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>RxJava 与 Retrofit 结合的最佳实践 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="RxJava和Retrofit也火了一段时间了，不过最近一直在学习ReactNative和Node相关的姿势，一直没有时间研究这些新东西，最近有个项目准备写，打算先用Android写一个Demo出来，却发现Android的世界发生了天翻地覆的变化，EventBus和OKHttp啥的都不见了，RxJava和Retrofit是什么鬼？">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RxJava 与 Retrofit 结合的最佳实践">
+<meta property="og:url" content="http://moqiang02.github.io/2016/04/23/RxJava-%E4%B8%8E-Retrofit-%E7%BB%93%E5%90%88%E7%9A%84%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="RxJava和Retrofit也火了一段时间了，不过最近一直在学习ReactNative和Node相关的姿势，一直没有时间研究这些新东西，最近有个项目准备写，打算先用Android写一个Demo出来，却发现Android的世界发生了天翻地覆的变化，EventBus和OKHttp啥的都不见了，RxJava和Retrofit是什么鬼？">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2016-04-23T15:59:15.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:08.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-RxJava-与-Retrofit-结合的最佳实践" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/04/23/RxJava-%E4%B8%8E-Retrofit-%E7%BB%93%E5%90%88%E7%9A%84%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5/" class="article-date">
+  <time datetime="2016-04-23T15:59:15.000Z" itemprop="datePublished">2016-04-23</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      RxJava 与 Retrofit 结合的最佳实践
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+<!-- 文章目录开始 -->
+
+<div id="toc" class="toc-article">
+<strong class="toc-title" style="cursor:pointer">contents</strong>
+<ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-RxJava如何与Retrofit结合"><span class="toc-number">1.</span> <span class="toc-text">1.RxJava如何与Retrofit结合</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-1-基本页面"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 基本页面</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-2-只用Retrofit"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 只用Retrofit</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-3-添加Rxjava"><span class="toc-number">1.3.</span> <span class="toc-text">1.3 添加Rxjava</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-4-将请求过程进行封装"><span class="toc-number">1.4.</span> <span class="toc-text">1.4 将请求过程进行封装</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-相同格式的Http请求数据该如何封装"><span class="toc-number">2.</span> <span class="toc-text">2.相同格式的Http请求数据该如何封装</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-相同格式的Http请求数据统一进行预处理"><span class="toc-number">3.</span> <span class="toc-text">3.相同格式的Http请求数据统一进行预处理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-如何取消一个Http请求-–-观察者之间的对决，Observer-VS-Subscriber"><span class="toc-number">4.</span> <span class="toc-text">4.如何取消一个Http请求 – 观察者之间的对决，Observer VS Subscriber</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#4-1-取消一个Http请求"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 取消一个Http请求</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-2-为什么会提到Oberver"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 为什么会提到Oberver</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-一个需要ProgressDialog的Subscriber该有的样子"><span class="toc-number">5.</span> <span class="toc-text">5.一个需要ProgressDialog的Subscriber该有的样子</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#5-1处理onNext"><span class="toc-number">5.1.</span> <span class="toc-text">5.1处理onNext</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5-2处理ProgressDialog"><span class="toc-number">5.2.</span> <span class="toc-text">5.2处理ProgressDialog</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#最后"><span class="toc-number">6.</span> <span class="toc-text">最后</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#最后的最后"><span class="toc-number">7.</span> <span class="toc-text">最后的最后</span></a></li></ol>
+</div>
+
+<!-- 文章目录结束 -->	  
+
+	  
+        <p>RxJava和Retrofit也火了一段时间了，不过最近一直在学习ReactNative和Node相关的姿势，一直没有时间研究这些新东西，最近有个项目准备写，打算先用Android写一个Demo出来，却发现Android的世界发生了天翻地覆的变化，EventBus和OKHttp啥的都不见了，RxJava和Retrofit是什么鬼？<a id="more"></a></p>
+<p>好吧，到Github上耐着性子看过了RxJava和Retrofit的介绍和几个Demo，原来Android的大神Jake Wharton为Retrofit这个项目贡献了这么多的代码，没有道理不用了。</p>
+<p>如果你对RxJava不熟悉请先看<a href="http://gank.io/post/560e15be2dca930e00da1083" target="_blank" rel="noopener">给 Android 开发者的 RxJava 详解</a>这篇文章。</p>
+<p>如果你对Retrofit不熟悉就先看<a href="http://square.github.io/retrofit" target="_blank" rel="noopener">Retrofit官网</a>。</p>
+<p>当然也有很多RxJava与Retrofit的文章，但是我觉得很多大家都很纠结的功能都没有被总结出来，所以才有了此篇文章。</p>
+<p>欢迎大家拍砖。</p>
+<p>接下来进入正文，我是从下面几个角度去思考RxJava与Retrofit结合的。</p>
+<ul>
+<li>RxJava如何与Retrofit结合</li>
+<li>相同格式的Http请求数据该如何封装</li>
+<li>相同格式的Http请求数据统一进行预处理</li>
+<li>如何取消一个Http请求 – 观察者之间的对决，Oberver VS Subscriber</li>
+<li>一个需要ProgressDialog的Subscriber该有的样子</li>
+</ul>
+<h3 id="1-RxJava如何与Retrofit结合"><a href="#1-RxJava如何与Retrofit结合" class="headerlink" title="1.RxJava如何与Retrofit结合"></a>1.RxJava如何与Retrofit结合</h3><h4 id="1-1-基本页面"><a href="#1-1-基本页面" class="headerlink" title="1.1 基本页面"></a>1.1 基本页面</h4><p>先扔出build.gradle文件的内容</p>
+<pre><code>dependencies {
+    compile fileTree(dir: &#39;libs&#39;, include: [&#39;*.jar&#39;])
+    testCompile &#39;junit:junit:4.12&#39;
+    compile &#39;com.android.support:appcompat-v7:23.2.0&#39;
+    compile &#39;io.reactivex:rxjava:1.1.0&#39;
+    compile &#39;io.reactivex:rxandroid:1.1.0&#39;
+    compile &#39;com.squareup.retrofit2:retrofit:2.0.0-beta4&#39;
+    compile &#39;com.squareup.retrofit2:converter-gson:2.0.0-beta4&#39;
+    compile &#39;com.squareup.retrofit2:adapter-rxjava:2.0.0-beta4&#39;
+    compile &#39;com.google.code.gson:gson:2.6.2&#39;
+    compile &#39;com.jakewharton:butterknife:7.0.1&#39;
+}</code></pre><p>也就是说本文是基于RxJava1.1.0和Retrofit 2.0.0-beta4来进行的。 添加rxandroid是因为rxjava中的线程问题。</p>
+<p>下面先搭建一个基本的页面，页面很简单，先来看文件目录结构<br>![](/images/RxJava 与 Retrofit 结合的最佳实践/1.jpg)</p>
+<p>activity_main.xml的代码如下：</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;RelativeLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;
+    xmlns:tools=&quot;http://schemas.android.com/tools&quot;
+    android:layout_width=&quot;match_parent&quot;
+    android:layout_height=&quot;match_parent&quot;
+    android:paddingBottom=&quot;@dimen/activity_vertical_margin&quot;
+    android:paddingLeft=&quot;@dimen/activity_horizontal_margin&quot;
+    android:paddingRight=&quot;@dimen/activity_horizontal_margin&quot;
+    android:paddingTop=&quot;@dimen/activity_vertical_margin&quot;
+    tools:context=&quot;.activity.MainActivity&quot;&gt;
+
+    &lt;Button
+        android:id=&quot;@+id/click_me_BN&quot;
+        android:layout_width=&quot;match_parent&quot;
+        android:layout_height=&quot;wrap_content&quot;
+        android:layout_alignParentBottom=&quot;true&quot;
+        android:padding=&quot;5dp&quot;
+        android:text=&quot;点我&quot;
+        android:textSize=&quot;16sp&quot;/&gt;
+    &lt;TextView
+        android:id=&quot;@+id/result_TV&quot;
+        android:layout_width=&quot;match_parent&quot;
+        android:layout_height=&quot;match_parent&quot;
+        android:layout_above=&quot;@id/click_me_BN&quot;
+        android:text=&quot;Hello World!&quot;
+        android:textSize=&quot;16sp&quot;/&gt;
+&lt;/RelativeLayout&gt;</code></pre><p>MainActivity.java的代码如下：</p>
+<pre><code>package com.queen.rxjavaretrofitdemo.activity;
+
+import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
+import android.widget.Button;
+import android.widget.TextView;
+
+import com.queen.rxjavaretrofitdemo.R;
+
+import butterknife.Bind;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
+
+public class MainActivity extends AppCompatActivity {
+
+    @Bind(R.id.click_me_BN)
+    Button clickMeBN;
+    @Bind(R.id.result_TV)
+    TextView resultTV;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        ButterKnife.bind(this);
+    }
+
+    @OnClick(R.id.click_me_BN)
+    public void onClick() {
+        getMovie();
+    }
+
+    //进行网络请求
+    private void getMovie(){
+
+    }
+}</code></pre><p>注意不要忘记加网络权限</p>
+<p><code>&lt;uses-permission android:name=&quot;android.permission.INTERNET&quot;/&gt;</code></p>
+<h4 id="1-2-只用Retrofit"><a href="#1-2-只用Retrofit" class="headerlink" title="1.2 只用Retrofit"></a>1.2 只用Retrofit</h4><p>我们准备在getMovie方法中进行网络请求，我们先来看看只使用Retrofit是如何进行的。</p>
+<p>我们使用豆瓣电影的Top250做测试连接，目标地址为<br><a href="https://api.douban.com/v2/movie/top250?start=0&amp;count=10" target="_blank" rel="noopener">https://api.douban.com/v2/movie/top250?start=0&amp;count=10</a></p>
+<p>至于返回的数据格式，大家自己访问下链接就看到了，太长就不放进来了。</p>
+<p>首先我们要根据返回的结果封装一个Entity，暂命名为MovieEntity，代码就不贴了。</p>
+<p>接下来我们要创建一个接口取名为MovieService，代码如下：</p>
+<pre><code>public interface MovieService {
+    @GET(&quot;top250&quot;)
+    Call&lt;MovieEntity&gt; getTopMovie(@Query(&quot;start&quot;) int start, @Query(&quot;count&quot;) int count);
+}</code></pre><p>回到MainActivity之中，我们来写getMovie方法的代码</p>
+<pre><code>//进行网络请求
+private void getMovie(){
+    String baseUrl = &quot;https://api.douban.com/v2/movie/&quot;;
+
+    Retrofit retrofit = new Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build();
+
+    MovieService movieService = retrofit.create(MovieService.class);
+    Call&lt;MovieEntity&gt; call = movieService.getTopMovie(0, 10);
+    call.enqueue(new Callback&lt;MovieEntity&gt;() {
+        @Override
+        public void onResponse(Call&lt;MovieEntity&gt; call, Response&lt;MovieEntity&gt; response) {
+            resultTV.setText(response.body().toString());
+        }
+
+        @Override
+        public void onFailure(Call&lt;MovieEntity&gt; call, Throwable t) {
+            resultTV.setText(t.getMessage());
+        }
+    });
+}</code></pre><p>以上为没有经过封装的、原生态的Retrofit写网络请求的代码。 我们可以封装创建Retrofit和service部分的代码，然后Activity用创建一个Callback作为参数给Call，这样Activity中只关注请求的结果，而且Call有cancel方法可以取消一个请求，好像没Rxjava什么事了，我觉得可以写到这就下班了~</p>
+<p>接下来我们要面对的问题是这样的 如果我的Http返回数据是一个统一的格式，例如</p>
+<pre><code>{
+ &quot;resultCode&quot;: 0,
+ &quot;resultMessage&quot;: &quot;成功&quot;,
+ &quot;data&quot;: {}
+}</code></pre><p>我们如何对返回结果进行一个统一的处理呢？</p>
+<p>另外，我的ProgressDialog的show方法应该在哪调用呢？看样子只能在getMovie()这个方法里面调用了，换个地方发出请求就要在对应的Listener里面写一遍show()的代码，其实挺闹心。</p>
+<p>而且错误请求我也想集中处理掉不要贴重复的代码。</p>
+<p>我们先来看结合了Rxjava之后，事情有没有变化的可能。当然即便是不用Rxjava，依旧能够做很多的封装，只是比较麻烦。</p>
+<p>如需查看项目代码 –&gt; 代码地址:<br><a href="https://github.com/tough1985/RxjavaRetrofitDemo" target="_blank" rel="noopener">https://github.com/tough1985/RxjavaRetrofitDemo</a><br>选择Tag -&gt; step1</p>
+<h4 id="1-3-添加Rxjava"><a href="#1-3-添加Rxjava" class="headerlink" title="1.3 添加Rxjava"></a>1.3 添加Rxjava</h4><p>Retrofit本身对Rxjava提供了支持。</p>
+<p>添加Retrofit对Rxjava的支持需要在Gradle文件中添加</p>
+<p><code>compile &#39;com.squareup.retrofit2:adapter-rxjava:2.0.0-beta4&#39;</code></p>
+<p>当然我们已经添加过了。</p>
+<p>然后在创建Retrofit的过程中添加如下代码：</p>
+<pre><code>Retrofit retrofit = new Retrofit.Builder()
+        .baseUrl(baseUrl)
+        .addConverterFactory(GsonConverterFactory.create())
+        .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
+        .build();</code></pre><p>这样一来我们定义的service返回值就不在是一个Call了，而是一个Observable</p>
+<p>重新定义MovieService</p>
+<pre><code>public interface MovieService {
+    @GET(&quot;top250&quot;)
+    Observable&lt;MovieEntity&gt; getTopMovie(@Query(&quot;start&quot;) int start, @Query(&quot;count&quot;) int count);
+}</code></pre><p>getMovie方法改为：</p>
+<pre><code>//进行网络请求
+private void getMovie(){
+    String baseUrl = &quot;https://api.douban.com/v2/movie/&quot;;
+
+    Retrofit retrofit = new Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .addConverterFactory(GsonConverterFactory.create())
+            .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
+            .build();
+
+    MovieService movieService = retrofit.create(MovieService.class);
+
+    movieService.getTopMovie(0, 10)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(new Subscriber&lt;MovieEntity&gt;() {
+                @Override
+                public void onCompleted() {
+                    Toast.makeText(MainActivity.this, &quot;Get Top Movie Completed&quot;, Toast.LENGTH_SHORT).show();
+                }
+
+                @Override
+                public void onError(Throwable e) {
+                    resultTV.setText(e.getMessage());
+                }
+
+                @Override
+                public void onNext(MovieEntity movieEntity) {
+                    resultTV.setText(movieEntity.toString());
+                }
+            });
+}</code></pre><p>这样基本上就完成了Retrofit和Rxjava的结合，但是我知道你们当然不会满意的。</p>
+<p>接下来我们把创建Retrofit的过程封装一下，然后希望Activity创建Subscriber对象传进来。</p>
+<p>如需查看项目代码 –&gt; 代码地址:<br><a href="https://github.com/tough1985/RxjavaRetrofitDemo" target="_blank" rel="noopener">https://github.com/tough1985/RxjavaRetrofitDemo</a><br>选择Tag -&gt; step2</p>
+<h4 id="1-4-将请求过程进行封装"><a href="#1-4-将请求过程进行封装" class="headerlink" title="1.4 将请求过程进行封装"></a>1.4 将请求过程进行封装</h4><p>创建一个对象HttpMethods</p>
+<pre><code>public class HttpMethods {
+
+    public static final String BASE_URL = &quot;https://api.douban.com/v2/movie/&quot;;
+
+    private static final int DEFAULT_TIMEOUT = 5;
+
+    private Retrofit retrofit;
+    private MovieService movieService;
+
+    //构造方法私有
+    private HttpMethods() {
+        //手动创建一个OkHttpClient并设置超时时间
+        OkHttpClient.Builder httpClientBuilder = new OkHttpClient.Builder();
+        httpClientBuilder.connectTimeout(DEFAULT_TIMEOUT, TimeUnit.SECONDS);
+
+        retrofit = new Retrofit.Builder()
+                .client(httpClientBuilder.build())
+                .addConverterFactory(GsonConverterFactory.create())
+                .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
+                .baseUrl(BASE_URL)
+                .build();
+
+        movieService = retrofit.create(MovieService.class);
+    }
+
+    //在访问HttpMethods时创建单例
+    private static class SingletonHolder{
+        private static final HttpMethods INSTANCE = new HttpMethods();
+    }
+
+    //获取单例
+    public static HttpMethods getInstance(){
+        return SingletonHolder.INSTANCE;
+    }
+
+    /**
+     * 用于获取豆瓣电影Top250的数据
+     * @param subscriber 由调用者传过来的观察者对象
+     * @param start 起始位置
+     * @param count 获取长度
+     */
+    public void getTopMovie(Subscriber&lt;MovieEntity&gt; subscriber, int start, int count){
+        movieService.getTopMovie(start, count)
+                .subscribeOn(Schedulers.io())
+                .unsubscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(subscriber);
+    }
+}</code></pre><p>用一个单例来封装该对象，在构造方法中创建Retrofit和对应的Service。 如果需要访问不同的基地址，那么你可能需要创建多个Retrofit对象，或者干脆根据不同的基地址封装不同的HttpMethod类。</p>
+<p>我们回头再来看MainActivity中的getMovie方法：</p>
+<pre><code>private void getMovie(){
+     subscriber = new Subscriber&lt;MovieEntity&gt;() {
+         @Override
+         public void onCompleted() {
+             Toast.makeText(MainActivity.this, &quot;Get Top Movie Completed&quot;, Toast.LENGTH_SHORT).show();
+         }
+
+         @Override
+         public void onError(Throwable e) {
+             resultTV.setText(e.getMessage());
+         }
+
+         @Override
+         public void onNext(MovieEntity movieEntity) {
+             resultTV.setText(movieEntity.toString());
+         }
+     };
+     HttpMethods.getInstance().getTopMovie(subscriber, 0, 10);
+}        </code></pre><p>其中subscriber是MainActivity的成员变量。</p>
+<p>如需查看项目代码 –&gt; 代码地址:<br><a href="https://github.com/tough1985/RxjavaRetrofitDemo" target="_blank" rel="noopener">https://github.com/tough1985/RxjavaRetrofitDemo</a><br>选择Tag -&gt; step3</p>
+<h3 id="2-相同格式的Http请求数据该如何封装"><a href="#2-相同格式的Http请求数据该如何封装" class="headerlink" title="2.相同格式的Http请求数据该如何封装"></a>2.相同格式的Http请求数据该如何封装</h3><p>第二部分和第三部分我参考了知乎上的一个问答： <a href="https://www.zhihu.com/question/39182019" target="_blank" rel="noopener">RxJava+Retrofit，在联网返回后如何先进行统一的判断？</a> 不过没有完整的示例，所以在这写一个完整的示例出来。</p>
+<p>这个段落我们来聊一下有些Http服务返回一个固定格式的数据的问题。 例如：</p>
+<pre><code>{
+ &quot;resultCode&quot;: 0,
+ &quot;resultMessage&quot;: &quot;成功&quot;,
+ &quot;data&quot;: {}
+}</code></pre><p>大部分的Http服务可能都是这样设置，resultCode和resultMessage的内容相对比较稳定，而data的内容变化多端，72变都不一定够变的，有可能是个User对象，也有可能是个订单对象，还有可能是个订单列表。 按照我们之前的用法，使用Gson转型需要我们在创建subscriber对象是指定返回值类型，如果我们对不同的返回值进行封装的话，那可能就要有上百个Entity了，看着明明是很清晰的结构，却因为data的不确定性无奈了起来。</p>
+<p>少年，不必烦恼，来来来~ 老衲赐你宝典葵花，老衲就是练了这个才出家。。。</p>
+<p>我们可以创建一个HttpResult类</p>
+<pre><code>public class HttpResult&lt;T&gt; {
+    private int resultCode;
+    private String resultMessage;
+
+    private T data;
+}</code></pre><p>如果data是一个User对象的话。那么在定义Service方法的返回值就可以写为</p>
+<p><code>Observable&lt;HttpResult&lt;User&gt;&gt;</code></p>
+<p>这样一来HttpResult就相当于一个包装类，将结果包装了起来，但是在使用的时候要给出一个明确的类型。</p>
+<p>在上面的示例中，我也创建了一个HttpResult类，用来模仿这个形式，将其中的Subject单独封装了起来。</p>
+<pre><code>public class HttpResult&lt;T&gt; {
+
+    //用来模仿resultCode和resultMessage
+    private int count;
+    private int start;
+    private int total;
+    private String title;
+
+    //用来模仿Data
+    private T subjects;
+}</code></pre><p>这样泛型的时候就要写为：</p>
+<p><code>Observable&lt;HttpResult&lt;List&lt;Subject&gt;&gt;&gt;</code></p>
+<p>如需查看项目代码 –&gt; 代码地址:<br><a href="https://github.com/tough1985/RxjavaRetrofitDemo" target="_blank" rel="noopener">https://github.com/tough1985/RxjavaRetrofitDemo</a><br>选择Tag -&gt; step4</p>
+<h3 id="3-相同格式的Http请求数据统一进行预处理"><a href="#3-相同格式的Http请求数据统一进行预处理" class="headerlink" title="3.相同格式的Http请求数据统一进行预处理"></a>3.相同格式的Http请求数据统一进行预处理</h3><p>既然我们有了相同的返回格式，那么我们可能就需要在获得数据之后进行一个统一的预处理。</p>
+<p>当接收到了一个Http请求结果之后，由于返回的结构统一为</p>
+<pre><code>{
+ &quot;resultCode&quot;: 0,
+ &quot;resultMessage&quot;: &quot;成功&quot;,
+ &quot;data&quot;: {}
+}</code></pre><p>我们想要对resultCode和resultMessage先做一个判断，因为如果<code>resultCode == 0</code>代表success，那么<code>resultCode != 0</code>时data一般都是null。</p>
+<p>Activity或Fragment对resultCode和resultMessage基本没有兴趣，他们只对请求状态和data数据感兴趣。</p>
+<p>基于这种考虑，我们在<code>resultCode != 0</code>的时候，抛出个自定义的ApiException。这样就会进入到subscriber的onError中，我们可以在onError中处理错误信息。</p>
+<p>另外，请求成功时，需要将data数据转换为目标数据类型传递给subscriber，因为，Activity和Fragment只想拿到和他们真正相关的数据。</p>
+<p>使用Observable的map方法可以完成这一功能。</p>
+<p>在HttpMethods中创建一个内部类HttpResultFunc，代码如下：</p>
+<pre><code>/**
+ * 用来统一处理Http的resultCode,并将HttpResult的Data部分剥离出来返回给subscriber
+ *
+ * @param &lt;T&gt; Subscriber真正需要的数据类型，也就是Data部分的数据类型
+ */
+private class HttpResultFunc&lt;T&gt; implements Func1&lt;HttpResult&lt;T&gt;, T&gt;{
+
+    @Override
+    public T call(HttpResult&lt;T&gt; httpResult) {
+        if (httpResult.getResultCode() != 0) {
+            throw new ApiException(httpResult.getResultCode());
+        }
+        return httpResult.getData();
+    }
+}</code></pre><p>然后我们的getTopMovie方法改为：</p>
+<pre><code>public void getTopMovie(Subscriber&lt;List&lt;Subject&gt;&gt; subscriber, int start, int count){
+
+    movieService.getTopMovie(start, count)
+            .map(new HttpResultFunc&lt;List&lt;Subject&gt;&gt;())
+            .subscribeOn(Schedulers.io())
+            .unsubscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(subscriber);
+}</code></pre><p>由于HttpResult中的泛型T就是我们希望传递给subscriber的数据类型，而数据可以通过httpResult的getData方法获得，这样我们就处理了泛型问题，错误处理问题，还有将请求数据部分剥离出来给subscriber</p>
+<p>这样我们只需要关注Data数据的类型，而不必在关心整个过程了。</p>
+<p>需要注意一点，就是在定义Service的时候，泛型是</p>
+<pre><code>HttpResult&lt;User&gt;
+//or
+HttpResult&lt;List&lt;Subject&gt;&gt;</code></pre><p>而在定义Subscriber的时候泛型是 <code>java User //or List&lt;Subject&gt;</code></p>
+<p>不然你会得到一个转型错误。</p>
+<p>如需查看项目代码 –&gt; 代码地址:<br><a href="https://github.com/tough1985/RxjavaRetrofitDemo" target="_blank" rel="noopener">https://github.com/tough1985/RxjavaRetrofitDemo</a><br>选择Tag -&gt; step5</p>
+<p>代码中我是用豆瓣数据模拟了HttpResult中的resultCode和resultMessage，与文档中的代码略有出入。</p>
+<h3 id="4-如何取消一个Http请求-–-观察者之间的对决，Observer-VS-Subscriber"><a href="#4-如何取消一个Http请求-–-观察者之间的对决，Observer-VS-Subscriber" class="headerlink" title="4.如何取消一个Http请求 – 观察者之间的对决，Observer VS Subscriber"></a>4.如何取消一个Http请求 – 观察者之间的对决，Observer VS Subscriber</h3><h4 id="4-1-取消一个Http请求"><a href="#4-1-取消一个Http请求" class="headerlink" title="4.1 取消一个Http请求"></a>4.1 取消一个Http请求</h4><p>这一部分我们来聊一下关于取消Http请求的事情，已经Oberver和Subscriber这两个体位我们哪个更容易给我们G点。</p>
+<p>如果没有使用Rxjava，那么Service返回的是一个Call，而这个Call对象有一个cancel方法可以用来取消Http请求。那么用了Rxjava之后，如何来取消一个请求呢？因为返回值是一个Observable。我们能做的似乎只有解除对Observable对象的订阅，其他的什么也做不了。</p>
+<p>好在Retrofit已经帮我们考虑到了这一点。 答案在RxJavaCallAdapterFactory这个类的源码中可以找到</p>
+<pre><code>static final class CallOnSubscribe&lt;T&gt; implements Observable.OnSubscribe&lt;Response&lt;T&gt;&gt; {
+  private final Call&lt;T&gt; originalCall;
+
+  CallOnSubscribe(Call&lt;T&gt; originalCall) {
+    this.originalCall = originalCall;
+  }
+
+  @Override public void call(final Subscriber&lt;? super Response&lt;T&gt;&gt; subscriber) {
+    // Since Call is a one-shot type, clone it for each new subscriber.
+    final Call&lt;T&gt; call = originalCall.clone();
+
+    // Attempt to cancel the call if it is still in-flight on unsubscription.
+    subscriber.add(Subscriptions.create(new Action0() {
+      @Override public void call() {
+        call.cancel();
+      }
+    }));
+
+    try {
+      Response&lt;T&gt; response = call.execute();
+      if (!subscriber.isUnsubscribed()) {
+        subscriber.onNext(response);
+      }
+    } catch (Throwable t) {
+      Exceptions.throwIfFatal(t);
+      if (!subscriber.isUnsubscribed()) {
+        subscriber.onError(t);
+      }
+      return;
+    }
+
+    if (!subscriber.isUnsubscribed()) {
+      subscriber.onCompleted();
+    }
+  }
+}</code></pre><p>我们看到call方法中，给subscriber添加了一个Subscription对象，Subscription对象很简单，主要就是取消订阅用的，如果你查看Subscriptions.create的源码，发现是这样的</p>
+<pre><code>public static Subscription create(final Action0 unsubscribe) {
+  return BooleanSubscription.create(unsubscribe);
+}</code></pre><p>利用了一个BooleanSubscription类来创建一个Subscription，如果你点进去看BooleanSubscription.create方法一切就清晰了，当接触绑定的时候，subscriber会调用Subscription的unsubscribe方法，然后触发创建Subscription时候的传递进来的Action0的call方法。RxJavaCallAdapterFactory帮我们给subscriber添加的是call.cancel()，总结起来就是说，我们在Activity或者Fragment中创建subscriber对象，想要取消请求的时候调用subscriber的unsubscribe方法就可以了。</p>
+<p>对不起这一节有太多的Subscriber和Subscription以及Observer和Observable，老衲当时看的时候也是不知道吐了多少次了，习惯了就好了。</p>
+<h4 id="4-2-为什么会提到Oberver"><a href="#4-2-为什么会提到Oberver" class="headerlink" title="4.2 为什么会提到Oberver"></a>4.2 为什么会提到Oberver</h4><p>提到Observer的过程是这样的。由于Subscriber一旦调用了unsubscribe方法之后，就没有用了。且当事件传递到onError或者onCompleted之后，也会自动的解绑。这样出现的一个问题就是每次发送请求都要创建新的Subscriber对象。</p>
+<p>这样我们就把注意力放到了Observer，Observer本身是一个接口，他的特性是不管你怎么用，都不会解绑，为什么呢？因为他没有解绑的方法。所以就达到了复用的效果，一开始我一直美滋滋的用Observer。事实上，如果你用的是Observer，在调用Observable对象的subscribe方法的时候，会自动的将Observer对象转换成Subscriber对象。</p>
+<p>下面是源码：</p>
+<pre><code>public final Subscription subscribe(final Observer&lt;? super T&gt; observer) {
+    if (observer instanceof Subscriber) {
+        return subscribe((Subscriber&lt;? super T&gt;)observer);
+    }
+    return subscribe(new Subscriber&lt;T&gt;() {
+
+        @Override
+        public void onCompleted() {
+            observer.onCompleted();
+        }
+
+        @Override
+        public void onError(Throwable e) {
+            observer.onError(e);
+        }
+
+        @Override
+        public void onNext(T t) {
+            observer.onNext(t);
+        }
+
+    });
+}</code></pre><p>后来发现了问题<br>问题1 无法取消，因为Observer没有unsubscribe方法<br>问题2 没有onStart方法 这个一会聊</p>
+<p>这两个问题是很痛苦的。所以，为了后面更好的高潮，我们还是选择用Subscriber。</p>
+<h3 id="5-一个需要ProgressDialog的Subscriber该有的样子"><a href="#5-一个需要ProgressDialog的Subscriber该有的样子" class="headerlink" title="5.一个需要ProgressDialog的Subscriber该有的样子"></a>5.一个需要ProgressDialog的Subscriber该有的样子</h3><p>我们希望有一个Subscriber在我们每次发送请求的时候能够弹出一个ProgressDialog，然后在请求接受的时候让这个ProgressDialog消失，同时在我们取消这个ProgressDialog的同时能够取消当前的请求，而我们只需要处理里面的数据就可以了。</p>
+<p>我们先来创建一个类，就叫ProgressSubscriber，让他继承Subscriber。</p>
+<p>Subscriber给我们提供了onStart、onNext、onError、onCompleted四个方法。</p>
+<p>其中只有onNext方法返回了数据，那我们自然希望能够在onNext里面处理数据相关的逻辑。</p>
+<p>onStart方法我们用来启动一个ProgressDialog。 onError方法我们集中处理错误，同时也停止ProgressDialog onComplated方法里面停止ProgressDialog</p>
+<p>其中我们需要解决两个问题</p>
+<p>问题1 onNext的处理<br>问题2 cancel掉一个ProgressDialog的时候取消请求</p>
+<p>我们先来解决问题1</p>
+<h4 id="5-1处理onNext"><a href="#5-1处理onNext" class="headerlink" title="5.1处理onNext"></a>5.1处理onNext</h4><p>我们希望这里能够让Activity或者Fragment自己处理onNext之后的逻辑，很自然的我们想到了用接口。问题还是泛型的问题，这里面我们必须指定明确的类型。所以接口还是需要泛型。</p>
+<p>我们先来定义一个接口，命名SubscriberOnNextListener</p>
+<pre><code>public interface SubscriberOnNextListener&lt;T&gt; {
+    void onNext(T t);
+}
+
+代码很简单。再来看一下ProgressSubscriber现在的代码
+
+public class ProgressSubscriber&lt;T&gt; extends Subscriber&lt;T&gt; {
+
+    private SubscriberOnNextListener mSubscriberOnNextListener;
+    private Context context;
+
+    public ProgressSubscriber(SubscriberOnNextListener mSubscriberOnNextListener, Context context) {
+        this.mSubscriberOnNextListener = mSubscriberOnNextListener;
+        this.context = context;
+    }
+
+    @Override
+    public void onStart() {
+    }
+
+    @Override
+    public void onCompleted() {
+        Toast.makeText(context, &quot;Get Top Movie Completed&quot;, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onError(Throwable e) {
+        Toast.makeText(context, &quot;error:&quot; + e.getMessage(), Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onNext(T t) {
+        mSubscriberOnNextListener.onNext(t);
+    }
+}</code></pre><p>我知道传Context不好，不过为了演示而已，大家可以自己封装一下Toast。</p>
+<p>MainActivity使用是这样的：</p>
+<p>先来定义一个SubscriberOnNextListener对象，可以在onCreate里面创建这个对象</p>
+<pre><code>private SubscriberOnNextListener getTopMovieOnNext;
+
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+    ButterKnife.bind(this);
+
+    getTopMovieOnNext = new SubscriberOnNextListener&lt;List&lt;Subject&gt;&gt;() {
+        @Override
+        public void onNext(List&lt;Subject&gt; subjects) {
+            resultTV.setText(subjects.toString());
+        }
+    };
+}</code></pre><p>getMovie方法这么写：</p>
+<pre><code>private void getMovie(){
+ HttpMethods.getInstance().getTopMovie(
+  new ProgressSubscriber(getTopMovieOnNext, MainActivity.this), 
+  0, 10);
+}</code></pre><p>这样Activity或Fragment就只需要关注拿到结果之后的逻辑了，其他的完全不用操心。</p>
+<p>如需查看项目代码 –&gt; 代码地址:<br><a href="https://github.com/tough1985/RxjavaRetrofitDemo" target="_blank" rel="noopener">https://github.com/tough1985/RxjavaRetrofitDemo</a><br>选择Tag -&gt; step6</p>
+<h4 id="5-2处理ProgressDialog"><a href="#5-2处理ProgressDialog" class="headerlink" title="5.2处理ProgressDialog"></a>5.2处理ProgressDialog</h4><p>我们希望当cancel掉ProgressDialog的时候，能够取消订阅，也就取消了当前的Http请求。 所以我们先来创建个接口来处理这件事情。</p>
+<pre><code>public interface ProgressCancelListener {
+    void onCancelProgress();
+}</code></pre><p>然后我们用ProgressSubscriber来实现这个接口，这样ProgressSubscriber就有了一个onCancelProgress方法，在这里面取消订阅。</p>
+<pre><code>@Override
+public void onCancelProgress() {
+    if (!this.isUnsubscribed()) {
+        this.unsubscribe();
+    }
+}</code></pre><p>然后我用了一个Handler来封装了ProgressDialog。</p>
+<pre><code>public class ProgressDialogHandler extends Handler {
+
+    public static final int SHOW_PROGRESS_DIALOG = 1;
+    public static final int DISMISS_PROGRESS_DIALOG = 2;
+
+    private ProgressDialog pd;
+
+    private Context context;
+    private boolean cancelable;
+    private ProgressCancelListener mProgressCancelListener;
+
+    public ProgressDialogHandler(Context context, ProgressCancelListener mProgressCancelListener,
+                                 boolean cancelable) {
+        super();
+        this.context = context;
+        this.mProgressCancelListener = mProgressCancelListener;
+        this.cancelable = cancelable;
+    }
+
+    private void initProgressDialog(){
+        if (pd == null) {
+            pd = new ProgressDialog(context);
+
+            pd.setCancelable(cancelable);
+
+            if (cancelable) {
+                pd.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                    @Override
+                    public void onCancel(DialogInterface dialogInterface) {
+                        mProgressCancelListener.onCancelProgress();
+                    }
+                });
+            }
+
+            if (!pd.isShowing()) {
+                pd.show();
+            }
+        }
+    }
+
+    private void dismissProgressDialog(){
+        if (pd != null) {
+            pd.dismiss();
+            pd = null;
+        }
+    }
+
+    @Override
+    public void handleMessage(Message msg) {
+        switch (msg.what) {
+            case SHOW_PROGRESS_DIALOG:
+                initProgressDialog();
+                break;
+            case DISMISS_PROGRESS_DIALOG:
+                dismissProgressDialog();
+                break;
+        }
+    }
+}</code></pre><p>Handler接收两个消息来控制显示Dialog还是关闭Dialog。 创建Handler的时候我们需要传入ProgressCancelListener的对象实例。</p>
+<p>最后贴出ProgressSubscriber的完整代码：</p>
+<pre><code>public class ProgressSubscriber&lt;T&gt; extends Subscriber&lt;T&gt; implements ProgressCancelListener{
+
+    private SubscriberOnNextListener mSubscriberOnNextListener;
+    private ProgressDialogHandler mProgressDialogHandler;
+
+    private Context context;
+
+    public ProgressSubscriber(SubscriberOnNextListener mSubscriberOnNextListener, Context context) {
+        this.mSubscriberOnNextListener = mSubscriberOnNextListener;
+        this.context = context;
+        mProgressDialogHandler = new ProgressDialogHandler(context, this, true);
+    }
+
+    private void showProgressDialog(){
+        if (mProgressDialogHandler != null) {
+            mProgressDialogHandler.obtainMessage(ProgressDialogHandler.SHOW_PROGRESS_DIALOG).sendToTarget();
+        }
+    }
+
+    private void dismissProgressDialog(){
+        if (mProgressDialogHandler != null) {
+            mProgressDialogHandler.obtainMessage(ProgressDialogHandler.DISMISS_PROGRESS_DIALOG).sendToTarget();
+            mProgressDialogHandler = null;
+        }
+    }
+
+    @Override
+    public void onStart() {
+        showProgressDialog();
+    }
+
+    @Override
+    public void onCompleted() {
+        dismissProgressDialog();
+        Toast.makeText(context, &quot;Get Top Movie Completed&quot;, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onError(Throwable e) {
+        dismissProgressDialog();
+        Toast.makeText(context, &quot;error:&quot; + e.getMessage(), Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onNext(T t) {
+        mSubscriberOnNextListener.onNext(t);
+    }
+
+    @Override
+    public void onCancelProgress() {
+        if (!this.isUnsubscribed()) {
+            this.unsubscribe();
+        }
+    }
+}</code></pre><p>目前为止，就封装完毕了。以上是我在用Rxjava和Retrofit过程中踩过的一些坑，最后整合出来的，由于没有在实际的项目中跑过，有问题的话希望能够提出来大家讨论一下，拍砖也欢迎。</p>
+<p>现在我们再写一个新的网络请求，步骤是这样的： 1. 在Service中定义一个新的方法。 2. 在HttpMethods封装对应的请求（代码基本可以copy） 3. 创建一个SubscriberOnNextListener处理请求数据并刷新UI。</p>
+<h3 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h3><p>如果你觉得写更改线程的代码觉得也很烦的话，可以把订阅这部分也封装起来：</p>
+<pre><code>public void getTopMovie(Subscriber&lt;List&lt;Subject&gt;&gt; subscriber, int start, int count){
+  //原来的样子
+// movieService.getTopMovie(start, count)
+// .map(new HttpResultFunc&lt;List&lt;Subject&gt;&gt;())
+// .subscribeOn(Schedulers.io())
+// .unsubscribeOn(Schedulers.io())
+// .observeOn(AndroidSchedulers.mainThread())
+// .subscribe(subscriber);
+
+ //修改之后的样子
+    Observable observable = movieService.getTopMovie(start, count)
+            .map(new HttpResultFunc&lt;List&lt;Subject&gt;&gt;());
+
+    toSubscribe(observable, subscriber);
+}
+
+//添加线程管理并订阅
+private void toSubscribe(Observable o, Subscriber s){
+     o.subscribeOn(Schedulers.io())
+            .unsubscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(s);
+}</code></pre><p>让你每次写一个请求的时候，写的代码尽量少，更多的精力放在业务逻辑本身。</p>
+<h3 id="最后的最后"><a href="#最后的最后" class="headerlink" title="最后的最后"></a>最后的最后</h3><p>如果你的httpResult格式本身没有问题，但是data中的内容是这样的：</p>
+<pre><code>{
+ &quot;resultCode&quot;: 0,
+ &quot;resultMessage&quot;: &quot;成功&quot;,
+ &quot;data&quot;: {&quot;user&quot;: {}, &quot;orderArray&quot;: []}
+}</code></pre><p>这样的情况还能不能继续使用这样的框架呢？ 我的解决方法是封装一个类，把user和orderArray作为类的属性。 但是如果你的服务器一会data本身是一个完整的user数据，一会又是这样： <code>&quot;data&quot;: {&quot;user&quot;: {}, &quot;orderArray&quot;: []}</code>那我觉得你有必要跟你的服务端好好聊聊了，请他吃顿饭和顿酒，大不了献出菊花就是了。</p>
+<p>但是如果服务已经上线了！！！</p>
+<p>对不起，骚年……</p>
+<p>老衲会在你坟前念300遍Thinking in java替你超度的~</p>
+<p>希望你用Retrofit和Rxjava的新体位能够享受到新的高潮。</p>
+<blockquote>
+<p>转自：<a href="http://gank.io/post/56e80c2c677659311bed9841" target="_blank" rel="noopener">http://gank.io/post/56e80c2c677659311bed9841</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2016/04/23/RxJava-%E4%B8%8E-Retrofit-%E7%BB%93%E5%90%88%E7%9A%84%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5/" data-id="ckcqdgks100uy9xlf7w4c8h2n" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/04/26/Android%E5%AE%A2%E6%88%B7%E7%AB%AF%E5%92%8C%E6%9C%8D%E5%8A%A1%E7%AB%AF%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8Token%E5%92%8CSession/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Android客户端和服务端如何使用Token和Session
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/04/23/RxJava%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF%E5%B0%8F%E7%BB%93/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">RxJava使用场景小结</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

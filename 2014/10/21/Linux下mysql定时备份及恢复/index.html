@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Linux下mysql定时备份及恢复 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="备份1.数据库定时备份工作脚本：(日期时间作为名称的压缩文件，解压开是sql脚本)&#x2F;root&#x2F;backup&#x2F;script&#x2F;backup_mysql.sh2.备份输出路径：&#x2F;root&#x2F;backup&#x2F;mysql3.执行计划任务的命令：crontab -e 打开计划任务编辑器增加如下内容（指定于周日和周四00:00开始执行backup_mysql.sh备份脚本）0 0 * * 0,4 root &#x2F;roo">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linux下mysql定时备份及恢复">
+<meta property="og:url" content="http://moqiang02.github.io/2014/10/21/Linux%E4%B8%8Bmysql%E5%AE%9A%E6%97%B6%E5%A4%87%E4%BB%BD%E5%8F%8A%E6%81%A2%E5%A4%8D/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="备份1.数据库定时备份工作脚本：(日期时间作为名称的压缩文件，解压开是sql脚本)&#x2F;root&#x2F;backup&#x2F;script&#x2F;backup_mysql.sh2.备份输出路径：&#x2F;root&#x2F;backup&#x2F;mysql3.执行计划任务的命令：crontab -e 打开计划任务编辑器增加如下内容（指定于周日和周四00:00开始执行backup_mysql.sh备份脚本）0 0 * * 0,4 root &#x2F;roo">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2014-10-21T14:28:12.000Z">
+<meta property="article:modified_time" content="2019-04-29T14:43:12.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Linux下mysql定时备份及恢复" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/10/21/Linux%E4%B8%8Bmysql%E5%AE%9A%E6%97%B6%E5%A4%87%E4%BB%BD%E5%8F%8A%E6%81%A2%E5%A4%8D/" class="article-date">
+  <time datetime="2014-10-21T14:28:12.000Z" itemprop="datePublished">2014-10-21</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/mysql/">mysql</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Linux下mysql定时备份及恢复
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <p>备份<br>1.数据库定时备份工作脚本：(日期时间作为名称的压缩文件，解压开是sql脚本)<br><code>/root/backup/script/backup_mysql.sh</code><br>2.备份输出路径：<br><code>/root/backup/mysql</code><br>3.执行计划任务的命令：<br><code>crontab -e</code> 打开计划任务编辑器<br>增加如下内容（指定于周日和周四00:00开始执行backup_mysql.sh备份脚本）<br><code>0 0 * * 0,4 root /root/backup/script/backup_mysql.sh</code><br>4.如果对库新增了数据，也可以手动执行一次备份<br>登陆192.168.20.101，命令行下<code>./root/backup/script/backup_mysql.sh</code> 执行脚本<br>5.文件生产在<code>/root/backup/mysql/年份日期时间.tar.gz</code></p>
+<a id="more"></a>
+<p>backup_mysql.sh脚本内容：</p>
+<pre><code class="bash">
+    #========================start shell 脚本============================  
+    #!/bin/bash     
+
+    #定义有备份的数据库名   
+    dbname=****    
+
+    #定义备份数据库时使用的用户名和密码   
+    dbuser=****  
+    dbpasswd=****    
+    #数据库备份的路径   
+    backuppath=/root/backup/mysql/   
+
+    #数据库备份日志文件存储的路径   
+    logfile=/root/backup/log/mysql.log     
+
+    #以当前的时间作为备份的数据库命名。   
+    dumpfile=$(date +%y%m%d%H%M)     
+
+    #这个函数用来备份数据库   
+    back_db() {      
+        #将备份的时间、数据库名存入日志      
+        echo &quot;------&quot;$(date +%Y-%m-%d%t%A%t%T)&quot; Beginning database &quot;${dbname}&quot; backup--------&quot; &gt;&gt;${logfile}       
+
+        #备份数据库，如果有错误信息也记入日志。默认utf8编码  
+        #--skip-opt (mysql服务运行时备份，请加此参数，防止表损坏，mysqldump可选参数)  
+        #--quick --force --routines --add-drop-database --add-drop-table  (存储过程也会一起备份，mysqldump可选参数)  
+        /usr/bin/mysqldump --skip-opt -u${dbuser} -p${dbpasswd} --default-character-set=utf8 --quick --force --routines --add-drop-database --add-drop-table ${dbname} &gt;${backuppath}${dumpfile}.sql 2&gt;&gt; ${logfile}       
+
+        #开始压缩数据文件     
+        echo $(date +%Y-%m-%d%t%A%t%T)&quot; Beginning zip ${backuppath}${dumpfile}.sql&quot; &gt;&gt;${logfile}   
+
+        #将备份数据库文件库压成ZIP文件，并删除先前的SQL文件。如果有错误信息也记入日志。     
+        tar zcvf ${dumpfile}.tar.gz ${dumpfile}.sql &amp;&amp; rm ${dumpfile}.sql 2&gt;&gt; ${logfile}       
+
+        #将压缩后的文件名存入日志。     
+        echo &quot;backup file name:&quot;${dumpfile}&quot;.tar.gz&quot; &gt;&gt;${logfile}     
+        echo -e &quot;-------&quot;$(date +%Y-%m-%d%t%A%t%T)&quot; Ending database &quot;${dbname}&quot; backup-------\n&quot; &gt;&gt;${logfile}    
+    }  
+
+    #发送邮件    
+    #cat ${logfile} | mutt -s &quot;Blog数据库备份&quot; -a ${dumpfile}.tar.gz 8chf@163.com }     
+
+    #这个函数用来删除90天前的数据，注意，这个脚本会删除当前目录下所有的早于七天前的文件   
+    rm_oldfile() {     
+        #查找出当前目录下90天前生成的文件，并将之删除     
+        find /root/backup/mysql -type f -mtime +90 -exec rm {} \;   
+    }     
+
+    #切换到数据库备份的目录。如果不做这个操作，压缩文件时有可能会错误   
+    cd ${backuppath}     
+
+    #运行备份数据函数   
+    back_db     
+
+    #运行删除文件函数   
+    rm_oldfile   
+
+    #====================end shell 脚本======================  </code></pre>
+<p>恢复备份的数据库<br>注：数据库备份为”年份日期时间.tar.gz”的压缩文件，解压后为sql文件。如：201206271633.tar.gz :代表2012年06月27日16点33分.tar.gz<br>1.winscp 登陆mysql服务器 取出<code>/root/backup/mysql/</code>下的最后备份的.tar.gz<br>2.解压<br>3.使用数据库管理工具navicat 新建一个“数据库”，然后打开，右键“表”，弹出菜单选择“运行批次任务文件”导入sql文件，选择utf8编码，执行即可还原表结构数据（默认utf8编码）。<br>test数据库为测试数据库，随便导入测试</p>
+<p>上面的脚本可能因为多余空格之类的原因无法运行，附上脚本下载链接：<a href="http://download.csdn.net/download/moqiang02/7742027" target="_blank" rel="noopener">点击此处下载</a></p>
+<hr>
+<p>如果备份失败，可能是由于目录不可写造成的<br>mysql是以mysql用户身份运行的，对<code>/root/backup/mysql</code>不可写也会失败<br><code>chmod 777 -R /root/backup/mysql</code> 或 <code>chown mysql.adm -R /root/backup/mysql</code> 尝试能否解决问题<br>给shell脚本增加可执行权限：<code>chmod +x ./backup_mysql.sh</code></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/10/21/Linux%E4%B8%8Bmysql%E5%AE%9A%E6%97%B6%E5%A4%87%E4%BB%BD%E5%8F%8A%E6%81%A2%E5%A4%8D/" data-id="ckcqdgkop00km9xlf9dmf1ml9" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/10/23/Python%E5%9C%A8Windows%E4%B8%8A%E7%9A%84%E5%AE%89%E8%A3%85/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Python在Windows上的安装
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/10/20/%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E5%85%AC%E4%BC%97%E5%8F%B7%E8%8F%9C%E5%8D%95%E7%9A%84%E5%89%8D%E7%BC%80%E5%9B%BE%E6%A0%87/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">实现微信公众号菜单的前缀图标</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

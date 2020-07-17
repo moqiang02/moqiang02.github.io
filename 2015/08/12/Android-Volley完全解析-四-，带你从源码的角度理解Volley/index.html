@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Android Volley完全解析(四)，带你从源码的角度理解Volley | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="经过前三篇文章的学习，Volley的用法我们已经掌握的差不多了，但是对于Volley的工作原理，恐怕有很多朋友还不是很清楚。因此，本篇文章中我们就来一起阅读一下Volley的源码，将它的工作流程整体地梳理一遍。同时，这也是Volley系列的最后一篇文章了。 其实，Volley的官方文档中本身就附有了一张Volley的工作流程图，如下图所示。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android Volley完全解析(四)，带你从源码的角度理解Volley">
+<meta property="og:url" content="http://moqiang02.github.io/2015/08/12/Android-Volley%E5%AE%8C%E5%85%A8%E8%A7%A3%E6%9E%90-%E5%9B%9B-%EF%BC%8C%E5%B8%A6%E4%BD%A0%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9A%84%E8%A7%92%E5%BA%A6%E7%90%86%E8%A7%A3Volley/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="经过前三篇文章的学习，Volley的用法我们已经掌握的差不多了，但是对于Volley的工作原理，恐怕有很多朋友还不是很清楚。因此，本篇文章中我们就来一起阅读一下Volley的源码，将它的工作流程整体地梳理一遍。同时，这也是Volley系列的最后一篇文章了。 其实，Volley的官方文档中本身就附有了一张Volley的工作流程图，如下图所示。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/Volley%E5%AE%8C%E5%85%A8%E8%A7%A3%E6%9E%90%E5%9B%9B%E5%B8%A6%E4%BD%A0%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9A%84%E8%A7%92%E5%BA%A6%E7%90%86%E8%A7%A3Volley/1.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/Volley%E5%AE%8C%E5%85%A8%E8%A7%A3%E6%9E%90%E5%9B%9B%E5%B8%A6%E4%BD%A0%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9A%84%E8%A7%92%E5%BA%A6%E7%90%86%E8%A7%A3Volley/1.jpg">
+<meta property="article:published_time" content="2015-08-12T15:04:10.000Z">
+<meta property="article:modified_time" content="2017-12-26T13:37:36.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/Volley%E5%AE%8C%E5%85%A8%E8%A7%A3%E6%9E%90%E5%9B%9B%E5%B8%A6%E4%BD%A0%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9A%84%E8%A7%92%E5%BA%A6%E7%90%86%E8%A7%A3Volley/1.jpg">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Android-Volley完全解析-四-，带你从源码的角度理解Volley" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/08/12/Android-Volley%E5%AE%8C%E5%85%A8%E8%A7%A3%E6%9E%90-%E5%9B%9B-%EF%BC%8C%E5%B8%A6%E4%BD%A0%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9A%84%E8%A7%92%E5%BA%A6%E7%90%86%E8%A7%A3Volley/" class="article-date">
+  <time datetime="2015-08-12T15:04:10.000Z" itemprop="datePublished">2015-08-12</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Android Volley完全解析(四)，带你从源码的角度理解Volley
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <p>经过前三篇文章的学习，Volley的用法我们已经掌握的差不多了，但是对于Volley的工作原理，恐怕有很多朋友还不是很清楚。因此，本篇文章中我们就来一起阅读一下Volley的源码，将它的工作流程整体地梳理一遍。同时，这也是Volley系列的最后一篇文章了。</p>
+<p>其实，Volley的官方文档中本身就附有了一张Volley的工作流程图，如下图所示。<a id="more"></a><br><img src="/images/Volley%E5%AE%8C%E5%85%A8%E8%A7%A3%E6%9E%90%E5%9B%9B%E5%B8%A6%E4%BD%A0%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9A%84%E8%A7%92%E5%BA%A6%E7%90%86%E8%A7%A3Volley/1.jpg" alt=""></p>
+<p>多数朋友突然看到一张这样的图，应该会和我一样，感觉一头雾水吧？没错，目前我们对Volley背后的工作原理还没有一个概念性的理解，直接就来看这张图自然会有些吃力。不过没关系，下面我们就去分析一下Volley的源码，之后再重新来看这张图就会好理解多了。</p>
+<p>说起分析源码，那么应该从哪儿开始看起呢？这就要回顾一下Volley的用法了，还记得吗，使用Volley的第一步，首先要调用Volley.newRequestQueue(context)方法来获取一个RequestQueue对象，那么我们自然要从这个方法开始看起了，代码如下所示：</p>
+<pre><code>    public static RequestQueue newRequestQueue(Context context) {  
+        return newRequestQueue(context, null);  
+    }  </code></pre><p>这个方法仅仅只有一行代码，只是调用了newRequestQueue()的方法重载，并给第二个参数传入null。那我们看下带有两个参数的newRequestQueue()方法中的代码，如下所示：</p>
+<pre><code>    public static RequestQueue newRequestQueue(Context context, HttpStack stack) {  
+        File cacheDir = new File(context.getCacheDir(), DEFAULT_CACHE_DIR);  
+        String userAgent = &quot;volley/0&quot;;  
+        try {  
+            String packageName = context.getPackageName();  
+            PackageInfo info = context.getPackageManager().getPackageInfo(packageName, 0);  
+            userAgent = packageName + &quot;/&quot; + info.versionCode;  
+        } catch (NameNotFoundException e) {  
+        }  
+        if (stack == null) {  
+            if (Build.VERSION.SDK_INT &gt;= 9) {  
+                stack = new HurlStack();  
+            } else {  
+                stack = new HttpClientStack(AndroidHttpClient.newInstance(userAgent));  
+            }  
+        }  
+        Network network = new BasicNetwork(stack);  
+        RequestQueue queue = new RequestQueue(new DiskBasedCache(cacheDir), network);  
+        queue.start();  
+        return queue;  
+    }  </code></pre><p>可以看到，这里在第10行判断如果stack是等于null的，则去创建一个HttpStack对象，这里会判断如果手机系统版本号是大于9的，则创建一个HurlStack的实例，否则就创建一个HttpClientStack的实例。实际上HurlStack的内部就是使用HttpURLConnection进行网络通讯的，而HttpClientStack的内部则是使用HttpClient进行网络通讯的，这里为什么这样选择呢？可以参考我之前翻译的一篇文章<a href="http://blog.csdn.net/guolin_blog/article/details/12452307" target="_blank" rel="noopener">Android访问网络，使用HttpURLConnection还是HttpClient？</a></p>
+<p>创建好了HttpStack之后，接下来又创建了一个Network对象，它是用于根据传入的HttpStack对象来处理网络请求的，紧接着new出一个RequestQueue对象，并调用它的start()方法进行启动，然后将RequestQueue返回，这样newRequestQueue()的方法就执行结束了。</p>
+<p>那么RequestQueue的start()方法内部到底执行了什么东西呢？我们跟进去瞧一瞧：</p>
+<pre><code>    public void start() {  
+        stop();  // Make sure any currently running dispatchers are stopped.  
+        // Create the cache dispatcher and start it.  
+        mCacheDispatcher = new CacheDispatcher(mCacheQueue, mNetworkQueue, mCache, mDelivery);  
+        mCacheDispatcher.start();  
+        // Create network dispatchers (and corresponding threads) up to the pool size.  
+        for (int i = 0; i &lt; mDispatchers.length; i++) {  
+            NetworkDispatcher networkDispatcher = new NetworkDispatcher(mNetworkQueue, mNetwork,  
+                    mCache, mDelivery);  
+            mDispatchers[i] = networkDispatcher;  
+            networkDispatcher.start();  
+        }  
+    }  </code></pre><p>这里先是创建了一个CacheDispatcher的实例，然后调用了它的start()方法，接着在一个for循环里去创建NetworkDispatcher的实例，并分别调用它们的start()方法。这里的CacheDispatcher和NetworkDispatcher都是继承自Thread的，而默认情况下for循环会执行四次，也就是说当调用了Volley.newRequestQueue(context)之后，就会有五个线程一直在后台运行，不断等待网络请求的到来，其中CacheDispatcher是缓存线程，NetworkDispatcher是网络请求线程。</p>
+<p>得到了RequestQueue之后，我们只需要构建出相应的Request，然后调用RequestQueue的add()方法将Request传入就可以完成网络请求操作了，那么不用说，add()方法的内部肯定有着非常复杂的逻辑，我们来一起看一下：</p>
+<pre><code>    public &lt;T&gt; Request&lt;T&gt; add(Request&lt;T&gt; request) {  
+        // Tag the request as belonging to this queue and add it to the set of current requests.  
+        request.setRequestQueue(this);  
+        synchronized (mCurrentRequests) {  
+            mCurrentRequests.add(request);  
+        }  
+        // Process requests in the order they are added.  
+        request.setSequence(getSequenceNumber());  
+        request.addMarker(&quot;add-to-queue&quot;);  
+        // If the request is uncacheable, skip the cache queue and go straight to the network.  
+        if (!request.shouldCache()) {  
+            mNetworkQueue.add(request);  
+            return request;  
+        }  
+        // Insert request into stage if there&#39;s already a request with the same cache key in flight.  
+        synchronized (mWaitingRequests) {  
+            String cacheKey = request.getCacheKey();  
+            if (mWaitingRequests.containsKey(cacheKey)) {  
+                // There is already a request in flight. Queue up.  
+                Queue&lt;Request&lt;?&gt;&gt; stagedRequests = mWaitingRequests.get(cacheKey);  
+                if (stagedRequests == null) {  
+                    stagedRequests = new LinkedList&lt;Request&lt;?&gt;&gt;();  
+                }  
+                stagedRequests.add(request);  
+                mWaitingRequests.put(cacheKey, stagedRequests);  
+                if (VolleyLog.DEBUG) {  
+                    VolleyLog.v(&quot;Request for cacheKey=%s is in flight, putting on hold.&quot;, cacheKey);  
+                }  
+            } else {  
+                // Insert &#39;null&#39; queue for this cacheKey, indicating there is now a request in  
+                // flight.  
+                mWaitingRequests.put(cacheKey, null);  
+                mCacheQueue.add(request);  
+            }  
+            return request;  
+        }  
+    }  </code></pre><p>可以看到，在第11行的时候会判断当前的请求是否可以缓存，如果不能缓存则在第12行直接将这条请求加入网络请求队列，可以缓存的话则在第33行将这条请求加入缓存队列。在默认情况下，每条请求都是可以缓存的，当然我们也可以调用Request的setShouldCache(false)方法来改变这一默认行为。</p>
+<p>OK，那么既然默认每条请求都是可以缓存的，自然就被添加到了缓存队列中，于是一直在后台等待的缓存线程就要开始运行起来了，我们看下CacheDispatcher中的run()方法，代码如下所示：</p>
+<pre><code>    public class CacheDispatcher extends Thread {  
+
+        ……  
+
+        @Override  
+        public void run() {  
+            if (DEBUG) VolleyLog.v(&quot;start new dispatcher&quot;);  
+            Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);  
+            // Make a blocking call to initialize the cache.  
+            mCache.initialize();  
+            while (true) {  
+                try {  
+                    // Get a request from the cache triage queue, blocking until  
+                    // at least one is available.  
+                    final Request&lt;?&gt; request = mCacheQueue.take();  
+                    request.addMarker(&quot;cache-queue-take&quot;);  
+                    // If the request has been canceled, don&#39;t bother dispatching it.  
+                    if (request.isCanceled()) {  
+                        request.finish(&quot;cache-discard-canceled&quot;);  
+                        continue;  
+                    }  
+                    // Attempt to retrieve this item from cache.  
+                    Cache.Entry entry = mCache.get(request.getCacheKey());  
+                    if (entry == null) {  
+                        request.addMarker(&quot;cache-miss&quot;);  
+                        // Cache miss; send off to the network dispatcher.  
+                        mNetworkQueue.put(request);  
+                        continue;  
+                    }  
+                    // If it is completely expired, just send it to the network.  
+                    if (entry.isExpired()) {  
+                        request.addMarker(&quot;cache-hit-expired&quot;);  
+                        request.setCacheEntry(entry);  
+                        mNetworkQueue.put(request);  
+                        continue;  
+                    }  
+                    // We have a cache hit; parse its data for delivery back to the request.  
+                    request.addMarker(&quot;cache-hit&quot;);  
+                    Response&lt;?&gt; response = request.parseNetworkResponse(  
+                            new NetworkResponse(entry.data, entry.responseHeaders));  
+                    request.addMarker(&quot;cache-hit-parsed&quot;);  
+                    if (!entry.refreshNeeded()) {  
+                        // Completely unexpired cache hit. Just deliver the response.  
+                        mDelivery.postResponse(request, response);  
+                    } else {  
+                        // Soft-expired cache hit. We can deliver the cached response,  
+                        // but we need to also send the request to the network for  
+                        // refreshing.  
+                        request.addMarker(&quot;cache-hit-refresh-needed&quot;);  
+                        request.setCacheEntry(entry);  
+                        // Mark the response as intermediate.  
+                        response.intermediate = true;  
+                        // Post the intermediate response back to the user and have  
+                        // the delivery then forward the request along to the network.  
+                        mDelivery.postResponse(request, response, new Runnable() {  
+                            @Override  
+                            public void run() {  
+                                try {  
+                                    mNetworkQueue.put(request);  
+                                } catch (InterruptedException e) {  
+                                    // Not much we can do about this.  
+                                }  
+                            }  
+                        });  
+                    }  
+                } catch (InterruptedException e) {  
+                    // We may have been interrupted because it was time to quit.  
+                    if (mQuit) {  
+                        return;  
+                    }  
+                    continue;  
+                }  
+            }  
+        }  
+    }  </code></pre><p>代码有点长，我们只挑重点看。首先在11行可以看到一个while(true)循环，说明缓存线程始终是在运行的，接着在第23行会尝试从缓存当中取出响应结果，如何为空的话则把这条请求加入到网络请求队列中，如果不为空的话再判断该缓存是否已过期，如果已经过期了则同样把这条请求加入到网络请求队列中，否则就认为不需要重发网络请求，直接使用缓存中的数据即可。之后会在第39行调用Request的parseNetworkResponse()方法来对数据进行解析，再往后就是将解析出来的数据进行回调了，这部分代码我们先跳过，因为它的逻辑和NetworkDispatcher后半部分的逻辑是基本相同的，那么我们等下合并在一起看就好了，先来看一下NetworkDispatcher中是怎么处理网络请求队列的，代码如下所示：</p>
+<pre><code>    public class NetworkDispatcher extends Thread {  
+        ……  
+        @Override  
+        public void run() {  
+            Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);  
+            Request&lt;?&gt; request;  
+            while (true) {  
+                try {  
+                    // Take a request from the queue.  
+                    request = mQueue.take();  
+                } catch (InterruptedException e) {  
+                    // We may have been interrupted because it was time to quit.  
+                    if (mQuit) {  
+                        return;  
+                    }  
+                    continue;  
+                }  
+                try {  
+                    request.addMarker(&quot;network-queue-take&quot;);  
+                    // If the request was cancelled already, do not perform the  
+                    // network request.  
+                    if (request.isCanceled()) {  
+                        request.finish(&quot;network-discard-cancelled&quot;);  
+                        continue;  
+                    }  
+                    addTrafficStatsTag(request);  
+                    // Perform the network request.  
+                    NetworkResponse networkResponse = mNetwork.performRequest(request);  
+                    request.addMarker(&quot;network-http-complete&quot;);  
+                    // If the server returned 304 AND we delivered a response already,  
+                    // we&#39;re done -- don&#39;t deliver a second identical response.  
+                    if (networkResponse.notModified &amp;&amp; request.hasHadResponseDelivered()) {  
+                        request.finish(&quot;not-modified&quot;);  
+                        continue;  
+                    }  
+                    // Parse the response here on the worker thread.  
+                    Response&lt;?&gt; response = request.parseNetworkResponse(networkResponse);  
+                    request.addMarker(&quot;network-parse-complete&quot;);  
+                    // Write to cache if applicable.  
+                    // TODO: Only update cache metadata instead of entire record for 304s.  
+                    if (request.shouldCache() &amp;&amp; response.cacheEntry != null) {  
+                        mCache.put(request.getCacheKey(), response.cacheEntry);  
+                        request.addMarker(&quot;network-cache-written&quot;);  
+                    }  
+                    // Post the response back.  
+                    request.markDelivered();  
+                    mDelivery.postResponse(request, response);  
+                } catch (VolleyError volleyError) {  
+                    parseAndDeliverNetworkError(request, volleyError);  
+                } catch (Exception e) {  
+                    VolleyLog.e(e, &quot;Unhandled exception %s&quot;, e.toString());  
+                    mDelivery.postError(request, new VolleyError(e));  
+                }  
+            }  
+        }  
+    }  </code></pre><p>同样地，在第7行我们看到了类似的while(true)循环，说明网络请求线程也是在不断运行的。在第28行的时候会调用Network的performRequest()方法来去发送网络请求，而Network是一个接口，这里具体的实现是BasicNetwork，我们来看下它的performRequest()方法，如下所示：</p>
+<pre><code>    public class BasicNetwork implements Network {  
+        ……  
+        @Override  
+        public NetworkResponse performRequest(Request&lt;?&gt; request) throws VolleyError {  
+            long requestStart = SystemClock.elapsedRealtime();  
+            while (true) {  
+                HttpResponse httpResponse = null;  
+                byte[] responseContents = null;  
+                Map&lt;String, String&gt; responseHeaders = new HashMap&lt;String, String&gt;();  
+                try {  
+                    // Gather headers.  
+                    Map&lt;String, String&gt; headers = new HashMap&lt;String, String&gt;();  
+                    addCacheHeaders(headers, request.getCacheEntry());  
+                    httpResponse = mHttpStack.performRequest(request, headers);  
+                    StatusLine statusLine = httpResponse.getStatusLine();  
+                    int statusCode = statusLine.getStatusCode();  
+                    responseHeaders = convertHeaders(httpResponse.getAllHeaders());  
+                    // Handle cache validation.  
+                    if (statusCode == HttpStatus.SC_NOT_MODIFIED) {  
+                        return new NetworkResponse(HttpStatus.SC_NOT_MODIFIED,  
+                                request.getCacheEntry() == null ? null : request.getCacheEntry().data,  
+                                responseHeaders, true);  
+                    }  
+                    // Some responses such as 204s do not have content.  We must check.  
+                    if (httpResponse.getEntity() != null) {  
+                      responseContents = entityToBytes(httpResponse.getEntity());  
+                    } else {  
+                      // Add 0 byte response as a way of honestly representing a  
+                      // no-content request.  
+                      responseContents = new byte[0];  
+                    }  
+                    // if the request is slow, log it.  
+                    long requestLifetime = SystemClock.elapsedRealtime() - requestStart;  
+                    logSlowRequests(requestLifetime, request, responseContents, statusLine);  
+                    if (statusCode &lt; 200 || statusCode &gt; 299) {  
+                        throw new IOException();  
+                    }  
+                    return new NetworkResponse(statusCode, responseContents, responseHeaders, false);  
+                } catch (Exception e) {  
+                    ……  
+                }  
+            }  
+        }  
+    }  </code></pre><p>这段方法中大多都是一些网络请求细节方面的东西，我们并不需要太多关心，需要注意的是在第14行调用了HttpStack的performRequest()方法，这里的HttpStack就是在一开始调用newRequestQueue()方法是创建的实例，默认情况下如果系统版本号大于9就创建的HurlStack对象，否则创建HttpClientStack对象。前面已经说过，这两个对象的内部实际就是分别使用HttpURLConnection和HttpClient来发送网络请求的，我们就不再跟进去阅读了，之后会将服务器返回的数据组装成一个NetworkResponse对象进行返回。</p>
+<p>在NetworkDispatcher中收到了NetworkResponse这个返回值后又会调用Request的parseNetworkResponse()方法来解析NetworkResponse中的数据，以及将数据写入到缓存，这个方法的实现是交给Request的子类来完成的，因为不同种类的Request解析的方式也肯定不同。还记得我们在上一篇文章中学习的自定义Request的方式吗？其中parseNetworkResponse()这个方法就是必须要重写的。</p>
+<p>在解析完了NetworkResponse中的数据之后，又会调用ExecutorDelivery的postResponse()方法来回调解析出的数据，代码如下所示：</p>
+<pre><code>    public void postResponse(Request&lt;?&gt; request, Response&lt;?&gt; response, Runnable runnable) {  
+        request.markDelivered();  
+        request.addMarker(&quot;post-response&quot;);  
+        mResponsePoster.execute(new ResponseDeliveryRunnable(request, response, runnable));  
+    }  </code></pre><p>其中，在mResponsePoster的execute()方法中传入了一个ResponseDeliveryRunnable对象，就可以保证该对象中的run()方法就是在主线程当中运行的了，我们看下run()方法中的代码是什么样的：</p>
+<pre><code>    private class ResponseDeliveryRunnable implements Runnable {  
+        private final Request mRequest;  
+        private final Response mResponse;  
+        private final Runnable mRunnable;  
+
+        public ResponseDeliveryRunnable(Request request, Response response, Runnable runnable) {  
+            mRequest = request;  
+            mResponse = response;  
+            mRunnable = runnable;  
+        }  
+
+        @SuppressWarnings(&quot;unchecked&quot;)  
+        @Override  
+        public void run() {  
+            // If this request has canceled, finish it and don&#39;t deliver.  
+            if (mRequest.isCanceled()) {  
+                mRequest.finish(&quot;canceled-at-delivery&quot;);  
+                return;  
+            }  
+            // Deliver a normal response or error, depending.  
+            if (mResponse.isSuccess()) {  
+                mRequest.deliverResponse(mResponse.result);  
+            } else {  
+                mRequest.deliverError(mResponse.error);  
+            }  
+            // If this is an intermediate response, add a marker, otherwise we&#39;re done  
+            // and the request can be finished.  
+            if (mResponse.intermediate) {  
+                mRequest.addMarker(&quot;intermediate-response&quot;);  
+            } else {  
+                mRequest.finish(&quot;done&quot;);  
+            }  
+            // If we have been provided a post-delivery runnable, run it.  
+            if (mRunnable != null) {  
+                mRunnable.run();  
+            }  
+       }  
+    }  </code></pre><p>代码虽然不多，但我们并不需要行行阅读，抓住重点看即可。其中在第22行调用了Request的deliverResponse()方法，有没有感觉很熟悉？没错，这个就是我们在自定义Request时需要重写的另外一个方法，每一条网络请求的响应都是回调到这个方法中，最后我们再在这个方法中将响应的数据回调到Response.Listener的onResponse()方法中就可以了。</p>
+<p>好了，到这里我们就把Volley的完整执行流程全部梳理了一遍，你是不是已经感觉已经很清晰了呢？对了，还记得在文章一开始的那张流程图吗，刚才还不能理解，现在我们再来重新看下这张图：<br><img src="/images/Volley%E5%AE%8C%E5%85%A8%E8%A7%A3%E6%9E%90%E5%9B%9B%E5%B8%A6%E4%BD%A0%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9A%84%E8%A7%92%E5%BA%A6%E7%90%86%E8%A7%A3Volley/1.jpg" alt=""></p>
+<p>其中蓝色部分代表主线程，绿色部分代表缓存线程，橙色部分代表网络线程。我们在主线程中调用RequestQueue的add()方法来添加一条网络请求，这条请求会先被加入到缓存队列当中，如果发现可以找到相应的缓存结果就直接读取缓存并解析，然后回调给主线程。如果在缓存中没有找到结果，则将这条请求加入到网络请求队列中，然后处理发送HTTP请求，解析响应结果，写入缓存，并回调主线程。</p>
+<p>怎么样，是不是感觉现在理解这张图已经变得轻松简单了？好了，到此为止我们就把Volley的用法和源码全部学习完了，相信你已经对Volley非常熟悉并可以将它应用到实际项目当中了，那么Volley完全解析系列的文章到此结束，感谢大家有耐心看到最后。</p>
+<blockquote>
+<p>转载请注明出处：<a href="http://blog.csdn.net/guolin_blog/article/details/17656437" target="_blank" rel="noopener">http://blog.csdn.net/guolin_blog/article/details/17656437</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2015/08/12/Android-Volley%E5%AE%8C%E5%85%A8%E8%A7%A3%E6%9E%90-%E5%9B%9B-%EF%BC%8C%E5%B8%A6%E4%BD%A0%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9A%84%E8%A7%92%E5%BA%A6%E7%90%86%E8%A7%A3Volley/" data-id="ckcqdgkjc002r9xlff6v40gpf" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/08/12/%E6%9C%80%E6%96%B0Volley%E6%A1%86%E6%9E%B6%E7%9A%84JAR%E6%96%87%E4%BB%B6%E7%94%9F%E6%88%90/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          最新Volley框架的JAR文件生成
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/08/12/Android-Volley%E5%AE%8C%E5%85%A8%E8%A7%A3%E6%9E%90-%E4%B8%89-%EF%BC%8C%E5%AE%9A%E5%88%B6%E8%87%AA%E5%B7%B1%E7%9A%84Request/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Android Volley完全解析(三)，定制自己的Request</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

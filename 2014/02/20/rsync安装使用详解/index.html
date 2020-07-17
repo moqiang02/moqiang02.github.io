@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>rsync安装使用详解 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="RSYNC软件介绍：rsync是类unix系统下的数据镜像备份工具，从软件的命名上就可以看出来了——remote sync。它的特性如下：  可以镜像保存整个目录树和文件系统。 可以很容易做到保持原来文件的权限、时间、软硬链接等等。 无须特殊权限即可安装。 优化的流程，文件传输效率高。 可以使用rcp、ssh等方式来传输文件，当然也可以通过直接的socket连接。 支持匿名传输，以方便进行网站镜象">
+<meta property="og:type" content="article">
+<meta property="og:title" content="rsync安装使用详解">
+<meta property="og:url" content="http://moqiang02.github.io/2014/02/20/rsync%E5%AE%89%E8%A3%85%E4%BD%BF%E7%94%A8%E8%AF%A6%E8%A7%A3/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="RSYNC软件介绍：rsync是类unix系统下的数据镜像备份工具，从软件的命名上就可以看出来了——remote sync。它的特性如下：  可以镜像保存整个目录树和文件系统。 可以很容易做到保持原来文件的权限、时间、软硬链接等等。 无须特殊权限即可安装。 优化的流程，文件传输效率高。 可以使用rcp、ssh等方式来传输文件，当然也可以通过直接的socket连接。 支持匿名传输，以方便进行网站镜象">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2014-02-20T14:53:13.000Z">
+<meta property="article:modified_time" content="2019-11-03T07:57:46.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta property="article:tag" content="集群">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-rsync安装使用详解" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/02/20/rsync%E5%AE%89%E8%A3%85%E4%BD%BF%E7%94%A8%E8%AF%A6%E8%A7%A3/" class="article-date">
+  <time datetime="2014-02-20T14:53:13.000Z" itemprop="datePublished">2014-02-20</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/linux/">linux</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      rsync安装使用详解
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+<!-- 文章目录开始 -->
+
+<div id="toc" class="toc-article">
+<strong class="toc-title" style="cursor:pointer">contents</strong>
+<ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、下载、安装rsync"><span class="toc-number">1.</span> <span class="toc-text">一、下载、安装rsync</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、配置rsync-server"><span class="toc-number">2.</span> <span class="toc-text">二、配置rsync server</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#三、启动rsync-server"><span class="toc-number">3.</span> <span class="toc-text">三、启动rsync server</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#四、加入rc-local"><span class="toc-number">4.</span> <span class="toc-text">四、加入rc.local</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#五、检查rsync"><span class="toc-number">5.</span> <span class="toc-text">五、检查rsync</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#六、配置rsync-client"><span class="toc-number">6.</span> <span class="toc-text">六、配置rsync client</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#七、iptables"><span class="toc-number">7.</span> <span class="toc-text">七、iptables</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#实例总结流程："><span class="toc-number">8.</span> <span class="toc-text">实例总结流程：</span></a></li></ol>
+</div>
+
+<!-- 文章目录结束 -->	  
+
+	  
+        <p>RSYNC软件介绍：<br>rsync是类unix系统下的数据镜像备份工具，从软件的命名上就可以看出来了——remote sync。它的特性如下：</p>
+<ul>
+<li>可以镜像保存整个目录树和文件系统。</li>
+<li>可以很容易做到保持原来文件的权限、时间、软硬链接等等。</li>
+<li>无须特殊权限即可安装。</li>
+<li>优化的流程，文件传输效率高。</li>
+<li>可以使用rcp、ssh等方式来传输文件，当然也可以通过直接的socket连接。</li>
+<li>支持匿名传输，以方便进行网站镜象。<a id="more"></a>
+
+</li>
+</ul>
+<p>rysnc的主页地址为：<br><a href="http://rsync.samba.org/" target="_blank" rel="noopener">http://rsync.samba.org/</a><br>目前最新版本为2.4.6。可以选择从原始网站下载：<br><a href="http://rsync.samba.org/ftp/rsync/" target="_blank" rel="noopener">http://rsync.samba.org/ftp/rsync/</a></p>
+<h3 id="一、下载、安装rsync"><a href="#一、下载、安装rsync" class="headerlink" title="一、下载、安装rsync"></a>一、下载、安装rsync</h3><pre><code class="bash">tar zxvf rsync-2.6.9.tar.gz  
+cd rsync-2.6.9  
+./configure --prefix=/usr/local/rsync  
+make   
+make install   </code></pre>
+<p>正常安装RH的时候是带RSYNC的，运行文件放在/usr/bin/rsync </p>
+<h3 id="二、配置rsync-server"><a href="#二、配置rsync-server" class="headerlink" title="二、配置rsync server"></a>二、配置rsync server</h3><p>1、启动RSYNC<br><code>vi /etc/xinetd.d/rsync</code></p>
+<pre><code class="ini">    service rsync  
+    {  
+            disable = no  # 把原来的YES改成NO
+            socket_type     = stream  
+            wait            = no  
+            user            = root  
+            server          = /usr/bin/rsync  
+            server_args     = --daemon  
+            log_on_failure  += USERID  
+    }  </code></pre>
+<p>随系统启动RSYNC<br><code>chkconfig rsync on</code></p>
+<p>2、配置<code>/etc/rsyncd.conf</code>(需要手动生成)<br>rsyncd.conf的参数写在上边就是全局参数和写在模块里的就是模块参数<br><code>vi /etc/rsyncd.conf</code>  </p>
+<p>【全局参数】</p>
+<pre><code>    uid = root                      //运行RSYNC守护进程的用户  
+    gid = root                      //运行RSYNC守护进程的组  
+    use chroot = no                 //不使用chroot  
+    max connections = 4             // 最大连接数为4  
+    strict modes =yes               //是否检查口令文件的权限  
+    port = 873                      //默认端口873  </code></pre><p>【模块参数】</p>
+<pre><code>    [backup]                     //这里是认证的模块名，在client端需要指定  
+    path = /home/backup/         //需要做镜像的目录,不可缺少！  
+    comment = This is a test     //这个模块的注释信息   
+    ignore errors                //可以忽略一些无关的IO错误  
+    read only = yes              // 只读   no：可读可写  
+    list = no                    //不允许列文件清单  
+    auth users = hening             //认证的用户名，这个名字是服务器端实实在在存在用户，如果没有这行则表明是匿名，此用户与系统无关  
+    secrets file = /etc/rsync.pas           //密码和用户名对比表，密码文件自己生成  
+    hosts allow = 192.168.1.1,10.10.10.10   //允许主机  
+    hosts deny = 0.0.0.0/0                  //禁止主机  
+    #transfer logging = yes  
+    注释：下面这三个文件是安装完RSYNC服务后自动生成的文件  
+    pid file = /var/run/rsyncd.pid      //pid文件的存放位置  
+    lock file = /var/run/rsync.lock     //锁文件的存放位置  
+    log file = /var/log/rsyncd.log      //日志记录文件的存放位置  </code></pre><p>3、配置rsync密码（在上边的配置文件中已经写好路径） <code>/etc/rsync.pas</code>（名字随便写，只要和上边配置文件里的一致即可），格式(一行一个用户)<br>账号：密码<br><code>vi /etc/rsync.pas</code><br>例子:<br><code>Hening:111111</code></p>
+<p>权限：因为rsync.pas存储了rsync服务的用户名和密码，所以非常重要。要将rsync.pas设置为root拥有, 且权限为600。</p>
+<pre><code>    cd /etc  
+    chown root.root rsync.pas   
+    chmod 600 rsync.pas  </code></pre><p>3.rsyncd.motd（配置欢迎信息，可有可无）<br><code>vi /etc/rsyncd.motd</code><br>rsyncd.motd记录了rsync服务的欢迎信息，你可以在其中输入任何文本信息，如：<br>Welcome to use the rsync services!</p>
+<p>4、让配置生效<br><code>service xinetd restart</code><br>如果报错：<code>xinetd: 未被识别的服务</code>，执行：<br><code>yum -y install xinetd</code> </p>
+<h3 id="三、启动rsync-server"><a href="#三、启动rsync-server" class="headerlink" title="三、启动rsync server"></a>三、启动rsync server</h3><p>RSYNC服务端启动的两种方法<br>1、启动rsync服务端（独立启动）<br><code>/usr/bin/rsync --daemon</code><br>2、启动rsync服务端 （有xinetd超级进程启动）<br><code>/etc/rc.d/init.d/xinetd reload</code><br>（reload一般只是从新读取一次配置文件。restart则是把进程停掉，从头启动一次。restart自然也就reload了。但是对于大型服务，restart可能不方便。）</p>
+<h3 id="四、加入rc-local"><a href="#四、加入rc-local" class="headerlink" title="四、加入rc.local"></a>四、加入rc.local</h3><p>在各种操作系统中，rc文件存放位置不尽相同，可以修改使系统启动时把<code>rsync --daemon</code>加载进去。<br><code>vi /etc/rc.local</code><br>加入一行<br><code>/usr/bin/rsync --daemon</code>  </p>
+<h3 id="五、检查rsync"><a href="#五、检查rsync" class="headerlink" title="五、检查rsync"></a>五、检查rsync</h3><pre><code>netstat -a | grep rsync  
+tcp        0      0 0.0.0.0:873                 0.0.0.0:*                   LISTEN    </code></pre><h3 id="六、配置rsync-client"><a href="#六、配置rsync-client" class="headerlink" title="六、配置rsync client"></a>六、配置rsync client</h3><p>1、设定密码<br><code>vi /etc/rsync.pas</code><br>111111  </p>
+<p>修改权限</p>
+<pre><code>    cd /etc  
+    chown root.root rsync.pas   
+    chmod 600 rsync.pas  </code></pre><p>2、client连接SERVER<br>从SERVER端取文件<br><code>/usr/bin/rsync -vzrtopg --progress --delete hening@192.168.0.217::backup /home/backup --password-file=/etc/rsync.pas</code><br>向SERVER端上传文件<br><code>/usr/bin/rsync -vzrtopg --progress --password-file=/root/rsync.pas  /home/backup hening@192.168.0.217::backup</code><br>这个命令将把本地机器<code>/home/backup</code>目录下的所有文件（含子目录）全部备份到RSYNC SERVER（172.20.0.6）的backup模块的设定的备份目录下。<br>请注意如果路径结束后面带有”/“,表示备份该目录下的东东，但不会创建该目录，如不带”/“则创建该目录。<br>RSYNC用法：</p>
+<pre><code>    rsync [OPTION]... [USER@]HOST::SRC  [DEST]              #从RSYNC SERVER备份文件到本地机器  
+    rsync [OPTION]... SRC [SRC]...      [USER@]HOST::DEST   #从本地机器备份文件到RSYNC SERVER  </code></pre><p>3、自动运行<br>1）vi /usr/local/rsync/time.sh     //制作脚本文件<br>把下边的内容复制进去</p>
+<pre><code>    #!/bin/bash  
+    /usr/bin/rsync -vzrtopg --progress --delete hening@192.168.0.217::backup /home/backup --password-file=/etc/rsync.pas  </code></pre><p>2) 定时执行</p>
+<pre><code>    crontab -e  
+    加入55 * * * * /usr/local/rsync/time.sh        //每55分运行一次time.sh脚本文件  </code></pre><h3 id="七、iptables"><a href="#七、iptables" class="headerlink" title="七、iptables"></a>七、iptables</h3><p><code>iptables -A INPUT -p tcp -s ! 11.22.33.44 --dport 873 -j DROP</code><br>如此， 只有 11.22.33.44 这个 client IP 能进入这台 rsync server。</p>
+<p>命令介绍：-rvlHpogDtS<br>rsync命令参数</p>
+<pre><code>-v表示verbose详细显示
+-z表示压缩
+-r表示recursive递归
+-t表示保持原文件创建时间
+-o表示保持原文件属主
+-p表示保持原文件的参数
+-g表示保持原文件的所属组
+-a存档模式
+-P表示代替-partial和-progress两者的选项功能
+-e ssh建立起加密的连接。
+--partial阻止rsync在传输中断时删除已拷贝的部分(如果在拷贝文件的过程中，传输被中断，rsync的默认操作是撤消前操作，即从目标机上
+删除已拷贝的部分文件。)
+--progress是指显示出详细的进度情况
+--delete是指如果服务器端删除了这一文件，那么客户端也相应把文件删除，保持真正的一致。
+--exclude不包含/ins目录
+--size-only 这个参数用在两个文件夹中的差别仅是源文件夹中有一些新文件，不存在重名且被修改过的文件，因为这种文件有可能会因为内容被修改可大小一样，而被略过。这个参数可以大大地提高同步的效率，因为它不需要检查同名文件的内容是否相同。
+--password-file来指定密码文件，内容包含server端指定认证用户的密码。这样就可以在脚本中使用而无需交互式地输入验证密码了，这里需要注意的是这份密码文件权限属性要设得只有属主可读。</code></pre><p>示例:</p>
+<pre><code>hening@192.168.0.217::backup</code></pre><p><code>hening</code>是指server端指定认证的用户<br><code>192.168.0.217</code>是指服务器端的ip<br><code>::backup</code> 表示服务器端需要同步的模块名称；<br><code>/home/quack/backup/$DATE</code>是同步后的文件指存放在本机的目录地址。<br><code>/var/log/rsync.$DATE</code>是同步后的日志文件存放在本机的目录地址。<br>注意:<br>不放<code>/</code>则目录名也包含mirror，放<code>/</code>则只有目录里面的东西mirror了</p>
+<p>详见：<a href="http://blog.csdn.net/moqiang02/article/details/37938059" target="_blank" rel="noopener">http://blog.csdn.net/moqiang02/article/details/37938059</a></p>
+<h3 id="实例总结流程："><a href="#实例总结流程：" class="headerlink" title="实例总结流程："></a>实例总结流程：</h3><p>1.配置主控端</p>
+<pre><code>    # vim /etc/rsyncd.conf  
+    ###################################  
+    uid = nobody  
+    gid = nobody  
+    use chroot = no  
+    max connections = 4  
+    stirict modes = yes  
+    port = 873  
+    [backup]  
+    path = /usr/local/test/  
+    comment = This is a test  
+    ignore errors  
+    read only = false  
+    list = no  
+    hosts allow = 192.168.0.11  
+    hosts deny = 0.0.0.0/0  
+    auth users = bakweb  
+    secrets file =/etc/rsyncd.pw  
+    pid file = /var/run/rsyncd.pid  
+    lock file = /var/run/rsync.lock  
+    log file = /var/log/rsyncd.log  
+    ###################################  
+    # vim /etc/rsyncd.pw  
+    ###################################  
+    bakweb:123456  
+    ###################################  
+    # cd /etc  
+    # chown root.root rsyncd.pw  
+    # chmod 600 rsyncd.pw  
+    启动rsync server  
+    # rsync --daemon  
+    查看端口873是否打开  
+    加入启动  
+    # echo &quot;rsync --daemon&quot; &gt;&gt;/etc/rc.local  
+    给/usr/local/test目录写权限  
+    # chown -R nobody.nobody /usr/local/test  
+    # chmod -R 770 /usr/local/test  </code></pre><p>主控配置完成。</p>
+<p>2.客户端配置</p>
+<pre><code>    # vim /etc/rsyncd.pw  
+    ####################################  
+    123456  
+    ####################################  
+    # chown root.root /etc/rsyncd.pw  
+    # chmod 600 /etc/rsyncd.pw  
+    再使用命令直接更新到服务器数据文件就不需要密码  
+    rsync -vzrtopg --progress --password-file=/etc/rsyncd.pw  /usr/local/bin/ bakweb@192.168.0.10::backup  </code></pre><p>注意：<br>1.这里的backup名字为主控conf配置里面的<code>[backup]</code>，一定要同名<br>2.bakweb为主控conf配置里面的bakweb，可以随意命名，不是系统用户。</p>
+<p>配置完了之后，可能会遇到一些权限问题。以下就一些常见的权限问题进行解答：<br>问题一：</p>
+<pre><code>@ERROR: chroot failed
+rsync error: error starting client-server protocol (code 5) at main.c(1522) [receiver=3.0.3]</code></pre><p>原因：<br>服务器端的目录不存在或无权限。<br>创建目录并修正权限可解决问题。</p>
+<p>问题二：</p>
+<pre><code>@ERROR: auth failed on module tee
+rsync error: error starting client-server protocol (code 5) at main.c(1522) [receiver=3.0.3]</code></pre><p>原因：<br>服务器端该模块（tee）需要验证用户名密码，但客户端没有提供正确的用户名密码，认证失败。<br>提供正确的用户名密码解决此问题。</p>
+<p>问题三：</p>
+<pre><code>@ERROR: Unknown module ‘tee_nonexists’
+rsync error: error starting client-server protocol (code 5) at main.c(1522) [receiver=3.0.3]</code></pre><p>原因：<br>服务器不存在指定模块。<br>提供正确的模块名或在服务器端修改成你要的模块以解决问题。</p>
+<p>测试<br>都配置完毕之后就是测试了。在FreeBSD机器上，输入命令<br><code>rsync -vzrtop --delete /home/andrewy/etc test@192.168.21.41::backup --password-file=/etc/rsyncd.password</code><br>查看同步效果。</p>
+<p>注意：我这里是直接以root进行操作。rsync以delete操作时要注意，它会完全同步这边的目录与服务器的目录中的文件，这样会产生一个后果，它会删掉服务器中多余的文件，这样做很危险，如果是线上机器，请慎之又慎，切记！</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/02/20/rsync%E5%AE%89%E8%A3%85%E4%BD%BF%E7%94%A8%E8%AF%A6%E8%A7%A3/" data-id="ckcqdgkzs01f79xlfgh169asf" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E9%9B%86%E7%BE%A4/" rel="tag">集群</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/02/20/rsync-inotify%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E7%9A%84%E5%AE%9E%E6%97%B6%E5%90%8C%E6%AD%A5%E6%9B%B4%E6%96%B0/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          rsync+inotify实现数据的实时同步更新
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/02/20/rsync-%E5%91%BD%E4%BB%A4%E4%B8%AD%E7%9A%84%E8%B7%AF%E5%BE%84%E6%96%9C%E7%BA%BF/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">rsync 命令中的路径斜线</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

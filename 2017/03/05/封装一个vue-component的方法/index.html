@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>封装一个vue component的方法 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="为什么选择自己封装第三方库最近几个月来我司把公司之前两三年的所以业务都用了vue重构了一遍，前台使用了vue+ssr，后台使用了vue+element，在此过程中包装和自己写了很多的vue component。其实vue 写component相当方便和简单的，github上有很多的vue component都只是简单的包装了一些jquery或者原生js的插件，但我个人是不太喜欢使用这些第三方封装的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="封装一个vue component的方法">
+<meta property="og:url" content="http://moqiang02.github.io/2017/03/05/%E5%B0%81%E8%A3%85%E4%B8%80%E4%B8%AAvue-component%E7%9A%84%E6%96%B9%E6%B3%95/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="为什么选择自己封装第三方库最近几个月来我司把公司之前两三年的所以业务都用了vue重构了一遍，前台使用了vue+ssr，后台使用了vue+element，在此过程中包装和自己写了很多的vue component。其实vue 写component相当方便和简单的，github上有很多的vue component都只是简单的包装了一些jquery或者原生js的插件，但我个人是不太喜欢使用这些第三方封装的">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-03-05T13:44:24.000Z">
+<meta property="article:modified_time" content="2019-03-09T14:06:12.000Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta property="article:tag" content="Vue">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-封装一个vue-component的方法" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/03/05/%E5%B0%81%E8%A3%85%E4%B8%80%E4%B8%AAvue-component%E7%9A%84%E6%96%B9%E6%B3%95/" class="article-date">
+  <time datetime="2017-03-05T13:44:24.000Z" itemprop="datePublished">2017-03-05</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/javascript/">javascript</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      封装一个vue component的方法
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <h3 id="为什么选择自己封装第三方库"><a href="#为什么选择自己封装第三方库" class="headerlink" title="为什么选择自己封装第三方库"></a>为什么选择自己封装第三方库</h3><p>最近几个月来我司把公司之前两三年的所以业务都用了vue重构了一遍，前台使用了vue+ssr，后台使用了vue+element，在此过程中包装和自己写了很多的vue component。其实vue 写component相当方便和简单的，github上有很多的vue component都只是简单的包装了一些jquery或者原生js的插件，但我个人是不太喜欢使用这些第三方封装的。</p>
+<a id="more"></a>
+<p>理由如下：</p>
+<ol>
+<li>很多第三方封装组件的时候参数配置项其实是有缺损的。如一些富文本组件，配置项远比你想想中的多得多。</li>
+<li>第三方组件的更新频率。很多第三方封装组件并不能一直和原始组件保持同步，万一原始组件更新了某个你需要的功能，但第三方并没有更新那岂不是很尴尬。</li>
+<li>灵活性和针对性。还是那富文本来说，我司有很多专门的编辑，所以富文本成了重中之重，我们需要图片上传七牛，需要打水印，需要很多针对业务的特殊需求，使用第三方包装的组件都是不合适的，基于第三方封装的组件是很难拓展的。</li>
+</ol>
+<p>所以我觉得大部分组件还是自己封装来的更方便和灵活一些。</p>
+<h3 id="动手开干"><a href="#动手开干" class="headerlink" title="动手开干"></a>动手开干</h3><p>接下来就来手把手教你如何改造包装一个js插件，只要几分钟就可以封装一个属于你的vue component。封装对象：<a href="https://github.com/inorganik/countUp.js" target="_blank" rel="noopener">countUp.js</a>，改造后结果<a href="https://github.com/PanJiaChen/vue-countTo" target="_blank" rel="noopener">vue-countTo</a></p>
+<p>首先我们用官方提供的vue-cli 来构建项目 这里选择了webpack-simple(组件比较简单，webpack-simple已经满足需求了)</p>
+<pre><code>$ npm install -g vue-cli
+$ vue init webpack-simple my-project
+$ cd my-project
+$ npm install</code></pre><p>安装countup.js</p>
+<pre><code>$ npm install countup.js
+$ npm run dev</code></pre><p>启动项目之后按照countup.js官方demo初始化插件</p>
+<h3 id="app-vue"><a href="#app-vue" class="headerlink" title="app.vue"></a>app.vue</h3><pre><code>&lt;template&gt;
+  &lt;span ref=&#39;countup&#39;&gt;&lt;/span&gt;
+&lt;/template&gt;
+
+&lt;script&gt;
+import CountUp from &#39;countup.js&#39;
+export default {
+  name: &#39;countup-demo&#39;,
+  data () {
+    return {
+      numAnim:null
+    }
+  },
+  mounted(){
+    this.initCountUp()
+  },
+  methods:{
+    initCountUp(){
+      this.numAnim = new CountUp(this.$refs.countup,0, 2017)
+      this.numAnim.start();
+    }
+  }
+}
+&lt;/script&gt;</code></pre><p>刷新页面，就这么简单，countUp.js已经生效了。<br>![](/images/封装一个vue component的方法/1.gif)<br>接下来查看countUp.js github发现它定义了如下可配置项目<br>![](/images/封装一个vue component的方法/2.png)<br>对应vue就是props，类型和初始化一目了然。</p>
+<pre><code>    props: {
+        start: {
+            type: Number,
+            default: 0
+        },
+        end: {
+            type: Number,
+            default: 2017
+        },
+        decimal: {
+            type: Number,
+            default: 0
+        },
+        duration: {
+            type: Number,
+            default: 2.5
+        },
+        options: {
+            type: Object
+        }
+    }</code></pre><p>之后再将countup之前写死的参数项替换为动态props就可以了</p>
+<pre><code>    this.numAnim = new CountUp(this.$refs.countup, this.start,
+        this.end,
+        this.decimal,
+        this.duration,
+        this.options
+    );</code></pre><p>使用组件</p>
+<pre><code>&lt;vuecountup class=&quot;myCounter&quot; :end=&quot;2500&quot; :duration=&quot;2.5&quot; :options=&quot;{useEasing : true,
+    useGrouping : true,
+    separator : &#39;,&#39;,
+    decimal : &#39;.&#39;,
+    prefix : &#39;&#39;,
+    suffix : &#39;&#39;}&quot;&gt;&lt;/vuecountup&gt;</code></pre><p>只要几分钟一个属于自己的原生组件就包装好了，就是这么简单。<a href="https://github.com/PanJiaChen/countUp-demo/blob/master/src/App.vue" target="_blank" rel="noopener">完整demo</a><br>这时候你如果觉得使用countUp.js 还有些不满足你的需求，那你可以选择自己来造轮子了。</p>
+<h3 id="造轮子篇"><a href="#造轮子篇" class="headerlink" title="造轮子篇"></a>造轮子篇</h3><p>首先当然是阅读<a href="https://github.com/inorganik/countUp.js/blob/master/countUp.js" target="_blank" rel="noopener">源码</a>了<br>其实源码也就两部分核心代码<br>第一部分主要是就是requestAnimationFrame，在游览器不支持requestAnimationFrame的情况下使用setTimeout来模拟，这段代码指的仔细阅读，自己平时的一些项目中也能借鉴使用。<br>第二部分就是<a href="https://github.com/inorganik/countUp.js/blob/master/countUp.js#L132" target="_blank" rel="noopener">count</a>函数<br>看懂这两部分之后造轮子就相当的简单了。<br>造轮子过程中发现countUp,并没有autoplayt这个参数项可以自动count，没事。。。我们可以自己来撸，我们首先定义autoplay这个props为布尔值，默认所有组件autoplay为true</p>
+<pre><code> props:{
+    autoplay: {
+      type: Boolean,
+      required: false,
+      default: true
+    }
+}</code></pre><p>定义好props之后在mounted生命周期内加一个判断就完事。</p>
+<pre><code>mounted() {
+    if (this.autoplay) {
+      this.start();
+    }
+  }</code></pre><p>我们的countUp组件可以自动count了！<br>![](/images/封装一个vue component的方法/3.gif)</p>
+<h3 id="上传NPM"><a href="#上传NPM" class="headerlink" title="上传NPM"></a>上传NPM</h3><p>在不跨项目的情况下之前说的已经满足需求了。这时候我说不，我想让世界上更多的人来使用我的东西，这时候就要上传NPM了。我们这里就要开始改一些配置项了。<br>我们新建一个index.js</p>
+<pre><code>    import CountTo from &#39;./vue-countTo.vue&#39;;
+    // 导出模块
+    export default CountTo;
+    //global 情况下 自动安装
+    if (typeof window !== &#39;undefined&#39; &amp;&amp; window.Vue) {
+      window.Vue.component(&#39;count-to&#39;, CountTo);</code></pre><p>我们也要改造一下webpack，因为不是所有使用你组件的人都是通过npm按住和import的很多人是通过<code>&lt;script&gt;</code>直接引入的,我们要将libraryTarget改为umd</p>
+<pre><code>    library: &#39;CountTo&#39;,
+    libraryTarget: &#39;umd&#39;,
+    umdNamedDefine: true</code></pre><p>大公搞成，现在只要发布到npm就可以了，首先注册一个npm<br>之后配置自己的package.json(注意填写version，每次发布的version不能相同；main为入口文件地址)<br>之后只要一个npm publish 你的项目就发到npm了，快让小伙伴们一起来用你的vue component吧！<br>![](/images/封装一个vue component的方法/4.png)</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>这里这是拿了一个很简单的countUp组件举了一个例子，有时候自己动手丰衣足食，很多项目自己封装比想象中简单的多。产品经理再也不会看到我因为这个插件怎么不支持这个功能而愁眉苦脸了，我们可以更好地满足产品了~~</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2017/03/05/%E5%B0%81%E8%A3%85%E4%B8%80%E4%B8%AAvue-component%E7%9A%84%E6%96%B9%E6%B3%95/" data-id="ckcqdgl6901tm9xlf6se89mou" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Vue/" rel="tag">Vue</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2017/03/15/%E6%B5%85%E8%B0%88web%E7%BD%91%E7%AB%99%E6%9E%B6%E6%9E%84%E6%BC%94%E5%8F%98%E8%BF%87%E7%A8%8B/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          浅谈web网站架构演变过程
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2017/02/26/%E5%9C%A8VirtualBox%E4%B8%AD%E4%B8%8E%E4%B8%BB%E6%9C%BA%E5%85%B1%E4%BA%AB%E6%96%87%E4%BB%B6%E5%A4%B9/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">在VirtualBox中与主机共享文件夹</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">29</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">54</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">89</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">14</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88%20Puppeteer/">结合项目来谈谈 Puppeteer</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/01/%E4%BD%BF%E7%94%A8Puppeteer%E4%BB%8E%E4%B8%80%E7%BB%84DOM%E8%8A%82%E7%82%B9%E4%B8%AD%E8%8E%B7%E5%8F%96%E6%9F%90%E4%B8%80%E5%B1%9E%E6%80%A7%E5%80%BC/">使用Puppeteer从一组DOM节点中获取某一属性值</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 12.86px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.14px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 10.71px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.57px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 11.43px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 11.43px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.43px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.14px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 13.57px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 12.86px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 10.71px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 11.43px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.86px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 10.71px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>
