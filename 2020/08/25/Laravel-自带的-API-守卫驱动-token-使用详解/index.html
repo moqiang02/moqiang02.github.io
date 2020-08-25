@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Laravel 自带的 API 守卫驱动 token 使用详解 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="在 Laravel 框架中，默认的用户认证守卫有两个，web 和 api，web 守卫默认的驱动是 session，而 api 守卫默认的驱动是 token。那么，该如何使用这个 token 驱动？">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Laravel 自带的 API 守卫驱动 token 使用详解">
+<meta property="og:url" content="http://moqiang02.github.io/2020/08/25/Laravel-%E8%87%AA%E5%B8%A6%E7%9A%84-API-%E5%AE%88%E5%8D%AB%E9%A9%B1%E5%8A%A8-token-%E4%BD%BF%E7%94%A8%E8%AF%A6%E8%A7%A3/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="在 Laravel 框架中，默认的用户认证守卫有两个，web 和 api，web 守卫默认的驱动是 session，而 api 守卫默认的驱动是 token。那么，该如何使用这个 token 驱动？">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-08-25T15:11:49.000Z">
+<meta property="article:modified_time" content="2020-08-25T15:22:38.387Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta property="article:tag" content="Laravel">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Laravel-自带的-API-守卫驱动-token-使用详解" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/08/25/Laravel-%E8%87%AA%E5%B8%A6%E7%9A%84-API-%E5%AE%88%E5%8D%AB%E9%A9%B1%E5%8A%A8-token-%E4%BD%BF%E7%94%A8%E8%AF%A6%E8%A7%A3/" class="article-date">
+  <time datetime="2020-08-25T15:11:49.000Z" itemprop="datePublished">2020-08-25</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Laravel 自带的 API 守卫驱动 token 使用详解
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+<!-- 文章目录开始 -->
+
+<div id="toc" class="toc-article">
+<strong class="toc-title" style="cursor:pointer">contents</strong>
+<ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#寻找-TokenGuard"><span class="toc-number">1.</span> <span class="toc-text">寻找 TokenGuard</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#解读-TokenGuard"><span class="toc-number">2.</span> <span class="toc-text">解读 TokenGuard</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#开始使用-token-进行-api-认证"><span class="toc-number">3.</span> <span class="toc-text">开始使用 token 进行 api 认证</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#添加数据表字段"><span class="toc-number">3.1.</span> <span class="toc-text">添加数据表字段</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#创建登录控制器"><span class="toc-number">3.2.</span> <span class="toc-text">创建登录控制器</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#添加登录路由"><span class="toc-number">4.</span> <span class="toc-text">添加登录路由</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#调试"><span class="toc-number">5.</span> <span class="toc-text">调试</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#总结"><span class="toc-number">6.</span> <span class="toc-text">总结</span></a></li></ol>
+</div>
+
+<!-- 文章目录结束 -->	  
+
+	  
+        <p>在 <code>Laravel</code> 框架中，默认的用户认证守卫有两个，<code>web</code> 和 <code>api</code>，<code>web</code> 守卫默认的驱动是 <code>session</code>，而 <code>api</code> 守卫默认的驱动是 <code>token</code>。那么，该如何使用这个 <code>token</code> 驱动？<a id="more"></a></p>
+<h2 id="寻找-TokenGuard"><a href="#寻找-TokenGuard" class="headerlink" title="寻找 TokenGuard"></a>寻找 TokenGuard</h2><p>通过 <code>Auth::guard()</code> 这个方法，可以追溯到 <code>token</code> 驱动对应的类。来看 <code>Illuminate\Auth\AuthManager</code> 中的代码：</p>
+<pre><code class="php"> /**
+     * Attempt to get the guard from the local cache.
+     *
+     * @param  string  $name
+     * @return \Illuminate\Contracts\Auth\Guard|\Illuminate\Contracts\Auth\StatefulGuard
+     */
+    public function guard($name = null)
+    {
+        $name = $name ?: $this-&gt;getDefaultDriver();
+
+        return $this-&gt;guards[$name] ?? $this-&gt;guards[$name] = $this-&gt;resolve($name);
+    }
+
+    /**
+     * Resolve the given guard.
+     *
+     * @param  string  $name
+     * @return \Illuminate\Contracts\Auth\Guard|\Illuminate\Contracts\Auth\StatefulGuard
+     *
+     * @throws \InvalidArgumentException
+     */
+    protected function resolve($name)
+    {
+        $config = $this-&gt;getConfig($name);
+
+        if (is_null($config)) {
+            throw new InvalidArgumentException(&quot;Auth guard [{$name}] is not defined.&quot;);
+        }
+
+        if (isset($this-&gt;customCreators[$config[&#39;driver&#39;]])) {
+            return $this-&gt;callCustomCreator($name, $config);
+        }
+
+        $driverMethod = &#39;create&#39;.ucfirst($config[&#39;driver&#39;]).&#39;Driver&#39;;
+
+        if (method_exists($this, $driverMethod)) {
+            return $this-&gt;{$driverMethod}($name, $config);
+        }
+
+        throw new InvalidArgumentException(&quot;Auth driver [{$config[&#39;driver&#39;]}] for guard [{$name}] is not defined.&quot;);
+    }</code></pre>
+<p>可以看到，默认情况下就会调用到 <code>createTokenDriver</code> 。来看看这个方法：</p>
+<pre><code class="php"> public function createTokenDriver($name, $config)
+ {
+     // The token guard implements a basic API token based guard implementation
+     // that takes an API token field from the request and matches it to the
+     // user in the database or another persistence layer where users are.
+     $guard = new TokenGuard(
+         $this-&gt;createUserProvider($config[&#39;provider&#39;] ?? null),
+         $this-&gt;app[&#39;request&#39;]
+     );
+
+     $this-&gt;app-&gt;refresh(&#39;request&#39;, $guard, &#39;setRequest&#39;);
+
+     return $guard;
+ }</code></pre>
+<p>显然，<code>api守卫</code>默认的驱动就是 <code>TokenGuard</code>。</p>
+<h2 id="解读-TokenGuard"><a href="#解读-TokenGuard" class="headerlink" title="解读 TokenGuard"></a>解读 TokenGuard</h2><pre><code class="php">/**
+     * Create a new authentication guard.
+     *
+     * @param  \Illuminate\Contracts\Auth\UserProvider  $provider
+     * @param  \Illuminate\Http\Request  $request
+     * @param  string  $inputKey
+     * @param  string  $storageKey
+     * @return void
+     */
+    public function __construct(UserProvider $provider, Request $request, $inputKey = &#39;api_token&#39;, $storageKey = &#39;api_token&#39;)
+    {
+        $this-&gt;request = $request;
+        $this-&gt;provider = $provider;
+        $this-&gt;inputKey = $inputKey;
+        $this-&gt;storageKey = $storageKey;
+    }
+
+    /**
+     * Get the currently authenticated user.
+     *
+     * @return \Illuminate\Contracts\Auth\Authenticatable|null
+     */
+    public function user()
+    {
+        // If we&#39;ve already retrieved the user for the current request we can just
+        // return it back immediately. We do not want to fetch the user data on
+        // every call to this method because that would be tremendously slow.
+        if (! is_null($this-&gt;user)) {
+            return $this-&gt;user;
+        }
+
+        $user = null;
+
+        $token = $this-&gt;getTokenForRequest();
+
+        if (! empty($token)) {
+            $user = $this-&gt;provider-&gt;retrieveByCredentials(
+                [$this-&gt;storageKey =&gt; $token]
+            );
+        }
+
+        return $this-&gt;user = $user;
+    }</code></pre>
+<p>从构造函数和 <code>user()</code> 方法中可以看出，默认使用</p>
+<pre><code class="php">[&#39;api_token&#39; =&gt; $token]</code></pre>
+<p>这个数组去获取用户，也就是说，在用户表中我们需要一个字段（默认 api_token）去存储标识用户的 token。</p>
+<h2 id="开始使用-token-进行-api-认证"><a href="#开始使用-token-进行-api-认证" class="headerlink" title="开始使用 token 进行 api 认证"></a>开始使用 token 进行 api 认证</h2><h3 id="添加数据表字段"><a href="#添加数据表字段" class="headerlink" title="添加数据表字段"></a>添加数据表字段</h3><pre><code class="php">&lt;?php
+
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
+
+class AddUsersApiTokenField extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        Schema::table(&#39;users&#39;, function (Blueprint $table) {
+            $table-&gt;string(&#39;api_token&#39;, 60)-&gt;unique()-&gt;nullable()-&gt;after(&#39;password&#39;);
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::table(&#39;users&#39;, function (Blueprint $table) {
+            $table-&gt;dropColumn(&#39;api_token&#39;);
+        });
+    }
+}</code></pre>
+<h3 id="创建登录控制器"><a href="#创建登录控制器" class="headerlink" title="创建登录控制器"></a>创建登录控制器</h3><p>这里不演示注册之类的，假设我们的 users 表中已经存在用户，先创建一个用于 api 登录的控制器。在每次登录的时候，更新一次用户的 api_token 。这里使用了 <code>ThrottlesLogins</code> ，用来控制登录的尝试次数。</p>
+<pre><code class="php">&lt;?php
+
+namespace App\Http\Controllers\Api;
+
+use Hash;
+use App\User;
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Illuminate\Foundation\Auth\ThrottlesLogins;
+use Illuminate\Validation\ValidationException;
+
+class LoginController extends Controller
+{
+    use ThrottlesLogins;
+
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\Response|void
+     * @throws ValidationException
+     */
+    public function login(Request $request)
+    {
+        $this-&gt;validateLogin($request);
+
+        if ($this-&gt;hasTooManyLoginAttempts($request)) {
+            return $this-&gt;sendLockoutResponse($request);
+        }
+
+        return $this-&gt;attempLogin($request);
+
+    }
+
+    /**
+     * @param Request $request
+     */
+    public function validateLogin(Request $request)
+    {
+        $this-&gt;validate($request, [
+            $this-&gt;username() =&gt; &#39;required|string&#39;,
+            &#39;password&#39; =&gt; &#39;required|string&#39;
+        ]);
+    }
+
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\Response|void
+     */
+    protected function attempLogin(Request $request)
+    {
+        $this-&gt;incrementLoginAttempts($request);
+
+        $user = User::where(&#39;email&#39;, $request-&gt;email)-&gt;first();
+
+        if (!$user || !Hash::check($request-&gt;password, $user-&gt;password)) {
+            return $this-&gt;sendFailedLoginResponse($request);
+        }
+
+        // 更新 api_key
+        $api_token = uniqid($user-&gt;id);
+        $user-&gt;api_token = $api_token;
+        $user-&gt;save();
+
+        return $this-&gt;sendLoginResponse($request, $user);
+    }
+
+    /**
+     * @param Request $request
+     */
+    protected function sendFailedLoginResponse(Request $request)
+    {
+        throw ValidationException::withMessages([
+            $this-&gt;username() =&gt; [trans(&#39;auth.failed&#39;)],
+        ]);
+    }
+
+    /**
+     * @param Request $request
+     * @param User $user
+     * @return \Illuminate\Http\Response
+     */
+    protected function sendLoginResponse(Request $request, User $user)
+    {
+        $this-&gt;clearLoginAttempts($request);
+
+        return \Response::make([
+            &#39;user&#39; =&gt; $user,
+            &#39;token&#39; =&gt; $user-&gt;api_token
+        ]);
+    }
+
+    public function username()
+    {
+        return &#39;email&#39;;
+    }
+}</code></pre>
+<h2 id="添加登录路由"><a href="#添加登录路由" class="headerlink" title="添加登录路由"></a>添加登录路由</h2><p>将 <code>routes\api.php</code> 修改如下：</p>
+<pre><code class="php">Route::namespace(&#39;Api&#39;)-&gt;group(function () {
+    Route::post(&#39;login&#39;, &#39;LoginController@login&#39;);
+}); # 登录路由
+
+Route::middleware(&#39;auth:api&#39;)-&gt;get(&#39;/user&#39;, function (Request $request) {
+    return $request-&gt;user();
+});
+</code></pre>
+<h2 id="调试"><a href="#调试" class="headerlink" title="调试"></a>调试</h2><p>测试之前先往 users 表中添加几个用户，以下是我的测试数据。</p>
+<p>图片丢失了，没办法</p>
+<p>可以看到登录成功并且返回了 token 。<br>接下去我们使用获取到的 token 请求需要登录的接口，默认有一个，就是 <code>/user</code>.</p>
+<p>图片丢失了，没办法</p>
+<p>ok~ 已经成功返回了数据，说明登录成功了！</p>
+<blockquote>
+<p>例子中，api_token 是通过 OAuth 2.0 Access Token 的形式传进去的，但这不是唯一的方法，可以查看 TokenGuard 中的 getTokenForRequest 这个方法，它告诉我们可以用四种不同的形式传入 api_token</p>
+</blockquote>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>默认的 api token 认证虽然在文档中没有提及如何使用，但是通过查看代码，也很容易使用。但是，在我们不重写或者扩展 <code>tokenGUard</code> 的情况下，api_token 简直就是裸奔，显然不可能就这样应用到项目中去。个人猜测，框架中提供这个功能是为了让我们更好的理解 api 认证的工作原理，方便我们开发自己需要的 guard ，而且官方文档也推荐我们使用 passport 或者 jwt 进行 api 认证。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2020/08/25/Laravel-%E8%87%AA%E5%B8%A6%E7%9A%84-API-%E5%AE%88%E5%8D%AB%E9%A9%B1%E5%8A%A8-token-%E4%BD%BF%E7%94%A8%E8%AF%A6%E8%A7%A3/" data-id="ckea3nla90005vllfg25m4j05" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Laravel/" rel="tag">Laravel</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2020/08/25/%E5%A6%82%E4%BD%95%E5%9C%A8windows%E5%AE%89%E8%A3%85php-redis%E6%89%A9%E5%B1%95/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">如何在windows安装php redis扩展</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">120</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">39</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">28</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">53</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">87</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">12</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/08/25/Laravel-%E8%87%AA%E5%B8%A6%E7%9A%84-API-%E5%AE%88%E5%8D%AB%E9%A9%B1%E5%8A%A8-token-%E4%BD%BF%E7%94%A8%E8%AF%A6%E8%A7%A3/">Laravel 自带的 API 守卫驱动 token 使用详解</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/25/%E5%A6%82%E4%BD%95%E5%9C%A8windows%E5%AE%89%E8%A3%85php-redis%E6%89%A9%E5%B1%95/">如何在windows安装php redis扩展</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/25/Laravel%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Laravel问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/24/GITHUB%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE%E7%B4%A2%E5%BC%95/">GITHUB开源项目索引</a>
+          </li>
+        
+          <li>
+            <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.57px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 16.43px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.86px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 11.43px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 19.29px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10.71px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 12.14px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.14px;">VMware</a> <a href="/tags/Vue/" style="font-size: 17.14px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.86px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 14.29px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 14.29px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 13.57px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.86px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.43px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.14px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 18.57px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.43px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15.71px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.86px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>

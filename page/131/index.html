@@ -59,6 +59,154 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-MySQL中Decimal类型和Float-Double等区别" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/02/22/MySQL%E4%B8%ADDecimal%E7%B1%BB%E5%9E%8B%E5%92%8CFloat-Double%E7%AD%89%E5%8C%BA%E5%88%AB/" class="article-date">
+  <time datetime="2014-02-22T12:51:45.000Z" itemprop="datePublished">2014-02-22</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/mysql/">mysql</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/02/22/MySQL%E4%B8%ADDecimal%E7%B1%BB%E5%9E%8B%E5%92%8CFloat-Double%E7%AD%89%E5%8C%BA%E5%88%AB/">MySQL中Decimal类型和Float Double等区别</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>MySQL中存在float，double等非标准数据类型，也有decimal这种标准数据类型。<br>其区别在于，<strong>float，double等非标准类型，在DB中保存的是近似值，而Decimal则以字符串的形式保存数值。</strong><br>float类型是可以存浮点数（即小数类型），但是float有个坏处，当你给定的数据是整数的时候，那么它就以整数给你处理。这样我们在存取货币值的时候自然遇到问题，我的default值为：0.00而实际存储是0，同样我存取货币为12.00，实际存储是12。<br>幸好mysql提供了两个数据类型：numeric和decimal，这两种数据类型可以轻松解决上面的问题：NUMERIC 和 DECIMAL 类型被 MySQL 以同样的类型实现，这在 SQL92 标准中是允许的。他们用于保存对准确精度有重要要求的值，例如与金钱有关的数据。</p>
+        
+          <p class="article-more-link">
+            <a href="/2014/02/22/MySQL%E4%B8%ADDecimal%E7%B1%BB%E5%9E%8B%E5%92%8CFloat-Double%E7%AD%89%E5%8C%BA%E5%88%AB/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/02/22/MySQL%E4%B8%ADDecimal%E7%B1%BB%E5%9E%8B%E5%92%8CFloat-Double%E7%AD%89%E5%8C%BA%E5%88%AB/" data-id="ckcqdgkpd00mn9xlf1gvs369b" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-实例说明optimize-table在优化mysql时很重要" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/02/22/%E5%AE%9E%E4%BE%8B%E8%AF%B4%E6%98%8Eoptimize-table%E5%9C%A8%E4%BC%98%E5%8C%96mysql%E6%97%B6%E5%BE%88%E9%87%8D%E8%A6%81/" class="article-date">
+  <time datetime="2014-02-22T12:51:36.000Z" itemprop="datePublished">2014-02-22</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/mysql/">mysql</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/02/22/%E5%AE%9E%E4%BE%8B%E8%AF%B4%E6%98%8Eoptimize-table%E5%9C%A8%E4%BC%98%E5%8C%96mysql%E6%97%B6%E5%BE%88%E9%87%8D%E8%A6%81/">实例说明optimize table在优化mysql时很重要</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>今天在看CU的时候，发现有人问有关optimize来表优化的问题，当年因为这个问题，困扰我很长一段时间，今天有空我把这个问题，用实际数据来展示出来，让大家可以亲眼来看看，optimize table的重要作用，而不是似是而非的估计了。</p>
+<h3 id="一，原始数据"><a href="#一，原始数据" class="headerlink" title="一，原始数据"></a>一，原始数据</h3><p>1，数据量</p>
+<pre><code class="sql">    ﻿﻿mysql&gt; select count(*) as total from ad_visit_history;  
+    +---------+  
+    | total   |  
+    +---------+  
+    | 1187096 |                      //总共有118万多条数据  
+    +---------+  
+    1 row in set (0.04 sec)  </code></pre>
+<p>2，存放在硬盘中的表文件大小</p>
+<pre><code class="ps">    ﻿﻿[root@BlackGhost test1]# ls |grep visit |xargs -i du {}  
+    382020    ad_visit_history.MYD                    //数据文件占了380M  
+    127116    ad_visit_history.MYI                    //索引文件占了127M  
+    12    ad_visit_history.frm                        //结构文件占了12K  </code></pre>
+        
+          <p class="article-more-link">
+            <a href="/2014/02/22/%E5%AE%9E%E4%BE%8B%E8%AF%B4%E6%98%8Eoptimize-table%E5%9C%A8%E4%BC%98%E5%8C%96mysql%E6%97%B6%E5%BE%88%E9%87%8D%E8%A6%81/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/02/22/%E5%AE%9E%E4%BE%8B%E8%AF%B4%E6%98%8Eoptimize-table%E5%9C%A8%E4%BC%98%E5%8C%96mysql%E6%97%B6%E5%BE%88%E9%87%8D%E8%A6%81/" data-id="ckcqdgl5x01sy9xlfchr2345z" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-log4php0-9的详细配备实例说明" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/02/22/log4php0-9%E7%9A%84%E8%AF%A6%E7%BB%86%E9%85%8D%E5%A4%87%E5%AE%9E%E4%BE%8B%E8%AF%B4%E6%98%8E/" class="article-date">
+  <time datetime="2014-02-22T12:51:25.000Z" itemprop="datePublished">2014-02-22</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/02/22/log4php0-9%E7%9A%84%E8%AF%A6%E7%BB%86%E9%85%8D%E5%A4%87%E5%AE%9E%E4%BE%8B%E8%AF%B4%E6%98%8E/">log4php0.9的详细配备实例说明</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="一、什么是log4php："><a href="#一、什么是log4php：" class="headerlink" title="一、什么是log4php："></a>一、什么是log4php：</h3><p>log4j在JAVA中可算是大名鼎鼎的日志开发包了，它为apche组织维护项目，VxR兄使用php来实现了log4j的功能， 目前log4php已经作为log4j的一个子项目存在，详细信息可点击：<a href="http://logging.apache.org/log4php/" target="_blank" rel="noopener">http://logging.apache.org/log4php/</a> 进行查看，另外VxR兄的log4php官方主站为：<a href="http://www.vxr.it/log4php/" target="_blank" rel="noopener">http://www.vxr.it/log4php/</a> ，有兴趣的朋友可直接点上边两个网址查看详细信息。<br>下载地址：<a href="http://www.vxr.it/log4php/download.html" target="_blank" rel="noopener">http://www.vxr.it/log4php/download.html</a></p>
+        
+          <p class="article-more-link">
+            <a href="/2014/02/22/log4php0-9%E7%9A%84%E8%AF%A6%E7%BB%86%E9%85%8D%E5%A4%87%E5%AE%9E%E4%BE%8B%E8%AF%B4%E6%98%8E/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/02/22/log4php0-9%E7%9A%84%E8%AF%A6%E7%BB%86%E9%85%8D%E5%A4%87%E5%AE%9E%E4%BE%8B%E8%AF%B4%E6%98%8E/" data-id="ckcqdgkwt01849xlfa5e2c4hn" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-CI中使用log4php调试程序" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2014/02/22/CI%E4%B8%AD%E4%BD%BF%E7%94%A8log4php%E8%B0%83%E8%AF%95%E7%A8%8B%E5%BA%8F/" class="article-date">
@@ -216,225 +364,6 @@
 
 
   
-    <article id="post-assert函数的用法" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2014/02/22/assert%E5%87%BD%E6%95%B0%E7%9A%84%E7%94%A8%E6%B3%95/" class="article-date">
-  <time datetime="2014-02-22T12:49:52.000Z" itemprop="datePublished">2014-02-22</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/php/">php</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2014/02/22/assert%E5%87%BD%E6%95%B0%E7%9A%84%E7%94%A8%E6%B3%95/">assert函数的用法</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>assert这个函数在php语言中是用来判断一个表达式是否成立。返回true or false;<br>例如：</p>
-<pre><code>    &lt;?php  
-    $s = 123;  
-    assert(&quot;is_int($s)&quot;);  
-    ?&gt;  </code></pre><p>从这个例子可以看到字符串参数会被执行，这跟eval()类似。不过eval($code_str)只是执行符合php编码规范的$code_str。<br>assert的用法却更详细一点。</p>
-        
-          <p class="article-more-link">
-            <a href="/2014/02/22/assert%E5%87%BD%E6%95%B0%E7%9A%84%E7%94%A8%E6%B3%95/#more">Read More</a>
-          </p>
-        
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2014/02/22/assert%E5%87%BD%E6%95%B0%E7%9A%84%E7%94%A8%E6%B3%95/" data-id="ckcqdgkul01209xlfakw3fzis" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-把一维数组合并成二维数组" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2014/02/22/%E6%8A%8A%E4%B8%80%E7%BB%B4%E6%95%B0%E7%BB%84%E5%90%88%E5%B9%B6%E6%88%90%E4%BA%8C%E7%BB%B4%E6%95%B0%E7%BB%84/" class="article-date">
-  <time datetime="2014-02-22T12:49:38.000Z" itemprop="datePublished">2014-02-22</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/php/">php</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2014/02/22/%E6%8A%8A%E4%B8%80%E7%BB%B4%E6%95%B0%E7%BB%84%E5%90%88%E5%B9%B6%E6%88%90%E4%BA%8C%E7%BB%B4%E6%95%B0%E7%BB%84/">把一维数组合并成二维数组</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-	  
-
-	  
-        <p>描述：$name数组是3个人的名字，$age数组的元素分别对应3个人的年龄，希望合并后的数组$user，它的每一个元素都是一条独立的个人信息。</p>
-<pre><code>    &lt;?php  
-    $name = array(&#39;andy&#39;,&#39;beer&#39;,&#39;candy&#39;);  
-    $age  = array(22,13,32);  
-
-    $user = array();  
-    foreach ($name as $k =&gt; $v) {  
-        $temp = array(&#39;name&#39;=&gt;$v,&#39;age&#39;=&gt;$age[$k]);  
-        $user[] = $temp;  
-        //$user[&#39;name&#39;][] = $v;  
-        //$user[&#39;age&#39;][] = $age[$k];  
-    }  
-
-    var_dump($user);  
-    /*  
-    array (size=3) 
-      0 =&gt;  
-        array (size=2) 
-          &#39;name&#39; =&gt; string &#39;andy&#39; (length=4) 
-          &#39;age&#39; =&gt; int 22 
-      1 =&gt;  
-        array (size=2) 
-          &#39;name&#39; =&gt; string &#39;beer&#39; (length=4) 
-          &#39;age&#39; =&gt; int 13 
-      2 =&gt;  
-        array (size=2) 
-          &#39;name&#39; =&gt; string &#39;candy&#39; (length=5) 
-          &#39;age&#39; =&gt; int 32 
-    */  
-    ?&gt;</code></pre>
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2014/02/22/%E6%8A%8A%E4%B8%80%E7%BB%B4%E6%95%B0%E7%BB%84%E5%90%88%E5%B9%B6%E6%88%90%E4%BA%8C%E7%BB%B4%E6%95%B0%E7%BB%84/" data-id="ckcqdgl6t01ut9xlfba57hn8d" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-表格数据上下行互换位置" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2014/02/22/%E8%A1%A8%E6%A0%BC%E6%95%B0%E6%8D%AE%E4%B8%8A%E4%B8%8B%E8%A1%8C%E4%BA%92%E6%8D%A2%E4%BD%8D%E7%BD%AE/" class="article-date">
-  <time datetime="2014-02-22T12:49:25.000Z" itemprop="datePublished">2014-02-22</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/javascript/">javascript</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2014/02/22/%E8%A1%A8%E6%A0%BC%E6%95%B0%E6%8D%AE%E4%B8%8A%E4%B8%8B%E8%A1%8C%E4%BA%92%E6%8D%A2%E4%BD%8D%E7%BD%AE/">表格数据上下行互换位置</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-	  
-
-	  
-        <br>
-```
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-    <title>表格数据上下行互换位置</title>
-    <script src="js/jquery-1.7.min.js" type="text/javascript"></script>
-    <script type="text/javascript">
-        $(document).ready(function () {
-            //上移
-            $("input.upbtn").each(function () {
-                $(this).click(function () {
-                    var $tr = $(this).parents("tr");
-                    if ($tr.index() != 0) {
-                        $tr.prev().before($tr);
-                    }
-                });
-            });
-            //下移
-            var trLength = $("input.downbtn").length;           
-            $("input.downbtn").each(function () {
-                $(this).click(function () {
-                    var $tr = $(this).parents("tr");                  
-                    if ($tr.index() != trLength - 1) {                      
-                        $tr.next().after($tr);
-                    }
-                });
-            });
-        });
-
-<pre><code>&lt;/script&gt;</code></pre><meta name="generator" content="Hexo 4.2.1"></head>
-<body>
-<table border="1" cellpadding=0 cellspacing=0>
-    <tr>
-        <td>6</td>
-        <td>xxxx66xxx</td>
-        <td>2013-5-26</td>
-        <td><input type="button" value="上移" class="upbtn" /><input type="button" value="下移" class="downbtn" /></td>
-    </tr>
-    <tr>
-        <td>7</td>
-        <td>xxxx77xxx</td>
-        <td>2013-5-27</td>
-        <td><input type="button" value="上移" class="upbtn" /><input type="button" value="下移" class="downbtn" /></td>
-    </tr>
-    <tr>
-        <td>8</td>
-        <td>xxx88xxxx</td>
-        <td>2013-5-28</td>
-        <td><input type="button" value="上移" class="upbtn" /><input type="button" value="下移" class="downbtn" /></td>
-    </tr>
-</table>
-</body>
-</html>
-```
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2014/02/22/%E8%A1%A8%E6%A0%BC%E6%95%B0%E6%8D%AE%E4%B8%8A%E4%B8%8B%E8%A1%8C%E4%BA%92%E6%8D%A2%E4%BD%8D%E7%BD%AE/" data-id="ckcqdgl8y01za9xlfgcms3hur" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/130/">« Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/129/">129</a><a class="page-number" href="/page/130/">130</a><span class="page-number current">131</span><a class="page-number" href="/page/132/">132</a><a class="page-number" href="/page/133/">133</a><span class="space">&hellip;</span><a class="page-number" href="/page/192/">192</a><a class="extend next" rel="next" href="/page/132/">Next »</a>
@@ -451,7 +380,7 @@ next_text: 'Next &raquo;' --></section>
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">120</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">28</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">53</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">87</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">12</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">120</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">39</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">28</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">53</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">87</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">12</span></li></ul>
     </div>
   </div>
 
@@ -463,23 +392,23 @@ next_text: 'Next &raquo;' --></section>
       <ul>
         
           <li>
+            <a href="/2020/08/25/Laravel-%E8%87%AA%E5%B8%A6%E7%9A%84-API-%E5%AE%88%E5%8D%AB%E9%A9%B1%E5%8A%A8-token-%E4%BD%BF%E7%94%A8%E8%AF%A6%E8%A7%A3/">Laravel 自带的 API 守卫驱动 token 使用详解</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/25/%E5%A6%82%E4%BD%95%E5%9C%A8windows%E5%AE%89%E8%A3%85php-redis%E6%89%A9%E5%B1%95/">如何在windows安装php redis扩展</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/25/Laravel%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Laravel问题集锦</a>
+          </li>
+        
+          <li>
             <a href="/2020/08/24/GITHUB%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE%E7%B4%A2%E5%BC%95/">GITHUB开源项目索引</a>
           </li>
         
           <li>
             <a href="/2020/07/17/%E5%9C%A8-macOS-Catalina-10-15-%E6%90%AD%E5%BB%BA-PHP-%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">在 macOS Catalina 10.15 搭建 PHP 开发环境</a>
-          </li>
-        
-          <li>
-            <a href="/2020/07/11/%E5%A6%82%E4%BD%95%E5%B0%86Promise-then%E4%B8%AD%E7%9A%84%E5%80%BC%E7%9B%B4%E6%8E%A5return%E5%87%BA%E6%9D%A5/">如何将Promise.then中的值直接return出来</a>
-          </li>
-        
-          <li>
-            <a href="/2020/07/02/Puppeteer%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E4%B8%8E%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87/">Puppeteer性能优化与执行速度提升</a>
-          </li>
-        
-          <li>
-            <a href="/2020/07/02/%E7%BB%93%E5%90%88%E9%A1%B9%E7%9B%AE%E6%9D%A5%E8%B0%88%E8%B0%88Puppeteer/">结合项目来谈谈 Puppeteer</a>
           </li>
         
       </ul>
@@ -491,7 +420,7 @@ next_text: 'Next &raquo;' --></section>
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/AndroidStudio/" style="font-size: 13.33px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 16px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.67px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 11.33px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.67px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10.67px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 12px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12px;">VMware</a> <a href="/tags/Vue/" style="font-size: 16.67px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.67px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 14px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 14px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 13.33px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.67px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.67px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.33px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 18px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.33px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15.33px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.33px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.33px;">集群</a>
+      <a href="/tags/AndroidStudio/" style="font-size: 13.57px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 16.43px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.86px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 11.43px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 19.29px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10.71px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 12.14px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.14px;">VMware</a> <a href="/tags/Vue/" style="font-size: 17.14px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.86px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 14.29px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 14.29px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 13.57px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.86px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.43px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.14px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 18.57px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.43px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15.71px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.86px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
     </div>
   </div>
 
