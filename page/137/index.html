@@ -132,71 +132,39 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-	  
-
-	  
-        <br>
-```sh
-mysqldumpslow --help
+        <pre><code class="sh">mysqldumpslow --help
 Usage: mysqldumpslow [ OPTS... ] [ LOGS... ]
 
-<p>Parse and summarize the MySQL slow query log. Options are</p>
-<p>  –verbose    verbose<br>  –debug      debug<br>  –help       write this text to standard output</p>
-<p>  -v           verbose 输出详细信息<br>  -d           debug<br>  -s ORDER     what to sort by (al, at, ar, c, l, r, t), ‘at’ is default<br>                al: average lock time<br>                ar: average rows sent<br>                at: average query time<br>                 c: count<br>                 l: lock time<br>                 r: rows sent<br>                 t: query time<br>  -r           reverse the sort order (largest last instead of first)<br>  -t NUM       just show the top n queries<br>  -a           don’t abstract all numbers to N and strings to ‘S’<br>  -n NUM       abstract numbers with at least n digits within names<br>  -g PATTERN   grep: only consider stmts that include this string<br>  -h HOSTNAME  hostname of db server for <em>-slow.log filename (can be wildcard),<br>               default is ‘</em>‘, i.e. match all<br>  -i NAME      name of server instance (if using mysql.server startup script)<br>  -l           don’t subtract lock time from total time</p>
-<pre><code>&lt;!--more--&gt;
-**经常使用几个命令**
--s，是order的顺序，说明写的不够详细，俺用下来，包括看了代码，主要有
-　　c、t、l,r和ac、at、al、ar，分别是按照query次数，查询时间，lock的时间和返回的记录数来排序，前面加了a的平均数
--t，是top n的意思，即为返回前面多少条的数据
--g，后边可以写一个正则匹配模式，大小写不敏感的，如`10$`是以10为结尾的条件
+Parse and summarize the MySQL slow query log. Options are
 
-例子
-`mysqldumpslow -t 10 -s t -g “left join” host-slow.log`
+  --verbose    verbose
+  --debug      debug
+  --help       write this text to standard output
 
-使用mysqldumpslow的分析结果不会显示具体完整的sql语句，说明：
-
-1：假如真正的sql语句如下：`SELECT * FROM sms_send WHERE service_id=10 GROUP BY content LIMIT 0, 1000;`
-mysqldumpslow显示的结果会是：</code></pre><p>Count: 1  Time=1.91s (1s)  Lock=0.00s (0s)  Rows=1000.0 (1000), vgos_dba[vgos_dba]@[10.130.229.196]<br>SELECT * FROM sms_send WHERE service_id=N GROUP BY content LIMIT N, N;</p>
-<pre><code>2：如果我们再执行一条`SELECT * FROM sms_send WHERE service_id=20 GROUP BY content LIMIT 10000, 1000;`
-mysqldumpslow显示的结果会是：</code></pre><p>Count: 2  Time=2.79s (5s)  Lock=0.00s (0s)  Rows=1.0 (2), vgos_dba[vgos_dba]@[10.130.229.196]<br>SELECT * FROM sms_send WHERE service_id=N GROUP BY content LIMIT N, N;</p>
-<pre><code>虽然这两条语句条件不一样，
-1：一个是server_id=10,一个是server_id=20
-2：一个是LIMIT 0, 1000,一个是LIMIT 10000, 1000
-但是mysqldumpslow分析会认为这是一种类型的语句，会合并显示。
-
-3：假设我们执行`SELECT * FROM sms_send WHERE service_id&lt;=10 GROUP BY content LIMIT 0, 1000;`
-执行mysqldumpslow结果是</code></pre><p>Count: 1  Time=2.91s (2s)  Lock=0.00s (0s)  Rows=1000.0 (1000), vgos_dba[vgos_dba]@[10.130.229.196]<br>SELECT * FROM sms_send WHERE service_id&lt;=N GROUP BY content LIMIT N, N;</p>
-<pre><code>可以看出它和上面我们写的sql语句是两种类型
-
-**mysqldumpslow的分析结果**
-Count会告诉我们这种类型的语句执行了几次，Time会告诉我们这种类型的语句执行的最大时间，`Time=2.79s (5s)`中
-（5s）是指这类型的语句执行总共花费的时间
-
-`Count: 2  Time=2.79s (5s)  Lock=0.00s (0s)  Rows=1.0 (2), vgos_dba[vgos_dba]@[10.130.229.196]`
-告诉我们执行了2次，最大时间是2.79s，总共花费时间5s，lock时间0s，单次返回的结果数是1条记录，2次总共返回2条记录
-
-`mysqldumpslow -s t -t 10 slow.log`
-查询的结果是10条执行时间最慢的sql语句，其中`-s t`是指此类类型的语句的执行总时长
-
-`Count: 1  Time=2.91s (2s)  Lock=0.00s (0s)  Rows=1000.0 (1000), vgos_dba[vgos_dba]@[10.130.229.196]`
-和
-`Count: 2  Time=2.79s (5s)  Lock=0.00s (0s)  Rows=1.0 (2), vgos_dba[vgos_dba]@[10.130.229.196]`
-比较的结果是
-`Count: 2  Time=2.79s (5s)  Lock=0.00s (0s)  Rows=1.0 (2), vgos_dba[vgos_dba]@[10.130.229.196]`排在前面，因为比较的时长是(5s)和(2s)，而不是2.79s和2.91s
-`-s at`比较的也是`(5s)/count:2`和`(2s)/Count: 1`
-所以：`-s at`是`Count: 1  Time=2.91s (2s)  Lock=0.00s (0s)  Rows=1000.0 (1000), vgos_dba[vgos_dba]@[10.130.229.196]`排在前面。
-
-`Rows=1.0 (2) `是按照以下逻辑展示的：
-(2)是指在Count: 2次数总共返回了2条记录集
-row=1.0显示`(2)/Count:2`，如果此时Count是3，那么row的计算方式是Rows=2/3，Rows=0.67
-
-主要功能是，统计不同慢sql的
-&gt; 出现次数(Count)  
-执行最长时间(Time)  
-累计总耗费时间(Time)  
-等待锁的时间(Lock)  
-发送给客户端的行总数(Rows)  
-扫描的行总数(Rows)  </code></pre>
+  -v           verbose 输出详细信息 
+  -d           debug
+  -s ORDER     what to sort by (al, at, ar, c, l, r, t), &#39;at&#39; is default
+                al: average lock time
+                ar: average rows sent
+                at: average query time
+                 c: count
+                 l: lock time
+                 r: rows sent
+                 t: query time 
+  -r           reverse the sort order (largest last instead of first)
+  -t NUM       just show the top n queries
+  -a           don&#39;t abstract all numbers to N and strings to &#39;S&#39;
+  -n NUM       abstract numbers with at least n digits within names
+  -g PATTERN   grep: only consider stmts that include this string
+  -h HOSTNAME  hostname of db server for *-slow.log filename (can be wildcard),
+               default is &#39;*&#39;, i.e. match all
+  -i NAME      name of server instance (if using mysql.server startup script)
+  -l           don&#39;t subtract lock time from total time</code></pre>
+        
+          <p class="article-more-link">
+            <a href="/2014/02/20/mysqldumpslow%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E%E6%80%BB%E7%BB%93/#more">Read More</a>
+          </p>
+        
       
     </div>
     <footer class="article-footer">
@@ -409,7 +377,7 @@ Threads_connected 跟show processlist结果相同，表示当前连接数。准�
   
   
     <nav id="page-nav">
-      <a class="extend prev" rel="prev" href="/page/136/">« Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/135/">135</a><a class="page-number" href="/page/136/">136</a><span class="page-number current">137</span><a class="page-number" href="/page/138/">138</a><a class="page-number" href="/page/139/">139</a><span class="space">&hellip;</span><a class="page-number" href="/page/192/">192</a><a class="extend next" rel="next" href="/page/138/">Next »</a>
+      <a class="extend prev" rel="prev" href="/page/136/">« Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/135/">135</a><a class="page-number" href="/page/136/">136</a><span class="page-number current">137</span><a class="page-number" href="/page/138/">138</a><a class="page-number" href="/page/139/">139</a><span class="space">&hellip;</span><a class="page-number" href="/page/191/">191</a><a class="extend next" rel="next" href="/page/138/">Next »</a>
     </nav>
   
 
@@ -423,7 +391,7 @@ next_text: 'Next &raquo;' --></section>
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">120</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">39</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">28</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">77</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">161</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">53</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">87</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">12</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">120</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">38</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">28</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">21</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">74</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">160</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">53</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">85</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">12</span></li></ul>
     </div>
   </div>
 
