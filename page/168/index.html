@@ -59,14 +59,14 @@
       <div class="outer">
         <section id="main">
   
-    <article id="post-使用json传输数组实例" class="article article-type-post" itemscope itemprop="blogPost">
+    <article id="post-apache两种工作模式详解" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
-    <a href="/2013/11/22/%E4%BD%BF%E7%94%A8json%E4%BC%A0%E8%BE%93%E6%95%B0%E7%BB%84%E5%AE%9E%E4%BE%8B/" class="article-date">
-  <time datetime="2013-11-22T02:44:36.000Z" itemprop="datePublished">2013-11-22</time>
+    <a href="/2013/09/29/apache%E4%B8%A4%E7%A7%8D%E5%B7%A5%E4%BD%9C%E6%A8%A1%E5%BC%8F%E8%AF%A6%E8%A7%A3/" class="article-date">
+  <time datetime="2013-09-29T11:21:05.000Z" itemprop="datePublished">2013-09-29</time>
 </a>
     
   <div class="article-category">
-    <a class="article-category-link" href="/categories/php/">php</a>
+    <a class="article-category-link" href="/categories/apache/">apache</a>
   </div>
 
   </div>
@@ -77,7 +77,7 @@
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2013/11/22/%E4%BD%BF%E7%94%A8json%E4%BC%A0%E8%BE%93%E6%95%B0%E7%BB%84%E5%AE%9E%E4%BE%8B/">使用json传输数组实例</a>
+      <a class="article-title" href="/2013/09/29/apache%E4%B8%A4%E7%A7%8D%E5%B7%A5%E4%BD%9C%E6%A8%A1%E5%BC%8F%E8%AF%A6%E8%A7%A3/">apache两种工作模式详解</a>
     </h1>
   
 
@@ -85,144 +85,16 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <p>client.php</p>
-<pre><code class="php">    &lt;?php  
-
-    //遍历数组元素，并将元素转码  
-    function array_iconv($data, $in_charset=&#39;GBK&#39;, $out_charset=&#39;UTF-8&#39;){  
-        if (!is_array($data)){  
-            $output = iconv($in_charset, $out_charset, $data);  
-        }elseif(count($data) === count($data, 1)){//判断是否是二维数组  
-            foreach($data as $key =&gt; $value){  
-            $output[$key] = iconv($in_charset, $out_charset, $value);  
-            }  
-        }else{  
-            eval_r(&#39;$output = &#39;.iconv($in_charset, $out_charset, var_export($data, TRUE)).&#39;;&#39;);  
-        }  
-        return $output;  
-    }  
-
-
-    $arr = array(&quot;username&quot;=&gt;&#39;aaa&#39;,&quot;pwd&quot;=&gt;&#39;47bce5c74f589f4867dbd57e9ca9f808&#39;,&#39;sex&#39;=&gt;&#39;男&#39;);   
-    $arr[&#39;_e_&#39;] = &#39;pwd,sex,username&#39;;   //这个参数中存的是randkey里面数组value值的排序  
-
-    //获得按&#39;_e_&#39;排序的临时数组，这是为了得到randkey  
-    $keys = explode(&quot;,&quot;,$arr[&#39;_e_&#39;]);  
-    $tempArr = array();  
-    for($i=0;$i&lt;count($arr)-1;$i++){  
-        $tempArr[&quot;$keys[$i]&quot;] = $arr[&quot;$keys[$i]&quot;];  
-    }  
-    $str=&#39;&#39;;  
-    foreach ($tempArr as $key=&gt;$value){  
-        $str .= $value;  
-    }  
-    $randkey = md5($str.&#39;123abc&#39;);  
-    $arr[&#39;randkey&#39;] = $randkey;  
-
-    $arr = array_iconv($arr);  
-    $arr = array_map(&#39;urlencode&#39;,$arr);  //可使用http_build_query()函数替代  
-    $data = json_encode($arr);  
-
-    $url = &quot;http://localhost/member/server.php?json=$data&quot;;  
-
-
-    /****get方式传递数据****** 
-    //初始化 
-    $ch = curl_init(); 
-    //设置选项，包括URL 
-    curl_setopt($ch, CURLOPT_URL, &quot;$url&quot;); 
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
-    curl_setopt($ch, CURLOPT_HEADER, 0); 
-    //执行并获取HTML文档内容 
-    $output = curl_exec($ch); 
-    //释放curl句柄 
-    curl_close($ch); 
-    //打印获得的数据 
-    print_r($output); 
-    */  
-
-
-    //***post方式传输数据******  
-    $ch = curl_init();  
-    curl_setopt($ch, CURLOPT_URL, $url);  
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);  
-    // post数据  
-    curl_setopt($ch, CURLOPT_POST, 1);  
-    // post的变量  
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);   
-    $output = curl_exec($ch);  
-    curl_close($ch);   
-    //打印获得的数据  
-    print_r($output);  
-
-
-    $res=unserialize($output);  
-    var_dump($res);  
-    if ($res[&#39;stat&#39;]==&#39;1&#39;) {  
-        echo &#39;right&#39;;  
-    }else{  
-        echo &#39;error&#39;;  
-    }  
-
-    ?&gt;  </code></pre>
+        <p>1、prefork.c模块(一个非线程型的、预派生的MPM)<br>prefork MPM 使用多个子进程，每个子进程只有一个线程。每个进程在某个确定的时间只能维持一个连接。在大多数平台上，Prefork MPM在效率上要比Worker MPM要高，但是内存使用大得多。prefork的无线程设计在某些情况下将比worker更有优势：他能够使用那些没有处理好线程安全的第三方模块，并 且对于那些线程调试困难的平台而言，他也更容易调试一些。<br>ServerLimit   20000<br>StartServers   5<br>MinSpareServers   5<br>MaxSpareServers   10<br>MaxClients   1000<br>MaxRequestsPerChild 0<br>ServerLimit     2000</p>
         
           <p class="article-more-link">
-            <a href="/2013/11/22/%E4%BD%BF%E7%94%A8json%E4%BC%A0%E8%BE%93%E6%95%B0%E7%BB%84%E5%AE%9E%E4%BE%8B/#more">Read More</a>
+            <a href="/2013/09/29/apache%E4%B8%A4%E7%A7%8D%E5%B7%A5%E4%BD%9C%E6%A8%A1%E5%BC%8F%E8%AF%A6%E8%A7%A3/#more">Read More</a>
           </p>
         
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2013/11/22/%E4%BD%BF%E7%94%A8json%E4%BC%A0%E8%BE%93%E6%95%B0%E7%BB%84%E5%AE%9E%E4%BE%8B/" data-id="ckcqdgl2u01me9xlff4lbe7bd" class="article-share-link">Share</a>
-      
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" rel="tag">数据传输</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-支付宝php支付接口说明" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2013/11/19/%E6%94%AF%E4%BB%98%E5%AE%9Dphp%E6%94%AF%E4%BB%98%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E/" class="article-date">
-  <time datetime="2013-11-19T05:24:16.000Z" itemprop="datePublished">2013-11-19</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2013/11/19/%E6%94%AF%E4%BB%98%E5%AE%9Dphp%E6%94%AF%E4%BB%98%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E/">支付宝php支付接口说明</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p> 直接把该代码放到PHP服务器下，直接访问index.php.<br>1、文件列表：</p>
-<p>alipay_config.php    （基本参数配置页面，填写商家的支付宝安全校验码，合作id,支付宝帐号等内容）<br>index.php            （提供给商家的接入页面，包含了物流信息，商品信息等内容）<br>return_url.php       （跳转页面，买家支付成功后跳转的页面，仅当买家支付成功后跳转一次。）<br>notify_url.php       （异步通知，下单成功后，支付宝服务器通知商户服务，并把这笔订单的状态通知给商户，商户根据返回的这笔订单的状态，修改网站订单的状态，比如等待买家付款状态，买家已经付款等待卖家发货…..）</p>
-<p>alipay_service.php    支付核心类文件（建议不要修改）<br>alipay_notify.php     返回核心类文件（建议不要修改）</p>
-        
-          <p class="article-more-link">
-            <a href="/2013/11/19/%E6%94%AF%E4%BB%98%E5%AE%9Dphp%E6%94%AF%E4%BB%98%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E/#more">Read More</a>
-          </p>
-        
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2013/11/19/%E6%94%AF%E4%BB%98%E5%AE%9Dphp%E6%94%AF%E4%BB%98%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E/" data-id="ckcqdgl6y01v49xlfdv7t7xla" class="article-share-link">Share</a>
+      <a data-url="http://moqiang02.github.io/2013/09/29/apache%E4%B8%A4%E7%A7%8D%E5%B7%A5%E4%BD%9C%E6%A8%A1%E5%BC%8F%E8%AF%A6%E8%A7%A3/" data-id="ckeio58zm0110v6lfg7gk23to" class="article-share-link">Share</a>
       
       
     </footer>
@@ -232,14 +104,14 @@
 
 
   
-    <article id="post-Error-No-suitable-device-found-no-device-found-for-connection-System-eth0" class="article article-type-post" itemscope itemprop="blogPost">
+    <article id="post-Apache-配置文件详解" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
-    <a href="/2013/11/16/Error-No-suitable-device-found-no-device-found-for-connection-System-eth0/" class="article-date">
-  <time datetime="2013-11-16T14:51:06.000Z" itemprop="datePublished">2013-11-16</time>
+    <a href="/2013/09/27/Apache-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E8%AF%A6%E8%A7%A3/" class="article-date">
+  <time datetime="2013-09-27T11:22:14.000Z" itemprop="datePublished">2013-09-27</time>
 </a>
     
   <div class="article-category">
-    <a class="article-category-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a>
+    <a class="article-category-link" href="/categories/apache/">apache</a>
   </div>
 
   </div>
@@ -250,7 +122,7 @@
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2013/11/16/Error-No-suitable-device-found-no-device-found-for-connection-System-eth0/">Error:No suitable device found: no device found for connection &#39;System eth0&#39;</a>
+      <a class="article-title" href="/2013/09/27/Apache-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E8%AF%A6%E8%A7%A3/">Apache 配置文件详解</a>
     </h1>
   
 
@@ -258,24 +130,21 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <p>环境描述：</p>
-<p>Virtual Box 下的虚拟机Rhel6u2 X64</p>
-<p>故障说明：</p>
-<p>在克隆几台虚拟机，发现启动后不能配置IP地址等信息，使用linux命令: <code>ifup eth0</code>也不能激活网卡，</p>
-<p>而在使用”service network restart”，出现错误：<code>Error:No suitable device found: no device found for connection &quot;System eth0&quot;</code></p>
+        <p>＃＃＃ Section 1: Global Environment<br>//当服务器响应主机头（header）信息时显示Apache的版本和操作系统名称<br>ServerTokens OS<br>//设置服务器的根目录<br>ServerRoot “/etc/httpd”</p>
+<p>＃ScoreBoardFile run/httpd.scoreboard</p>
+<p>//设置运行Apache时使用的PidFile的路径<br>PidFile run/httpd.pid</p>
+<p>//若300秒后没有收到或送出任何数据就切断该连接<br>Timeout 300</p>
         
           <p class="article-more-link">
-            <a href="/2013/11/16/Error-No-suitable-device-found-no-device-found-for-connection-System-eth0/#more">Read More</a>
+            <a href="/2013/09/27/Apache-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E8%AF%A6%E8%A7%A3/#more">Read More</a>
           </p>
         
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2013/11/16/Error-No-suitable-device-found-no-device-found-for-connection-System-eth0/" data-id="ckcqdgkmh00d09xlf6ajpeicp" class="article-share-link">Share</a>
+      <a data-url="http://moqiang02.github.io/2013/09/27/Apache-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E8%AF%A6%E8%A7%A3/" data-id="ckeio58q0006gv6lf9axj8237" class="article-share-link">Share</a>
       
       
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/VMware/" rel="tag">VMware</a></li></ul>
-
     </footer>
   </div>
   
@@ -283,14 +152,14 @@
 
 
   
-    <article id="post-VMware下linux与window文件夹共享" class="article article-type-post" itemscope itemprop="blogPost">
+    <article id="post-Apache下禁止使用IP直接访问本站的配置方法" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
-    <a href="/2013/11/13/VMware%E4%B8%8Blinux%E4%B8%8Ewindow%E6%96%87%E4%BB%B6%E5%A4%B9%E5%85%B1%E4%BA%AB/" class="article-date">
-  <time datetime="2013-11-13T14:10:33.000Z" itemprop="datePublished">2013-11-13</time>
+    <a href="/2013/09/19/Apache%E4%B8%8B%E7%A6%81%E6%AD%A2%E4%BD%BF%E7%94%A8IP%E7%9B%B4%E6%8E%A5%E8%AE%BF%E9%97%AE%E6%9C%AC%E7%AB%99%E7%9A%84%E9%85%8D%E7%BD%AE%E6%96%B9%E6%B3%95/" class="article-date">
+  <time datetime="2013-09-19T11:21:18.000Z" itemprop="datePublished">2013-09-19</time>
 </a>
     
   <div class="article-category">
-    <a class="article-category-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a>
+    <a class="article-category-link" href="/categories/apache/">apache</a>
   </div>
 
   </div>
@@ -301,7 +170,7 @@
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2013/11/13/VMware%E4%B8%8Blinux%E4%B8%8Ewindow%E6%96%87%E4%BB%B6%E5%A4%B9%E5%85%B1%E4%BA%AB/">VMware下linux与window文件夹共享</a>
+      <a class="article-title" href="/2013/09/19/Apache%E4%B8%8B%E7%A6%81%E6%AD%A2%E4%BD%BF%E7%94%A8IP%E7%9B%B4%E6%8E%A5%E8%AE%BF%E9%97%AE%E6%9C%AC%E7%AB%99%E7%9A%84%E9%85%8D%E7%BD%AE%E6%96%B9%E6%B3%95/">Apache下禁止使用IP直接访问本站的配置方法</a>
     </h1>
   
 
@@ -309,20 +178,26 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <p>这里说的是在虚拟机下来实现在windows下共享一个文件夹。<br>下面来说明一下是如何实现的：<br>1．安装VMware.Workstation.<br>2．安装Redhat Linux 9.0，在虚拟机下。<br>3．完成前两步后，打开VMware－&gt;工具栏—&gt;虚拟机－&gt;选择 安装Vmware工具
+        <p>现在管的严啊，上面要求不能使用IP直接访问服务器，把apache配置做下调整就行了。方法如下：</p>
+<p>打开apache的配置文件</p>
+<p><code>vi /usr/local/apache2/conf/extra/httpd-vhosts.conf</code></p>
+<p>在所有虚拟机的最前面加上一个noweb的</p>
+<pre><code>#noweb
+&lt;VirtualHost *:80&gt;
+DocumentRoot &quot;/srv/htdocs/noweb/&quot;
+ServerAlias noweb
+&lt;/VirtualHost&gt;</code></pre>
         
           <p class="article-more-link">
-            <a href="/2013/11/13/VMware%E4%B8%8Blinux%E4%B8%8Ewindow%E6%96%87%E4%BB%B6%E5%A4%B9%E5%85%B1%E4%BA%AB/#more">Read More</a>
+            <a href="/2013/09/19/Apache%E4%B8%8B%E7%A6%81%E6%AD%A2%E4%BD%BF%E7%94%A8IP%E7%9B%B4%E6%8E%A5%E8%AE%BF%E9%97%AE%E6%9C%AC%E7%AB%99%E7%9A%84%E9%85%8D%E7%BD%AE%E6%96%B9%E6%B3%95/#more">Read More</a>
           </p>
         
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2013/11/13/VMware%E4%B8%8Blinux%E4%B8%8Ewindow%E6%96%87%E4%BB%B6%E5%A4%B9%E5%85%B1%E4%BA%AB/" data-id="ckcqdgksz00xu9xlf13dkd2a1" class="article-share-link">Share</a>
+      <a data-url="http://moqiang02.github.io/2013/09/19/Apache%E4%B8%8B%E7%A6%81%E6%AD%A2%E4%BD%BF%E7%94%A8IP%E7%9B%B4%E6%8E%A5%E8%AE%BF%E9%97%AE%E6%9C%AC%E7%AB%99%E7%9A%84%E9%85%8D%E7%BD%AE%E6%96%B9%E6%B3%95/" data-id="ckeio58py006av6lf5r2n94rr" class="article-share-link">Share</a>
       
       
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/VMware/" rel="tag">VMware</a></li></ul>
-
     </footer>
   </div>
   
@@ -330,14 +205,14 @@
 
 
   
-    <article id="post-虚拟机无法联网解决方法" class="article article-type-post" itemscope itemprop="blogPost">
+    <article id="post-在文本框中提示用户输入内容格式的方法" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
-    <a href="/2013/11/07/%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%97%A0%E6%B3%95%E8%81%94%E7%BD%91%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/" class="article-date">
-  <time datetime="2013-11-07T14:51:45.000Z" itemprop="datePublished">2013-11-07</time>
+    <a href="/2013/09/19/%E5%9C%A8%E6%96%87%E6%9C%AC%E6%A1%86%E4%B8%AD%E6%8F%90%E7%A4%BA%E7%94%A8%E6%88%B7%E8%BE%93%E5%85%A5%E5%86%85%E5%AE%B9%E6%A0%BC%E5%BC%8F%E7%9A%84%E6%96%B9%E6%B3%95/" class="article-date">
+  <time datetime="2013-09-19T05:35:54.000Z" itemprop="datePublished">2013-09-19</time>
 </a>
     
   <div class="article-category">
-    <a class="article-category-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a>
+    <a class="article-category-link" href="/categories/html-css/">html+css</a>
   </div>
 
   </div>
@@ -348,7 +223,7 @@
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2013/11/07/%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%97%A0%E6%B3%95%E8%81%94%E7%BD%91%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">虚拟机无法联网解决方法</a>
+      <a class="article-title" href="/2013/09/19/%E5%9C%A8%E6%96%87%E6%9C%AC%E6%A1%86%E4%B8%AD%E6%8F%90%E7%A4%BA%E7%94%A8%E6%88%B7%E8%BE%93%E5%85%A5%E5%86%85%E5%AE%B9%E6%A0%BC%E5%BC%8F%E7%9A%84%E6%96%B9%E6%B3%95/">在文本框中提示用户输入内容格式的方法</a>
     </h1>
   
 
@@ -356,28 +231,19 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <p>虚拟机无法联网，service network start 启动eth0报错：</p>
-<p>Error: Connection activation failed: Device not managed by NetworkMan</p>
-<p>错误的原因是：网络管理装置不被允许。</p>
-<p>解决方法：</p>
-<p>运行下列命令</p>
-<p>chkconfig network off</p>
-<p>chkconfig network on</p>
-<p>service NetworkManager stop</p>
-<p>service NetworkManager start</p>
+        <p>希望达到的效果：</p>
+<p><img src="/images/%E5%9C%A8%E6%96%87%E6%9C%AC%E6%A1%86%E4%B8%AD%E6%8F%90%E7%A4%BA%E7%94%A8%E6%88%B7%E8%BE%93%E5%85%A5%E5%86%85%E5%AE%B9%E6%A0%BC%E5%BC%8F%E7%9A%84%E6%96%B9%E6%B3%95/SouthEast.jpg" alt=""></p>
         
           <p class="article-more-link">
-            <a href="/2013/11/07/%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%97%A0%E6%B3%95%E8%81%94%E7%BD%91%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/#more">Read More</a>
+            <a href="/2013/09/19/%E5%9C%A8%E6%96%87%E6%9C%AC%E6%A1%86%E4%B8%AD%E6%8F%90%E7%A4%BA%E7%94%A8%E6%88%B7%E8%BE%93%E5%85%A5%E5%86%85%E5%AE%B9%E6%A0%BC%E5%BC%8F%E7%9A%84%E6%96%B9%E6%B3%95/#more">Read More</a>
           </p>
         
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2013/11/07/%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%97%A0%E6%B3%95%E8%81%94%E7%BD%91%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/" data-id="ckcqdgl8v01z29xlfd2sq4rn0" class="article-share-link">Share</a>
+      <a data-url="http://moqiang02.github.io/2013/09/19/%E5%9C%A8%E6%96%87%E6%9C%AC%E6%A1%86%E4%B8%AD%E6%8F%90%E7%A4%BA%E7%94%A8%E6%88%B7%E8%BE%93%E5%85%A5%E5%86%85%E5%AE%B9%E6%A0%BC%E5%BC%8F%E7%9A%84%E6%96%B9%E6%B3%95/" data-id="ckeio598y01oiv6lfex8s9e7p" class="article-share-link">Share</a>
       
       
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/VMware/" rel="tag">VMware</a></li></ul>
-
     </footer>
   </div>
   
@@ -385,14 +251,14 @@
 
 
   
-    <article id="post-json-encode-中文处理" class="article article-type-post" itemscope itemprop="blogPost">
+    <article id="post-apache配置优化-解决网站访问速度慢的问题（重点参考）" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
-    <a href="/2013/10/24/json-encode-%E4%B8%AD%E6%96%87%E5%A4%84%E7%90%86/" class="article-date">
-  <time datetime="2013-10-24T06:07:23.000Z" itemprop="datePublished">2013-10-24</time>
+    <a href="/2013/09/13/apache%E9%85%8D%E7%BD%AE%E4%BC%98%E5%8C%96-%E8%A7%A3%E5%86%B3%E7%BD%91%E7%AB%99%E8%AE%BF%E9%97%AE%E9%80%9F%E5%BA%A6%E6%85%A2%E7%9A%84%E9%97%AE%E9%A2%98%EF%BC%88%E9%87%8D%E7%82%B9%E5%8F%82%E8%80%83%EF%BC%89/" class="article-date">
+  <time datetime="2013-09-13T11:15:32.000Z" itemprop="datePublished">2013-09-13</time>
 </a>
     
   <div class="article-category">
-    <a class="article-category-link" href="/categories/php/">php</a>
+    <a class="article-category-link" href="/categories/apache/">apache</a>
   </div>
 
   </div>
@@ -403,7 +269,7 @@
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2013/10/24/json-encode-%E4%B8%AD%E6%96%87%E5%A4%84%E7%90%86/">json_encode 中文处理</a>
+      <a class="article-title" href="/2013/09/13/apache%E9%85%8D%E7%BD%AE%E4%BC%98%E5%8C%96-%E8%A7%A3%E5%86%B3%E7%BD%91%E7%AB%99%E8%AE%BF%E9%97%AE%E9%80%9F%E5%BA%A6%E6%85%A2%E7%9A%84%E9%97%AE%E9%A2%98%EF%BC%88%E9%87%8D%E7%82%B9%E5%8F%82%E8%80%83%EF%BC%89/">apache配置优化-解决网站访问速度慢的问题（重点参考）</a>
     </h1>
   
 
@@ -411,30 +277,73 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <p>在 php 中使用 json_encode() 内置函数(php &gt; 5.2)可以使用得 php 中数据可以与其它语言很好的传递并且使用它。</p>
-<p>这个函数的功能是将数值转换成json数据存储格式。</p>
-<pre><code>    &lt;?php  
-    $arr = array(  
-              &#39;Name&#39;=&gt;&#39;希亚&#39;,  
-              &#39;Age&#39;=&gt;20  
-           );  
-
-    $jsonencode = json_encode($arr);  
-    echo $jsonencode;  
-    ?&gt;  </code></pre><p>程序运行结果如下：<br><code>{&quot;Name&quot;:null,&quot;Age&quot;:20}</code></p>
+        <p>如果apche访问量过大，将会导致页面打开迟缓，下载速度也降低，如果由于经费和环境问题，集群方案没有得以应用。可以通过对Apache2增加模块MPM来进行优化, 这里我选择线程型MPM加以优化：<br>开启mpm：在httpd.conf文件中去掉 Include conf/extra/httpd-mpm.conf 前面的“#”号（提示：如果没有此段代码可以新加。没有此文件httpd-mpm.conf可以新建，也可以直接加代码到）</p>
+<p><strong>优化配置：</strong> </p>
+<p>服务器启动时建立的线程数 StartServers 200<br>空闲子进程的最小数量 MinSpareServers 100<br>空闲子进程的最大数量 MaxSpareServers 200<br>允许同时伺服的最大接入请求数量 MaxClients 800<br>每个子进程在其生存期内允许伺服的最大请求数量 MaxRequestsPerChild 3000</p>
         
           <p class="article-more-link">
-            <a href="/2013/10/24/json-encode-%E4%B8%AD%E6%96%87%E5%A4%84%E7%90%86/#more">Read More</a>
+            <a href="/2013/09/13/apache%E9%85%8D%E7%BD%AE%E4%BC%98%E5%8C%96-%E8%A7%A3%E5%86%B3%E7%BD%91%E7%AB%99%E8%AE%BF%E9%97%AE%E9%80%9F%E5%BA%A6%E6%85%A2%E7%9A%84%E9%97%AE%E9%A2%98%EF%BC%88%E9%87%8D%E7%82%B9%E5%8F%82%E8%80%83%EF%BC%89/#more">Read More</a>
           </p>
         
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2013/10/24/json-encode-%E4%B8%AD%E6%96%87%E5%A4%84%E7%90%86/" data-id="ckcqdgkw301639xlfec84adwk" class="article-share-link">Share</a>
+      <a data-url="http://moqiang02.github.io/2013/09/13/apache%E9%85%8D%E7%BD%AE%E4%BC%98%E5%8C%96-%E8%A7%A3%E5%86%B3%E7%BD%91%E7%AB%99%E8%AE%BF%E9%97%AE%E9%80%9F%E5%BA%A6%E6%85%A2%E7%9A%84%E9%97%AE%E9%A2%98%EF%BC%88%E9%87%8D%E7%82%B9%E5%8F%82%E8%80%83%EF%BC%89/" data-id="ckeio58zo0114v6lf7b60a0pt" class="article-share-link">Share</a>
       
       
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" rel="tag">数据传输</a></li></ul>
+    </footer>
+  </div>
+  
+</article>
 
+
+  
+    <article id="post-apache-限制IP访问" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2013/09/11/apache-%E9%99%90%E5%88%B6IP%E8%AE%BF%E9%97%AE/" class="article-date">
+  <time datetime="2013-09-11T11:17:44.000Z" itemprop="datePublished">2013-09-11</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/apache/">apache</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2013/09/11/apache-%E9%99%90%E5%88%B6IP%E8%AE%BF%E9%97%AE/">apache 限制IP访问</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <pre><code>&lt;Directory &quot;/var/www&quot;&gt;
+Options All
+AllowOverride None
+Order Deny,Allow
+Deny From all
+Allow From 192.168.0.0/24
+Allow From 127.0.0.1
+Allow From 59.37.x.x/28
+&lt;/Directory&gt;</code></pre><p>上面这一段的意思是对/var/www目录下面的文件,只允许从192.168.0/24 和 127.0.1、59.37.x.x/28这几个IP段内的用户访问。</p>
+        
+          <p class="article-more-link">
+            <a href="/2013/09/11/apache-%E9%99%90%E5%88%B6IP%E8%AE%BF%E9%97%AE/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2013/09/11/apache-%E9%99%90%E5%88%B6IP%E8%AE%BF%E9%97%AE/" data-id="ckeio58zl010wv6lf0hnl7ffd" class="article-share-link">Share</a>
+      
+      
     </footer>
   </div>
   
@@ -444,7 +353,7 @@
   
   
     <nav id="page-nav">
-      <a class="extend prev" rel="prev" href="/page/167/">« Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/166/">166</a><a class="page-number" href="/page/167/">167</a><span class="page-number current">168</span><a class="page-number" href="/page/169/">169</a><a class="page-number" href="/page/170/">170</a><span class="space">&hellip;</span><a class="page-number" href="/page/191/">191</a><a class="extend next" rel="next" href="/page/169/">Next »</a>
+      <a class="extend prev" rel="prev" href="/page/167/">« Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/166/">166</a><a class="page-number" href="/page/167/">167</a><span class="page-number current">168</span><a class="page-number" href="/page/169/">169</a><a class="page-number" href="/page/170/">170</a><span class="space">&hellip;</span><a class="page-number" href="/page/189/">189</a><a class="extend next" rel="next" href="/page/169/">Next »</a>
     </nav>
   
 
@@ -458,7 +367,7 @@ next_text: 'Next &raquo;' --></section>
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">120</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">38</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">28</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">21</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">74</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">160</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">53</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">85</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">12</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">119</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">38</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">28</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">21</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">74</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">71</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">156</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">52</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">83</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">12</span></li></ul>
     </div>
   </div>
 
@@ -498,7 +407,7 @@ next_text: 'Next &raquo;' --></section>
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/AndroidStudio/" style="font-size: 13.57px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 16.43px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.86px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 11.43px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 19.29px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10.71px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 12.14px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.14px;">VMware</a> <a href="/tags/Vue/" style="font-size: 17.14px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.86px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 14.29px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 14.29px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 13.57px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.86px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.43px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.14px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 18.57px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.43px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15.71px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.86px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+      <a href="/tags/AndroidStudio/" style="font-size: 13.57px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 16.43px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.86px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 11.43px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 19.29px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10.71px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 12.14px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.14px;">VMware</a> <a href="/tags/Vue/" style="font-size: 17.86px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.86px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 14.29px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 13.57px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.86px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.43px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.14px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.14px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.43px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15.71px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 18.57px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
     </div>
   </div>
 

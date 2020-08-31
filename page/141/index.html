@@ -59,495 +59,6 @@
       <div class="outer">
         <section id="main">
   
-    <article id="post-php多文件上传类（含示例）" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2014/02/20/php%E5%A4%9A%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E7%B1%BB%EF%BC%88%E5%90%AB%E7%A4%BA%E4%BE%8B%EF%BC%89/" class="article-date">
-  <time datetime="2014-02-20T02:51:52.000Z" itemprop="datePublished">2014-02-20</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/php/">php</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2014/02/20/php%E5%A4%9A%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E7%B1%BB%EF%BC%88%E5%90%AB%E7%A4%BA%E4%BE%8B%EF%BC%89/">php多文件上传类（含示例）</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>在网上看到一个比较好的多文件上传类，自己改良了下，顺便用js实现了多文件浏览，php文件上传原理都是相同的，多文件上传也只是进行了循环上传而已，当然你也可以使用swfupload进行多文件上传！
-        
-          <p class="article-more-link">
-            <a href="/2014/02/20/php%E5%A4%9A%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E7%B1%BB%EF%BC%88%E5%90%AB%E7%A4%BA%E4%BE%8B%EF%BC%89/#more">Read More</a>
-          </p>
-        
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2014/02/20/php%E5%A4%9A%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E7%B1%BB%EF%BC%88%E5%90%AB%E7%A4%BA%E4%BE%8B%EF%BC%89/" data-id="ckcqdgkyw01d89xlffjbidu76" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-PHP多图片上传类推荐" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2014/02/20/PHP%E5%A4%9A%E5%9B%BE%E7%89%87%E4%B8%8A%E4%BC%A0%E7%B1%BB%E6%8E%A8%E8%8D%90/" class="article-date">
-  <time datetime="2014-02-20T02:51:38.000Z" itemprop="datePublished">2014-02-20</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/php/">php</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2014/02/20/PHP%E5%A4%9A%E5%9B%BE%E7%89%87%E4%B8%8A%E4%BC%A0%E7%B1%BB%E6%8E%A8%E8%8D%90/">PHP多图片上传类推荐</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>多文件上传是PHP中的一个基础应用，反正PHPer都会遇到的问题，现在就介绍一个功能完善、强大的多文件上传类给大家吧，能用上这个类的地方会很多。</p>
-<pre><code class="php">    &lt;?php  
-
-    class Upload{  
-        var $saveName;// 保存名  
-        var $savePath;// 保存路径  
-        var $fileFormat = array(&#39;gif&#39;,&#39;jpg&#39;,&#39;doc&#39;,&#39;application/octet-stream&#39;);// 文件格式&amp;MIME限定  
-        var $overwrite = 0;// 覆盖模式  
-        var $maxSize = 0;// 文件最大字节  
-        var $ext;// 文件扩展名  
-        var $thumb = 0;// 是否生成缩略图  
-        var $thumbWidth = 130;// 缩略图宽  
-        var $thumbHeight = 130;// 缩略图高  
-        var $thumbPrefix = &quot;_thumb_&quot;;// 缩略图前缀  
-        var $errno;// 错误代号  
-        var $returnArray= array();// 所有文件的返回信息  
-        var $returninfo= array();// 每个文件返回信息  
-
-
-    // 构造函数  
-    // @param $savePath 文件保存路径  
-    // @param $fileFormat 文件格式限制数组  
-    // @param $maxSize 文件最大尺寸  
-    // @param $overwriet 是否覆盖 1 允许覆盖 0 禁止覆盖  
-
-        function Upload($savePath, $fileFormat=&#39;&#39;,$maxSize = 0, $overwrite = 0) {  
-            $this-&gt;setSavepath($savePath);  
-            $this-&gt;setFileformat($fileFormat);  
-            $this-&gt;setMaxsize($maxSize);  
-            $this-&gt;setOverwrite($overwrite);  
-            $this-&gt;setThumb($this-&gt;thumb, $this-&gt;thumbWidth,$this-&gt;thumbHeight);  
-            $this-&gt;errno = 0;  
-        }  
-
-    // 上传  
-    // @param $fileInput 网页Form(表单)中input的名称  
-    // @param $changeName 是否更改文件名  
-        function run($fileInput,$changeName = 1){  
-            if(isset($_FILES[$fileInput])){  
-                $fileArr = $_FILES[$fileInput];  
-                if(is_array($fileArr[&#39;name&#39;])){//上传同文件域名称多个文件  
-                    for($i = 0; $i &lt; count($fileArr[&#39;name&#39;]); $i++){  
-                        $ar[&#39;tmp_name&#39;] = $fileArr[&#39;tmp_name&#39;][$i];  
-                        $ar[&#39;name&#39;] = $fileArr[&#39;name&#39;][$i];  
-                        $ar[&#39;type&#39;] = $fileArr[&#39;type&#39;][$i];  
-                        $ar[&#39;size&#39;] = $fileArr[&#39;size&#39;][$i];  
-                        $ar[&#39;error&#39;] = $fileArr[&#39;error&#39;][$i];  
-                        $this-&gt;getExt($ar[&#39;name&#39;]);//取得扩展名，赋给$this-&gt;ext，下次循环会更新  
-                        $this-&gt;setSavename($changeName == 1 ? &#39;&#39; : $ar[&#39;name&#39;]);//设置保存文件名  
-                        if($this-&gt;copyfile($ar)){  
-                            $this-&gt;returnArray[] =  $this-&gt;returninfo;  
-                        }else{  
-                            $this-&gt;returninfo[&#39;error&#39;] = $this-&gt;errmsg();  
-                            $this-&gt;returnArray[] =  $this-&gt;returninfo;  
-                        }  
-                    }  
-                    return $this-&gt;errno ?  false :  true;  
-                }else{//上传单个文件  
-                    $this-&gt;getExt($fileArr[&#39;name&#39;]);//取得扩展名  
-                    $this-&gt;setSavename($changeName == 1 ? &#39;&#39; : $fileArr[&#39;name&#39;]);//设置保存文件名  
-                    if($this-&gt;copyfile($fileArr)){  
-                        $this-&gt;returnArray[] =  $this-&gt;returninfo;  
-                    }else{  
-                        $this-&gt;returninfo[&#39;error&#39;] = $this-&gt;errmsg();  
-                        $this-&gt;returnArray[] =  $this-&gt;returninfo;  
-                    }  
-                    return $this-&gt;errno ?  false :  true;  
-                }  
-                return false;  
-            }else{  
-                $this-&gt;errno = 10;  
-                return false;  
-            }  
-        }  
-
-    // 单个文件上传  
-    // @param $fileArray 文件信息数组  
-        function copyfile($fileArray){  
-            $this-&gt;returninfo = array();  
-            // 返回信息  
-            $this-&gt;returninfo[&#39;name&#39;] = $fileArray[&#39;name&#39;];  
-            $this-&gt;returninfo[&#39;md5&#39;] = @md5_file($fileArray[&#39;tmp_name&#39;]);  
-            $this-&gt;returninfo[&#39;saveName&#39;] = $this-&gt;saveName;  
-            $this-&gt;returninfo[&#39;size&#39;] = number_format( ($fileArray[&#39;size&#39;])/1024 , 0, &#39;.&#39;, &#39; &#39;);//以KB为单位  
-            $this-&gt;returninfo[&#39;type&#39;] = $fileArray[&#39;type&#39;];  
-            // 检查文件格式  
-            if (!$this-&gt;validateFormat()){  
-                $this-&gt;errno = 11;  
-                return false;  
-            }  
-            // 检查目录是否可写  
-            if(!@is_writable($this-&gt;savePath)){  
-                $this-&gt;errno = 12;  
-                return false;  
-            }  
-            // 如果不允许覆盖，检查文件是否已经存在  
-            //if($this-&gt;overwrite == 0 &amp;&amp; @file_exists($this-&gt;savePath.$fileArray[&#39;name&#39;])){  
-            //  $this-&gt;errno = 13;  
-            //  return false;  
-            //}  
-            // 如果有大小限制，检查文件是否超过限制  
-            if ($this-&gt;maxSize != 0 ){  
-                if ($fileArray[&quot;size&quot;] &gt; $this-&gt;maxSize){  
-                    $this-&gt;errno = 14;  
-                    return false;  
-                }  
-            }  
-            // 文件上传  
-            if(!@move_uploaded_file($fileArray[&quot;tmp_name&quot;], $this-&gt;savePath.$this-&gt;saveName)){  
-                $this-&gt;errno = $fileArray[&quot;error&quot;];  
-                return false;  
-            }elseif( $this-&gt;thumb ){// 创建缩略图  
-                $CreateFunction = &quot;imagecreatefrom&quot;.($this-&gt;ext == &#39;jpg&#39; ? &#39;jpeg&#39; : $this-&gt;ext);  
-                $SaveFunction = &quot;image&quot;.($this-&gt;ext == &#39;jpg&#39; ? &#39;jpeg&#39; : $this-&gt;ext);  
-                if (strtolower($CreateFunction) == &quot;imagecreatefromgif&quot;   
-                    &amp;&amp; !function_exists(&quot;imagecreatefromgif&quot;)) {  
-                    $this-&gt;errno = 16;  
-                    return false;  
-                } elseif (strtolower($CreateFunction) == &quot;imagecreatefromjpeg&quot;   
-                    &amp;&amp; !function_exists(&quot;imagecreatefromjpeg&quot;)) {  
-                    $this-&gt;errno = 17;  
-                    return false;  
-                } elseif (!function_exists($CreateFunction)) {  
-                    $this-&gt;errno = 18;  
-                    return false;  
-                }  
-
-                $Original = @$CreateFunction($this-&gt;savePath.$this-&gt;saveName);  
-                if (!$Original) {$this-&gt;errno = 19; return false;}  
-                $originalHeight = ImageSY($Original);  
-                $originalWidth = ImageSX($Original);  
-                $this-&gt;returninfo[&#39;originalHeight&#39;] = $originalHeight;  
-                $this-&gt;returninfo[&#39;originalWidth&#39;] = $originalWidth;  
-                /* 
-                if (($originalHeight &lt; $this-&gt;thumbHeight  
-                    &amp;&amp; $originalWidth &lt; $this-&gt;thumbWidth)) { 
-                    // 如果比期望的缩略图小，那只Copy 
-                    move_uploaded_file($this-&gt;savePath.$this-&gt;saveName,  
-                        $this-&gt;savePath.$this-&gt;thumbPrefix.$this-&gt;saveName); 
-                } else { 
-                    if( $originalWidth &gt; $this-&gt;thumbWidth ){// 宽 &gt; 设定宽度 
-                        $thumbWidth = $this-&gt;thumbWidth ; 
-                        $thumbHeight = $this-&gt;thumbWidth * ( $originalHeight / $originalWidth ); 
-                        if($thumbHeight &gt; $this-&gt;thumbHeight){// 高 &gt; 设定高度 
-                            $thumbWidth = $this-&gt;thumbHeight * ( $thumbWidth / $thumbHeight ); 
-                            $thumbHeight = $this-&gt;thumbHeight ; 
-                        } 
-                    }elseif( $originalHeight &gt; $this-&gt;thumbHeight ){// 高 &gt; 设定高度 
-                        $thumbHeight = $this-&gt;thumbHeight ; 
-                        $thumbWidth = $this-&gt;thumbHeight * ( $originalWidth / $originalHeight ); 
-                        if($thumbWidth &gt; $this-&gt;thumbWidth){// 宽 &gt; 设定宽度 
-                            $thumbHeight = $this-&gt;thumbWidth * ( $thumbHeight / $thumbWidth ); 
-                            $thumbWidth = $this-&gt;thumbWidth ; 
-                        } 
-                    } 
-                    */  
-                    $radio=max(($originalWidth/$this-&gt;thumbWidth),($originalHeight/$this-&gt;thumbHeight));  
-                    $thumbWidth=(int)$originalWidth/$radio;  
-                    $thumbHeight=(int)$originalHeight/$radio;  
-
-                    if ($thumbWidth == 0) $thumbWidth = 1;  
-                    if ($thumbHeight == 0) $thumbHeight = 1;  
-                    $createdThumb = imagecreatetruecolor($thumbWidth, $thumbHeight);  
-                    if ( !$createdThumb ) {$this-&gt;errno = 20; return false;}  
-                    if ( !imagecopyresampled($createdThumb, $Original, 0, 0, 0, 0,   
-                        $thumbWidth, $thumbHeight, $originalWidth, $originalHeight) )  
-                        {$this-&gt;errno = 21; return false;}  
-                    if ( !$SaveFunction($createdThumb,   
-                        $this-&gt;savePath.$this-&gt;thumbPrefix.$this-&gt;saveName) )  
-                        {$this-&gt;errno = 22; return false;}  
-
-            }  
-            // 删除临时文件  
-            /* 
-            if(!@$this-&gt;del($fileArray[&quot;tmp_name&quot;])){ 
-                return false; 
-            } 
-            */  
-            return true;  
-        }  
-
-    // 文件格式检查,MIME检测  
-        function validateFormat(){  
-            if(!is_array($this-&gt;fileFormat)   
-                || in_array(strtolower($this-&gt;ext), $this-&gt;fileFormat)   
-                || in_array(strtolower($this-&gt;returninfo[&#39;type&#39;]), $this-&gt;fileFormat) )  
-                return true;  
-            else  
-                return false;  
-        }  
-    // 获取文件扩展名  
-    // @param $fileName 上传文件的原文件名  
-        function getExt($fileName){  
-            $ext = explode(&quot;.&quot;, $fileName);  
-            $ext = $ext[count($ext) - 1];  
-            $this-&gt;ext = strtolower($ext);  
-        }  
-
-    // 设置上传文件的最大字节限制  
-    // @param $maxSize 文件大小(bytes) 0:表示无限制  
-        function setMaxsize($maxSize){  
-            $this-&gt;maxSize = $maxSize;  
-        }  
-    // 设置文件格式限定  
-    // @param $fileFormat 文件格式数组  
-        function setFileformat($fileFormat){  
-            if(is_array($fileFormat)){$this-&gt;fileFormat = $fileFormat ;}  
-        }  
-
-    // 设置覆盖模式  
-    // @param overwrite 覆盖模式 1:允许覆盖 0:禁止覆盖  
-        function setOverwrite($overwrite){  
-            $this-&gt;overwrite = $overwrite;  
-        }  
-
-
-    // 设置保存路径  
-    // @param $savePath 文件保存路径：以 &quot;/&quot; 结尾，若没有 &quot;/&quot;，则补上  
-        function setSavepath($savePath){  
-            $this-&gt;savePath = substr( str_replace(&quot;\\&quot;,&quot;/&quot;, $savePath) , -1) == &quot;/&quot;   
-            ? $savePath : $savePath.&quot;/&quot;;  
-        }  
-
-    // 设置缩略图  
-    // @param $thumb = 1 产生缩略图 $thumbWidth,$thumbHeight 是缩略图的宽和高  
-        function setThumb($thumb, $thumbWidth = 0,$thumbHeight = 0){  
-            $this-&gt;thumb = $thumb;  
-            if($thumbWidth) $this-&gt;thumbWidth = $thumbWidth;  
-            if($thumbHeight) $this-&gt;thumbHeight = $thumbHeight;  
-        }  
-
-    // 设置文件保存名  
-    // @param $saveName 保存名，如果为空，则系统自动生成一个随机的文件名  
-        function setSavename($saveName){  
-            if ($saveName == &#39;&#39;){  // 如果未设置文件名，则生成一个随机文件名  
-                $name = date(&#39;YmdHis&#39;).&quot;_&quot;.rand(100,999).&#39;.&#39;.$this-&gt;ext;  
-                //判断文件是否存在,不允许重复文件  
-                if(file_exists($this-&gt;savePath . $name)){  
-                    $name = setSavename($saveName);  
-                    }  
-            } else {  
-                $name = $saveName;  
-            }  
-            $this-&gt;saveName = $name;  
-        }  
-
-    // 删除文件  
-    // @param $fileName 所要删除的文件名  
-        function del($fileName){  
-            if(!@unlink($fileName)){  
-                $this-&gt;errno = 15;  
-                return false;  
-            }  
-            return true;  
-        }  
-
-    // 返回上传文件的信息  
-        function getInfo(){  
-            return $this-&gt;returnArray;  
-        }  
-
-    // 得到错误信息  
-        function errmsg(){  
-            $uploadClassError = array(  
-                0   =&gt;&#39;There is no error, the file uploaded with success. &#39;,  
-                1   =&gt;&#39;The uploaded file exceeds the upload_max_filesize directive in php.ini.&#39;,  
-                2   =&gt;&#39;The uploaded file exceeds the MAX_FILE_SIZE that was specified in the HTML form.&#39;,  
-                3   =&gt;&#39;The uploaded file was only partially uploaded. &#39;,  
-                4   =&gt;&#39;No file was uploaded. &#39;,  
-                6   =&gt;&#39;Missing a temporary folder. Introduced in PHP 4.3.10 and PHP 5.0.3. &#39;,  
-                7   =&gt;&#39;Failed to write file to disk. Introduced in PHP 5.1.0. &#39;,  
-                10  =&gt;&#39;Input name is not unavailable!&#39;,  
-                11  =&gt;&#39;The uploaded file is Unallowable!&#39;,  
-                12  =&gt;&#39;Directory unwritable!&#39;,  
-                13  =&gt;&#39;File exist already!&#39;,  
-                14  =&gt;&#39;File is too big!&#39;,  
-                15  =&gt;&#39;Delete file unsuccessfully!&#39;,  
-                16  =&gt;&#39;Your version of PHP does not appear to have GIF thumbnailing support.&#39;,  
-                17  =&gt;&#39;Your version of PHP does not appear to have JPEG thumbnailing support.&#39;,  
-                18  =&gt;&#39;Your version of PHP does not appear to have pictures thumbnailing support.&#39;,  
-                19  =&gt;&#39;An error occurred while attempting to copy the source image .   
-                        Your version of php (&#39;.phpversion().&#39;) may not have this image type support.&#39;,  
-                20  =&gt;&#39;An error occurred while attempting to create a new image.&#39;,  
-                21  =&gt;&#39;An error occurred while copying the source image to the thumbnail image.&#39;,  
-                22  =&gt;&#39;An error occurred while saving the thumbnail image to the filesystem.   
-                        Are you sure that PHP has been configured with both read and write access on this folder?&#39;,  
-                );  
-            if ($this-&gt;errno == 0)  
-                return false;  
-            else  
-                return $uploadClassError[$this-&gt;errno];  
-        }  
-    }  
-
-    ?&gt;  </code></pre>
-        
-          <p class="article-more-link">
-            <a href="/2014/02/20/PHP%E5%A4%9A%E5%9B%BE%E7%89%87%E4%B8%8A%E4%BC%A0%E7%B1%BB%E6%8E%A8%E8%8D%90/#more">Read More</a>
-          </p>
-        
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2014/02/20/PHP%E5%A4%9A%E5%9B%BE%E7%89%87%E4%B8%8A%E4%BC%A0%E7%B1%BB%E6%8E%A8%E8%8D%90/" data-id="ckcqdgkqq00qu9xlfbyn49u50" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-PHP解析URL并得到URL中的参数" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2014/02/20/PHP%E8%A7%A3%E6%9E%90URL%E5%B9%B6%E5%BE%97%E5%88%B0URL%E4%B8%AD%E7%9A%84%E5%8F%82%E6%95%B0/" class="article-date">
-  <time datetime="2014-02-20T02:49:55.000Z" itemprop="datePublished">2014-02-20</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/php/">php</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2014/02/20/PHP%E8%A7%A3%E6%9E%90URL%E5%B9%B6%E5%BE%97%E5%88%B0URL%E4%B8%AD%E7%9A%84%E5%8F%82%E6%95%B0/">PHP解析URL并得到URL中的参数</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-	  
-
-	  
-        <pre><code class="php">    &lt;?php  
-
-    //例举一个URL格式的字符串:  
-    $str = &#39;http://test.com/testdir/index.php?param1=10&amp;param2=20&amp;param3=30&amp;param4=40&amp;param5=50&amp;param6=60&#39;;  
-
-    //1 用parse_url解析URL,此处是$str  
-    $arr = parse_url($str);  
-    var_dump($arr);  
-
-    //2 将URL中的参数取出来放到数组里  
-    $arr_query = convertUrlQuery($arr[&#39;query&#39;]);  
-    var_dump($arr_query);  
-
-    //3 将 参数数组 再变回 字符串形式的参数格式  
-    var_dump(getUrlQuery($arr_query));  
-
-
-    /**   
-      * Returns the url query as associative array   
-      * @param     string     query   
-      * @return     array     params   
-      */    
-    function convertUrlQuery($query)  
-    {  
-        $queryParts = explode(&#39;&amp;&#39;, $query);  
-        $params = array();  
-        foreach ($queryParts as $param)  
-        {  
-            $item = explode(&#39;=&#39;, $param);  
-            $params[$item[0]] = $item[1];  
-        }  
-        return $params;  
-    }  
-
-    function getUrlQuery($array_query)  
-    {  
-        $tmp = array();  
-        foreach($array_query as $k=&gt;$param)  
-        {  
-            $tmp[] = $k.&#39;=&#39;.$param;  
-        }  
-        $params = implode(&#39;&amp;&#39;,$tmp);  
-        return $params;  
-    }  
-    ?&gt;  </code></pre>
-<p>输出结果：</p>
-<pre><code>    array (size=4)  
-      &#39;scheme&#39; =&gt; string &#39;http&#39; (length=4)  
-      &#39;host&#39; =&gt; string &#39;test.com&#39; (length=8)  
-      &#39;path&#39; =&gt; string &#39;/testdir/index.php&#39; (length=18)  
-      &#39;query&#39; =&gt; string &#39;param1=10&amp;param2=20&amp;param3=30&amp;param4=40&amp;param5=50&amp;param6=60&#39; (length=59)  
-
-
-    array (size=6)  
-      &#39;param1&#39; =&gt; string &#39;10&#39; (length=2)  
-      &#39;param2&#39; =&gt; string &#39;20&#39; (length=2)  
-      &#39;param3&#39; =&gt; string &#39;30&#39; (length=2)  
-      &#39;param4&#39; =&gt; string &#39;40&#39; (length=2)  
-      &#39;param5&#39; =&gt; string &#39;50&#39; (length=2)  
-      &#39;param6&#39; =&gt; string &#39;60&#39; (length=2)  
-
-
-    string &#39;param1=10&amp;param2=20&amp;param3=30&amp;param4=40&amp;param5=50&amp;param6=60&#39; (length=59) </code></pre>
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2014/02/20/PHP%E8%A7%A3%E6%9E%90URL%E5%B9%B6%E5%BE%97%E5%88%B0URL%E4%B8%AD%E7%9A%84%E5%8F%82%E6%95%B0/" data-id="ckcqdgkr200rx9xlf58pq48nv" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
     <article id="post-PHP实现XML传输" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2014/02/20/PHP%E5%AE%9E%E7%8E%B0XML%E4%BC%A0%E8%BE%93/" class="article-date">
@@ -603,57 +114,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2014/02/20/PHP%E5%AE%9E%E7%8E%B0XML%E4%BC%A0%E8%BE%93/" data-id="ckcqdgkqq00qx9xlf1rjr9jwo" class="article-share-link">Share</a>
-      
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" rel="tag">数据传输</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-PHP解析XML" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2014/02/20/PHP%E8%A7%A3%E6%9E%90XML/" class="article-date">
-  <time datetime="2014-02-20T02:48:43.000Z" itemprop="datePublished">2014-02-20</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/php/">php</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2014/02/20/PHP%E8%A7%A3%E6%9E%90XML/">PHP解析XML</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>昨天接了个项目，需要和一个合作方做个url验证。由我像对方的提供的url发起请求，然后对方返回一个XML，我再根据XML的内容作下一步的处理。</p>
-<p>当时看文档的时候我心想这还不简单，直接file_get_contents（$url）不就OK 了，但是真正做的时候才发现不是那么一回事，我把file_get_contents获取的结果var_dump，结果是str(95) “   “,就是说结果是一个字符串，但是字符串的内容却是”  “,也就是空，这是怎么一回事呢？(后来我自己写了个XML,也用这个函数获取，虽然结果也是字符串，但是却是有值的字符串，说明那哥们写的XML有问题)</p>
-<p>特地的写了一个程序测试下file_get_contents这个函数，汗，才发现原来它抓的是网页的源代码，不是网页的内容，以前一直以为抓的是内容。</p>
-<p>那么就可以说明一个问题了，它抓的是源代码，如果是HTML，那么echo之后就直接在浏览器里面输出了网页的容，但是由于现在抓的是XML的源代码，那么var_dump的话其实是不能输出XML的。因为浏览器不认识这个。</p>
-        
-          <p class="article-more-link">
-            <a href="/2014/02/20/PHP%E8%A7%A3%E6%9E%90XML/#more">Read More</a>
-          </p>
-        
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2014/02/20/PHP%E8%A7%A3%E6%9E%90XML/" data-id="ckcqdgkr200rz9xlfddw59b1k" class="article-share-link">Share</a>
+      <a data-url="http://moqiang02.github.io/2014/02/20/PHP%E5%AE%9E%E7%8E%B0XML%E4%BC%A0%E8%BE%93/" data-id="ckeio58w000qlv6lf34ymdjs2" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" rel="tag">数据传输</a></li></ul>
@@ -709,7 +170,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2014/02/20/PHP%E7%94%9F%E6%88%90%E5%92%8C%E8%8E%B7%E5%8F%96XML%E6%A0%BC%E5%BC%8F%E6%95%B0%E6%8D%AE/" data-id="ckcqdgkqz00rn9xlfgy8wayjy" class="article-share-link">Share</a>
+      <a data-url="http://moqiang02.github.io/2014/02/20/PHP%E7%94%9F%E6%88%90%E5%92%8C%E8%8E%B7%E5%8F%96XML%E6%A0%BC%E5%BC%8F%E6%95%B0%E6%8D%AE/" data-id="ckeio58w900rbv6lfdysg0z3x" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" rel="tag">数据传输</a></li></ul>
@@ -721,9 +182,216 @@
 
 
   
+    <article id="post-PHP判断用户是否手机访问" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/02/20/PHP%E5%88%A4%E6%96%AD%E7%94%A8%E6%88%B7%E6%98%AF%E5%90%A6%E6%89%8B%E6%9C%BA%E8%AE%BF%E9%97%AE/" class="article-date">
+  <time datetime="2014-02-20T02:48:09.000Z" itemprop="datePublished">2014-02-20</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/php/">php</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/02/20/PHP%E5%88%A4%E6%96%AD%E7%94%A8%E6%88%B7%E6%98%AF%E5%90%A6%E6%89%8B%E6%9C%BA%E8%AE%BF%E9%97%AE/">PHP判断用户是否手机访问</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>随着移动设备的普及，网站也会迎来越来越多移动设备的访问。用适应PC的页面，很多时候对手机用户不友好，那么有些时候，我们需要判断用户是否用手机访问，如果是手机的话，就跳转到指定的手机友好页面。这里就介绍一下，如何判断用户是否用手机访问。</p>
+<p>自定义的函数如下：</p>
+<pre><code>    // check if wap  
+    function check_wap(){  
+        // 先检查是否为wap代理，准确度高  
+        if(stristr($_SERVER[&#39;HTTP_VIA&#39;],&quot;wap&quot;)){  
+            return true;  
+        }  
+        // 检查浏览器是否接受 WML.  
+        elseif(strpos(strtoupper($_SERVER[&#39;HTTP_ACCEPT&#39;]),&quot;VND.WAP.WML&quot;) &gt; 0){  
+            return true;  
+       }  
+       //检查USER_AGENT  
+       elseif(preg_match(&#39;/(blackberry|configuration\/cldc|hp |hp-|htc |htc_|htc-|iemobile|kindle|midp|mmp|motorola|mobile|nokia|opera mini|opera |Googlebot-Mobile|YahooSeeker\/M1A1-R2D2|android|iphone|ipod|mobi|palm|palmos|pocket|portalmmm|ppc;|smartphone|sonyericsson|sqh|spv|symbian|treo|up.browser|up.link|vodafone|windows ce|xda |xda_)/i&#39;, $_SERVER[&#39;HTTP_USER_AGENT&#39;])){  
+            return true;  
+        }  
+        else{  
+            return false;  
+       }  
+    }  </code></pre>
+        
+          <p class="article-more-link">
+            <a href="/2014/02/20/PHP%E5%88%A4%E6%96%AD%E7%94%A8%E6%88%B7%E6%98%AF%E5%90%A6%E6%89%8B%E6%9C%BA%E8%AE%BF%E9%97%AE/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/02/20/PHP%E5%88%A4%E6%96%AD%E7%94%A8%E6%88%B7%E6%98%AF%E5%90%A6%E6%89%8B%E6%9C%BA%E8%AE%BF%E9%97%AE/" data-id="ckeio58vw00q9v6lfhoty6ovj" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-降低winnt-Apache服务的权限，让你的虚拟主机更安全" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/02/20/%E9%99%8D%E4%BD%8Ewinnt-Apache%E6%9C%8D%E5%8A%A1%E7%9A%84%E6%9D%83%E9%99%90%EF%BC%8C%E8%AE%A9%E4%BD%A0%E7%9A%84%E8%99%9A%E6%8B%9F%E4%B8%BB%E6%9C%BA%E6%9B%B4%E5%AE%89%E5%85%A8/" class="article-date">
+  <time datetime="2014-02-20T02:47:55.000Z" itemprop="datePublished">2014-02-20</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/apache/">apache</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/02/20/%E9%99%8D%E4%BD%8Ewinnt-Apache%E6%9C%8D%E5%8A%A1%E7%9A%84%E6%9D%83%E9%99%90%EF%BC%8C%E8%AE%A9%E4%BD%A0%E7%9A%84%E8%99%9A%E6%8B%9F%E4%B8%BB%E6%9C%BA%E6%9B%B4%E5%AE%89%E5%85%A8/">降低winnt Apache服务的权限，让你的虚拟主机更安全</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>winnt 安装 Apache 后，在后台的服务默认是以system权限运行的(system是winnt的最高权限），这给服务器带来很大的安全隐患，最近我遇到的就是php的W8C 文件管理既然可以随意浏览，创建和删除winnt分区内的所有文件，包括系统目录的，因为php的权限也是system，可怕！我尝试修改php.ini禁用了一些函数但效果不好，一些程序不能运行。</p>
+<p>解决办法：</p>
+<p>1，在管理工具–计算机管理新建一个用户apache，用户权限user,设置一个密码，第一步完成</p>
+<p>2，在管理工具–本地全策略—用户权力指派–作为服务登陆，添加apache这个用户。第二步完成</p>
+<p>3，在管理工具–服务，找到apache这个服务，属性–登陆，你会看到现在选择的是本地系统账户，改称此账号，浏览找到apache这个用户，输入密码，确定，重起apache,ok现在apache就是以user权限运行的了。</p>
+        
+          <p class="article-more-link">
+            <a href="/2014/02/20/%E9%99%8D%E4%BD%8Ewinnt-Apache%E6%9C%8D%E5%8A%A1%E7%9A%84%E6%9D%83%E9%99%90%EF%BC%8C%E8%AE%A9%E4%BD%A0%E7%9A%84%E8%99%9A%E6%8B%9F%E4%B8%BB%E6%9C%BA%E6%9B%B4%E5%AE%89%E5%85%A8/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/02/20/%E9%99%8D%E4%BD%8Ewinnt-Apache%E6%9C%8D%E5%8A%A1%E7%9A%84%E6%9D%83%E9%99%90%EF%BC%8C%E8%AE%A9%E4%BD%A0%E7%9A%84%E8%99%9A%E6%8B%9F%E4%B8%BB%E6%9C%BA%E6%9B%B4%E5%AE%89%E5%85%A8/" data-id="ckeio59ec01zlv6lfctp3636w" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-Windows下降权MYSQL和apche的运行级别-普通用户权限运行" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/02/20/Windows%E4%B8%8B%E9%99%8D%E6%9D%83MYSQL%E5%92%8Capche%E7%9A%84%E8%BF%90%E8%A1%8C%E7%BA%A7%E5%88%AB-%E6%99%AE%E9%80%9A%E7%94%A8%E6%88%B7%E6%9D%83%E9%99%90%E8%BF%90%E8%A1%8C/" class="article-date">
+  <time datetime="2014-02-20T02:47:39.000Z" itemprop="datePublished">2014-02-20</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/apache/">apache</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/02/20/Windows%E4%B8%8B%E9%99%8D%E6%9D%83MYSQL%E5%92%8Capche%E7%9A%84%E8%BF%90%E8%A1%8C%E7%BA%A7%E5%88%AB-%E6%99%AE%E9%80%9A%E7%94%A8%E6%88%B7%E6%9D%83%E9%99%90%E8%BF%90%E8%A1%8C/">Windows下降权MYSQL和apche的运行级别(普通用户权限运行)</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>1、MYSQL的降权运行 </p>
+<p>新建立一个用户比如mysql<br>net user mysql microsoft /add<br>net localgroup users mysql /del<br>不属于任何组<br>如果MYSQL装在d:\mysql ，那么，给 mysql完全控制 的权限<br>然后在系统服务中设置，MYSQL的服务属性，在登录属性当中，选择此用户mysql然后输入密码，确定。<br>重新启动MYSQL服务，然后MYSQL就运行在低权限下了。 </p>
+        
+          <p class="article-more-link">
+            <a href="/2014/02/20/Windows%E4%B8%8B%E9%99%8D%E6%9D%83MYSQL%E5%92%8Capche%E7%9A%84%E8%BF%90%E8%A1%8C%E7%BA%A7%E5%88%AB-%E6%99%AE%E9%80%9A%E7%94%A8%E6%88%B7%E6%9D%83%E9%99%90%E8%BF%90%E8%A1%8C/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/02/20/Windows%E4%B8%8B%E9%99%8D%E6%9D%83MYSQL%E5%92%8Capche%E7%9A%84%E8%BF%90%E8%A1%8C%E7%BA%A7%E5%88%AB-%E6%99%AE%E9%80%9A%E7%94%A8%E6%88%B7%E6%9D%83%E9%99%90%E8%BF%90%E8%A1%8C/" data-id="ckeio58z100ziv6lfbe5k4xu5" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-Windows下Apache应用环境塔建安全设置-目录权限设置" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/02/20/Windows%E4%B8%8BApache%E5%BA%94%E7%94%A8%E7%8E%AF%E5%A2%83%E5%A1%94%E5%BB%BA%E5%AE%89%E5%85%A8%E8%AE%BE%E7%BD%AE-%E7%9B%AE%E5%BD%95%E6%9D%83%E9%99%90%E8%AE%BE%E7%BD%AE/" class="article-date">
+  <time datetime="2014-02-20T02:47:22.000Z" itemprop="datePublished">2014-02-20</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/apache/">apache</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/02/20/Windows%E4%B8%8BApache%E5%BA%94%E7%94%A8%E7%8E%AF%E5%A2%83%E5%A1%94%E5%BB%BA%E5%AE%89%E5%85%A8%E8%AE%BE%E7%BD%AE-%E7%9B%AE%E5%BD%95%E6%9D%83%E9%99%90%E8%AE%BE%E7%BD%AE/">Windows下Apache应用环境塔建安全设置(目录权限设置)</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>目的：为Apache，php配置受限制的用户权限。保护系统安全。需要的朋友可以参考下。</p>
+<p><strong>环境配置情况：</strong><br>apache安装目录：d:\www-s\apache<br>php目录：d:\www-s\php5<br>mysql目录：d:\www-s\mysql<br>网站根目录：d:\www\htdocs</p>
+<p>专门为运行Apache运行所使用的用户：apache-u（可不隶属于任何用户组）</p>
+<p>PS：这里只说Windows下Apache应用环境相关的目录权限设置，至于其他基本的服务器目录权限设置就不提啦！</p>
+        
+          <p class="article-more-link">
+            <a href="/2014/02/20/Windows%E4%B8%8BApache%E5%BA%94%E7%94%A8%E7%8E%AF%E5%A2%83%E5%A1%94%E5%BB%BA%E5%AE%89%E5%85%A8%E8%AE%BE%E7%BD%AE-%E7%9B%AE%E5%BD%95%E6%9D%83%E9%99%90%E8%AE%BE%E7%BD%AE/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/02/20/Windows%E4%B8%8BApache%E5%BA%94%E7%94%A8%E7%8E%AF%E5%A2%83%E5%A1%94%E5%BB%BA%E5%AE%89%E5%85%A8%E8%AE%BE%E7%BD%AE-%E7%9B%AE%E5%BD%95%E6%9D%83%E9%99%90%E8%AE%BE%E7%BD%AE/" data-id="ckeio58yy00z9v6lfdq324pfz" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
   
     <nav id="page-nav">
-      <a class="extend prev" rel="prev" href="/page/140/">« Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/139/">139</a><a class="page-number" href="/page/140/">140</a><span class="page-number current">141</span><a class="page-number" href="/page/142/">142</a><a class="page-number" href="/page/143/">143</a><span class="space">&hellip;</span><a class="page-number" href="/page/191/">191</a><a class="extend next" rel="next" href="/page/142/">Next »</a>
+      <a class="extend prev" rel="prev" href="/page/140/">« Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/139/">139</a><a class="page-number" href="/page/140/">140</a><span class="page-number current">141</span><a class="page-number" href="/page/142/">142</a><a class="page-number" href="/page/143/">143</a><span class="space">&hellip;</span><a class="page-number" href="/page/189/">189</a><a class="extend next" rel="next" href="/page/142/">Next »</a>
     </nav>
   
 
@@ -737,7 +405,7 @@ next_text: 'Next &raquo;' --></section>
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">120</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">38</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">28</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">21</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">74</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">160</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">53</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">85</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">12</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">119</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">38</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">28</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">21</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">74</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">71</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">156</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">52</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">83</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">12</span></li></ul>
     </div>
   </div>
 
@@ -777,7 +445,7 @@ next_text: 'Next &raquo;' --></section>
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/AndroidStudio/" style="font-size: 13.57px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 16.43px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.86px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 11.43px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 19.29px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10.71px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 12.14px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.14px;">VMware</a> <a href="/tags/Vue/" style="font-size: 17.14px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.86px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 14.29px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 14.29px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 13.57px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.86px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.43px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.14px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 18.57px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.43px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15.71px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.86px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
+      <a href="/tags/AndroidStudio/" style="font-size: 13.57px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 16.43px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.86px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 11.43px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 19.29px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10.71px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 12.14px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.14px;">VMware</a> <a href="/tags/Vue/" style="font-size: 17.86px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.86px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 14.29px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 13.57px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.86px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.43px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.14px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 17.14px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.43px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15.71px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 18.57px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 19.29px;">集群</a>
     </div>
   </div>
 
