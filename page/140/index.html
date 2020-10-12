@@ -59,6 +59,345 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-PHP多图片上传类推荐" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/02/20/PHP%E5%A4%9A%E5%9B%BE%E7%89%87%E4%B8%8A%E4%BC%A0%E7%B1%BB%E6%8E%A8%E8%8D%90/" class="article-date">
+  <time datetime="2014-02-20T02:51:38.000Z" itemprop="datePublished">2014-02-20</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/php/">php</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/02/20/PHP%E5%A4%9A%E5%9B%BE%E7%89%87%E4%B8%8A%E4%BC%A0%E7%B1%BB%E6%8E%A8%E8%8D%90/">PHP多图片上传类推荐</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>多文件上传是PHP中的一个基础应用，反正PHPer都会遇到的问题，现在就介绍一个功能完善、强大的多文件上传类给大家吧，能用上这个类的地方会很多。</p>
+<pre><code class="php">    &lt;?php  
+
+    class Upload{  
+        var $saveName;// 保存名  
+        var $savePath;// 保存路径  
+        var $fileFormat = array(&#39;gif&#39;,&#39;jpg&#39;,&#39;doc&#39;,&#39;application/octet-stream&#39;);// 文件格式&amp;MIME限定  
+        var $overwrite = 0;// 覆盖模式  
+        var $maxSize = 0;// 文件最大字节  
+        var $ext;// 文件扩展名  
+        var $thumb = 0;// 是否生成缩略图  
+        var $thumbWidth = 130;// 缩略图宽  
+        var $thumbHeight = 130;// 缩略图高  
+        var $thumbPrefix = &quot;_thumb_&quot;;// 缩略图前缀  
+        var $errno;// 错误代号  
+        var $returnArray= array();// 所有文件的返回信息  
+        var $returninfo= array();// 每个文件返回信息  
+
+
+    // 构造函数  
+    // @param $savePath 文件保存路径  
+    // @param $fileFormat 文件格式限制数组  
+    // @param $maxSize 文件最大尺寸  
+    // @param $overwriet 是否覆盖 1 允许覆盖 0 禁止覆盖  
+
+        function Upload($savePath, $fileFormat=&#39;&#39;,$maxSize = 0, $overwrite = 0) {  
+            $this-&gt;setSavepath($savePath);  
+            $this-&gt;setFileformat($fileFormat);  
+            $this-&gt;setMaxsize($maxSize);  
+            $this-&gt;setOverwrite($overwrite);  
+            $this-&gt;setThumb($this-&gt;thumb, $this-&gt;thumbWidth,$this-&gt;thumbHeight);  
+            $this-&gt;errno = 0;  
+        }  
+
+    // 上传  
+    // @param $fileInput 网页Form(表单)中input的名称  
+    // @param $changeName 是否更改文件名  
+        function run($fileInput,$changeName = 1){  
+            if(isset($_FILES[$fileInput])){  
+                $fileArr = $_FILES[$fileInput];  
+                if(is_array($fileArr[&#39;name&#39;])){//上传同文件域名称多个文件  
+                    for($i = 0; $i &lt; count($fileArr[&#39;name&#39;]); $i++){  
+                        $ar[&#39;tmp_name&#39;] = $fileArr[&#39;tmp_name&#39;][$i];  
+                        $ar[&#39;name&#39;] = $fileArr[&#39;name&#39;][$i];  
+                        $ar[&#39;type&#39;] = $fileArr[&#39;type&#39;][$i];  
+                        $ar[&#39;size&#39;] = $fileArr[&#39;size&#39;][$i];  
+                        $ar[&#39;error&#39;] = $fileArr[&#39;error&#39;][$i];  
+                        $this-&gt;getExt($ar[&#39;name&#39;]);//取得扩展名，赋给$this-&gt;ext，下次循环会更新  
+                        $this-&gt;setSavename($changeName == 1 ? &#39;&#39; : $ar[&#39;name&#39;]);//设置保存文件名  
+                        if($this-&gt;copyfile($ar)){  
+                            $this-&gt;returnArray[] =  $this-&gt;returninfo;  
+                        }else{  
+                            $this-&gt;returninfo[&#39;error&#39;] = $this-&gt;errmsg();  
+                            $this-&gt;returnArray[] =  $this-&gt;returninfo;  
+                        }  
+                    }  
+                    return $this-&gt;errno ?  false :  true;  
+                }else{//上传单个文件  
+                    $this-&gt;getExt($fileArr[&#39;name&#39;]);//取得扩展名  
+                    $this-&gt;setSavename($changeName == 1 ? &#39;&#39; : $fileArr[&#39;name&#39;]);//设置保存文件名  
+                    if($this-&gt;copyfile($fileArr)){  
+                        $this-&gt;returnArray[] =  $this-&gt;returninfo;  
+                    }else{  
+                        $this-&gt;returninfo[&#39;error&#39;] = $this-&gt;errmsg();  
+                        $this-&gt;returnArray[] =  $this-&gt;returninfo;  
+                    }  
+                    return $this-&gt;errno ?  false :  true;  
+                }  
+                return false;  
+            }else{  
+                $this-&gt;errno = 10;  
+                return false;  
+            }  
+        }  
+
+    // 单个文件上传  
+    // @param $fileArray 文件信息数组  
+        function copyfile($fileArray){  
+            $this-&gt;returninfo = array();  
+            // 返回信息  
+            $this-&gt;returninfo[&#39;name&#39;] = $fileArray[&#39;name&#39;];  
+            $this-&gt;returninfo[&#39;md5&#39;] = @md5_file($fileArray[&#39;tmp_name&#39;]);  
+            $this-&gt;returninfo[&#39;saveName&#39;] = $this-&gt;saveName;  
+            $this-&gt;returninfo[&#39;size&#39;] = number_format( ($fileArray[&#39;size&#39;])/1024 , 0, &#39;.&#39;, &#39; &#39;);//以KB为单位  
+            $this-&gt;returninfo[&#39;type&#39;] = $fileArray[&#39;type&#39;];  
+            // 检查文件格式  
+            if (!$this-&gt;validateFormat()){  
+                $this-&gt;errno = 11;  
+                return false;  
+            }  
+            // 检查目录是否可写  
+            if(!@is_writable($this-&gt;savePath)){  
+                $this-&gt;errno = 12;  
+                return false;  
+            }  
+            // 如果不允许覆盖，检查文件是否已经存在  
+            //if($this-&gt;overwrite == 0 &amp;&amp; @file_exists($this-&gt;savePath.$fileArray[&#39;name&#39;])){  
+            //  $this-&gt;errno = 13;  
+            //  return false;  
+            //}  
+            // 如果有大小限制，检查文件是否超过限制  
+            if ($this-&gt;maxSize != 0 ){  
+                if ($fileArray[&quot;size&quot;] &gt; $this-&gt;maxSize){  
+                    $this-&gt;errno = 14;  
+                    return false;  
+                }  
+            }  
+            // 文件上传  
+            if(!@move_uploaded_file($fileArray[&quot;tmp_name&quot;], $this-&gt;savePath.$this-&gt;saveName)){  
+                $this-&gt;errno = $fileArray[&quot;error&quot;];  
+                return false;  
+            }elseif( $this-&gt;thumb ){// 创建缩略图  
+                $CreateFunction = &quot;imagecreatefrom&quot;.($this-&gt;ext == &#39;jpg&#39; ? &#39;jpeg&#39; : $this-&gt;ext);  
+                $SaveFunction = &quot;image&quot;.($this-&gt;ext == &#39;jpg&#39; ? &#39;jpeg&#39; : $this-&gt;ext);  
+                if (strtolower($CreateFunction) == &quot;imagecreatefromgif&quot;   
+                    &amp;&amp; !function_exists(&quot;imagecreatefromgif&quot;)) {  
+                    $this-&gt;errno = 16;  
+                    return false;  
+                } elseif (strtolower($CreateFunction) == &quot;imagecreatefromjpeg&quot;   
+                    &amp;&amp; !function_exists(&quot;imagecreatefromjpeg&quot;)) {  
+                    $this-&gt;errno = 17;  
+                    return false;  
+                } elseif (!function_exists($CreateFunction)) {  
+                    $this-&gt;errno = 18;  
+                    return false;  
+                }  
+
+                $Original = @$CreateFunction($this-&gt;savePath.$this-&gt;saveName);  
+                if (!$Original) {$this-&gt;errno = 19; return false;}  
+                $originalHeight = ImageSY($Original);  
+                $originalWidth = ImageSX($Original);  
+                $this-&gt;returninfo[&#39;originalHeight&#39;] = $originalHeight;  
+                $this-&gt;returninfo[&#39;originalWidth&#39;] = $originalWidth;  
+                /* 
+                if (($originalHeight &lt; $this-&gt;thumbHeight  
+                    &amp;&amp; $originalWidth &lt; $this-&gt;thumbWidth)) { 
+                    // 如果比期望的缩略图小，那只Copy 
+                    move_uploaded_file($this-&gt;savePath.$this-&gt;saveName,  
+                        $this-&gt;savePath.$this-&gt;thumbPrefix.$this-&gt;saveName); 
+                } else { 
+                    if( $originalWidth &gt; $this-&gt;thumbWidth ){// 宽 &gt; 设定宽度 
+                        $thumbWidth = $this-&gt;thumbWidth ; 
+                        $thumbHeight = $this-&gt;thumbWidth * ( $originalHeight / $originalWidth ); 
+                        if($thumbHeight &gt; $this-&gt;thumbHeight){// 高 &gt; 设定高度 
+                            $thumbWidth = $this-&gt;thumbHeight * ( $thumbWidth / $thumbHeight ); 
+                            $thumbHeight = $this-&gt;thumbHeight ; 
+                        } 
+                    }elseif( $originalHeight &gt; $this-&gt;thumbHeight ){// 高 &gt; 设定高度 
+                        $thumbHeight = $this-&gt;thumbHeight ; 
+                        $thumbWidth = $this-&gt;thumbHeight * ( $originalWidth / $originalHeight ); 
+                        if($thumbWidth &gt; $this-&gt;thumbWidth){// 宽 &gt; 设定宽度 
+                            $thumbHeight = $this-&gt;thumbWidth * ( $thumbHeight / $thumbWidth ); 
+                            $thumbWidth = $this-&gt;thumbWidth ; 
+                        } 
+                    } 
+                    */  
+                    $radio=max(($originalWidth/$this-&gt;thumbWidth),($originalHeight/$this-&gt;thumbHeight));  
+                    $thumbWidth=(int)$originalWidth/$radio;  
+                    $thumbHeight=(int)$originalHeight/$radio;  
+
+                    if ($thumbWidth == 0) $thumbWidth = 1;  
+                    if ($thumbHeight == 0) $thumbHeight = 1;  
+                    $createdThumb = imagecreatetruecolor($thumbWidth, $thumbHeight);  
+                    if ( !$createdThumb ) {$this-&gt;errno = 20; return false;}  
+                    if ( !imagecopyresampled($createdThumb, $Original, 0, 0, 0, 0,   
+                        $thumbWidth, $thumbHeight, $originalWidth, $originalHeight) )  
+                        {$this-&gt;errno = 21; return false;}  
+                    if ( !$SaveFunction($createdThumb,   
+                        $this-&gt;savePath.$this-&gt;thumbPrefix.$this-&gt;saveName) )  
+                        {$this-&gt;errno = 22; return false;}  
+
+            }  
+            // 删除临时文件  
+            /* 
+            if(!@$this-&gt;del($fileArray[&quot;tmp_name&quot;])){ 
+                return false; 
+            } 
+            */  
+            return true;  
+        }  
+
+    // 文件格式检查,MIME检测  
+        function validateFormat(){  
+            if(!is_array($this-&gt;fileFormat)   
+                || in_array(strtolower($this-&gt;ext), $this-&gt;fileFormat)   
+                || in_array(strtolower($this-&gt;returninfo[&#39;type&#39;]), $this-&gt;fileFormat) )  
+                return true;  
+            else  
+                return false;  
+        }  
+    // 获取文件扩展名  
+    // @param $fileName 上传文件的原文件名  
+        function getExt($fileName){  
+            $ext = explode(&quot;.&quot;, $fileName);  
+            $ext = $ext[count($ext) - 1];  
+            $this-&gt;ext = strtolower($ext);  
+        }  
+
+    // 设置上传文件的最大字节限制  
+    // @param $maxSize 文件大小(bytes) 0:表示无限制  
+        function setMaxsize($maxSize){  
+            $this-&gt;maxSize = $maxSize;  
+        }  
+    // 设置文件格式限定  
+    // @param $fileFormat 文件格式数组  
+        function setFileformat($fileFormat){  
+            if(is_array($fileFormat)){$this-&gt;fileFormat = $fileFormat ;}  
+        }  
+
+    // 设置覆盖模式  
+    // @param overwrite 覆盖模式 1:允许覆盖 0:禁止覆盖  
+        function setOverwrite($overwrite){  
+            $this-&gt;overwrite = $overwrite;  
+        }  
+
+
+    // 设置保存路径  
+    // @param $savePath 文件保存路径：以 &quot;/&quot; 结尾，若没有 &quot;/&quot;，则补上  
+        function setSavepath($savePath){  
+            $this-&gt;savePath = substr( str_replace(&quot;\\&quot;,&quot;/&quot;, $savePath) , -1) == &quot;/&quot;   
+            ? $savePath : $savePath.&quot;/&quot;;  
+        }  
+
+    // 设置缩略图  
+    // @param $thumb = 1 产生缩略图 $thumbWidth,$thumbHeight 是缩略图的宽和高  
+        function setThumb($thumb, $thumbWidth = 0,$thumbHeight = 0){  
+            $this-&gt;thumb = $thumb;  
+            if($thumbWidth) $this-&gt;thumbWidth = $thumbWidth;  
+            if($thumbHeight) $this-&gt;thumbHeight = $thumbHeight;  
+        }  
+
+    // 设置文件保存名  
+    // @param $saveName 保存名，如果为空，则系统自动生成一个随机的文件名  
+        function setSavename($saveName){  
+            if ($saveName == &#39;&#39;){  // 如果未设置文件名，则生成一个随机文件名  
+                $name = date(&#39;YmdHis&#39;).&quot;_&quot;.rand(100,999).&#39;.&#39;.$this-&gt;ext;  
+                //判断文件是否存在,不允许重复文件  
+                if(file_exists($this-&gt;savePath . $name)){  
+                    $name = setSavename($saveName);  
+                    }  
+            } else {  
+                $name = $saveName;  
+            }  
+            $this-&gt;saveName = $name;  
+        }  
+
+    // 删除文件  
+    // @param $fileName 所要删除的文件名  
+        function del($fileName){  
+            if(!@unlink($fileName)){  
+                $this-&gt;errno = 15;  
+                return false;  
+            }  
+            return true;  
+        }  
+
+    // 返回上传文件的信息  
+        function getInfo(){  
+            return $this-&gt;returnArray;  
+        }  
+
+    // 得到错误信息  
+        function errmsg(){  
+            $uploadClassError = array(  
+                0   =&gt;&#39;There is no error, the file uploaded with success. &#39;,  
+                1   =&gt;&#39;The uploaded file exceeds the upload_max_filesize directive in php.ini.&#39;,  
+                2   =&gt;&#39;The uploaded file exceeds the MAX_FILE_SIZE that was specified in the HTML form.&#39;,  
+                3   =&gt;&#39;The uploaded file was only partially uploaded. &#39;,  
+                4   =&gt;&#39;No file was uploaded. &#39;,  
+                6   =&gt;&#39;Missing a temporary folder. Introduced in PHP 4.3.10 and PHP 5.0.3. &#39;,  
+                7   =&gt;&#39;Failed to write file to disk. Introduced in PHP 5.1.0. &#39;,  
+                10  =&gt;&#39;Input name is not unavailable!&#39;,  
+                11  =&gt;&#39;The uploaded file is Unallowable!&#39;,  
+                12  =&gt;&#39;Directory unwritable!&#39;,  
+                13  =&gt;&#39;File exist already!&#39;,  
+                14  =&gt;&#39;File is too big!&#39;,  
+                15  =&gt;&#39;Delete file unsuccessfully!&#39;,  
+                16  =&gt;&#39;Your version of PHP does not appear to have GIF thumbnailing support.&#39;,  
+                17  =&gt;&#39;Your version of PHP does not appear to have JPEG thumbnailing support.&#39;,  
+                18  =&gt;&#39;Your version of PHP does not appear to have pictures thumbnailing support.&#39;,  
+                19  =&gt;&#39;An error occurred while attempting to copy the source image .   
+                        Your version of php (&#39;.phpversion().&#39;) may not have this image type support.&#39;,  
+                20  =&gt;&#39;An error occurred while attempting to create a new image.&#39;,  
+                21  =&gt;&#39;An error occurred while copying the source image to the thumbnail image.&#39;,  
+                22  =&gt;&#39;An error occurred while saving the thumbnail image to the filesystem.   
+                        Are you sure that PHP has been configured with both read and write access on this folder?&#39;,  
+                );  
+            if ($this-&gt;errno == 0)  
+                return false;  
+            else  
+                return $uploadClassError[$this-&gt;errno];  
+        }  
+    }  
+
+    ?&gt;  </code></pre>
+        
+          <p class="article-more-link">
+            <a href="/2014/02/20/PHP%E5%A4%9A%E5%9B%BE%E7%89%87%E4%B8%8A%E4%BC%A0%E7%B1%BB%E6%8E%A8%E8%8D%90/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/02/20/PHP%E5%A4%9A%E5%9B%BE%E7%89%87%E4%B8%8A%E4%BC%A0%E7%B1%BB%E6%8E%A8%E8%8D%90/" data-id="ckeio58vz00qiv6lffdhj5h8q" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-PHP解析URL并得到URL中的参数" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2014/02/20/PHP%E8%A7%A3%E6%9E%90URL%E5%B9%B6%E5%BE%97%E5%88%B0URL%E4%B8%AD%E7%9A%84%E5%8F%82%E6%95%B0/" class="article-date">
@@ -400,55 +739,9 @@
 
 
   
-    <article id="post-Windows下降权MYSQL和apche的运行级别-普通用户权限运行" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2014/02/20/Windows%E4%B8%8B%E9%99%8D%E6%9D%83MYSQL%E5%92%8Capche%E7%9A%84%E8%BF%90%E8%A1%8C%E7%BA%A7%E5%88%AB-%E6%99%AE%E9%80%9A%E7%94%A8%E6%88%B7%E6%9D%83%E9%99%90%E8%BF%90%E8%A1%8C/" class="article-date">
-  <time datetime="2014-02-20T02:47:39.000Z" itemprop="datePublished">2014-02-20</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/apache/">apache</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2014/02/20/Windows%E4%B8%8B%E9%99%8D%E6%9D%83MYSQL%E5%92%8Capche%E7%9A%84%E8%BF%90%E8%A1%8C%E7%BA%A7%E5%88%AB-%E6%99%AE%E9%80%9A%E7%94%A8%E6%88%B7%E6%9D%83%E9%99%90%E8%BF%90%E8%A1%8C/">Windows下降权MYSQL和apche的运行级别(普通用户权限运行)</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>1、MYSQL的降权运行 </p>
-<p>新建立一个用户比如mysql<br>net user mysql microsoft /add<br>net localgroup users mysql /del<br>不属于任何组<br>如果MYSQL装在d:\mysql ，那么，给 mysql完全控制 的权限<br>然后在系统服务中设置，MYSQL的服务属性，在登录属性当中，选择此用户mysql然后输入密码，确定。<br>重新启动MYSQL服务，然后MYSQL就运行在低权限下了。 </p>
-        
-          <p class="article-more-link">
-            <a href="/2014/02/20/Windows%E4%B8%8B%E9%99%8D%E6%9D%83MYSQL%E5%92%8Capche%E7%9A%84%E8%BF%90%E8%A1%8C%E7%BA%A7%E5%88%AB-%E6%99%AE%E9%80%9A%E7%94%A8%E6%88%B7%E6%9D%83%E9%99%90%E8%BF%90%E8%A1%8C/#more">Read More</a>
-          </p>
-        
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2014/02/20/Windows%E4%B8%8B%E9%99%8D%E6%9D%83MYSQL%E5%92%8Capche%E7%9A%84%E8%BF%90%E8%A1%8C%E7%BA%A7%E5%88%AB-%E6%99%AE%E9%80%9A%E7%94%A8%E6%88%B7%E6%9D%83%E9%99%90%E8%BF%90%E8%A1%8C/" data-id="ckeio58z100ziv6lfbe5k4xu5" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
-      <a class="extend prev" rel="prev" href="/page/139/">« Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/138/">138</a><a class="page-number" href="/page/139/">139</a><span class="page-number current">140</span><a class="page-number" href="/page/141/">141</a><a class="page-number" href="/page/142/">142</a><span class="space">&hellip;</span><a class="page-number" href="/page/186/">186</a><a class="extend next" rel="next" href="/page/141/">Next »</a>
+      <a class="extend prev" rel="prev" href="/page/139/">« Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/138/">138</a><a class="page-number" href="/page/139/">139</a><span class="page-number current">140</span><a class="page-number" href="/page/141/">141</a><a class="page-number" href="/page/142/">142</a><span class="space">&hellip;</span><a class="page-number" href="/page/187/">187</a><a class="extend next" rel="next" href="/page/141/">Next »</a>
     </nav>
   
 
@@ -462,7 +755,7 @@ next_text: 'Next &raquo;' --></section>
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">119</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">38</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">21</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">69</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">71</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">151</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">35</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">51</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">83</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">11</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">119</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">38</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">21</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">69</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">71</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">151</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">36</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">51</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">83</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">11</span></li></ul>
     </div>
   </div>
 
@@ -472,6 +765,10 @@ next_text: 'Next &raquo;' --></section>
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2020/10/12/%E5%8D%8F%E7%A8%8B%E5%92%8C%E5%A4%9A%E8%BF%9B%E7%A8%8B-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E7%9A%84%E5%8C%BA%E5%88%AB/">协程和多进程/多线程的区别</a>
+          </li>
         
           <li>
             <a href="/2020/09/14/%E7%9C%9F%E6%AD%A3%E9%A9%B1%E5%8A%A8%E4%BD%A0%E6%88%90%E9%95%BF%E7%9A%84%E6%98%AF%E7%97%9B%E8%8B%A6/">真正驱动你成长的，是痛苦</a>
@@ -487,10 +784,6 @@ next_text: 'Next &raquo;' --></section>
         
           <li>
             <a href="/2020/08/25/Laravel%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Laravel问题集锦</a>
-          </li>
-        
-          <li>
-            <a href="/2020/08/24/GITHUB%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE%E7%B4%A2%E5%BC%95/">GITHUB开源项目索引</a>
           </li>
         
       </ul>
