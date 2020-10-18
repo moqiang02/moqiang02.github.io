@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Python回测神器Backtrader (上） | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="将用两篇文章简要的介绍一下Backtrader这个库。第一篇代码部分涉及的较少，主要讲讲Backtrader的优势以及整体框架。第二篇会讲如何在Backtrader中进行回测、选股、优化及可视化，并给出例子中的源码。后续个人也会尝试结合券商金融工程的研报进行一些有趣的研究。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Python回测神器Backtrader (上）">
+<meta property="og:url" content="http://moqiang02.github.io/2020/10/18/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader-%E4%B8%8A/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="将用两篇文章简要的介绍一下Backtrader这个库。第一篇代码部分涉及的较少，主要讲讲Backtrader的优势以及整体框架。第二篇会讲如何在Backtrader中进行回测、选股、优化及可视化，并给出例子中的源码。后续个人也会尝试结合券商金融工程的研报进行一些有趣的研究。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader/1.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader/2.png">
+<meta property="article:published_time" content="2020-10-18T07:31:19.000Z">
+<meta property="article:modified_time" content="2020-10-18T15:21:30.148Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader/1.png">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Python回测神器Backtrader-上" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/10/18/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader-%E4%B8%8A/" class="article-date">
+  <time datetime="2020-10-18T07:31:19.000Z" itemprop="datePublished">2020-10-18</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Python回测神器Backtrader (上）
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+<!-- 文章目录开始 -->
+
+<div id="toc" class="toc-article">
+<strong class="toc-title" style="cursor:pointer">contents</strong>
+<ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#0-引言"><span class="toc-number">1.</span> <span class="toc-text">0.引言</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-什么是Backtrader？"><span class="toc-number">2.</span> <span class="toc-text">1.什么是Backtrader？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-为什么学习Backtrader？"><span class="toc-number">3.</span> <span class="toc-text">2.为什么学习Backtrader？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-阻碍学习Backtrader的原因"><span class="toc-number">4.</span> <span class="toc-text">3.阻碍学习Backtrader的原因</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-Backtrader的工作原理"><span class="toc-number">5.</span> <span class="toc-text">4.Backtrader的工作原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-Backtrader的安装"><span class="toc-number">6.</span> <span class="toc-text">5.Backtrader的安装</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-IDE的选择"><span class="toc-number">7.</span> <span class="toc-text">6.IDE的选择</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-Backtrader的基本配置"><span class="toc-number">8.</span> <span class="toc-text">7.Backtrader的基本配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#8-Backtrader的数据导入"><span class="toc-number">9.</span> <span class="toc-text">8.Backtrader的数据导入</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#9-在Strategy类中输出数据"><span class="toc-number">10.</span> <span class="toc-text">9.在Strategy类中输出数据</span></a></li></ol>
+</div>
+
+<!-- 文章目录结束 -->	  
+
+	  
+        <blockquote>
+<p>将用两篇文章简要的介绍一下Backtrader这个库。<br>第一篇代码部分涉及的较少，主要讲讲Backtrader的优势以及整体框架。<br>第二篇会讲如何在Backtrader中进行回测、选股、优化及可视化，并给出例子中的源码。<br>后续个人也会尝试结合券商金融工程的研报进行一些有趣的研究。</p>
+</blockquote>
+<a id="more"></a>
+
+<h3 id="0-引言"><a href="#0-引言" class="headerlink" title="0.引言"></a>0.引言</h3><p>对于绝大多数使用Python回测交易策略的研究人员，通常有以下三个选项：<br>1）使用现成的较成熟的库回测<br>2）构建自己的回测平台<br>3）使用云交易平台</p>
+<p><strong>这里主要讨论第一个选项</strong>。其优点是可以快速的测试策略，优化参数，同时将所有数据都安全地存储在本地计算机上。( <strong>如果当前可用的解决方案不能满足需求，则可以考虑选项2实现个性化的需求</strong>）</p>
+<p>目前两个比较流行的本地回测库是Backtrader和Zipline，本文将重点介绍Backtrader这个库。</p>
+<h3 id="1-什么是Backtrader？"><a href="#1-什么是Backtrader？" class="headerlink" title="1.什么是Backtrader？"></a>1.什么是Backtrader？</h3><p>Backtrader是一个帮助金融市场交易者进行<strong>策略开发和测试的开源Python库</strong>。在Backtrader的开源框架中，允许用户基于历史数据对策略进行测试与优化，对计算结果进行可视化，甚至可用于实时交易。</p>
+<h3 id="2-为什么学习Backtrader？"><a href="#2-为什么学习Backtrader？" class="headerlink" title="2.为什么学习Backtrader？"></a>2.为什么学习Backtrader？</h3><blockquote>
+<p>Backtrader可大大节省量化研究人员在Coding上所花时间，从而专注于开发、测试及优化市场策略。在庞大的社区和活跃的论坛中，可轻松地找到使用时遇到问题的解决方案。此外，Backtrader网站上的大量文档甚至可能让你发现你策略中的关键部分。</p>
+</blockquote>
+<p>Backtrader的常见优点如下：</p>
+<ul>
+<li><p><strong>回测测试</strong><br>成熟的回测程序减少了清理数据并进行迭代等策略测试中所必须的繁琐过程。它具有可用于各种数据源的内置函数，保证数据导入更加容易。</p>
+</li>
+<li><p><strong>优化</strong><br>策略参数的调整有时可能带来同类策略是否盈利的差别。运行回测后，只需更改几行代码即可轻松完成优化。</p>
+</li>
+<li><p><strong>绘图</strong><br>Python的绘图工具并不是十分友好，尤其是第一次使用时。在Backtrader中可用少量代码创建复杂的图表。</p>
+</li>
+<li><p><strong>技术指标</strong><br>大多数主流指标已在Backtrader平台中实现。用户若想测试某个指标，但不确定其效果如何，可以尝试使用少量代码在Backtrader中对其进行测试，避免花费大量时间在弄清指标含义及编程实现上。</p>
+</li>
+<li><p><strong>对复杂策略的支持</strong><br>想要从一个数据集中获取信号并在另一个数据集上执行交易？策略是否涉及多个时间范围？还是需要重新采样数据？针对这些情形，Backtrader考虑到了市场不同的交易方式，并提供了广泛的支持。</p>
+</li>
+<li><p><strong>开源</strong></p>
+<ol>
+<li>使用者拥有对所有单个组件的完全访问权限，并且可以根据需要对他们进行改写。</li>
+<li>无需将策略上传到第三方服务器，保证了策略的私密性。</li>
+<li>没有义务升级和处理不必要的更改，就像使用公司的软件一样。一个反面案例是几年前Quantopian停止了实盘交易。它迫使许多用户迁移到另一个可能很麻烦的平台。</li>
+</ol>
+</li>
+<li><p><strong>研发积极</strong><br>这可能是Backtrader尤其突出的领域。该框架最初于2015年开发，此后不断进行改进。就在几周前，基于Pandas的技术分析库已发布，以解决流行且常用的TA-Lib框架中的问题。此外，由于拥有广泛的用户基础，因此也拥有大量积极的第三方开发者。</p>
+</li>
+<li><p><strong>实时交易</strong><br>如果对回测结果感到满意，则可以轻松迁移到Backtrader中的实时环境。如果打算使用平台提供的内置指标，则此功能特别有用。</p>
+</li>
+</ul>
+<h3 id="3-阻碍学习Backtrader的原因"><a href="#3-阻碍学习Backtrader的原因" class="headerlink" title="3.阻碍学习Backtrader的原因"></a>3.阻碍学习Backtrader的原因</h3><ul>
+<li><p><strong>潜在的陡峭学习曲线</strong><br>Backtrader可以做很多事情，它非常全面。但是附加功能可以看作是一把双刃剑，需要花费不少时间了解所使用的语法和逻辑。</p>
+</li>
+<li><p><strong>对库本身的深入理解</strong><br>在上一点的基础上，最好浏览任何库的源代码以更好地了解框架。源代码中包含了多达470个项目。尽管其中一些是示例或数据集和一些不再使用的脚本，然而还是有很多事情要做。</p>
+</li>
+<li><p><strong>创建私人的框架</strong><br>有些人倾向于完全掌握自己的软件，宁愿自己耗费不小的精力创建一个回测平台。在大多数情况下，这带来巨大工作量，但有明显的好处。如果只是想了解一个简单策略的大体概念，尝试遍历过往数据而不是学习库可能会更容易。</p>
+</li>
+</ul>
+<h3 id="4-Backtrader的工作原理"><a href="#4-Backtrader的工作原理" class="headerlink" title="4.Backtrader的工作原理"></a>4.Backtrader的工作原理</h3><blockquote>
+<p>通过对过去的价格数据进行回溯测试，分析策略在过往市场中的表现。</p>
+</blockquote>
+<p>Backtrader库的基本功能如下：</p>
+<ul>
+<li>遍历历史数据，根据策略给出的信号来模拟交易的执行。它以多种方式扩展了此功能。</li>
+<li>“Analyzer”可提供评估策略优劣的统计信息。在本教程的稍后部分的优化测试中，我们将使用常用的夏普比率展示一个示例。</li>
+<li>在优化方面，内置优化模块使用多进程技术，充分利用CPU的多核特性加快处理速度。</li>
+<li>基于matplotlib库在回测结束时创建图表，提供直观的分析图。</li>
+</ul>
+<h3 id="5-Backtrader的安装"><a href="#5-Backtrader的安装" class="headerlink" title="5.Backtrader的安装"></a>5.Backtrader的安装</h3><p>最简单方法是通过命令行 <code>pip install backtrader</code>。</p>
+<p>如果计划使用图表功能，则应安装matplotlib(最低版本要求是1.4.1)。可以通过从命令行输入pip Frozen以显示已安装的Python软件包来确认它已安装在系统上。如果需要安装，可以通过<code>pip install backtrader [plotting]</code>或<code>pip install matplotlib</code>进行安装。</p>
+<p>或者，可以从源代码运行Backtrader。从Backtrader GitHub页面下载<a href="https://github.com/blampe/IbPy/archive/master.zip" target="_blank" rel="noopener">zip文件</a> 并将backtrader目录放置在项目文件中。</p>
+<h3 id="6-IDE的选择"><a href="#6-IDE的选择" class="headerlink" title="6.IDE的选择"></a>6.IDE的选择</h3><blockquote>
+<p>在深入研究代码之前，让我们花一点时间来讨论IDE。IDE或集成开发环境只是一个用于从中编写和调试代码的编辑器。</p>
+</blockquote>
+<p>有几种流行的IDE，选择合适的IDE通常取决于个人喜好。Python随附有一个称为IDLE的IDE。其中一些受欢迎的第三方Python IDE包括VS Code，Sublime Text，PyCharm和Spyder。</p>
+<p>另一个考虑因素是是否使用交互式IDE。交互式IDE的一个流行选择是Jupyter Notebook。</p>
+<p>交互式IDE具有执行选定代码块而无需运行整个脚本的附加功能。在测试新库时，这非常有用，因为可以尝试其他功能，而不必注释掉或删除先前的代码块。</p>
+<p><strong>虽然可以在Backtrader中使用交互式IDE的某些功能，但不建议这样做</strong>。某些功能（例如优化）需要进行多重处理，而这些功能不适用于交互式IDE。如果决定使用交互式IDE，则应该能够继续学习本教程直到优化部分为止。</p>
+<h3 id="7-Backtrader的基本配置"><a href="#7-Backtrader的基本配置" class="headerlink" title="7.Backtrader的基本配置"></a>7.Backtrader的基本配置</h3><p>基本的Backtrader脚本有两个主要组件，<strong>Strategy类</strong>和<strong>Cerebro引擎</strong>。</p>
+<pre><code class="py">import backtrader as bt
+class MyStrategy(bt.Strategy):
+    def next(self):
+        pass #策略核心部件
+
+#初始化Cebro引擎
+cerebro = bt.Cerebro()
+
+# 给Cebro引擎添加策略
+cerebro.addstrategy(MyStrategy)
+
+# 给Cebro引擎添加数据
+data = bt.feeds.YahooFinanceCSVData(dataname=&#39;TSLA.csv&#39;) 
+cerebro.adddata(data) 
+
+#运行Cebro引擎
+cerebro.run()</code></pre>
+<p>在下面的示例中，我们将更详细地讨论Strategy类。<strong>Strategy类中包含了确定和执行交易信号的所有逻辑</strong>。用户还可以在其中创建或调用指标，并确定要记录或打印的内容。</p>
+<p><strong>Cerebro引擎是Backtrader的核心</strong>。在调用<code>cerebro.run()</code>命令之前，我们将向其添加数据和策略。</p>
+<h3 id="8-Backtrader的数据导入"><a href="#8-Backtrader的数据导入" class="headerlink" title="8.Backtrader的数据导入"></a>8.Backtrader的数据导入</h3><p>有几种获取数据的方法。比如券商开放的历史数据和实时行情API访问权限。另外，也有第三方API可供下载历史数据。下面从Yahoo Finance网站下载CSV格式的数据为例进行介绍。</p>
+<p><img src="/images/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader/1.png" alt="如何从Yahoo中下载所需CSV数据"></p>
+<p>导航到Yahoo Finance 网站，输入代码或公司名称查找所需的数据。单击“历史数据”选项卡，选择起止时间段，然后单击“Apply”，将下载CSV文件保存到本地硬盘。最好将CSV文件复制到项目目录中。否则，将数据添加到Cerebro中时必须指定完整的路径名。这里使用专用于Yahoo Finance的数据格式的接口将数据添加到Backtrader中。</p>
+<p>下面示例将CSV数据集分配给名为data的变量并添加到cerebro引擎中。</p>
+<pre><code class="py">data = bt.feeds.YahooFinanceCSVData(dataname=&#39;TSLA.csv&#39;) 
+cerebro.adddata(data)</code></pre>
+<blockquote>
+<p>需要补充一句，虽然这里给的例子是用csv读取的原始数据,Backtrader是完美支持Pandas数据格式的，调用方式如下</p>
+</blockquote>
+<pre><code class="py">data = bt.feeds.PandasData(dataname=self.df,
+         fromdate=self.startdate,                              
+         todate=self.enddate)</code></pre>
+<p>用户可以在Cerebro引擎的初始化和<code>Cerebro.run()</code>命令之间的任何时间添加数据。加载数据时还可指定其他参数。在下一个示例中，我们将进一步探讨这一点。</p>
+<h3 id="9-在Strategy类中输出数据"><a href="#9-在Strategy类中输出数据" class="headerlink" title="9.在Strategy类中输出数据"></a>9.在Strategy类中输出数据</h3><blockquote>
+<p>Strategy类是策略开发者在Backtrader中花费最多时间的地方。</p>
+</blockquote>
+<p>为了更熟悉Backtrader中的Strategy类，这里将创建一个简单的脚本打印收盘价。这里，要做的第一件事是创建一个名为PrintClose的新类，其继承于Strategy类。</p>
+<pre><code class="py">import backtrader as bt
+class PrintClose(bt.Strategy):
+    def __init__(self):
+        #引用data[0]中的收盘价格数据
+        self.dataclose = self.datas[0].close
+
+    def log(self, txt, dt=None):     
+        dt = dt or self.datas[0].datetime.date(0)     
+        print(&#39;%s, %s&#39; % (dt.isoformat(), txt)) 
+        #打印日期和收盘价格
+
+    def next(self):     
+        #将收盘价保留两位小数再输出
+        self.log(&#39;Close: %.2f&#39; % self.dataclose[0])</code></pre>
+<p>上面的<code>_init_()</code> 函数创建了一个名为dataclose的变量记录收盘价。收盘价存储在<code>datas[0].close</code>中。用户可以通过引用<code>data[0].open</code>来轻松获得开盘价。如果使用多个数据Feed，则可以通过引用<code>datas[1].close</code>来访问第二个Feed，但稍后会介绍更多。</p>
+<p>Backtrader的一个重要功能是访问历史数据。当Backtrader遍历历史数据时，可从<code>dataclose[0]</code>访问最新价格，还可以通过访问dataclose的负索引获取之前的数据。</p>
+<p>例如，下面的代码检查最近的收盘价是否大于先前的收盘价。</p>
+<pre><code class="py">if dataclose[0] &gt; dataclose [-1]: 
+   pass # 触发某种行为</code></pre>
+<p>我们可以像这样通过更改索引轻松获得倒数第二个收盘价：<code>dataclose[-2]</code></p>
+<p>下一步是创建<code>log()</code>函数。</p>
+<pre><code class="py">def log(self, txt, dt=None):     
+    dt = dt or self.datas[0].datetime.date(0)     
+    #打印日期和收盘价格
+    print(&#39;%s, %s&#39; % (dt.isoformat(), txt)) </code></pre>
+<p>log()函数允许用户通过变量txt将所需的数据输出至屏幕。这里log()尝试从最近的数据点获取日期时间值（如果有），并打印至屏幕。</p>
+<p>现在已经定义了log()函数，我们将定义next()函数。这是Strategy类最重要的部分，因为绝大多数代码都将在此处执行。每当Backtrader在下一个新数据点上进行迭代时，都会调用此部分。</p>
+<pre><code class="py">def next(self):     
+     #将收盘价保留两位小数再输出
+     self.log(&#39;Close: %.2f&#39; % self.dataclose[0])</code></pre>
+<p>上面的代码记录了四舍五入到两个小数点后的收盘价。</p>
+<p>截至目前为止，完整的脚本如下:</p>
+<pre><code class="py">import backtrader as bt
+class PrintClose(bt.Strategy):
+    def __init__(self):
+        #引用data[0]中的收盘价格数据
+        self.dataclose = self.datas[0].close
+
+    def log(self, txt, dt=None):     
+        dt = dt or self.datas[0].datetime.date(0)     
+        print(&#39;%s, %s&#39; % (dt.isoformat(), txt)) 
+        # 打印日期和收盘价格
+
+    def next(self):     
+        #将收盘价保留两位小数再输出
+        self.log(&#39;Close: %.2f&#39; % self.dataclose[0])
+
+#初始化Cebro引擎
+cerebro = bt.Cerebro()
+##给Cebro引擎添加数据
+data = bt.feeds.YahooFinanceCSVData(dataname=&#39;TSLA.csv&#39;)
+cerebro.adddata(data)
+#给Cebro引擎添加策略
+cerebro.addstrategy(PrintClose)
+#运行Cebro引擎
+cerebro.run()</code></pre>
+<p>输出应如下所示：</p>
+<p><img src="/images/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader/2.png" alt=""></p>
+<p>从现在开始，脚本的整体结构将基本保持不变。后续工作主要是在Strategy类的next函数下编写策略。</p>
+<p><strong><em>如何在Backtrader中进行策略回测、选股、优化、可视化以及文中案例的源码，将在下一篇给出</em></strong>。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2020/10/18/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader-%E4%B8%8A/" data-id="ckgf8zu9v000002lf18h24h5g" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2020/10/18/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader-%E4%B8%8B/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Python回测神器Backtrader (下）
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2020/10/12/%E5%8D%8F%E7%A8%8B%E5%92%8C%E5%A4%9A%E8%BF%9B%E7%A8%8B-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E7%9A%84%E5%8C%BA%E5%88%AB/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">协程和多进程/多线程的区别</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">119</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">38</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">21</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">69</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">71</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">151</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">36</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">51</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">83</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">2</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/10/18/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader-%E4%B8%8B/">Python回测神器Backtrader (下）</a>
+          </li>
+        
+          <li>
+            <a href="/2020/10/18/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader-%E4%B8%8A/">Python回测神器Backtrader (上）</a>
+          </li>
+        
+          <li>
+            <a href="/2020/10/12/%E5%8D%8F%E7%A8%8B%E5%92%8C%E5%A4%9A%E8%BF%9B%E7%A8%8B-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E7%9A%84%E5%8C%BA%E5%88%AB/">协程和多进程/多线程的区别</a>
+          </li>
+        
+          <li>
+            <a href="/2020/09/14/%E7%9C%9F%E6%AD%A3%E9%A9%B1%E5%8A%A8%E4%BD%A0%E6%88%90%E9%95%BF%E7%9A%84%E6%98%AF%E7%97%9B%E8%8B%A6/">真正驱动你成长的，是痛苦</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/25/Laravel-%E8%87%AA%E5%B8%A6%E7%9A%84-API-%E5%AE%88%E5%8D%AB%E9%A9%B1%E5%8A%A8-token-%E4%BD%BF%E7%94%A8%E8%AF%A6%E8%A7%A3/">Laravel 自带的 API 守卫驱动 token 使用详解</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.57px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.86px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 11.43px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 19.29px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10.71px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 12.14px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.14px;">VMware</a> <a href="/tags/Vue/" style="font-size: 17.14px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.86px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 14.29px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 13.57px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.86px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.43px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.14px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 16.43px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.43px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.86px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.57px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>
