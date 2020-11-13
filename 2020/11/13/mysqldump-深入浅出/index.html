@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>mysqldump 深入浅出 | 自强不息</title>
+  <link  href="/favicon.ico" rel="icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="mysqldump 是用于转存储 mysql 数据库的实用程序。 主要产生一个 SQL 脚本，其中包含从头重新创建数据库的所有命令。 导出脚本过程大概如下：创建数据库判断语句、删除表、创建表、锁表、禁用索引、插入数据、启用索引、解锁表。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="mysqldump 深入浅出">
+<meta property="og:url" content="http://moqiang02.github.io/2020/11/13/mysqldump-%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="mysqldump 是用于转存储 mysql 数据库的实用程序。 主要产生一个 SQL 脚本，其中包含从头重新创建数据库的所有命令。 导出脚本过程大概如下：创建数据库判断语句、删除表、创建表、锁表、禁用索引、插入数据、启用索引、解锁表。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-11-13T14:55:43.000Z">
+<meta property="article:modified_time" content="2020-11-13T15:03:27.110Z">
+<meta property="article:author" content="moqiang02@163.com">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="icon" href="/favicon.ico">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+
+  <link rel="stylesheet" href="/css/highlight/styles/vs2015.css">
+<meta name="generator" content="Hexo 4.2.1"></head>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-mysqldump-深入浅出" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/11/13/mysqldump-%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA/" class="article-date">
+  <time datetime="2020-11-13T14:55:43.000Z" itemprop="datePublished">2020-11-13</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/mysql/">mysql</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      mysqldump 深入浅出
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+<!-- 文章目录开始 -->
+
+<div id="toc" class="toc-article">
+<strong class="toc-title" style="cursor:pointer">contents</strong>
+<ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#快速使用"><span class="toc-number">1.</span> <span class="toc-text">快速使用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参数"><span class="toc-number">2.</span> <span class="toc-text">参数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#实例"><span class="toc-number">3.</span> <span class="toc-text">实例</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#导出某个表"><span class="toc-number">3.1.</span> <span class="toc-text">导出某个表</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#数据表条件导出"><span class="toc-number">3.2.</span> <span class="toc-text">数据表条件导出</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#忽略某张表"><span class="toc-number">3.3.</span> <span class="toc-text">忽略某张表</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#导入某个表数据脚本"><span class="toc-number">3.4.</span> <span class="toc-text">导入某个表数据脚本</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#备份脚本"><span class="toc-number">4.</span> <span class="toc-text">备份脚本</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#恢复备份"><span class="toc-number">5.</span> <span class="toc-text">恢复备份</span></a></li></ol>
+</div>
+
+<!-- 文章目录结束 -->	  
+
+	  
+        <p><code>mysqldump</code> 是用于转存储 <code>mysql</code> 数据库的实用程序。</p>
+<p>主要产生一个 <code>SQL</code> 脚本，其中包含从头重新创建数据库的所有命令。</p>
+<p>导出脚本过程大概如下：创建数据库判断语句、删除表、创建表、锁表、禁用索引、插入数据、启用索引、解锁表。<a id="more"></a></p>
+<h2 id="快速使用"><a href="#快速使用" class="headerlink" title="快速使用"></a>快速使用</h2><pre><code># game 是库名
+
+# 完整导出一个库
+# 包括建库语句、表结构、数据
+mysqldump -uroot -proot --host=127.0.0.1 --port=3306 --databases game &gt; test.sql
+
+# 只导出表结构
+mysqldump -uroot -proot --host=127.0.0.1 --port=3306 -d game &gt; test.sql
+
+# 只导出数据
+mysqldump -uroot -proot --host=127.0.0.1 --port=3306 -t game &gt; test.sql
+
+# 导出一个数据库中多个表的数据和结构
+mysqldump -uroot -proot --host=127.0.0.1 game --tables articles users &gt; test.sql
+mysqldump -uroot -proot --host=127.0.0.1 game articles users &gt; test.sql
+
+# 恢复导出数据
+mysql -u username -proot databse &lt; backup.sql</code></pre><h2 id="参数"><a href="#参数" class="headerlink" title="参数"></a>参数</h2><p><code>--user=user_name, -u user_name</code></p>
+<p>连接数据库的用户名。</p>
+<p><code>--password=password, -p[password]</code></p>
+<p>连接数据库的密码，如果使用 <code>-p</code> 缩写，和密码之间不能有空格。</p>
+<p><code>--opt or --compact</code></p>
+<ul>
+<li>使用 <code>--opt</code> 等于使用这些参数 <code>--add-drop-table, --add-locks, --create-options, --disable-keys, --extended-insert, --lock-tables, --quick, and --set-charset</code>，默认情况下即使不加 <code>--opt</code> 参数也是开启的。</li>
+<li>使用 <code>--compact</code> 等于使用这些参数 <code>--skip-add-drop-table, --skip-add-locks, --skip-comments, --skip-disable-keys, and --skip-set-charset</code>，默认不开启。</li>
+</ul>
+<p><code>--databases, -B</code></p>
+<p>指定导出的库名。</p>
+<p><code>--all-databases</code></p>
+<p>表示导出所有的库。</p>
+<p><code>--tables</code></p>
+<p>会覆盖 <code>--databases or -B</code> 选项，指定导出某个表就会忽略库选项。</p>
+<p><code>--no-data, -d</code></p>
+<p>不导出数据，只导出表结构。</p>
+<p>Do not dump table contents</p>
+<p><code>--no-create-info, -t</code></p>
+<p>只导出数据，不导出表结构，不添加 <code>CREATE TABLE</code> 语句。</p>
+<p><code>--no-create-db, -n</code></p>
+<p>不添加 <code>CREATE DATABASE</code> 建库语句。</p>
+<p><code>--routines, -R</code></p>
+<p>导出存储过程以及自定义函数</p>
+<h2 id="实例"><a href="#实例" class="headerlink" title="实例"></a>实例</h2><pre><code>// 导出一个数据库
+// 包括建库语句、删表语句、建表语句、插入数据
+mysqldump -uroot -proot --host=127.0.0.1 --port=3306 --databases game &gt; test.sql
+
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `game` /*!40100 DEFAULT CHARACTER SET latin1 */;
+
+USE `game`;
+
+--
+-- Table structure for table `address`
+--
+
+DROP TABLE IF EXISTS `address`;
+CREATE TABLE `address` (
+        ...
+)
+
+LOCK TABLES `address` WRITE;
+/*!40000 ALTER TABLE `address` DISABLE KEYS */;
+INSERT INTO ...
+/*!40000 ALTER TABLE `address` ENABLE KEYS */;
+UNLOCK TABLES;
+...
+
+// -d 不导出数据，导出所有的建表删表语句，不包括建库语句，
+mysqldump -uroot -proot --host=127.0.0.1 --port=3306 -d game &gt; test.sql
+
+DROP TABLE IF EXISTS `address`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `address` (
+        ...
+)
+
+// -t 不导出结构，导出所有表中的数据，不包括建库语句，都是插入语句
+mysqldump -uroot -proot --host=127.0.0.1 --port=3306 -t game &gt; test.sql
+
+LOCK TABLES `address` WRITE;
+/*!40000 ALTER TABLE `address` DISABLE KEYS */;
+/*!40000 ALTER TABLE `address` ENABLE KEYS */;
+UNLOCK TABLES;
+
+// 导出一个数据库的表结构以及数据，不包括建库语句
+mysqldump -uroot -proot --host=127.0.0.1 --port=3306 game &gt; test.sql
+
+// 导出多个数据库的表结构以及数据，包括建库语句
+mysqldump -uroot -proot --host=127.0.0.1 -B game game2 &gt; test.sql
+
+// 导出多个数据库的结构，包括建库语句
+mysqldump -uroot -proot --host=127.0.0.1 -d -B game game2 &gt; test.sql
+
+// 导出多个数据库的数据，包括建库语句
+mysqldump -uroot -proot --host=127.0.0.1 -t -B game game2 &gt; test.sql</code></pre><h3 id="导出某个表"><a href="#导出某个表" class="headerlink" title="导出某个表"></a>导出某个表</h3><pre><code>// 导出一个数据库中一个表的结构，导出 articles 表的结构和数据
+mysqldump -uroot -proot --host=127.0.0.1 game articles &gt; test.sql
+
+// 导出一个数据库中多个表的数据和结构
+mysqldump -uroot -proot --host=127.0.0.1 game --tables articles users &gt; test.sql
+mysqldump -uroot -proot --host=127.0.0.1 game articles users &gt; test.sql
+
+// 导出一个数据库中多个表的结构
+mysqldump -uroot -proot --host=127.0.0.1 -d game articles users &gt; test.sql
+
+// 导出一个数据库中多个表的数据
+mysqldump -uroot -proot --host=127.0.0.1 -t game articles users &gt; test.sql</code></pre><h3 id="数据表条件导出"><a href="#数据表条件导出" class="headerlink" title="数据表条件导出"></a>数据表条件导出</h3><pre><code>// 导出 articles 表 id = 1 的数据
+mysqldump -uroot -proot --host=127.0.0.1 --where=&#39;id=1&#39; game articles &gt; test.sql</code></pre><h3 id="忽略某张表"><a href="#忽略某张表" class="headerlink" title="忽略某张表"></a>忽略某张表</h3><pre><code>--ignore-table database.tableName</code></pre><p>多次添加忽略多张表。</p>
+<h3 id="导入某个表数据脚本"><a href="#导入某个表数据脚本" class="headerlink" title="导入某个表数据脚本"></a>导入某个表数据脚本</h3><pre><code># 数据来源
+src_user=&quot;root&quot; # 用户名
+src_password=&quot;root&quot; # 密码
+src_host=&quot;localhost&quot; # Host
+src_port=&quot;3306&quot; # 端口
+src_database=&quot;test&quot; # 数据库名
+src_table=&quot;edu&quot; # 表名
+
+# 数据导入的数据库配置
+dst_user=&quot;root&quot; # 用户名
+dst_password=&quot;root&quot; # 密码
+dst_host=&quot;localhost&quot; # Host
+dst_port=&quot;3306&quot; # 端口
+dst_database=&quot;test&quot; # 数据库名
+
+mysqldump --host=$src_host --port=$src_port -u$src_user -p$src_password $src_database --tables $src_table | mysql --host=$dst_host --port=$dst_port -u$dst_user -p$dst_password $dst_database</code></pre><h2 id="备份脚本"><a href="#备份脚本" class="headerlink" title="备份脚本"></a>备份脚本</h2><pre><code>#!/bin/bash
+
+# 以下配置信息请自己修改
+mysql_user=&quot;root&quot; #MySQL备份用户
+mysql_password=&quot;root&quot; #MySQL备份用户的密码
+mysql_host=&quot;localhost&quot;
+mysql_port=&quot;3306&quot;
+mysql_charset=&quot;utf8mb4&quot; #MySQL编码
+backup_db_arr=(&quot;db1&quot; &quot;db2&quot;) #要备份的数据库名称，多个用空格分开隔开 如(&quot;db1&quot; &quot;db2&quot; &quot;db3&quot;)
+backup_location=/var/www/mysql  #备份数据存放位置，末尾请不要带&quot;/&quot;,此项可以保持默认，程序会自动创建文件夹
+expire_backup_delete=&quot;OFF&quot; #是否开启过期备份删除 ON为开启 OFF为关闭
+expire_days=3 #过期时间天数 默认为三天，此项只有在expire_backup_delete开启时有效
+
+# 本行开始以下不需要修改
+backup_time=`date +%Y%m%d%H%M`  #定义备份详细时间
+backup_Ymd=`date +%Y-%m-%d` #定义备份目录中的年月日时间
+backup_3ago=`date -d &#39;3 days ago&#39; +%Y-%m-%d` #3天之前的日期
+backup_dir=$backup_location/$backup_Ymd  #备份文件夹全路径
+welcome_msg=&quot;Welcome to use MySQL backup tools!&quot; #欢迎语
+
+# 判断MYSQL是否启动,mysql没有启动则备份退出
+mysql_ps=`ps -ef |grep mysql |wc -l`
+mysql_listen=`netstat -an |grep LISTEN |grep $mysql_port|wc -l`
+if [ [$mysql_ps == 0] -o [$mysql_listen == 0] ]; then
+        echo &quot;ERROR:MySQL is not running! backup stop!&quot;
+        exit
+else
+        echo $welcome_msg
+fi
+
+# 连接到mysql数据库，无法连接则备份退出
+mysql -h$mysql_host -P$mysql_port -u$mysql_user -p$mysql_password &lt;&lt;end
+use mysql;
+select host,user from user where user=&#39;root&#39; and host=&#39;localhost&#39;;
+exit
+end
+
+flag=`echo $?`
+if [ $flag != &quot;0&quot; ]; then
+        echo &quot;ERROR:Can&#39;t connect mysql server! backup stop!&quot;
+        exit
+else
+        echo &quot;MySQL connect ok! Please wait......&quot;
+        # 判断有没有定义备份的数据库，如果定义则开始备份，否则退出备份
+        if [ &quot;$backup_db_arr&quot; != &quot;&quot; ];then
+                #dbnames=$(cut -d &#39;,&#39; -f1-5 $backup_database)
+                #echo &quot;arr is (${backup_db_arr[@]})&quot;
+                for dbname in ${backup_db_arr[@]}
+                do
+                        echo &quot;database $dbname backup start...&quot;
+                        `mkdir -p $backup_dir`
+                        `mysqldump -h$mysql_host -P$mysql_port -u$mysql_user -p$mysql_password $dbname --default-character-set=$mysql_charset | gzip &gt; $backup_dir/$dbname-$backup_time.sql.gz`
+                        flag=`echo $?`
+                        if [ $flag == &quot;0&quot; ];then
+                                echo &quot;database $dbname success backup to $backup_dir/$dbname-$backup_time.sql.gz&quot;
+                        else
+                                echo &quot;database $dbname backup fail!&quot;
+                        fi
+
+                done
+        else
+                echo &quot;ERROR:No database to backup! backup stop&quot;
+                exit
+        fi
+        # 如果开启了删除过期备份，则进行删除操作
+        if [ &quot;$expire_backup_delete&quot; == &quot;ON&quot; -a  &quot;$backup_location&quot; != &quot;&quot; ];then
+                 #`find $backup_location/ -type d -o -type f -ctime +$expire_days -exec rm -rf {} \;`
+                 `find $backup_location/ -type d -mtime +$expire_days | xargs rm -rf`
+                 echo &quot;Expired backup data delete complete!&quot;
+        fi
+        echo &quot;All database backup success! Thank you!&quot;
+        exit
+fi</code></pre><p>修改shell脚本的属性：</p>
+<pre><code>chmod 600 /root/mysql_backup.sh
+chmod +x /root/mysql_backup.sh</code></pre><p>设置好属性之后，把命令加入 <code>crontab</code>，设置每天 <code>00:00</code> 定时自动备份。</p>
+<pre><code>00 00 * * * /path/to/mysql_backup.sh</code></pre><h2 id="恢复备份"><a href="#恢复备份" class="headerlink" title="恢复备份"></a>恢复备份</h2><pre><code>mysql -u username -proot databse &lt; backup.sql
+
+// 和建库语句一起导入
+mysql -uroot -proot --host=127.0.0.1 --port=33006  &lt; global.sql
+
+或者
+
+mysql -u root -p
+
+use dbname;
+
+source dbname.sql</code></pre>
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2020/11/13/mysqldump-%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA/" data-id="ckhge3mty000045lfc9wz6dwi" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2020/10/31/conda%E7%8E%AF%E5%A2%83%E7%AE%A1%E7%90%86%E5%91%BD%E4%BB%A4/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">conda环境管理命令</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">119</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">38</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">21</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">69</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">151</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">51</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">83</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">2</span></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recents</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/11/13/mysqldump-%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA/">mysqldump 深入浅出</a>
+          </li>
+        
+          <li>
+            <a href="/2020/10/31/conda%E7%8E%AF%E5%A2%83%E7%AE%A1%E7%90%86%E5%91%BD%E4%BB%A4/">conda环境管理命令</a>
+          </li>
+        
+          <li>
+            <a href="/2020/10/18/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader-%E4%B8%8B/">Python回测神器Backtrader (下）</a>
+          </li>
+        
+          <li>
+            <a href="/2020/10/18/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader-%E4%B8%8A/">Python回测神器Backtrader (上）</a>
+          </li>
+        
+          <li>
+            <a href="/2020/10/12/%E5%8D%8F%E7%A8%8B%E5%92%8C%E5%A4%9A%E8%BF%9B%E7%A8%8B-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E7%9A%84%E5%8C%BA%E5%88%AB/">协程和多进程/多线程的区别</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.57px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.86px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 11.43px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 19.29px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10.71px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 12.14px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.14px;">VMware</a> <a href="/tags/Vue/" style="font-size: 17.14px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.86px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 14.29px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 13.57px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.86px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.43px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.14px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 16.43px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.43px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.86px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.57px;">集群</a>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 moqiang02@163.com<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//libs.baidu.com/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+<div id="totop" style="position:fixed;bottom:20px;right:20px;cursor: pointer;z-index:99;">
+<a title="返回顶部" ><img src="/css/images/scrollup.png" style="width:35px;height:auto;"/></a>
+</div>
+<script src="/js/totop.js"></script>
+<script src="/js/toc.js"></script>
+<script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+$("pre code").each(function(){
+    $(this).html("<li>" + $(this).html().replace(/\n/g,"\n</li><li>") +"\n</li>");
+    //$("pre code li:last").remove() //删除最后一个li //rex
+});
+</script>
+  </div>
+</body>
+</html>
