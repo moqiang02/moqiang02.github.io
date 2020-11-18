@@ -6,15 +6,15 @@
   <title>使用json传输数组实例 | 自强不息</title>
   <link  href="/favicon.ico" rel="icon">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="client.php     &lt;?php        &#x2F;&#x2F;遍历数组元素，并将元素转码       function array_iconv($data, $in_charset&#x3D;&#39;GBK&#39;, $out_charset&#x3D;&#39;UTF-8&#39;){           if (!is_array($data)){               $output &#x3D; icon">
+  <meta name="description" content="client.php &lt;?php    &#x2F;&#x2F;遍历数组元素，并将元素转码   function array_iconv($data, $in_charset&#x3D;&#39;GBK&#39;, $out_charset&#x3D;&#39;UTF-8&#39;){       if (!is_array($data)){           $output &#x3D; iconv($in_charset, $out_">
 <meta property="og:type" content="article">
 <meta property="og:title" content="使用json传输数组实例">
 <meta property="og:url" content="http://moqiang02.github.io/2013/11/22/%E4%BD%BF%E7%94%A8json%E4%BC%A0%E8%BE%93%E6%95%B0%E7%BB%84%E5%AE%9E%E4%BE%8B/index.html">
 <meta property="og:site_name" content="自强不息">
-<meta property="og:description" content="client.php     &lt;?php        &#x2F;&#x2F;遍历数组元素，并将元素转码       function array_iconv($data, $in_charset&#x3D;&#39;GBK&#39;, $out_charset&#x3D;&#39;UTF-8&#39;){           if (!is_array($data)){               $output &#x3D; icon">
+<meta property="og:description" content="client.php &lt;?php    &#x2F;&#x2F;遍历数组元素，并将元素转码   function array_iconv($data, $in_charset&#x3D;&#39;GBK&#39;, $out_charset&#x3D;&#39;UTF-8&#39;){       if (!is_array($data)){           $output &#x3D; iconv($in_charset, $out_">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2013-11-22T02:44:36.000Z">
-<meta property="article:modified_time" content="2017-12-26T13:37:18.000Z">
+<meta property="article:modified_time" content="2020-11-18T02:14:34.000Z">
 <meta property="article:author" content="moqiang02@163.com">
 <meta property="article:tag" content="数据传输">
 <meta name="twitter:card" content="summary">
@@ -92,143 +92,143 @@
 
 	  
         <p>client.php</p>
-<pre><code class="php">    &lt;?php  
+<pre><code class="php">&lt;?php  
 
-    //遍历数组元素，并将元素转码  
-    function array_iconv($data, $in_charset=&#39;GBK&#39;, $out_charset=&#39;UTF-8&#39;){  
-        if (!is_array($data)){  
-            $output = iconv($in_charset, $out_charset, $data);  
-        }elseif(count($data) === count($data, 1)){//判断是否是二维数组  
-            foreach($data as $key =&gt; $value){  
-            $output[$key] = iconv($in_charset, $out_charset, $value);  
-            }  
-        }else{  
-            eval_r(&#39;$output = &#39;.iconv($in_charset, $out_charset, var_export($data, TRUE)).&#39;;&#39;);  
+//遍历数组元素，并将元素转码  
+function array_iconv($data, $in_charset=&#39;GBK&#39;, $out_charset=&#39;UTF-8&#39;){  
+    if (!is_array($data)){  
+        $output = iconv($in_charset, $out_charset, $data);  
+    }elseif(count($data) === count($data, 1)){//判断是否是二维数组  
+        foreach($data as $key =&gt; $value){  
+        $output[$key] = iconv($in_charset, $out_charset, $value);  
         }  
-        return $output;  
-    }  
-
-
-    $arr = array(&quot;username&quot;=&gt;&#39;aaa&#39;,&quot;pwd&quot;=&gt;&#39;47bce5c74f589f4867dbd57e9ca9f808&#39;,&#39;sex&#39;=&gt;&#39;男&#39;);   
-    $arr[&#39;_e_&#39;] = &#39;pwd,sex,username&#39;;   //这个参数中存的是randkey里面数组value值的排序  
-
-    //获得按&#39;_e_&#39;排序的临时数组，这是为了得到randkey  
-    $keys = explode(&quot;,&quot;,$arr[&#39;_e_&#39;]);  
-    $tempArr = array();  
-    for($i=0;$i&lt;count($arr)-1;$i++){  
-        $tempArr[&quot;$keys[$i]&quot;] = $arr[&quot;$keys[$i]&quot;];  
-    }  
-    $str=&#39;&#39;;  
-    foreach ($tempArr as $key=&gt;$value){  
-        $str .= $value;  
-    }  
-    $randkey = md5($str.&#39;123abc&#39;);  
-    $arr[&#39;randkey&#39;] = $randkey;  
-
-    $arr = array_iconv($arr);  
-    $arr = array_map(&#39;urlencode&#39;,$arr);  //可使用http_build_query()函数替代  
-    $data = json_encode($arr);  
-
-    $url = &quot;http://localhost/member/server.php?json=$data&quot;;  
-
-
-    /****get方式传递数据****** 
-    //初始化 
-    $ch = curl_init(); 
-    //设置选项，包括URL 
-    curl_setopt($ch, CURLOPT_URL, &quot;$url&quot;); 
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
-    curl_setopt($ch, CURLOPT_HEADER, 0); 
-    //执行并获取HTML文档内容 
-    $output = curl_exec($ch); 
-    //释放curl句柄 
-    curl_close($ch); 
-    //打印获得的数据 
-    print_r($output); 
-    */  
-
-
-    //***post方式传输数据******  
-    $ch = curl_init();  
-    curl_setopt($ch, CURLOPT_URL, $url);  
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);  
-    // post数据  
-    curl_setopt($ch, CURLOPT_POST, 1);  
-    // post的变量  
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);   
-    $output = curl_exec($ch);  
-    curl_close($ch);   
-    //打印获得的数据  
-    print_r($output);  
-
-
-    $res=unserialize($output);  
-    var_dump($res);  
-    if ($res[&#39;stat&#39;]==&#39;1&#39;) {  
-        echo &#39;right&#39;;  
     }else{  
-        echo &#39;error&#39;;  
+        eval_r(&#39;$output = &#39;.iconv($in_charset, $out_charset, var_export($data, TRUE)).&#39;;&#39;);  
     }  
+    return $output;  
+}  
 
-    ?&gt;  </code></pre>
+
+$arr = array(&quot;username&quot;=&gt;&#39;aaa&#39;,&quot;pwd&quot;=&gt;&#39;47bce5c74f589f4867dbd57e9ca9f808&#39;,&#39;sex&#39;=&gt;&#39;男&#39;);   
+$arr[&#39;_e_&#39;] = &#39;pwd,sex,username&#39;;   //这个参数中存的是randkey里面数组value值的排序  
+
+//获得按&#39;_e_&#39;排序的临时数组，这是为了得到randkey  
+$keys = explode(&quot;,&quot;,$arr[&#39;_e_&#39;]);  
+$tempArr = array();  
+for($i=0;$i&lt;count($arr)-1;$i++){  
+    $tempArr[&quot;$keys[$i]&quot;] = $arr[&quot;$keys[$i]&quot;];  
+}  
+$str=&#39;&#39;;  
+foreach ($tempArr as $key=&gt;$value){  
+    $str .= $value;  
+}  
+$randkey = md5($str.&#39;123abc&#39;);  
+$arr[&#39;randkey&#39;] = $randkey;  
+
+$arr = array_iconv($arr);  
+$arr = array_map(&#39;urlencode&#39;,$arr);  //可使用http_build_query()函数替代  
+$data = json_encode($arr);  
+
+$url = &quot;http://localhost/member/server.php?json=$data&quot;;  
+
+
+/****get方式传递数据****** 
+//初始化 
+$ch = curl_init(); 
+//设置选项，包括URL 
+curl_setopt($ch, CURLOPT_URL, &quot;$url&quot;); 
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
+curl_setopt($ch, CURLOPT_HEADER, 0); 
+//执行并获取HTML文档内容 
+$output = curl_exec($ch); 
+//释放curl句柄 
+curl_close($ch); 
+//打印获得的数据 
+print_r($output); 
+*/  
+
+
+//***post方式传输数据******  
+$ch = curl_init();  
+curl_setopt($ch, CURLOPT_URL, $url);  
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);  
+// post数据  
+curl_setopt($ch, CURLOPT_POST, 1);  
+// post的变量  
+curl_setopt($ch, CURLOPT_POSTFIELDS, $data);   
+$output = curl_exec($ch);  
+curl_close($ch);   
+//打印获得的数据  
+print_r($output);  
+
+
+$res=unserialize($output);  
+var_dump($res);  
+if ($res[&#39;stat&#39;]==&#39;1&#39;) {  
+    echo &#39;right&#39;;  
+}else{  
+    echo &#39;error&#39;;  
+}  
+
+?&gt;  </code></pre>
 <a id="more"></a>
 <p>server.php</p>
-<pre><code class="php">    &lt;?php  
+<pre><code class="php">&lt;?php  
 
-    require_once(dirname(__FILE__).&quot;/config.php&quot;);  
+require_once(dirname(__FILE__).&quot;/config.php&quot;);  
 
-    //遍历数组元素，并将元素转码  
-    function array_iconv($data, $in_charset=&#39;GBK&#39;, $out_charset=&#39;UTF-8&#39;){  
-        if (!is_array($data)){  
-            $output = iconv($in_charset, $out_charset, $data);  
-        }elseif(count($data) === count($data, 1)){//判断是否是二维数组  
-            foreach($data as $key =&gt; $value){  
-                $output[$key] = iconv($in_charset, $out_charset, $value);  
-            }  
-        }else{  
-            eval_r(&#39;$output = &#39;.iconv($in_charset, $out_charset, var_export($data, TRUE)).&#39;;&#39;);  
-        }  
-        return $output;  
-    }  
-
-
-    if($_GET[&quot;json&quot;]){  //数据传递为get方式  
-        $arr = json_decode($_GET[&quot;json&quot;],true);  
-    }else{      //数据传递为post方式  或者使用$_SERVER[&#39;REQUEST_METHOD&#39;] == &#39;POST&#39;，判断提交的数据是否是POST方式传来的  
-        $arr = file_get_contents(&quot;php://input&quot;);  //若$arr=$_POST;返回null  
-        $arr = json_decode($arr,true);  
-        //var_dump($arr);  
-    }  
-    $arr = array_map(&#39;urldecode&#39;,$arr);   
-    $arr = array_iconv($arr,&#39;utf-8&#39;,&#39;gbk&#39;);  
-    $str = $arr[&#39;_e_&#39;];  
-
-    //获得按&#39;_e_&#39;排序的临时数组，这是为了得到randkey  
-    $keys = explode(&quot;,&quot;,$str);  
-    $tempArr = array();  
-    for($i=0;$i&lt;count($arr)-2;$i++){  
-        $tempArr[&quot;$keys[$i]&quot;] = $arr[&quot;$keys[$i]&quot;];  
-    }  
-
-    $str=&#39;&#39;;  
-    foreach ($tempArr as $key=&gt;$value){  
-        $str .= $value;  
-    }  
-    $randkey = md5($str.&#39;123abc&#39;);  
-
-    if($randkey == $arr[&#39;randkey&#39;]){  
-        $son = $dsql-&gt;GetOne(&quot;SELECT * FROM #@__member WHERE user=&#39;$arr[username]&#39; &quot;);  
-        if($son[pwd] == $arr[pwd]){  
-            //将数组序列化后输出，客户端反序列化后还原为数组；也可以使用json_encode()输出，客户端使用josn_decode()获得数组  
-            echo serialize($son);    
-        }else{  
-            echo serialize(&#39;password error&#39;); //这边序列化是为了防止客户端反序列化该字符串不标准而报错  
+//遍历数组元素，并将元素转码  
+function array_iconv($data, $in_charset=&#39;GBK&#39;, $out_charset=&#39;UTF-8&#39;){  
+    if (!is_array($data)){  
+        $output = iconv($in_charset, $out_charset, $data);  
+    }elseif(count($data) === count($data, 1)){//判断是否是二维数组  
+        foreach($data as $key =&gt; $value){  
+            $output[$key] = iconv($in_charset, $out_charset, $value);  
         }  
     }else{  
-        echo serialize(&#39;vertiy code error&#39;);  
+        eval_r(&#39;$output = &#39;.iconv($in_charset, $out_charset, var_export($data, TRUE)).&#39;;&#39;);  
     }  
+    return $output;  
+}  
 
-    ?&gt;  </code></pre>
+
+if($_GET[&quot;json&quot;]){  //数据传递为get方式  
+    $arr = json_decode($_GET[&quot;json&quot;],true);  
+}else{      //数据传递为post方式  或者使用$_SERVER[&#39;REQUEST_METHOD&#39;] == &#39;POST&#39;，判断提交的数据是否是POST方式传来的  
+    $arr = file_get_contents(&quot;php://input&quot;);  //若$arr=$_POST;返回null  
+    $arr = json_decode($arr,true);  
+    //var_dump($arr);  
+}  
+$arr = array_map(&#39;urldecode&#39;,$arr);   
+$arr = array_iconv($arr,&#39;utf-8&#39;,&#39;gbk&#39;);  
+$str = $arr[&#39;_e_&#39;];  
+
+//获得按&#39;_e_&#39;排序的临时数组，这是为了得到randkey  
+$keys = explode(&quot;,&quot;,$str);  
+$tempArr = array();  
+for($i=0;$i&lt;count($arr)-2;$i++){  
+    $tempArr[&quot;$keys[$i]&quot;] = $arr[&quot;$keys[$i]&quot;];  
+}  
+
+$str=&#39;&#39;;  
+foreach ($tempArr as $key=&gt;$value){  
+    $str .= $value;  
+}  
+$randkey = md5($str.&#39;123abc&#39;);  
+
+if($randkey == $arr[&#39;randkey&#39;]){  
+    $son = $dsql-&gt;GetOne(&quot;SELECT * FROM #@__member WHERE user=&#39;$arr[username]&#39; &quot;);  
+    if($son[pwd] == $arr[pwd]){  
+        //将数组序列化后输出，客户端反序列化后还原为数组；也可以使用json_encode()输出，客户端使用josn_decode()获得数组  
+        echo serialize($son);    
+    }else{  
+        echo serialize(&#39;password error&#39;); //这边序列化是为了防止客户端反序列化该字符串不标准而报错  
+    }  
+}else{  
+    echo serialize(&#39;vertiy code error&#39;);  
+}  
+
+?&gt;  </code></pre>
 
       
     </div>
@@ -272,7 +272,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">119</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">38</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">69</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">150</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">51</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">83</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">119</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">38</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">69</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">149</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">51</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">83</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
     </div>
   </div>
 
@@ -312,7 +312,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/AndroidStudio/" style="font-size: 13.57px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.86px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 11.43px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 19.29px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10.71px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 12.14px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.14px;">VMware</a> <a href="/tags/Vue/" style="font-size: 17.14px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.86px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 14.29px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 13.57px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.86px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.43px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.14px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 16.43px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.43px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.86px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.57px;">集群</a>
+      <a href="/tags/AndroidStudio/" style="font-size: 13.57px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.86px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 11.43px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 19.29px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10.71px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 12.14px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.14px;">VMware</a> <a href="/tags/Vue/" style="font-size: 17.14px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.86px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 14.29px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 13.57px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.43px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.14px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 16.43px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.43px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.86px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.57px;">集群</a>
     </div>
   </div>
 
