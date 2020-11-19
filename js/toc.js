@@ -1,6 +1,7 @@
 (function($) {
 	$(".toc").hide();
 
+	// rex
 /* 	$(".toc-title").click(function(){
 		$(".toc").toggle();
 	}); */
