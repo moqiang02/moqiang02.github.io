@@ -59,6 +59,278 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-脏读、不可重复读和虚读" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/03/02/%E8%84%8F%E8%AF%BB%E3%80%81%E4%B8%8D%E5%8F%AF%E9%87%8D%E5%A4%8D%E8%AF%BB%E5%92%8C%E8%99%9A%E8%AF%BB/" class="article-date">
+  <time datetime="2015-03-02T14:50:04.000Z" itemprop="datePublished">2015-03-02</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/mysql/">mysql</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2015/03/02/%E8%84%8F%E8%AF%BB%E3%80%81%E4%B8%8D%E5%8F%AF%E9%87%8D%E5%A4%8D%E8%AF%BB%E5%92%8C%E8%99%9A%E8%AF%BB/">脏读、不可重复读和虚读</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p><strong>脏读 dirty reads：</strong>当事务读取还未被提交的数据时，就会发生这种事件。举例来说：Transaction 1 修改了一行数据，然后 Transaction 2 在 Transaction 1 还未提交修改操作之前读取了被修改的行。如果 Transaction 1 回滚了修改操作，那么 Transaction 2 读取的数据就可以看作是从未存在过的。<br><strong>不可重复的读 non-repeatable reads：</strong>当事务两次读取同一行数据，但每次得到的数据都不一样时，就会发生这种事件。举例来说：Transaction 1 读取一行数据，然后 Transaction 2 修改或删除该行并提交修改操作。当 Transaction 1 试图重新读取该行时，它就会得到不同的数据值（如果该行被更新）或发现该行不再存在（如果该行被删除）。<br><strong>虚读（幻读） phantom read：</strong>如果符合搜索条件的一行数据在后面的读取操作中出现，但该行数据却不属于最初的数据，就会发生这种事件。举例来说：Transaction 1 读取满足某种搜索条件的一些行，然后 Transaction 2 插入了符合 Transaction 1 的搜索条件的一个新行。如果 Transaction 1 重新执行产生原来那些行的查询，就会得到不同的行。</p>
+        
+          <p class="article-more-link">
+            <a href="/2015/03/02/%E8%84%8F%E8%AF%BB%E3%80%81%E4%B8%8D%E5%8F%AF%E9%87%8D%E5%A4%8D%E8%AF%BB%E5%92%8C%E8%99%9A%E8%AF%BB/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2015/03/02/%E8%84%8F%E8%AF%BB%E3%80%81%E4%B8%8D%E5%8F%AF%E9%87%8D%E5%A4%8D%E8%AF%BB%E5%92%8C%E8%99%9A%E8%AF%BB/" data-id="cki64kr8l01vz5wlfe1pa467c" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-php-时间计算问题小结" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/03/02/php-%E6%97%B6%E9%97%B4%E8%AE%A1%E7%AE%97%E9%97%AE%E9%A2%98%E5%B0%8F%E7%BB%93/" class="article-date">
+  <time datetime="2015-03-02T14:07:19.000Z" itemprop="datePublished">2015-03-02</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/php/">php</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2015/03/02/php-%E6%97%B6%E9%97%B4%E8%AE%A1%E7%AE%97%E9%97%AE%E9%A2%98%E5%B0%8F%E7%BB%93/">php 时间计算问题小结</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>示例代码：</p>
+<pre><code class="php">&lt;?php
+//GB2312的Encode
+header(&quot;Cache-Control: no-store, no-cache, must-revalidate&quot;);
+header(&quot;Cache-Control: post-check=0, pre-check=0&quot;, false);
+
+/*重点了解strtotime()函数
+1、strftime比time()好用，可以直接把常用的’2010-02-03‘转成时间戳。
+2、date()可以显示1970年前的时间。而不必用负数做参数
+3、日期计算可以用时间戳来中转。计算两个日期相差的天数，可以取得相差的时间戳后除以“24小时*60分*60”秒来得到,但用strtotime()更简洁
+4、了解用PEAR创建日历。这里略去。
+知识点：网络上有关于date(&#39;Y-m-d&#39;,-800)来计算1970年前的时间，但WINDOW系统不支持负值，因此总会返回1970-1-1子夜。
+*/
+
+#PHP5必须先设置默认区。
+date_default_timezone_set(&#39;ETC/GMT-8&#39;);
+$nowdate=&#39;2010-02-23&#39;;
+$lassdate = &#39;2010-02-22&#39;;
+
+echo &#39;strftime()函数输出的&#39;.strftime(&#39;%Y-%m-%d %H:%M:%S&#39;,time()).&#39;&lt;br /&gt;&#39;;
+echo &#39;date()函数输出的&#39;.date(&#39;Y-m-d H:i:s&#39;,time()).&#39;&lt;br /&gt;&#39;;
+//检查日期：boolean checkdate(int month,int day,int year)
+$d=&#39;2010-2-31&#39;;
+echo $d.&#39;是&#39;.(checkdate(2,31,2010)?&#39;有效日期！&#39;:&#39;无效日期！&#39;).&#39;&lt;br /&gt;&#39;;
+
+
+//确定当月天数
+echo &#39;本月有&#39;.date(&#39;t&#39;,time()).&#39;天&lt;br /&gt;&#39;; //28天
+//确定任意给定的月份的天数
+$d=&#39;2008-02-01&#39;; //闰年,或$d=&#39;2008-02&#39;;不需要输入天也可以
+$d=strtotime($d);
+echo &#39;2008年2月有&#39;.date(&#39;t&#39;,$d).&#39;天&lt;br /&gt;&#39;; //29天
+
+$d=getdate(); //getdate() 取得日期／时间信息。
+echo &#39;&lt;pre&gt;&#39;;
+print_r($d);
+echo &#39;&lt;/pre&gt;&#39;;
+
+//echo date(&quot;Y-m-d H:i:s&quot;,-8000);
+//setlocale(LC_ALL,&#39;zh_CN.gb2312&#39;); //setlocale函数对下面的没有影响。
+#测试strftime，mktime函数。
+echo strftime(&#39;今天是：%Y-%m-%d %H:%M:%S&#39;).&#39;&lt;br /&gt;&#39;;
+echo strtotime(&#39;now&#39;).&#39;&lt;br /&gt;&#39;; // 等于time()，但strtotime使用范围更灵活，参下文.
+echo &#39;测试还原昨天时间:&#39;.date(&#39;Y-m-d&#39;,strtotime($lassdate)).&#39;&lt;br /&gt;&#39;; //可以把字串型日期转成时间戳再用date转回原格式。
+$x=strtotime($lassdate);
+$y=mktime(0,0,0,&#39;2&#39;,&#39;22&#39;,&#39;2010&#39;);  //mktime(hour,minute,second,month,day,year,is_dst) 返回一个日期的 Unix 时间戳。
+echo &#39;strtotime()得到的昨天的时间戳是：&#39;.$x.&#39;，mktime()得到的昨天时间戳是：&#39;.$y.(($x==$y)?&#39;，二者相等&#39;:&#39;，二者不相同&#39;).&#39;&lt;br /&gt;&#39;; //相等。
+
+#显示1970年前的日期
+$time_int=strtotime(&#39;1929-2-10&#39;);
+echo date(&quot;Y-m-d &quot;,$time_int).&#39;&lt;br /&gt;&#39;; //在MYSQL中与date()函数相同功能的是date_format(&#39;1996-02-05 11:07:45&#39;,&#39;%Y-%m-%d&#39;)或for_format()
+
+/*时间运算:
+*请使用方法三。其它方法只供参考。 *
+*/
+#1、今天是23号，获得前天的时间，即减两天。
+$predate=2;
+$pretime=$predate*24*60*60; //2天的时间戳。
+echo date(&#39;前天是：Y-m-d&#39;,time()-$pretime).&#39;&lt;br /&gt;&#39;;    //前天是：2010-02-21
+
+#2、两个日期相差的天数。(php时间计算的的基础都是秒钟,把握这个规律后可以将时差换算成分钟,小时等均可)
+$olddate = &#39;2010-02-11&#39;; //如果要用mktime函数，则要用explode拆解日期。
+$oldtime = strtotime($olddate);
+$passtime = time()-$oldtime; //经过的时间戳。
+echo &#39;你在网上泡了&#39;.floor($passtime/(24*60*60)).&#39;天了&#39;.&#39;&lt;br /&gt;&#39;; //12天。
+
+#3、去年这个时侯。使用时要考虑闰年:平年365天，闰年366天。
+#方法一：用减去全年天数的时间戳来获取。
+$yDate=1;
+$yDate_Y=date(&#39;Y&#39;,time())-1; //年份-1，即去年
+$yDateYMD=&quot;$yDate_Y-01-01&quot;;
+$yYMD=strtotime($yDateYMD); //去年的1月1号时间戳。
+$d=date(&#39;L&#39;,$yYMD)?366:365; //是否是闰年
+$yYearTime=$d*24*60*60;
+$yYear=date(&#39;Y-m-d&#39;,time()-$yYearTime);
+echo &quot;去年的今天：$yYear&lt;br /&gt;&quot;; //2009-02-23
+
+#方法二：用直接截取当前日期的年份减一，但不严谨，没有考虑到闰年。
+#计算60年前的今天。忽略当中经过的闰年。
+$yDate_Y=$yDate_Y-59;
+$md=explode(&#39;-&#39;,date(&#39;Y-m-d&#39;));
+$yYMD=&quot;$yDate_Y-{$md[1]}-{$md[2]}&quot;;
+echo &quot;60年前的今天：$yYMD &lt;br /&gt;&quot;; //1950-02-23
+
+#方法三：用strtotime()和GNU日期语法---------推荐！
+//3天后; //当前时间为2010-02-23
+$d=strtotime(&#39;3 days&#39;);
+echo &#39;3天后&#39;.date(&#39;Y-m-d&#39;,$d).&quot;&lt;br /&gt;&quot;;
+//3天前：
+$d=strtotime(&#39;-3 days&#39;);
+echo &#39;3天前&#39;.date(&#39;Y-m-d&#39;,$d).&quot;&lt;br /&gt;&quot;; //2010-02-20
+//一个月前：
+$d=strtotime(&#39;-1 months&#39;);
+echo &#39;一个月前&#39;.date(&#39;Y-m-d&#39;,$d).&quot;&lt;br /&gt;&quot;; //2010-01-23
+
+//2个月后：
+$d=strtotime(&#39;2 months&#39;);
+echo &#39;二个月后&#39;.date(&#39;Y-m-d&#39;,$d).&quot;&lt;br /&gt;&quot;; //2010-04-23
+
+//1年前：
+$d=strtotime(&#39;-1 years&#39;);
+echo &#39;1年前&#39;.date(&#39;Y-m-d&#39;,$d).&quot;&lt;br /&gt;&quot;; //2009-02-23
+
+//2小时前：
+$d=strtotime(&#39;-2 hours&#39;);
+echo &#39;目前：&#39;.date(&#39;Y-m-d H:i:s&#39;,time()).&#39;，2小时前&#39;.date(&#39;Y-m-d H:i:s&#39;,$d).&quot;&lt;br /&gt;&quot;; //目前：2010-02-23 13:38:49，2小时前2010-02-23 11:38:49
+
+#DateTime构造函数：object DateTime([string $time [,dateTimeZone $timezone])
+$date = new DateTime(&#39;2010-02-23 12:26:36&#39;);
+echo $date-&gt;format(&#39;Y-m-d H:i:s&#39;).&quot;&lt;br /&gt;&quot;; //和date()函数相同。2010-02-23 12:26:36
+//重设时间:
+//1、重设日期： boolean setDate(int year,int month,int day)
+//2、重设时间： boolean setDate(int hour,int minute[,int second])
+$date-&gt;setDate(2010,2,28);
+echo $date-&gt;format(&#39;Y-m-d H:i:s&#39;).&quot;&lt;br /&gt;&quot;; //2010-02-28 12:26:36
+//日期计算，相当于上面的strtotime()
+$date-&gt;modify(&quot;+7 hours&quot;);
+echo $date-&gt;format(&#39;Y-m-d H:i:s&#39;).&quot;&lt;br /&gt;&quot;; //2010-02-28 19:26:36
+$date-&gt;modify(&quot;3 days&quot;);
+echo $date-&gt;format(&#39;Y-m-d H:i:s&#39;).&quot;&lt;br /&gt;&quot;; //2010-03-03 19:26:36 //从上面被改过的28号开始
+
+/*PHP5在WIN不支持money_format函数？
+setlocale(LC_MONETARY,&#39;zh_CN&#39;);
+echo money_format(&quot;%i&quot;,786.56);//?Fatal error: Call to undefined function money_format()
+*/
+?&gt;</code></pre>
+        
+          <p class="article-more-link">
+            <a href="/2015/03/02/php-%E6%97%B6%E9%97%B4%E8%AE%A1%E7%AE%97%E9%97%AE%E9%A2%98%E5%B0%8F%E7%BB%93/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2015/03/02/php-%E6%97%B6%E9%97%B4%E8%AE%A1%E7%AE%97%E9%97%AE%E9%A2%98%E5%B0%8F%E7%BB%93/" data-id="cki64kqyy01a25wlf9wfg6jy6" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-php获取今日、昨日、上周、本月的起始时间戳和结束时间戳的方法" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/03/02/php%E8%8E%B7%E5%8F%96%E4%BB%8A%E6%97%A5%E3%80%81%E6%98%A8%E6%97%A5%E3%80%81%E4%B8%8A%E5%91%A8%E3%80%81%E6%9C%AC%E6%9C%88%E7%9A%84%E8%B5%B7%E5%A7%8B%E6%97%B6%E9%97%B4%E6%88%B3%E5%92%8C%E7%BB%93%E6%9D%9F%E6%97%B6%E9%97%B4%E6%88%B3%E7%9A%84%E6%96%B9%E6%B3%95/" class="article-date">
+  <time datetime="2015-03-02T14:06:19.000Z" itemprop="datePublished">2015-03-02</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/php/">php</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2015/03/02/php%E8%8E%B7%E5%8F%96%E4%BB%8A%E6%97%A5%E3%80%81%E6%98%A8%E6%97%A5%E3%80%81%E4%B8%8A%E5%91%A8%E3%80%81%E6%9C%AC%E6%9C%88%E7%9A%84%E8%B5%B7%E5%A7%8B%E6%97%B6%E9%97%B4%E6%88%B3%E5%92%8C%E7%BB%93%E6%9D%9F%E6%97%B6%E9%97%B4%E6%88%B3%E7%9A%84%E6%96%B9%E6%B3%95/">php获取今日、昨日、上周、本月的起始时间戳和结束时间戳的方法</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>php 获取今日、昨日、上周、本月的起始时间戳和结束时间戳的方法，主要使用到了 php 的时间函数 mktime。下面首先还是直奔主题以示例说明如何使用 mktime 获取今日、昨日、上周、本月的起始时间戳和结束时间戳，然后在介绍一下 mktime 函数作用和用法。</p>
+<pre><code class="php">    //php获取今日开始时间戳和结束时间戳  
+    $beginToday=mktime(0,0,0,date(&#39;m&#39;),date(&#39;d&#39;),date(&#39;Y&#39;));  
+    $endToday=mktime(0,0,0,date(&#39;m&#39;),date(&#39;d&#39;)+1,date(&#39;Y&#39;))-1;  
+    //php获取昨日起始时间戳和结束时间戳  
+    $beginYesterday=mktime(0,0,0,date(&#39;m&#39;),date(&#39;d&#39;)-1,date(&#39;Y&#39;));  
+    $endYesterday=mktime(0,0,0,date(&#39;m&#39;),date(&#39;d&#39;),date(&#39;Y&#39;))-1;  
+    //php获取上周起始时间戳和结束时间戳  
+    $beginLastweek=mktime(0,0,0,date(&#39;m&#39;),date(&#39;d&#39;)-date(&#39;w&#39;)+1-7,date(&#39;Y&#39;));  
+    $endLastweek=mktime(23,59,59,date(&#39;m&#39;),date(&#39;d&#39;)-date(&#39;w&#39;)+7-7,date(&#39;Y&#39;));  
+    //php获取本月起始时间戳和结束时间戳  
+    $beginThismonth=mktime(0,0,0,date(&#39;m&#39;),1,date(&#39;Y&#39;));  
+    $endThismonth=mktime(23,59,59,date(&#39;m&#39;),date(&#39;t&#39;),date(&#39;Y&#39;));  </code></pre>
+        
+          <p class="article-more-link">
+            <a href="/2015/03/02/php%E8%8E%B7%E5%8F%96%E4%BB%8A%E6%97%A5%E3%80%81%E6%98%A8%E6%97%A5%E3%80%81%E4%B8%8A%E5%91%A8%E3%80%81%E6%9C%AC%E6%9C%88%E7%9A%84%E8%B5%B7%E5%A7%8B%E6%97%B6%E9%97%B4%E6%88%B3%E5%92%8C%E7%BB%93%E6%9D%9F%E6%97%B6%E9%97%B4%E6%88%B3%E7%9A%84%E6%96%B9%E6%B3%95/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2015/03/02/php%E8%8E%B7%E5%8F%96%E4%BB%8A%E6%97%A5%E3%80%81%E6%98%A8%E6%97%A5%E3%80%81%E4%B8%8A%E5%91%A8%E3%80%81%E6%9C%AC%E6%9C%88%E7%9A%84%E8%B5%B7%E5%A7%8B%E6%97%B6%E9%97%B4%E6%88%B3%E5%92%8C%E7%BB%93%E6%9D%9F%E6%97%B6%E9%97%B4%E6%88%B3%E7%9A%84%E6%96%B9%E6%B3%95/" data-id="cki64kqzu01ch5wlff92jd7tx" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-mysql分组取每组前几条记录-排序" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2015/03/01/mysql%E5%88%86%E7%BB%84%E5%8F%96%E6%AF%8F%E7%BB%84%E5%89%8D%E5%87%A0%E6%9D%A1%E8%AE%B0%E5%BD%95-%E6%8E%92%E5%BA%8F/" class="article-date">
@@ -123,7 +395,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2015/03/01/mysql%E5%88%86%E7%BB%84%E5%8F%96%E6%AF%8F%E7%BB%84%E5%89%8D%E5%87%A0%E6%9D%A1%E8%AE%B0%E5%BD%95-%E6%8E%92%E5%BA%8F/" data-id="ckhj6gjh4017uzllff1lb6flc" class="article-share-link">Share</a>
+      <a data-url="http://moqiang02.github.io/2015/03/01/mysql%E5%88%86%E7%BB%84%E5%8F%96%E6%AF%8F%E7%BB%84%E5%89%8D%E5%87%A0%E6%9D%A1%E8%AE%B0%E5%BD%95-%E6%8E%92%E5%BA%8F/" data-id="cki64kqy1017w5wlfa0v1cy2o" class="article-share-link">Share</a>
       
       
     </footer>
@@ -174,7 +446,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2015/02/25/php%E4%BA%8C%E7%BB%B4%E6%95%B0%E7%BB%84%E6%8E%92%E5%BA%8F%E6%96%B9%E6%B3%95-array-multisort-usort/" data-id="ckhj6gjio01b0zllfb33d6gua" class="article-share-link">Share</a>
+      <a data-url="http://moqiang02.github.io/2015/02/25/php%E4%BA%8C%E7%BB%B4%E6%95%B0%E7%BB%84%E6%8E%92%E5%BA%8F%E6%96%B9%E6%B3%95-array-multisort-usort/" data-id="cki64kqzb01b25wlf6qlb0e9f" class="article-share-link">Share</a>
       
       
     </footer>
@@ -222,194 +494,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2015/02/21/PHP%E5%BC%95%E7%94%A8-%E4%BD%BF%E7%94%A8%E8%AF%A6%E8%A7%A3/" data-id="ckhj6gjab00qlzllfeocg72mr" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-jquery通过submit-和serialize-提交表单" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2015/02/13/jquery%E9%80%9A%E8%BF%87submit-%E5%92%8Cserialize-%E6%8F%90%E4%BA%A4%E8%A1%A8%E5%8D%95/" class="article-date">
-  <time datetime="2015-02-13T03:12:57.000Z" itemprop="datePublished">2015-02-13</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/javascript/">javascript</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2015/02/13/jquery%E9%80%9A%E8%BF%87submit-%E5%92%8Cserialize-%E6%8F%90%E4%BA%A4%E8%A1%A8%E5%8D%95/">jquery通过submit()和serialize()提交表单</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <pre><code>    &lt;script type=&quot;text/javascript&quot;&gt;  
-        $(function() {  
-            $(&#39;#form1&#39;).submit(function() { //当提交表单时，会发生 submit 事件。  
-                //此处可做表单验证  
-                if ($(&quot;#username&quot;).val() == &quot;&quot;) {  
-                    alert(&quot;用户名不能为空&quot;);  
-                    return false;  
-                }  
-
-                var postData = $(&quot;#form1&quot;).serialize(); //序列化表单，后台可正常通过post方法获取数据  
-                $.ajax({  
-                    type: &quot;POST&quot;,  
-                    url: &quot;/member/member/post_member&quot;,  
-                    data: postData,  
-                    beforeSend: function() {  
-                        $(&quot;#btn-submit&quot;).attr(&quot;disabled&quot;, true);//提交表单前的处理，防止用户多次点击【登陆】，重复提交表单  
-                        $(&quot;#btn-submit&quot;).val(&quot;正在登陆...&quot;);  
-                    },  
-                    success: function(msg) {  
-                        if (msg == 0) {  
-                            alert(&#39;操作成功&#39;);  
-                            window.location.href = &#39;/member/member&#39;;  
-                        } else {  
-                            $(&quot;#btn-submit&quot;).attr(&quot;disabled&quot;, false);  
-                            $(&quot;#btn-submit&quot;).val(&quot;登陆&quot;);  
-                            alert(&quot;用户或密码错误！&quot;);  
-                        }  
-                    }  
-                });  
-            });  
-        });  
-    &lt;/script&gt;  
-    &lt;div&gt;  
-        &lt;form id=&quot;form1&quot; onsubmit=&quot;return false;&quot;&gt;  //注意：此处必须阻止表单提交  
-            &lt;!--表单内容部分--&gt;  
-            &lt;input type=&quot;reset&quot; value=&quot;重置&quot; /&gt;  
-            &lt;input type=&quot;submit&quot; id=&quot;btn-submit&quot; value=&quot;登陆&quot; /&gt;  
-        &lt;/form&gt;  
-    &lt;/div&gt;  </code></pre>
-        
-          <p class="article-more-link">
-            <a href="/2015/02/13/jquery%E9%80%9A%E8%BF%87submit-%E5%92%8Cserialize-%E6%8F%90%E4%BA%A4%E8%A1%A8%E5%8D%95/#more">Read More</a>
-          </p>
-        
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2015/02/13/jquery%E9%80%9A%E8%BF%87submit-%E5%92%8Cserialize-%E6%8F%90%E4%BA%A4%E8%A1%A8%E5%8D%95/" data-id="ckhj6gjfx0152zllffee51nc6" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-JS如何取得当前对象的属性" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2015/01/30/JS%E5%A6%82%E4%BD%95%E5%8F%96%E5%BE%97%E5%BD%93%E5%89%8D%E5%AF%B9%E8%B1%A1%E7%9A%84%E5%B1%9E%E6%80%A7/" class="article-date">
-  <time datetime="2015-01-30T02:48:46.000Z" itemprop="datePublished">2015-01-30</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/javascript/">javascript</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2015/01/30/JS%E5%A6%82%E4%BD%95%E5%8F%96%E5%BE%97%E5%BD%93%E5%89%8D%E5%AF%B9%E8%B1%A1%E7%9A%84%E5%B1%9E%E6%80%A7/">JS如何取得当前对象的属性(this)</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-	  
-
-	  
-        <p>页面中有很多张图片，要获取当前点击的那一张图片的src，语句怎么写？</p>
-<pre><code>    //方法:  
-    &lt;script language=&quot;javascript&quot;&gt;  
-    function fc(dom){  
-        var src = dom.getAttribute(&quot;src&quot;);  
-        alert(src);  
-    }  
-    &lt;/script&gt;  
-
-    //标签:  
-    &lt;img src=&quot;...&quot;  onclick=&quot;fc(this)&quot;&gt;&lt;/img&gt;</code></pre>
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2015/01/30/JS%E5%A6%82%E4%BD%95%E5%8F%96%E5%BE%97%E5%BD%93%E5%89%8D%E5%AF%B9%E8%B1%A1%E7%9A%84%E5%B1%9E%E6%80%A7/" data-id="ckhj6gj7000guzllf7gfle5da" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-表单验证插件jquery-validate-js" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2015/01/28/%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81%E6%8F%92%E4%BB%B6jquery-validate-js/" class="article-date">
-  <time datetime="2015-01-28T06:15:48.000Z" itemprop="datePublished">2015-01-28</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/javascript/">javascript</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2015/01/28/%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81%E6%8F%92%E4%BB%B6jquery-validate-js/">表单验证插件jquery.validate.js</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>最常使用JavaScript的场合就是表单的验证，而jQuery作为一个优秀的JavaScript库，也提供了一个优秀的表单验证插件—-Validation。Validation是历史最悠久的jQuery插件之一，经过了全球范围内不同项目的验证，并得到了许多Web开发者的好评。作为一个标准的验证方法库，Validation拥有如下特点：</p>
-<p>1.内置验证规则： 拥有必填、数字、Email、URL和信用卡号码等19类内置验证规则</p>
-<p>2.自定义验证规则： 可以很方便地自定义验证规则</p>
-<p>3.简单强大的验证信息提示： 默认了验证信息提示，并提供自定义覆盖默认的提示信息的功能</p>
-<p>4.实时验证： 可能通过keyup或blur事件触发验证，而不仅仅在表单提交的时候验证</p>
-<p>validate.js下载地址： <a href="http://plugins.jquery.com/project/validate" target="_blank" rel="noopener">http://plugins.jquery.com/project/validate</a></p>
-<p>metadata.js下载地址： <a href="http://plugins.jquery.com/project/metadata" target="_blank" rel="noopener">http://plugins.jquery.com/project/metadata</a></p>
-        
-          <p class="article-more-link">
-            <a href="/2015/01/28/%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81%E6%8F%92%E4%BB%B6jquery-validate-js/#more">Read More</a>
-          </p>
-        
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2015/01/28/%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81%E6%8F%92%E4%BB%B6jquery-validate-js/" data-id="ckhj6gjtn01wpzllf8nyo3id5" class="article-share-link">Share</a>
+      <a data-url="http://moqiang02.github.io/2015/02/21/PHP%E5%BC%95%E7%94%A8-%E4%BD%BF%E7%94%A8%E8%AF%A6%E8%A7%A3/" data-id="cki64wcc9003wl3lf98y8etpw" class="article-share-link">Share</a>
       
       
     </footer>
@@ -421,7 +506,7 @@
   
   
     <nav id="page-nav">
-      <a class="extend prev" rel="prev" href="/page/97/">« Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/96/">96</a><a class="page-number" href="/page/97/">97</a><span class="page-number current">98</span><a class="page-number" href="/page/99/">99</a><a class="page-number" href="/page/100/">100</a><span class="space">&hellip;</span><a class="page-number" href="/page/187/">187</a><a class="extend next" rel="next" href="/page/99/">Next »</a>
+      <a class="extend prev" rel="prev" href="/page/97/">« Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/96/">96</a><a class="page-number" href="/page/97/">97</a><span class="page-number current">98</span><a class="page-number" href="/page/99/">99</a><a class="page-number" href="/page/100/">100</a><span class="space">&hellip;</span><a class="page-number" href="/page/188/">188</a><a class="extend next" rel="next" href="/page/99/">Next »</a>
     </nav>
   
 
@@ -435,7 +520,7 @@ next_text: 'Next &raquo;' --></section>
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">119</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">38</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">106</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">69</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">149</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">51</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">83</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">119</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">104</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">38</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">108</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">69</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">149</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">51</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">83</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
     </div>
   </div>
 
@@ -447,23 +532,23 @@ next_text: 'Next &raquo;' --></section>
       <ul>
         
           <li>
+            <a href="/2020/12/01/%E8%A7%A3%E5%86%B3RedisException-with-message-read-error-on-connection/">解决RedisException with message read error on connection</a>
+          </li>
+        
+          <li>
+            <a href="/2020/12/01/Vue%E4%B8%8EjQuery%E6%8F%92%E4%BB%B6%E6%B7%B7%E7%94%A8Jquery%E7%9A%84%E4%BA%8B%E4%BB%B6%E6%97%A0%E6%B3%95%E5%93%8D%E5%BA%94%E6%80%8E%E4%B9%88%E8%A7%A3%E5%86%B3/">Vue与jQuery插件混用，Jquery的事件无法响应怎么解决？</a>
+          </li>
+        
+          <li>
+            <a href="/2020/12/01/Vue%E9%9B%86%E9%94%A6/">Vue集锦</a>
+          </li>
+        
+          <li>
             <a href="/2020/11/17/Backtrader%E5%AE%98%E6%96%B9%E6%96%87%E6%A1%A3%E4%B8%AD%E6%96%87%E7%BF%BB%E8%AF%91/">Backtrader官方文档中文翻译</a>
           </li>
         
           <li>
             <a href="/2020/11/15/flex%E5%B8%83%E5%B1%80-%E4%B8%89%E4%B8%AAdiv-%E4%B8%A4%E4%B8%AA%E5%B7%A6%E5%AF%B9%E9%BD%90-%E4%B8%80%E4%B8%AA%E5%8F%B3%E5%AF%B9%E9%BD%90/">flex布局 三个div 两个左对齐 一个右对齐</a>
-          </li>
-        
-          <li>
-            <a href="/2020/11/13/mysqldump-%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA/">mysqldump 深入浅出</a>
-          </li>
-        
-          <li>
-            <a href="/2020/10/31/conda%E7%8E%AF%E5%A2%83%E7%AE%A1%E7%90%86%E5%91%BD%E4%BB%A4/">conda环境管理命令</a>
-          </li>
-        
-          <li>
-            <a href="/2020/10/18/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader-%E4%B8%8B/">Python回测神器Backtrader (下）</a>
           </li>
         
       </ul>
@@ -475,7 +560,7 @@ next_text: 'Next &raquo;' --></section>
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/AndroidStudio/" style="font-size: 13.57px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.86px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 11.43px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 19.29px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10.71px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 12.14px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.14px;">VMware</a> <a href="/tags/Vue/" style="font-size: 17.14px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.86px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 14.29px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 13.57px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.43px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.14px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 16.43px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.43px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.86px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.57px;">集群</a>
+      <a href="/tags/AndroidStudio/" style="font-size: 13.57px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.86px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 11.43px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 19.29px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10.71px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 12.14px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.14px;">VMware</a> <a href="/tags/Vue/" style="font-size: 17.86px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.86px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 14.29px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 13.57px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.43px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.14px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 16.43px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.43px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.57px;">集群</a>
     </div>
   </div>
 
