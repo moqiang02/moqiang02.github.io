@@ -59,6 +59,296 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-Highcharts属性与Y轴数据值刻度显示Y轴最小最大值" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/09/07/Highcharts%E5%B1%9E%E6%80%A7%E4%B8%8EY%E8%BD%B4%E6%95%B0%E6%8D%AE%E5%80%BC%E5%88%BB%E5%BA%A6%E6%98%BE%E7%A4%BAY%E8%BD%B4%E6%9C%80%E5%B0%8F%E6%9C%80%E5%A4%A7%E5%80%BC/" class="article-date">
+  <time datetime="2014-09-07T03:17:11.000Z" itemprop="datePublished">2014-09-07</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/javascript/">javascript</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/09/07/Highcharts%E5%B1%9E%E6%80%A7%E4%B8%8EY%E8%BD%B4%E6%95%B0%E6%8D%AE%E5%80%BC%E5%88%BB%E5%BA%A6%E6%98%BE%E7%A4%BAY%E8%BD%B4%E6%9C%80%E5%B0%8F%E6%9C%80%E5%A4%A7%E5%80%BC/">Highcharts属性与Y轴数据值刻度显示Y轴最小最大值</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <pre><code>    Highcharts.setOptions({global:{useUTC : false}});    
+    $(function(){      
+        //声明报表对象      
+        var chart = new Highcharts.Chart({      
+            chart: {    
+            renderTo: &#39;container&#39;, // 报表显示在 页面位置 container 为 div 定义的属性    
+            defaultSeriesType: &#39;spline&#39;, // 定义报表类型 例如：line ，spline ，colume    
+            events: {    
+                    load:  getForm  //调用js 方法    
+                }    
+            },    
+            title:{    
+                text:&#39;实时监测曲线图&quot; //定义曲线报表 名称    
+            },    
+            xAxis: {    
+                type: &#39;datetime&#39;, // 定义时间轴的 类型    
+                maxPadding : 0.05,    
+                minPadding : 0.05,    
+                tickWidth:1,//刻度的宽度    
+                lineWidth :1,//自定义x轴宽度    
+                gridLineWidth :1,//默认是0，即在图上没有纵轴间隔线    
+                lineColor : &#39;#990000&#39;       
+            },    
+            yAxis: {    
+                    max:12, // 定义Y轴 最大值    
+                    min:0, // 定义最小值    
+                    minPadding: 0.2,     
+                    maxPadding: 0.2,    
+                    tickInterval:1, // 刻度值    
+                    title: {    
+                        text: &#39;PH值&#39;    
+                    },    
+                    // plotLines 表示为定义曲线报表中的 （刻度线）或者叫做（定义的区间范围）    
+    // 一下为2条表示线    
+                    plotLines: [{     
+                                value: 6,    
+                                color: &#39;green&#39;,    
+                                dashStyle: &#39;shortdash&#39;,    
+                                width: 2,    
+                                label: {    
+                                    text: &#39;正常&#39;    
+                                }    
+                            },{    
+                                value: 8,    
+                                color: &#39;green&#39;,    
+                                dashStyle: &#39;shortdash&#39;,    
+                                width: 2,    
+                                label: {    
+                                    text: &#39;正常&#39;    
+                                }    
+                            }    
+                    }]    
+            },    
+            tooltip: {  // 表示为 鼠标放在报表图中数据点上显示的数据信息    
+                formatter: function() {    
+                      return &#39;&lt;b&gt;&#39;+&#39;日期:&#39; +&#39;&lt;/b&gt;&#39;    
+    +Highcharts.dateFormat(&#39;%Y-%m-%d %H:%M:%S&#39;, this.x) +&#39;&lt;br/&gt;&#39;+    
+                       &#39;&lt;b&gt;&#39;+&#39;&lt;%=lbname%&gt;:&#39; +&#39;&lt;/b&gt;&#39;+ this.y+&#39;  &lt;%=shll%&gt;&#39;;    
+                }    
+            },    
+            series: [{    
+                name: &#39;PH&#39;,    
+                data: [] // 此处存放数据值 用,分开 例如：1.8,8.9,null,9.2,   如果在某一点数据为空      
+    //可以用null 来表示     
+                //如果是想动态扶植  这个位置 应该为空 即：data: []    
+            }]    
+        });      
+        // 与后台进行数据交互    
+        function getForm(){      
+            jQuery.getJSON(&quot;test!test.do?id=123456&quot;, null, function(data) {       
+                //为图表设置值       
+                chart.series[0].setData(data);       
+            });         
+        }      
+        //定时刷新 列表数据    
+       $(document).ready(function() {      
+           //每隔3秒自动调用方法，实现图表的实时更新      
+           window.setInterval(getForm,50000);       
+       });      
+    });    
+
+    //定义 曲线报表图 的样式    
+        Highcharts.theme = {    
+           colors: [&#39;#058DC7&#39;, &#39;#50B432&#39;, &#39;#ED561B&#39;, &#39;#DDDF00&#39;, &#39;#24CBE5&#39;, &#39;#64E572&#39;, &#39;#FF9655&#39;,    
+     &#39;#FFF263&#39;, &#39;#6AF9C4&#39;],    
+           chart: {    
+              backgroundColor: {    
+                 linearGradient: [0, 0, 500, 500],    
+                 stops: [    
+                    [0, &#39;rgb(255, 255, 255)&#39;],    
+                    [1, &#39;rgb(240, 240, 255)&#39;]    
+                 ]    
+              },    
+              borderWidth: 2,    
+              plotBackgroundColor: &#39;rgba(255, 255, 255, .9)&#39;,    
+              plotShadow: true,    
+              plotBorderWidth: 1    
+           },    
+           title: {    
+              style: {     
+                 color: &#39;#000&#39;,    
+                 font: &#39;bold 16px &quot;Trebuchet MS&quot;, Verdana, sans-serif&#39;    
+              }    
+           },    
+           subtitle: {    
+              style: {     
+                 color: &#39;#666666&#39;,    
+                 font: &#39;bold 12px &quot;Trebuchet MS&quot;, Verdana, sans-serif&#39;    
+              }    
+           },    
+           xAxis: {    
+              gridLineWidth: 1,    
+              lineColor: &#39;#000&#39;,    
+              tickColor: &#39;#000&#39;,    
+              labels: {    
+                 style: {    
+                    color: &#39;#000&#39;,    
+                    font: &#39;11px Trebuchet MS, Verdana, sans-serif&#39;    
+                 }    
+              },    
+              title: {    
+                 style: {    
+                    color: &#39;#333&#39;,    
+                    fontWeight: &#39;bold&#39;,    
+                    fontSize: &#39;12px&#39;,    
+                    fontFamily: &#39;Trebuchet MS, Verdana, sans-serif&#39;    
+
+                 }                
+              }    
+           },    
+           yAxis: {    
+              //minorTickInterval: &#39;auto&#39;  // 此处会在Y轴坐标2点之前出现小格  所以就没有使用。    
+           },    
+           legend: {    
+              itemStyle: {             
+                 font: &#39;9pt Trebuchet MS, Verdana, sans-serif&#39;,    
+                 color: &#39;black&#39;    
+              },    
+              itemHoverStyle: {    
+                 color: &#39;#039&#39;    
+              },    
+              itemHiddenStyle: {    
+                 color: &#39;gray&#39;    
+              }    
+           },    
+           labels: {    
+              style: {    
+                 color: &#39;#99b&#39;    
+              }    
+           }    
+        };    
+        var highchartsOptions = Highcharts.setOptions(Highcharts.theme);   </code></pre>
+        
+          <p class="article-more-link">
+            <a href="/2014/09/07/Highcharts%E5%B1%9E%E6%80%A7%E4%B8%8EY%E8%BD%B4%E6%95%B0%E6%8D%AE%E5%80%BC%E5%88%BB%E5%BA%A6%E6%98%BE%E7%A4%BAY%E8%BD%B4%E6%9C%80%E5%B0%8F%E6%9C%80%E5%A4%A7%E5%80%BC/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/09/07/Highcharts%E5%B1%9E%E6%80%A7%E4%B8%8EY%E8%BD%B4%E6%95%B0%E6%8D%AE%E5%80%BC%E5%88%BB%E5%BA%A6%E6%98%BE%E7%A4%BAY%E8%BD%B4%E6%9C%80%E5%B0%8F%E6%9C%80%E5%A4%A7%E5%80%BC/" data-id="ckjharwhi00fh4clf07swdf5f" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-CentOS下NFS服务器配置教程" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/09/03/CentOS%E4%B8%8BNFS%E6%9C%8D%E5%8A%A1%E5%99%A8%E9%85%8D%E7%BD%AE%E6%95%99%E7%A8%8B/" class="article-date">
+  <time datetime="2014-09-03T14:54:37.000Z" itemprop="datePublished">2014-09-03</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/linux/">linux</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/09/03/CentOS%E4%B8%8BNFS%E6%9C%8D%E5%8A%A1%E5%99%A8%E9%85%8D%E7%BD%AE%E6%95%99%E7%A8%8B/">CentOS下NFS服务器配置教程</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>说明：<br>NFS服务器:<br>操作系统：CentOS 5.5<br>IP：192.168.21.160<br>nfs网络文件服务器共享目录：/data/osyunwei<br>目录所有者：www(说明：www为nginx运行账号)<br>chown <a href="http://www.www" target="_blank" rel="noopener">www.www</a> -R /data/osyunwei<br>目录权限：700<br>chmod 700 -R /data/osyunwei<br>NFS客户端：<br>操作系统：CentOS 5.5<br>IP：192.168.21.169<br>把NFS服务器上的目录/data/osyunwei挂载到本地目录/data/osyunwei中<br>本地目录/data/osyunwei所有者：www(说明：www为nginx运行账号)<br>chown <a href="http://www.www" target="_blank" rel="noopener">www.www</a> -R /data/osyunwei<br>目录权限：700<br>chmod 700 -R /data/osyunwei</p>
+        
+          <p class="article-more-link">
+            <a href="/2014/09/03/CentOS%E4%B8%8BNFS%E6%9C%8D%E5%8A%A1%E5%99%A8%E9%85%8D%E7%BD%AE%E6%95%99%E7%A8%8B/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/09/03/CentOS%E4%B8%8BNFS%E6%9C%8D%E5%8A%A1%E5%99%A8%E9%85%8D%E7%BD%AE%E6%95%99%E7%A8%8B/" data-id="ckjharwfm008r4clf03xvcpun" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E9%9B%86%E7%BE%A4/" rel="tag">集群</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-使用：-usr-bin-phpize-报错" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/09/03/%E4%BD%BF%E7%94%A8%EF%BC%9A-usr-bin-phpize-%E6%8A%A5%E9%94%99/" class="article-date">
+  <time datetime="2014-09-03T11:53:25.000Z" itemprop="datePublished">2014-09-03</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/linux/">linux</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/09/03/%E4%BD%BF%E7%94%A8%EF%BC%9A-usr-bin-phpize-%E6%8A%A5%E9%94%99/">使用：/usr/bin/phpize 报错</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <p>使用：/usr/bin/phpize</p>
+<p>出现下面错误提示</p>
+<p>Can’t find PHP headers in /usr/include/php<br>The php-devel package is required for use of this command</p>
+<p>yum install php-devel 解决</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/09/03/%E4%BD%BF%E7%94%A8%EF%BC%9A-usr-bin-phpize-%E6%8A%A5%E9%94%99/" data-id="ckjharwwt01kx4clf758k8zzn" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-mongodb常用语句-集合操作" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2014/09/03/mongodb%E5%B8%B8%E7%94%A8%E8%AF%AD%E5%8F%A5-%E9%9B%86%E5%90%88%E6%93%8D%E4%BD%9C/" class="article-date">
@@ -199,178 +489,6 @@
 
 
   
-    <article id="post-linux-php-安装xdebug" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2014/09/01/linux-php-%E5%AE%89%E8%A3%85xdebug/" class="article-date">
-  <time datetime="2014-09-01T11:53:02.000Z" itemprop="datePublished">2014-09-01</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/linux/">linux</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2014/09/01/linux-php-%E5%AE%89%E8%A3%85xdebug/">linux php 安装xdebug</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>我的环境是PHP 5.2.5，下载的xdebug是Xdebug v2.2.1 源码包<br>PHP 5.3.20用的是Xdebug v2.1.0  {版本一定要匹配}<br>下载地址为：<a href="http://xdebug.org/files/xdebug-2.2.1.tgz" target="_blank" rel="noopener">http://xdebug.org/files/xdebug-2.2.1.tgz</a><br>安装过程是：<br>1、<code>tar zxvf xdebug-2.2.1.tgz</code><br>   <code>cd xdebug-2.2.1</code><br>2、运行 <code>phpize</code> [如果没有将phpize加入$PATH,则应该使用全路径]<br>   <code>phpize</code><br>3、然后运行<code>./configure --with-php-config=/usr/local/php/bin/php-config</code>这个根据自己的目录定<br>   之后是 <code>make &amp;&amp; make install</code> </p>
-        
-          <p class="article-more-link">
-            <a href="/2014/09/01/linux-php-%E5%AE%89%E8%A3%85xdebug/#more">Read More</a>
-          </p>
-        
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2014/09/01/linux-php-%E5%AE%89%E8%A3%85xdebug/" data-id="ckjharwqp016f4clfa3p5fkee" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-CI框架自带的验证工具及汉化" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2014/08/30/CI%E6%A1%86%E6%9E%B6%E8%87%AA%E5%B8%A6%E7%9A%84%E9%AA%8C%E8%AF%81%E5%B7%A5%E5%85%B7%E5%8F%8A%E6%B1%89%E5%8C%96/" class="article-date">
-  <time datetime="2014-08-30T11:46:59.000Z" itemprop="datePublished">2014-08-30</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2014/08/30/CI%E6%A1%86%E6%9E%B6%E8%87%AA%E5%B8%A6%E7%9A%84%E9%AA%8C%E8%AF%81%E5%B7%A5%E5%85%B7%E5%8F%8A%E6%B1%89%E5%8C%96/">CI框架自带的验证工具及汉化</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>本人自己还是很喜欢CI框架自带的验证工具的，使用方式如下：</p>
-<pre><code>    /**  
-     *@blog&lt;http://www.phpddt.com&gt; 
-     */  
-    public function do_login()  
-    {  
-
-        if ($this-&gt;form_validation-&gt;run(&#39;do_login&#39;) == FALSE)  
-        {  
-           $this-&gt;load-&gt;view(&#39;login&#39;);  
-        }  
-        else  
-        {  
-           $usr = $this-&gt;input-&gt;post(&quot;username&quot;,TRUE);  
-           $psw = $this-&gt;input-&gt;post(&quot;password&quot;,TRUE);  
-           $user = $this-&gt;user_mdl-&gt;validate_user($usr,$psw);  
-           if($user)  
-           {  
-                /** 验证成功，更新用户信息，设置session,自动跳转 */  
-                $data[&#39;last_active&#39;] = time();  
-                $this-&gt;user_mdl-&gt;update_user($user-&gt;uid,$data);  
-                $session_data = array(  
-                    &#39;uid&#39; =&gt; $user-&gt;uid,  
-                    &#39;username&#39; =&gt; $user-&gt;username  
-                );  
-                $this-&gt;session-&gt;set_userdata($session_data);  
-                redirect(&#39;admin/meta&#39;);  
-           }  
-           else  
-           {  
-                $this-&gt;session-&gt;set_flashdata(&#39;error&#39;, &#39;用户名或密码不正确&#39;);  
-                redirect(&#39;admin/login&#39;);  
-           }  
-        }  
-    }  </code></pre><p>在view页面，你只要<code>&lt;?=validation_errors()?&gt;</code>就可以获取错误信息，但是提示是英文的，其实是有汉化包的哦！</p>
-        
-          <p class="article-more-link">
-            <a href="/2014/08/30/CI%E6%A1%86%E6%9E%B6%E8%87%AA%E5%B8%A6%E7%9A%84%E9%AA%8C%E8%AF%81%E5%B7%A5%E5%85%B7%E5%8F%8A%E6%B1%89%E5%8C%96/#more">Read More</a>
-          </p>
-        
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2014/08/30/CI%E6%A1%86%E6%9E%B6%E8%87%AA%E5%B8%A6%E7%9A%84%E9%AA%8C%E8%AF%81%E5%B7%A5%E5%85%B7%E5%8F%8A%E6%B1%89%E5%8C%96/" data-id="ckjharwfc007j4clf2zqe0ln7" class="article-share-link">Share</a>
-      
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/CI/" rel="tag">CI</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-CentOS-开机自启动脚本" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2014/08/26/CentOS-%E5%BC%80%E6%9C%BA%E8%87%AA%E5%90%AF%E5%8A%A8%E8%84%9A%E6%9C%AC/" class="article-date">
-  <time datetime="2014-08-26T14:52:37.000Z" itemprop="datePublished">2014-08-26</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/linux/">linux</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2014/08/26/CentOS-%E5%BC%80%E6%9C%BA%E8%87%AA%E5%90%AF%E5%8A%A8%E8%84%9A%E6%9C%AC/">CentOS 开机自启动脚本</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>开机时执行自己的脚本.</p>
-<p>1.编写自己的服务脚本<br>进入系统服务脚本目录:<br>cd /etc/rc.d/init.d/<br>vi test</p>
-        
-          <p class="article-more-link">
-            <a href="/2014/08/26/CentOS-%E5%BC%80%E6%9C%BA%E8%87%AA%E5%90%AF%E5%8A%A8%E8%84%9A%E6%9C%AC/#more">Read More</a>
-          </p>
-        
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2014/08/26/CentOS-%E5%BC%80%E6%9C%BA%E8%87%AA%E5%90%AF%E5%8A%A8%E8%84%9A%E6%9C%AC/" data-id="ckjharwfk008h4clf41zbaumi" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/110/">« Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/109/">109</a><a class="page-number" href="/page/110/">110</a><span class="page-number current">111</span><a class="page-number" href="/page/112/">112</a><a class="page-number" href="/page/113/">113</a><span class="space">&hellip;</span><a class="page-number" href="/page/189/">189</a><a class="extend next" rel="next" href="/page/112/">Next »</a>
@@ -387,7 +505,7 @@ next_text: 'Next &raquo;' --></section>
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">120</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">105</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">38</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">108</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">69</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">149</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">38</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">51</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">83</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Android/">Android</a><span class="category-list-count">123</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/AndroidUI/">AndroidUI</a><span class="category-list-count">105</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Android%E5%BC%80%E6%BA%90/">Android开源</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/IIS/">IIS</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/PHP%E6%A1%86%E6%9E%B6/">PHP框架</a><span class="category-list-count">38</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">108</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">69</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">149</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">38</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">51</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">83</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
     </div>
   </div>
 
@@ -399,23 +517,23 @@ next_text: 'Next &raquo;' --></section>
       <ul>
         
           <li>
+            <a href="/2021/01/22/View-%E6%BB%91%E5%8A%A8%E5%86%B2%E7%AA%81%E8%A7%A3%E5%86%B3%E6%96%B9%E5%BC%8F%E4%BB%A5%E5%8F%8A%E5%8E%9F%E7%90%86/">View 滑动冲突解决方式以及原理</a>
+          </li>
+        
+          <li>
+            <a href="/2021/01/22/%E6%BB%91%E5%8A%A8%E5%86%B2%E7%AA%81%E4%B9%8B%E5%86%85%E9%83%A8%E6%8B%A6%E6%88%AA%E6%B3%95/">滑动冲突之内部拦截法</a>
+          </li>
+        
+          <li>
+            <a href="/2021/01/22/android%E4%B8%AD%E7%9A%84dispatchTouchEvent%E3%80%81onInterceptTouchEvent%E5%92%8ConTouchEvent/">android中的dispatchTouchEvent、onInterceptTouchEvent和onTouchEvent</a>
+          </li>
+        
+          <li>
             <a href="/2021/01/18/%E7%94%A8Android-Studio%E7%9A%84Profiler%E6%9F%A5%E7%9C%8B%E7%BD%91%E7%BB%9C%E8%AF%B7%E6%B1%82/">用Android Studio的Profiler查看网络请求</a>
           </li>
         
           <li>
             <a href="/2021/01/12/Kotlin-%E4%B8%AD%E7%9A%84-let-with-run-apply-also-%E7%AD%89%E5%87%BD%E6%95%B0%E7%9A%84%E4%BD%BF%E7%94%A8/">Kotlin 中的 let, with, run, apply, also 等函数的使用</a>
-          </li>
-        
-          <li>
-            <a href="/2021/01/10/%E4%BB%8EButterKnife%E5%88%B0KotterKnife%E5%86%8D%E5%88%B0Kotlin-Android-Extensions/">从ButterKnife到KotterKnife再到Kotlin Android Extensions</a>
-          </li>
-        
-          <li>
-            <a href="/2021/01/09/%E6%9C%80%E5%85%A8%E9%9D%A2%E7%9A%84ConstraintLayout%E6%95%99%E7%A8%8B/">最全面的ConstraintLayout教程</a>
-          </li>
-        
-          <li>
-            <a href="/2021/01/05/Python3-6%E6%96%B0%E7%9A%84%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%A0%BC%E5%BC%8F%E5%8C%96%E8%AF%AD%E6%B3%95/">Python3.6新的字符串格式化语法</a>
           </li>
         
       </ul>
@@ -427,7 +545,7 @@ next_text: 'Next &raquo;' --></section>
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/AndroidStudio/" style="font-size: 13.57px;">AndroidStudio</a> <a href="/tags/CI/" style="font-size: 15.71px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.86px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 11.43px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 19.29px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10.71px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 12.14px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.14px;">VMware</a> <a href="/tags/Vue/" style="font-size: 17.86px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.86px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 13.57px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 14.29px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 13.57px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.14px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.29px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.43px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.14px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 16.43px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.43px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.14px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.57px;">集群</a>
+      <a href="/tags/AndroidStudio/" style="font-size: 14px;">AndroidStudio</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.33px;">Android事件拦截</a> <a href="/tags/CI/" style="font-size: 16px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.33px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 20px;">DEDE</a> <a href="/tags/KindEditor/" style="font-size: 12px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 19.33px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/ThinkPHP/" style="font-size: 10.67px;">ThinkPHP</a> <a href="/tags/UEditor/" style="font-size: 12.67px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.67px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.33px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 14px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 14.67px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.67px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.67px;">socket</a> <a href="/tags/sphinx/" style="font-size: 12px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.67px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 16.67px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 12px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15.33px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.33px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.67px;">集群</a>
     </div>
   </div>
 
