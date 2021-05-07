@@ -14,7 +14,7 @@
 <meta property="og:description" content="应用场景：1，每个请求都带上的参数，比如 token，时间戳等2，对返回的状态进行判断，比如 token 是否过期">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2019-03-14T13:52:00.000Z">
-<meta property="article:modified_time" content="2019-03-14T13:19:26.000Z">
+<meta property="article:modified_time" content="2021-05-07T13:55:45.317Z">
 <meta property="article:author" content="moqiang">
 <meta property="article:tag" content="Vue">
 <meta name="twitter:card" content="summary">
@@ -160,6 +160,42 @@ axios.interceptors.request.use(
         return Promise.reject(error);
     }
 );</code></pre>
+<hr>
+<p>在向服务器发送前，修改请求数据，使用transformRequest</p>
+<pre><code class="js">&lt;script&gt;
+  import axios from &#39;axios&#39;
+  import qs from &#39;qs&#39;
+
+  let http = axios.create({
+    baseURL: &#39;https://www.easy-mock.com/mock/5d41580a1a802c0d5e53dcc2/example/&#39;,
+    // 可以通过设置一个 `baseURL` 便于为 axios 实例的方法传递相对 URL
+
+    transformRequest: [function (data) {
+      // `transformRequest` 允许在向服务器发送前，修改请求数据
+      // 只能用在 &#39;PUT&#39;, &#39;POST&#39; 和 &#39;PATCH&#39; 这几个请求方法
+      data.sex = &#39;man&#39;
+      return qs.stringify(data)
+      // 结合create_headers里的内容，在这里又新增一条信息sex=man
+      // 因此network中查看的结果是：name=xiaoming&amp;age=12&amp;sex=man
+    }],
+
+    headers: {&#39;content-type&#39;: &#39;application/x-www-form-urlencoded&#39;},
+  })
+  export default {
+    name: &quot;create_transformRequest&quot;,
+    methods: {
+      postUrl () {
+        http.post(&#39;bb&#39;, {
+          &#39;name&#39;: &#39;xiaoming&#39;,
+          &#39;age&#39;: 12
+        })
+      }
+    },
+    created () {
+      this.postUrl()
+    }
+  }
+&lt;/script&gt;</code></pre>
 <blockquote>
 <p>参考：<a href="https://blog.csdn.net/wxj_ios/article/details/85328323" target="_blank" rel="noopener">vue axios 请求拦截器，取消</a></p>
 </blockquote>
