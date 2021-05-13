@@ -59,6 +59,265 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-一个简单的CI分页类" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/07/23/%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84CI%E5%88%86%E9%A1%B5%E7%B1%BB/" class="article-date">
+  <time datetime="2014-07-23T11:51:47.000Z" itemprop="datePublished">2014-07-23</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/php/">php</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/07/23/%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84CI%E5%88%86%E9%A1%B5%E7%B1%BB/">一个简单的CI分页类</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <pre><code>    /** 
+     *  
+     * 关于 页码有效性的判断需要加在 控制器中判断，即当页码数&lt;1或者&gt;总页数 
+     * 
+     */  
+
+    class Custom_pagination  
+    {  
+        var $page_url = &#39;&#39;; //分页目标URL  
+        var $page_size = 10; //每一页行数  
+        var $page_num = 1;//页码  
+        var $rows_num= &#39;&#39;;//数据总行数  
+        var $links_num= 3;//选中链接前后的链接数，必须大于等于1  
+
+        var $anchor_class= &#39;&#39;;//链接样式类  
+        var $current_class= &#39;&#39;;//当前页样式类  
+        var $full_tag_open= &#39;&#39;;//分页开始标签  
+        var $full_tag_close= &#39;&#39;;//分页结束标签  
+        var $info_tag_open= &#39;&#39;;  
+        var $info_tag_close= &#39; &#39;;  
+        var $first_tag_open= &#39;&#39;;  
+        var $first_tag_close= &#39; &#39;;  
+        var $last_tag_open= &#39; &#39;;  
+        var $last_tag_close= &#39;&#39;;  
+        var $cur_tag_open= &#39; &lt;strong&gt;&#39;;  
+        var $cur_tag_close= &#39;&lt;/strong&gt;&#39;;  
+        var $next_tag_open= &#39; &#39;;  
+        var $next_tag_close= &#39; &#39;;  
+        var $prev_tag_open= &#39; &#39;;  
+        var $prev_tag_close= &#39;&#39;;  
+        var $num_tag_open= &#39; &#39;;  
+        var $num_tag_close= &#39;&#39;;  
+
+        public function __construct($params = array())  
+        {  
+            if (count($params) &gt; 0)  
+            {  
+                $this-&gt;init($params);  
+            }  
+        }  
+
+        function init($params = array()) //初始化数据  
+        {  
+            if (count($params) &gt; 0)  
+            {  
+                foreach ($params as $key =&gt; $val)  
+                {  
+                    if (isset($this-&gt;$key))  
+                    {  
+                        $this-&gt;$key = $val;  
+                    }  
+                }  
+            }  
+        }  
+
+        function create_links()  
+        {  
+            ///////////////////////////////////////////////////////  
+            //准备数据  
+            ///////////////////////////////////////////////////////  
+            $page_url = $this-&gt;page_url;  
+            $rows_num = $this-&gt;rows_num;  
+            $page_size = $this-&gt;page_size;  
+            $links_num = $this-&gt;links_num;  
+
+            if ($rows_num == 0 OR $page_size == 0)  
+            {  
+                return &#39;&#39;;  
+            }  
+
+            $pages = intval($rows_num/$page_size);  
+            if ($rows_num % $page_size)  
+            {  
+                //有余数pages+1  
+                $pages++;  
+            };  
+            $page_num = $this-&gt;page_num &lt; 1 ? &#39;1&#39; : $this-&gt;page_num;  
+
+            $anchor_class = &#39;&#39;;  
+            if($this-&gt;anchor_class !== &#39;&#39;)  
+            {  
+                $anchor_class = &#39;class=&quot;&#39;.$this-&gt;anchor_class.&#39;&quot; &#39;;  
+            }  
+
+            $current_class = &#39;&#39;;  
+            if($this-&gt;current_class !== &#39;&#39;)  
+            {  
+                $current_class = &#39;class=&quot;&#39;.$this-&gt;current_class.&#39;&quot; &#39;;  
+            }  
+            if($pages == 1)  
+            {  
+                return &#39;&#39;;  
+            }  
+            if($links_num &lt; 0)  
+            {  
+                return &#39;- -！links_num必须大于等于0&#39;;  
+            }  
+            ////////////////////////////////////////////////////////  
+            //创建链接开始  
+            ////////////////////////////////////////////////////////  
+            $output = $this-&gt;full_tag_open;  
+            $output .= $this-&gt;info_tag_open.&#39;共&#39;.$rows_num.&#39;条数据  第 &#39;.$page_num.&#39;/&#39;.$pages.&#39; 页&#39;.$this-&gt;info_tag_close;  
+            //首页  
+            if($page_num &gt; 1)  
+            {  
+                $output .= $this-&gt;first_tag_open.&#39;&lt;a &#39;.$anchor_class.&#39; href=&quot;&#39;.site_url($page_url).&#39;&quot; &gt;首页&lt;/a&gt;&#39;.$this-&gt;first_tag_close;  
+            }  
+            //上一页  
+            if($page_num &gt; 1)  
+            {  
+                $n = $page_num - 1;  
+                $output .= $this-&gt;prev_tag_open.&#39;&lt;a &#39;.$anchor_class.&#39; href=&quot;&#39;.site_url($page_url.&#39;/&#39;.$n).&#39;&quot; &gt;上一页&lt;/a&gt;&#39;.$this-&gt;prev_tag_close;  
+            }  
+            //pages  
+            for($i=1;$i&lt;=$pages;$i++)  
+            {  
+                $pl = $page_num - $links_num &lt; 0 ? 0 : $page_num - $links_num;  
+                $pr = $page_num + $links_num &gt; $pages ? $pages : $page_num + $links_num;  
+                //判断链接个数是否太少，举例，假设links_num = 2，则链接个数不可少于 5 个，主要是 当page_num 等于 1， 2 和 n，n-1的时候  
+                if($pr &lt; 2 * $links_num + 1)  
+                {  
+                    $pr = 2 * $links_num + 1;  
+                }  
+                if($pl &gt; $pages-2 * $links_num)  
+                {  
+                    $pl = $pages - 2 * $links_num;  
+                }  
+                if($i == $page_num)  
+                {   //current page  
+                    $output .= $this-&gt;cur_tag_open.&#39;&lt;span &#39;.$current_class.&#39; &gt;&#39;.$i.&#39;&lt;/span&gt;&#39;.$this-&gt;cur_tag_close;  
+                }else if($i &gt;= $pl &amp;&amp; $i &lt;= $pr)  
+                {  
+                    $output .= $this-&gt;num_tag_open.&#39;&lt;a &#39;.$anchor_class.&#39; href=&quot;&#39;.site_url($page_url.&#39;/&#39;.$i).&#39;&quot; &gt;&#39;.$i.&#39;&lt;/a&gt;&#39;.$this-&gt;num_tag_close;  
+                }  
+            }  
+            //下一页  
+            if($page_num &lt; $pages)  
+            {  
+                $n = $page_num + 1;  
+                $output .= $this-&gt;next_tag_open.&#39;&lt;a &#39;.$anchor_class.&#39; href=&quot;&#39;.site_url($page_url.&#39;/&#39;.$n).&#39;&quot; &gt;下一页&lt;/a&gt;&#39;.$this-&gt;next_tag_close;  
+            }  
+            //末页  
+            if($page_num &lt; $pages)  
+            {  
+                $output .= $this-&gt;last_tag_open.&#39;&lt;a &#39;.$anchor_class.&#39; href=&quot;&#39;.site_url($page_url.&#39;/&#39;.$pages).&#39;&quot; &gt;末页&lt;/a&gt;&#39;.$this-&gt;last_tag_close;  
+            }  
+
+            $output.=$this-&gt;full_tag_close;  
+            return $output;  
+        }  
+    }  </code></pre><p>控制器里调用</p>
+<pre><code>    $config[&#39;page_url&#39;]  = &#39;about/science&#39;;  
+    $config[&#39;page_size&#39;] = $pagesize;  
+    $config[&#39;rows_num&#39;] = $num_rows;  
+    $config[&#39;page_num&#39;] = $page;    
+
+    $this-&gt;load-&gt;library(&#39;Custom_pagination&#39;);  
+    $this-&gt;custom_pagination-&gt;init($config);  
+    echo $this-&gt;custom_pagination-&gt;create_links();&lt;/span&gt;  </code></pre><pre><code>    &lt;?php  
+    class page{  
+
+        public $page; //当前页  
+        public $pagenum;  // 页数  
+        public $pagesize;  // 每页显示条数  
+        public function __construct($count, $pagesize){  
+            $this-&gt;pagenum = ceil($count/$pagesize);  
+            $this-&gt;pagesize = $pagesize;  
+            $this-&gt;page =(isset($_GET[&#39;p&#39;])&amp;&amp;$_GET[&#39;p&#39;]&gt;0) ? intval($_GET[&#39;p&#39;]) : 1;  
+        }  
+        /** 
+         * 获得 url 后面GET传递的参数 
+         */   
+        public function getUrl(){     
+            $url = &#39;index.php?&#39;.http_build_query($_GET);  
+            $url = preg_replace(&#39;/[?,&amp;]p=(\w)+/&#39;,&#39;&#39;,$url);  
+            $url .= (strpos($url,&quot;?&quot;) === false) ? &#39;?&#39; : &#39;&amp;&#39;;  
+            return $url;  
+        }  
+        /** 
+         * 获得分页HTML 
+         */  
+        public function getPage(){  
+            $url = $this-&gt;getUrl();  
+            $start = $this-&gt;page-5;  
+            $start=$start&gt;0 ? $start : 1;   
+            $end   = $start+9;  
+            $end = $end&lt;$this-&gt;pagenum ? $end : $this-&gt;pagenum;  
+            $pagestr = &#39;&#39;;  
+            if($this-&gt;page&gt;5){  
+                $pagestr = &quot;&lt;a href=&quot;.$url.&quot;p=1&quot;.&quot;&gt;首页&lt;/a&gt; &quot;;  
+            }  
+            if($this-&gt;page!=1){  
+                $pagestr.= &quot;&lt;a href=&quot;.$url.&quot;p=&quot;.($this-&gt;page-1).&quot;&gt;上一页&lt;/a&gt;&quot;;  
+            }  
+
+            for($i=$start;$i&lt;=$end;$i++){  
+                $pagestr.= &quot;&lt;a href=&quot;.$url.&quot;p=&quot;.$i.&quot;&gt;&quot;.$i.&quot;&lt;/a&gt;  &quot;;                       
+            }  
+            if($this-&gt;page!=$this-&gt;pagenum){  
+                $pagestr.=&quot;&lt;a href=&quot;.$url.&quot;p=&quot;.($this-&gt;page+1).&quot;&gt;下一页&lt;/a&gt;&quot;;  
+
+            }  
+            if($this-&gt;page+5&lt;$this-&gt;pagenum){  
+                $pagestr.=&quot;&lt;a href=&quot;.$url.&quot;p=&quot;.$this-&gt;pagenum.&quot;&gt;尾页&lt;/a&gt; &quot;;  
+            }  
+            return $pagestr;      
+        }  
+
+    }  
+    // 测试代码  
+    $page = new page(100,10);  
+    $str=$page-&gt;getPage();  
+    echo $str;  
+
+    ?&gt;  </code></pre>
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/07/23/%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84CI%E5%88%86%E9%A1%B5%E7%B1%BB/" data-id="ckmnk2yz101kf9klfdg3p5dv5" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/CI/" rel="tag">CI</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-jQuery-如何给动态生成的元素绑定事件" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2014/07/23/jQuery-%E5%A6%82%E4%BD%95%E7%BB%99%E5%8A%A8%E6%80%81%E7%94%9F%E6%88%90%E7%9A%84%E5%85%83%E7%B4%A0%E7%BB%91%E5%AE%9A%E4%BA%8B%E4%BB%B6/" class="article-date">
@@ -330,57 +589,6 @@
 
 
   
-    <article id="post-如何用命令行解决可执行文件的权限问题" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2014/07/18/%E5%A6%82%E4%BD%95%E7%94%A8%E5%91%BD%E4%BB%A4%E8%A1%8C%E8%A7%A3%E5%86%B3%E5%8F%AF%E6%89%A7%E8%A1%8C%E6%96%87%E4%BB%B6%E7%9A%84%E6%9D%83%E9%99%90%E9%97%AE%E9%A2%98/" class="article-date">
-  <time datetime="2014-07-18T14:50:36.000Z" itemprop="datePublished">2014-07-18</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/linux/">linux</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2014/07/18/%E5%A6%82%E4%BD%95%E7%94%A8%E5%91%BD%E4%BB%A4%E8%A1%8C%E8%A7%A3%E5%86%B3%E5%8F%AF%E6%89%A7%E8%A1%8C%E6%96%87%E4%BB%B6%E7%9A%84%E6%9D%83%E9%99%90%E9%97%AE%E9%A2%98/">如何用命令行解决可执行文件的权限问题</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>在用命令行执行一个后台监控的可执行文件时出现了如下提示：</p>
-<pre><code>[root@promote 桌面]# nohup /etc/nginx_check.sh
-nohup: 忽略输入并把输出追加到&quot;nohup.out&quot;
-nohup: 无法运行命令&quot;/etc/nginx_check.sh&quot;: 权限不够</code></pre><p>或：</p>
-<pre><code>[root@promote 桌面]# nohup /etc/nginx_check.sh
-nohup: ignoring input and appending output to `nohup.out&#39;
-nohup: failed to run command `/etc/nginx_check.sh&#39;: Permission denied</code></pre>
-        
-          <p class="article-more-link">
-            <a href="/2014/07/18/%E5%A6%82%E4%BD%95%E7%94%A8%E5%91%BD%E4%BB%A4%E8%A1%8C%E8%A7%A3%E5%86%B3%E5%8F%AF%E6%89%A7%E8%A1%8C%E6%96%87%E4%BB%B6%E7%9A%84%E6%9D%83%E9%99%90%E9%97%AE%E9%A2%98/#more">Read More</a>
-          </p>
-        
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2014/07/18/%E5%A6%82%E4%BD%95%E7%94%A8%E5%91%BD%E4%BB%A4%E8%A1%8C%E8%A7%A3%E5%86%B3%E5%8F%AF%E6%89%A7%E8%A1%8C%E6%96%87%E4%BB%B6%E7%9A%84%E6%9D%83%E9%99%90%E9%97%AE%E9%A2%98/" data-id="ckmnk2z3801tn9klferz4g3qu" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/117/">« Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/116/">116</a><a class="page-number" href="/page/117/">117</a><span class="page-number current">118</span><a class="page-number" href="/page/119/">119</a><a class="page-number" href="/page/120/">120</a><span class="space">&hellip;</span><a class="page-number" href="/page/191/">191</a><a class="extend next" rel="next" href="/page/119/">Next »</a>
@@ -397,7 +605,7 @@ next_text: 'Next &raquo;' --></section>
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">111</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">70</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">52</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">82</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">112</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">70</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">52</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">82</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
     </div>
   </div>
 
@@ -407,6 +615,10 @@ next_text: 'Next &raquo;' --></section>
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2021/05/14/VUE%E4%B8%AD%E4%BD%BF%E7%94%A8Three-js%E6%89%80%E9%81%87%E5%88%B0%E7%9A%84%E9%97%AE%E9%A2%98/">VUE中使用Three.js所遇到的问题</a>
+          </li>
         
           <li>
             <a href="/2021/03/10/Mac%E4%B8%8B%E6%8F%90%E7%A4%BAAPP%E5%B7%B2%E6%8D%9F%E5%9D%8F%EF%BC%8C%E6%89%93%E4%B8%8D%E5%BC%80%EF%BC%8C%E8%AF%B7%E7%A7%BB%E8%87%B3%E5%BA%9F%E7%BA%B8%E7%AF%93/">Mac下提示APP已损坏，打不开，请移至废纸篓</a>
@@ -422,10 +634,6 @@ next_text: 'Next &raquo;' --></section>
         
           <li>
             <a href="/2021/02/24/macOS-Mojave-10-14-6-App-Store%E6%97%A0%E6%B3%95%E4%B8%8B%E8%BD%BD%E5%92%8C%E6%9B%B4%E6%96%B0%E5%BA%94%E7%94%A8%E7%9A%84%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95/">macOS Mojave 10.14.6 App Store无法下载和更新应用的解决办法</a>
-          </li>
-        
-          <li>
-            <a href="/2021/02/09/%E4%BD%BF%E7%94%A8venv%E5%88%9B%E5%BB%BApython3%E8%99%9A%E6%8B%9F%E7%8E%AF%E5%A2%83/">使用venv创建python3虚拟环境</a>
           </li>
         
       </ul>

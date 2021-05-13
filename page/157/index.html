@@ -59,6 +59,241 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-php用户注册页面利用js进行表单验证" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/02/17/php%E7%94%A8%E6%88%B7%E6%B3%A8%E5%86%8C%E9%A1%B5%E9%9D%A2%E5%88%A9%E7%94%A8js%E8%BF%9B%E8%A1%8C%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81/" class="article-date">
+  <time datetime="2014-02-17T13:16:00.000Z" itemprop="datePublished">2014-02-17</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/javascript/">javascript</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/02/17/php%E7%94%A8%E6%88%B7%E6%B3%A8%E5%86%8C%E9%A1%B5%E9%9D%A2%E5%88%A9%E7%94%A8js%E8%BF%9B%E8%A1%8C%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81/">php用户注册页面利用js进行表单验证</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <pre><code class="html">&lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD XHTML 1.0 Transitional//EN&quot; &quot;http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd&quot;&gt;
+&lt;html xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;
+    &lt;head&gt;
+        &lt;meta http-equiv=&quot;Content-Type&quot; content=&quot;text/html; charset=gb2312&quot; /&gt; 
+        &lt;title&gt;用户注册 - 当当网&lt;/title&gt;
+        &lt;link href=&quot;../css/login.css&quot; rel=&quot;stylesheet&quot; type=&quot;text/css&quot; /&gt;
+        &lt;link href=&quot;../css/page_bottom.css&quot; rel=&quot;stylesheet&quot; type=&quot;text/css&quot; /&gt;
+        &lt;script type=&quot;text/javascript&quot; src=&quot;../js/jquery-1.7.1.js&quot;&gt;&lt;/script&gt;
+        &lt;script type=&quot;text/javascript&quot;&gt;
+            var flag = {
+                &quot;email&quot;:false,
+                &quot;nickname&quot;:false,
+                &quot;password&quot;:false,
+                &quot;verify&quot;:false
+            };
+
+            $(function(){
+                $(&quot;#txtEmail&quot;).blur(function () {
+                    var email=$(this).val();
+                    //alert(email);
+                    if(email==&quot;&quot;){
+                        $(&quot;#email\\.info&quot;).html(&quot;Email地址不能为空&quot;);
+                        return;
+                    }
+                    var pattern=/\b(^[&#39;_A-Za-z0-9-]+(\.[&#39;_A-Za-z0-9-]+)*@([A-Za-z0-9-])+(\.[A-Za-z0-9-]+)*((\.[A-Za-z0-9]{2,})|(\.[A-Za-z0-9]{2,}\.[A-Za-z0-9]{2,}))$)\b/;
+                    if(!pattern.test(email)){
+                        $(&quot;#email\\.info&quot;).html(&quot;Email格式不正确&quot;);
+                        return;
+                    }
+                    $.get(&quot;check_email.php?email=&quot;+email,null,
+                        function(data){
+                            $(&quot;#email\\.info&quot;).html(data);
+                            if (data==&quot;可以注册&quot;) {
+                                flag.email=true;
+                            }
+                        }
+                    );
+                });
+                $(&quot;#txtNickName&quot;).blur(function () {
+                    var nickname=$(this).val();
+                    if(nickname==&quot;&quot;){
+                        $(&quot;#name\\.info&quot;).html(&quot;昵称不能为空&quot;);
+                        return;
+                    }
+                    var pattern = /\b(^[&#39;A-Za-z0-9]{4,20}$)\b/;
+                    if (!pattern.test(nickname)) {
+                        $(&quot;#name\\.info&quot;).html(&quot;昵称格式不正确&quot;);
+                        return;
+                    }else{
+                        $(&quot;#name\\.info&quot;).html(&quot;昵称格式正确&quot;);
+                        flag.nickname=true;
+                        return;
+                    }
+                });
+                $(&quot;#txtPassword&quot;).blur(function () {
+                    var password=$(this).val();
+                    if (password==&quot;&quot;) {
+                        $(&quot;#password\\.info&quot;).html(&quot;密码不能为空&quot;);
+                        return;
+                    }
+                    var pattern = /\b(^[&#39;A-Za-z0-9]{4,20}$)\b/;
+                    if (!pattern.test(password)) {
+                        $(&quot;#password\\.info&quot;).html(&quot;密码格式不正确&quot;);
+                        return;   
+                    }else{
+                        $(&quot;#password\\.info&quot;).html(&quot;密码格式正确&quot;);
+                        //flag.password=true;
+                        return;
+                    }
+                });
+                $(&quot;#txtRepeatPass&quot;).blur(function () {
+                    var password1=$(this).val();
+                    if (password1==&quot;&quot;) {
+                        $(&quot;#password1\\.info&quot;).html(&quot;密码不能为空&quot;);
+                        return;
+                    }
+                    var pattern = /\b(^[&#39;A-Za-z0-9]{4,20}$)\b/;
+                    if (!pattern.test(password1)) {
+                        $(&quot;#password1\\.info&quot;).html(&quot;密码格式不正确&quot;);
+                        return;   
+                    }else if(password1!=$(&quot;#txtPassword&quot;).val()){
+                        $(&quot;#password1\\.info&quot;).html(&quot;两次输入的密码不一致&quot;);
+                        return;
+                    }else{
+                        $(&quot;#password1\\.info&quot;).html(&quot;重复密码正确&quot;);
+                        flag.password=true;
+                        return;
+                    }                                            
+                });
+                $(&quot;#txtVerifyCode&quot;).blur(function () {
+                    var verify=$(this).val();
+                    if(verify==&quot;&quot;){
+                        $(&quot;#number\\.info&quot;).html(&quot;验证码不能为空&quot;);
+                        return;
+                    }
+                    $.post(&quot;./verify/check.php&quot;,{verify:verify},
+                        function(data){
+                            $(&quot;#number\\.info&quot;).html(data);
+                            if (data==&quot;验证成功&quot;) {
+                                flag.verify=true;
+                            }
+                        }
+                    );
+                })
+                $(&quot;#f&quot;).submit(function(){
+                    var ok = flag.email&amp;&amp;flag.password&amp;&amp;flag.verify&amp;&amp;flag.nickname;
+                    if(ok==false){
+                        alert(&quot;表单项正在检测或存在错误&quot;);
+                        history.back();
+                        return false;
+                    }
+                    return true;
+                });    
+            })
+        &lt;/script&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;?php include(&quot;../common/head.php&quot;); ?&gt;
+        &lt;div class=&quot;login_step&quot;&gt;
+            注册步骤:&lt;span class=&quot;red_bold&quot;&gt;1.填写信息&lt;/span&gt; &gt; 2.验证邮箱 &gt; 3.注册成功
+        &lt;/div&gt;
+        &lt;div class=&quot;fill_message&quot;&gt;
+            &lt;form name=&quot;ctl00&quot; method=&quot;post&quot; action=&quot;save_reg.php&quot; id=&quot;f&quot;&gt;
+                &lt;h2&gt;以下均为必填项&lt;/h2&gt;
+                &lt;table class=&quot;tab_login&quot; &gt;
+                    &lt;tr&gt;
+                        &lt;td valign=&quot;top&quot; class=&quot;w1&quot;&gt;请填写您的Email地址：&lt;/td&gt;
+                        &lt;td&gt;
+                            &lt;input name=&quot;email&quot; type=&quot;text&quot; id=&quot;txtEmail&quot; class=&quot;text_input&quot;/&gt;
+                            &lt;div class=&quot;text_left&quot; id=&quot;emailValidMsg&quot;&gt;
+                                &lt;p&gt;请填写有效的Email地址。&lt;/p&gt;
+                                &lt;span id=&quot;email.info&quot; style=&quot;color:red&quot;&gt;&lt;/span&gt;
+                            &lt;/div&gt;
+                        &lt;/td&gt;
+                    &lt;/tr&gt;
+                    &lt;tr&gt;
+                        &lt;td valign=&quot;top&quot; class=&quot;w1&quot;&gt;设置您在当当网的昵称：&lt;/td&gt;
+                        &lt;td&gt;
+                            &lt;input name=&quot;nickname&quot; type=&quot;text&quot; id=&quot;txtNickName&quot; class=&quot;text_input&quot; /&gt;
+                            &lt;div class=&quot;text_left&quot; id=&quot;nickNameValidMsg&quot;&gt;
+                                &lt;p&gt;由小写英文字母、中文、数字组成，长度4－20个字符，一个汉字为两个字符。&lt;/p&gt;
+                                &lt;span id=&quot;name.info&quot; style=&quot;color:red&quot;&gt;&lt;/span&gt;
+                            &lt;/div&gt;
+                        &lt;/td&gt;
+                    &lt;/tr&gt;
+                    &lt;tr&gt;
+                        &lt;td valign=&quot;top&quot; class=&quot;w1&quot;&gt;设置密码：&lt;/td&gt;
+                        &lt;td&gt;
+                            &lt;input name=&quot;password&quot; type=&quot;password&quot; id=&quot;txtPassword&quot; class=&quot;text_input&quot; /&gt;
+                            &lt;div class=&quot;text_left&quot; id=&quot;passwordValidMsg&quot;&gt;
+                                &lt;p&gt;您的密码可以由大小写英文字母、数字组成，长度6－20位。&lt;/p&gt;
+                                &lt;span id=&quot;password.info&quot; style=&quot;color:red&quot;&gt;&lt;/span&gt;
+                            &lt;/div&gt;
+                        &lt;/td&gt;
+                    &lt;/tr&gt;
+                    &lt;tr&gt;
+                        &lt;td valign=&quot;top&quot; class=&quot;w1&quot;&gt;再次输入您设置的密码：&lt;/td&gt;
+                        &lt;td&gt;
+                            &lt;input name=&quot;password1&quot; type=&quot;password&quot; id=&quot;txtRepeatPass&quot; class=&quot;text_input&quot;/&gt;
+                            &lt;div class=&quot;text_left&quot; id=&quot;repeatPassValidMsg&quot;&gt;
+                            &lt;span id=&quot;password1.info&quot; style=&quot;color:red&quot;&gt;&lt;/span&gt;
+                            &lt;/div&gt;
+                        &lt;/td&gt;
+                    &lt;/tr&gt;
+                    &lt;tr&gt;
+                        &lt;td valign=&quot;top&quot; class=&quot;w1&quot;&gt;验证码：&lt;/td&gt;
+                        &lt;td&gt;
+                            &lt;img class=&quot;yzm_img&quot; id=&#39;imgVcode&#39; src=&#39;./verify/verify.php&#39; style=&quot;cursor:pointer&quot; border=&#39;0&#39; onclick=&quot;document.getElementById(&#39;imgVcode&#39;).src=&#39;./verify/verify.php?t=&#39;+Math.random()&quot;/&gt;
+                            &lt;input name=&quot;number&quot; type=&quot;text&quot; id=&quot;txtVerifyCode&quot; class=&quot;yzm_input&quot;/&gt;
+                            &lt;div class=&quot;text_left t1&quot;&gt;
+                                &lt;p class=&quot;t1&quot;&gt;
+                                    &lt;span id=&quot;vcodeValidMsg&quot;&gt;请输入图片中的四个字母。&lt;/span&gt;                                    
+                                    &lt;a href=&quot;#&quot; style=&quot;cursor:pointer&quot; 
+                                        onclick=&quot;document.getElementById(&#39;imgVcode&#39;).src=&#39;./verify/verify.php?t=&#39;+Math.random()&quot;&gt;
+                                        看不清楚？换个图片
+                                    &lt;/a&gt;
+                                    &lt;br /&gt;
+                                    &lt;span id=&quot;number.info&quot; style=&quot;color:red&quot;&gt;&lt;/span&gt;
+                                &lt;/p&gt;
+                            &lt;/div&gt;
+                        &lt;/td&gt;
+                    &lt;/tr&gt;
+                &lt;/table&gt;
+
+                &lt;div class=&quot;login_in&quot;&gt;
+                    &lt;input id=&quot;btnClientRegister&quot; class=&quot;button_1&quot; name=&quot;submit&quot; type=&quot;submit&quot; value=&quot;注 册&quot;/&gt;
+                &lt;/div&gt;
+            &lt;/form&gt;
+        &lt;/div&gt;
+        &lt;?php include(&quot;../common/foot.php&quot;); ?&gt;
+    &lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/02/17/php%E7%94%A8%E6%88%B7%E6%B3%A8%E5%86%8C%E9%A1%B5%E9%9D%A2%E5%88%A9%E7%94%A8js%E8%BF%9B%E8%A1%8C%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81/" data-id="ckmnk2yx301fo9klfbln0ekko" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-phpMyAdmin-尝试连接到MySQL服务器，但服务器拒绝连接" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2014/02/16/phpMyAdmin-%E5%B0%9D%E8%AF%95%E8%BF%9E%E6%8E%A5%E5%88%B0MySQL%E6%9C%8D%E5%8A%A1%E5%99%A8%EF%BC%8C%E4%BD%86%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%8B%92%E7%BB%9D%E8%BF%9E%E6%8E%A5/" class="article-date">
@@ -309,52 +544,6 @@
 
 
   
-    <article id="post-hexo系列教程：（四）hexo博客的优化技巧" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2014/01/24/hexo%E7%B3%BB%E5%88%97%E6%95%99%E7%A8%8B%EF%BC%9A%EF%BC%88%E5%9B%9B%EF%BC%89hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E4%BC%98%E5%8C%96%E6%8A%80%E5%B7%A7/" class="article-date">
-  <time datetime="2014-01-24T04:13:58.000Z" itemprop="datePublished">2014-01-24</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2014/01/24/hexo%E7%B3%BB%E5%88%97%E6%95%99%E7%A8%8B%EF%BC%9A%EF%BC%88%E5%9B%9B%EF%BC%89hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E4%BC%98%E5%8C%96%E6%8A%80%E5%B7%A7/">hexo系列教程：（四）hexo博客的优化技巧</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>上一节中我们已经学会了用hexo发布博客，这里再介绍一些小技巧对博客站点进行优化，实现更加丰富的功能。</p>
-<p>后面的修改优化主要是针对 theme/light 的，如果你想偷懒直接使用配置好的主题，欢迎使用我的<a href="https://github.com/zippera/lightum" target="_blank" rel="noopener">Lightum</a>。如果你想使用其他主题，可以去<a href="https://github.com/hexojs/hexo/wiki/themes" target="_blank" rel="noopener">Wiki</a>挑选一款喜欢的。</p>
-        
-          <p class="article-more-link">
-            <a href="/2014/01/24/hexo%E7%B3%BB%E5%88%97%E6%95%99%E7%A8%8B%EF%BC%9A%EF%BC%88%E5%9B%9B%EF%BC%89hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E4%BC%98%E5%8C%96%E6%8A%80%E5%B7%A7/#more">Read More</a>
-          </p>
-        
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2014/01/24/hexo%E7%B3%BB%E5%88%97%E6%95%99%E7%A8%8B%EF%BC%9A%EF%BC%88%E5%9B%9B%EF%BC%89hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E4%BC%98%E5%8C%96%E6%8A%80%E5%B7%A7/" data-id="ckmnk2ytq017c9klfccjb7ks4" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/156/">« Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/155/">155</a><a class="page-number" href="/page/156/">156</a><span class="page-number current">157</span><a class="page-number" href="/page/158/">158</a><a class="page-number" href="/page/159/">159</a><span class="space">&hellip;</span><a class="page-number" href="/page/191/">191</a><a class="extend next" rel="next" href="/page/158/">Next »</a>
@@ -371,7 +560,7 @@ next_text: 'Next &raquo;' --></section>
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">111</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">70</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">52</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">82</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">112</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">70</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">52</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">82</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
     </div>
   </div>
 
@@ -381,6 +570,10 @@ next_text: 'Next &raquo;' --></section>
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2021/05/14/VUE%E4%B8%AD%E4%BD%BF%E7%94%A8Three-js%E6%89%80%E9%81%87%E5%88%B0%E7%9A%84%E9%97%AE%E9%A2%98/">VUE中使用Three.js所遇到的问题</a>
+          </li>
         
           <li>
             <a href="/2021/03/10/Mac%E4%B8%8B%E6%8F%90%E7%A4%BAAPP%E5%B7%B2%E6%8D%9F%E5%9D%8F%EF%BC%8C%E6%89%93%E4%B8%8D%E5%BC%80%EF%BC%8C%E8%AF%B7%E7%A7%BB%E8%87%B3%E5%BA%9F%E7%BA%B8%E7%AF%93/">Mac下提示APP已损坏，打不开，请移至废纸篓</a>
@@ -396,10 +589,6 @@ next_text: 'Next &raquo;' --></section>
         
           <li>
             <a href="/2021/02/24/macOS-Mojave-10-14-6-App-Store%E6%97%A0%E6%B3%95%E4%B8%8B%E8%BD%BD%E5%92%8C%E6%9B%B4%E6%96%B0%E5%BA%94%E7%94%A8%E7%9A%84%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95/">macOS Mojave 10.14.6 App Store无法下载和更新应用的解决办法</a>
-          </li>
-        
-          <li>
-            <a href="/2021/02/09/%E4%BD%BF%E7%94%A8venv%E5%88%9B%E5%BB%BApython3%E8%99%9A%E6%8B%9F%E7%8E%AF%E5%A2%83/">使用venv创建python3虚拟环境</a>
           </li>
         
       </ul>
