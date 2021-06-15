@@ -59,6 +59,381 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-PHP操作MongoDB学习笔记" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/09/15/PHP%E6%93%8D%E4%BD%9CMongoDB%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" class="article-date">
+  <time datetime="2014-09-15T12:43:22.000Z" itemprop="datePublished">2014-09-15</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/mongodb/">mongodb</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/09/15/PHP%E6%93%8D%E4%BD%9CMongoDB%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">PHP操作MongoDB学习笔记</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+	  
+
+	  
+        <pre><code class="php">&lt;?php
+/**
+* PHP操作MongoDB学习笔记
+*/
+//*************************
+//**   连接MongoDB数据库  **//
+//*************************
+//格式=&gt;(&quot;mongodb://用户名:密码 @地址:端口/默认指定数据库&quot;,参数)
+$conn = new Mongo();
+//可以简写为
+//$conn=new Mongo(); #连接本地主机,默认端口.
+//$conn=new Mongo(&quot;172.21.15.69&quot;); #连接远程主机
+//$conn=new Mongo(&quot;xiaocai.loc:10086&quot;); #连接指定端口远程主机
+//$conn=new Mongo(&quot;xiaocai.loc&quot;,array(&quot;replicaSet&quot;=&gt;true)); #负载均衡
+//$conn=new Mongo(&quot;xiaocai.loc&quot;,array(&quot;persist&quot;=&gt;&quot;t&quot;)); #持久连接
+//$conn=new Mongo(&quot;mongodb://sa:123@localhost&quot;); #带用户名密码
+//$conn=new Mongo(&quot;mongodb://localhost:27017,localhost:27018&quot;); #连接多个服务器
+//$conn=new Mongo(&quot;mongodb:///tmp/mongo-27017.sock&quot;); #域套接字
+//$conn=new Mongo(&quot;mongodb://admin_miss:miss@localhost:27017/test&quot;,array(&#39;persist&#39;=&gt;&#39;p&#39;,&quot;replicaSet&quot;=&gt;true)); #完整
+//详细资料:http://www.php.net/manual/en/mongo.connecting.php
+//*************************
+//**   选择数据库与表    **//
+//*************************
+$db=$conn-&gt;mydb; #选择mydb数据库
+//$db=$conn-&gt;selectDB(&quot;mydb&quot;); #第二种写法
+$collection=$db-&gt;column; #选择集合(选择&#39;表&#39;)
+//$collection=$db-&gt;selectCollection(&#39;column&#39;); #第二种写法
+//$collection=$conn-&gt;mydb-&gt;column; #更简洁的写法
+//注意:1.数据库和集合不需要事先创建,若它们不存在则会自动创建它们.
+//   2.注意错别字,你可能会无意间的创建一个新的数据库(与原先的数据库混乱).
+
+
+//*************************
+//**   插入文档     **//
+//*************************
+//**向集合中插入数据,返回bool判断是否插入成功. **/
+$array=array(&#39;column_name&#39;=&gt;&#39;col&#39;.rand(100,999),&#39;column_exp&#39;=&gt;&#39;xiaocai&#39;);
+$result=$collection-&gt;insert($array); #简单插入
+echo &quot;新记录ID:&quot;.$array[&#39;_id&#39;]; #MongoDB会返回一个记录标识
+var_dump($result); #返回:bool(true)
+//**向集合中安全插入数据,返回插入状态(数组). **/
+$array=array(&#39;column_name&#39;=&gt;&#39;col&#39;.rand(100,999),&#39;column_exp&#39;=&gt;&#39;xiaocai2&#39;);
+$result=$collection-&gt;insert($array,true); #用于等待MongoDB完成操作,以便确定是否成功.(当有大量记录插入时使用该参数会比较有用)
+echo &quot;新记录ID:&quot;.$array[&#39;_id&#39;]; #MongoDB会返回一个记录标识
+var_dump($result); #返回:array(3) { [&quot;err&quot;]=&gt; NULL [&quot;n&quot;]=&gt; int(0) [&quot;ok&quot;]=&gt; float(1) }
+//**完整的写法 **/
+#insert($array,array(&#39;safe&#39;=&gt;false,&#39;fsync&#39;=&gt;false,&#39;timeout&#39;=&gt;10000))
+/*
+* *
+* 完整格式:insert ( array $a [, array $options = array() ] )
+*    insert(array(),array(&#39;safe&#39;=&gt;false,&#39;fsync&#39;=&gt;false,&#39;timeout&#39;=&gt;10000))
+*    参数:safe:默认false,是否安全写入
+*         fsync:默认false,是否强制插入到同步到磁盘
+*         timeout:超时时间(毫秒)
+*
+* 插入结果:{ &quot;_id&quot; : ObjectId(&quot;4d63552ad549a02c01000009&quot;), &quot;column_name&quot; : &quot;col770&quot;, &quot;column_exp&quot; : &quot;xiaocai&quot; }
+*    &#39;_id&#39;为主键字段,在插入是MongoDB自动添加.
+*
+* 安全插入:
+*    （注：safe已弃用，建议安全插入使用&quot;w&quot;=&gt;1（默认）,非安全操作为&quot;w&quot;=&gt;0，此时虽然不能往数据库插入数据，但是不会输出任何提示
+* $person = array(&quot;name&quot; =&gt; &quot;Joe&quot;, &quot;age&quot; =&gt; 20);
+* $collection-&gt;insert($person);
+* // 现在 $person 【已经】具有了一个_id字段，所以我们再次保存它的时候，将会得到一个异常
+* try {
+*     $collection-&gt;insert($person, array(&quot;w&quot; =&gt; 1));
+* } catch(MongoCursorException $e) {
+*     echo &quot;Can&#39;t save the same person twice!\n&quot;;
+* }
+*
+*    详细资料:http://www.php.net/manual/zh/mongocollection.insert.php
+* *
+*/
+
+
+//*************************
+//**   更新文档     **//
+//*************************
+//** 修改更新 **/
+$where=array(&#39;column_name&#39;=&gt;&#39;col123&#39;);
+$newdata=array(&#39;column_exp&#39;=&gt;&#39;GGGGGGG&#39;,&#39;column_fid&#39;=&gt;444);
+$result=$collection-&gt;update($where,array(&#39;$set&#39;=&gt;$newdata)); #$set:让某节点等于给定值,类似的还有$pull $pullAll $pop $inc,在后面慢慢说明用法
+/*
+* 结果:
+* 原数据
+* {&quot;_id&quot;:ObjectId(&quot;4d635ba2d549a02801000003&quot;),&quot;column_name&quot;:&quot;col123&quot;,&quot;column_exp&quot;:&quot;xiaocai&quot;}
+* 被替换成了
+* {&quot;_id&quot;:ObjectId(&quot;4d635ba2d549a02801000003&quot;),&quot;column_name&quot;:&quot;col123&quot;,&quot;column_exp&quot;:&quot;GGGGGGG&quot;,&quot;column_fid&quot;:444}
+*/
+//** 替换更新 **/
+$where=array(&#39;column_name&#39;=&gt;&#39;col709&#39;);
+$newdata=array(&#39;column_exp&#39;=&gt;&#39;HHHHHHHHH&#39;,&#39;column_fid&#39;=&gt;123);
+$result=$collection-&gt;update($where,$newdata);
+/*
+* 结果:
+* 原数据
+* {&quot;_id&quot;:ObjectId(&quot;4d635ba2d549a02801000003&quot;),&quot;column_name&quot;:&quot;col709&quot;,&quot;column_exp&quot;:&quot;xiaocai&quot;}
+* 被替换成了
+* {&quot;_id&quot;:ObjectId(&quot;4d635ba2d549a02801000003&quot;),&quot;column_exp&quot;:&quot;HHHHHHHHH&quot;,&quot;column_fid&quot;:123}
+*/
+//** 批量更新 **/
+$where=array(&#39;column_name&#39;=&gt;&#39;col&#39;);
+$newdata=array(&#39;column_exp&#39;=&gt;&#39;multiple&#39;,&#39;91u&#39;=&gt;684435);
+$result=$collection-&gt;update($where,array(&#39;$set&#39;=&gt;$newdata),array(&#39;multiple&#39;=&gt;true));
+/**
+* 所有&#39;column_name&#39;=&#39;col&#39;都被修改
+*/
+//** 自动累加 **/
+$where=array(&#39;91u&#39;=&gt;684435);
+$newdata=array(&#39;column_exp&#39;=&gt;&#39;edit&#39;);
+$result=$collection-&gt;update($where,array(&#39;$set&#39;=&gt;$newdata,&#39;$inc&#39;=&gt;array(&#39;91u&#39;=&gt;-5)));
+/**
+* 更新91u=684435的数据,并且91u自减5
+*/
+/** 删除节点 **/
+$where=array(&#39;column_name&#39;=&gt;&#39;col685&#39;);
+$result=$collection-&gt;update($where,array(&#39;$unset&#39;=&gt;array(&#39;column_exp&#39;=&gt;1)));
+/**
+* 删除节点column_exp
+*/
+/*
+* *
+* 完整格式:update(array $criteria, array $newobj [, array $options = array()  ] )
+* 注意:1.注意区分替换更新与修改更新
+*    2.注意区分数据类型如 array(&#39;91u&#39;=&gt;&#39;684435&#39;)与array(&#39;91u&#39;=&gt;684435)
+* 详细资料:http://www.mongodb.org/display/DOCS/Updating#Updating-%24bit
+* *
+*/
+
+
+//*************************
+//**   删除文档     **//
+//*************************
+/** 清空数据库 **/
+$collection-&gt;remove(array(&#39;column_name&#39;=&gt;&#39;col399&#39;));
+//$collection-&gt;remove(); #清空集合
+/** 删除指定MongoId **/
+$id = new MongoId(&quot;4d638ea1d549a02801000011&quot;);
+$collection-&gt;remove(array(&#39;_id&#39;=&gt;(object)$id));
+
+
+/*
+* *
+*  使用下面的方法来匹配{&quot;_id&quot;:ObjectId(&quot;4d638ea1d549a02801000011&quot;)},查询、更新也一样
+*  $id = new MongoId(&quot;4d638ea1d549a02801000011&quot;);
+*  array(&#39;_id&#39;=&gt;(object)$id)
+* *
+*/
+//*************************
+//**   查询文档     **//
+//*************************
+/** 查询文档中的记录数 **/
+echo &#39;count:&#39;.$collection-&gt;count().&quot;&lt;br&gt;&quot;; #全部
+echo &#39;count:&#39;.$collection-&gt;count(array(&#39;type&#39;=&gt;&#39;user&#39;)).&quot;&lt;br&gt;&quot;; #可以加上条件
+echo &#39;count:&#39;.$collection-&gt;count(array(&#39;age&#39;=&gt;array(&#39;$gt&#39;=&gt;50,&#39;$lte&#39;=&gt;74))).&quot;&lt;br&gt;&quot;; #大于50小于等于74
+echo &#39;count:&#39;.$collection-&gt;find()-&gt;limit(5)-&gt;skip(0)-&gt;count(true).&quot;&lt;br&gt;&quot;; #获得实际返回的结果数
+/**
+* 注:$gt为大于、$gte为大于等于、$lt为小于、$lte为小于等于、$ne为不等于、$exists不存在
+*/
+/** 集合中所有文档 **/
+$cursor = $collection-&gt;find()-&gt;snapshot();
+foreach ($cursor as $key =&gt; $value) {
+    echo &quot;$key: &quot;; var_dump($value); echo &quot;&lt;br&gt;&quot;;
+}
+/**
+* 注意:
+* 在我们做了find()操作，获得$cursor游标之后，这个游标还是动态的.
+* 换句话说,在我find()之后,到我的游标循环完成这段时间,如果再有符合条件的记录被插入到collection,那么这些记录也会被$cursor 获得.
+* 如果你想在获得$cursor之后的结果集不变化,需要这样做：
+* $cursor = $collection-&gt;find();
+* $cursor-&gt;snapshot();
+* 详见http://www.bumao.com/index.php/2010/08/mongo_php_cursor.html
+*/
+/** 查询一条数据 **/
+$cursor = $collection-&gt;findOne();
+/**
+*  注意:findOne()获得结果集后不能使用snapshot(),fields()等函数;
+*/
+/** age,type 列不显示 **/
+$cursor = $collection-&gt;find()-&gt;fields(array(&quot;age&quot;=&gt;false,&quot;type&quot;=&gt;false));
+/** 只显示user 列 **/
+$cursor = $collection-&gt;find()-&gt;fields(array(&quot;user&quot;=&gt;true));
+/**
+* 我这样写会出错:$cursor-&gt;fields(array(&quot;age&quot;=&gt;true,&quot;type&quot;=&gt;false));
+*/
+/** (存在type,age节点) and age!=0 and age&lt;50 **/
+$where=array(&#39;type&#39;=&gt;array(&#39;$exists&#39;=&gt;true),&#39;age&#39;=&gt;array(&#39;$ne&#39;=&gt;0,&#39;$lt&#39;=&gt;50,&#39;$exists&#39;=&gt;true));
+$cursor = $collection-&gt;find($where);
+/** 分页获取结果集  **/
+$cursor = $collection-&gt;find()-&gt;limit(5)-&gt;skip(0);
+/** 排序  **/
+$cursor = $collection-&gt;find()-&gt;sort(array(&#39;age&#39;=&gt;-1,&#39;type&#39;=&gt;1)); ##1表示降序 -1表示升序,参数的先后影响排序顺序
+/** 索引  **/
+$collection-&gt;ensureIndex(array(&#39;age&#39; =&gt; 1,&#39;type&#39;=&gt;-1)); #1表示降序 -1表示升序
+$collection-&gt;ensureIndex(array(&#39;age&#39; =&gt; 1,&#39;type&#39;=&gt;-1),array(&#39;background&#39;=&gt;true)); #索引的创建放在后台运行(默认是同步运行)
+$collection-&gt;ensureIndex(array(&#39;age&#39; =&gt; 1,&#39;type&#39;=&gt;-1),array(&#39;unique&#39;=&gt;true)); #该索引是唯一的
+/**
+* ensureIndex (array(),array(&#39;name&#39;=&gt;&#39;索引名称&#39;,&#39;background&#39;=true,&#39;unique&#39;=true))
+* 详见:http://www.php.net/manual/en/mongocollection.ensureindex.php
+*/
+/** 取得查询结果 **/
+$cursor = $collection-&gt;find();
+$array=array();
+foreach ($cursor as $key =&gt; $value) {
+    $array[]=$value;
+}
+
+
+//*************************
+//**   文档聚类     **//
+//*************************
+//**distinct — 获取集合里指定键的不同值的列表 **/ 
+//详见：http://php.net/manual/zh/mongocollection.distinct.php
+$retval = $collection-&gt;distinct(&quot;age&quot;);
+var_dump($retval);//返回一个包含不同值的数组
+$retval = $collection-&gt;distinct(&quot;age&quot;,array(&#39;name&#39;=&gt;&#39;andy&#39;));//多加了一个where条件，返回name=andy的所有age不同的值所组成的数组
+var_dump($retval);
+
+//**group — 类似于SQL中的 GROUP BY 分组 **/ 
+//详见：http://php.net/manual/zh/mongocollection.group.php
+$keys = array(&quot;sex&quot; =&gt; 1);//按性别分组
+$initial = array(&quot;items&quot; =&gt; array());
+$reduce = &quot;function (obj, prev) { prev.items.push(obj); }&quot;;
+$condition = array(&#39;condition&#39; =&gt; array(&#39;name&#39; =&gt; array( &#39;$ne&#39; =&gt; &#39;andy&#39;)));//where条件，可选
+$g = $collection-&gt;group($keys, $initial, $reduce, $condition);
+print_r($g);
+
+//**aggregate — 主要用于处理数据(诸如统计平均值,求和等)，并返回计算后的数据结果 **/ 
+//详见：http://php.net/manual/zh/mongocollection.aggregate.php
+//http://blog.csdn.net/moqiang02/article/details/39800993
+//http://blog.csdn.net/moqiang02/article/details/39544617
+$out = $collection-&gt;aggregate(
+    array(
+        &#39;$group&#39; =&gt; array(
+            &#39;_id&#39; =&gt; &#39;$name&#39;,  //按名称分组
+            &#39;count&#39; =&gt; array(&#39;$sum&#39; =&gt; 1),
+            &#39;total&#39; =&gt; array(&#39;$sum&#39; =&gt; &#39;$num&#39;)
+        )
+    )
+);
+var_dump($out); 
+
+$conn-&gt;close(); #关闭连接
+
+
+/*
+关系型数据库与MongoDB数据存储的区别
+MySql数据 结构:
+CREATE TABLE IF NOT EXISTS `column`(
+    `column_id` int(16)  NOT NULL  auto_increment  COMMENT &#39;主键&#39;,
+    `column_name` varchar(32) NOT NULL COMMENT &#39;栏目名称&#39;,
+    PRIMARY KEY  (`column_id`)
+);
+CREATE TABLE IF NOT EXISTS `article`(
+    `article_id`  int(16)  NOT NULL  auto_increment  COMMENT &#39;主键&#39;,
+    `article_caption` varchar(15) NOT NULL COMMENT &#39;标题&#39;,
+    PRIMARY KEY(`article_id`)
+);
+CREATE TABLE IF NOT EXISTS `article_body`(
+    `article_id` int(16) NOT NULL COMMENT &#39;article.article_id&#39;,
+    `body` text COMMENT &#39;正文&#39;
+);
+MongoDB数据结构:
+$data=array(
+    &#39;column_name&#39; =&gt;&#39;default&#39;,
+    &#39;article&#39; =&gt;array(
+        &#39;article_caption&#39; =&gt; &#39;xiaocai&#39;,
+        &#39;body&#39;   =&gt; &#39;xxxxxxxxxx…&#39;
+    )
+);
+$inc
+如果记录的该节点存在，让该节点的数值加N；如果该节点不存在，让该节点值等 于N
+设结构记录结构为 array(&#39;a&#39;=&gt;1,&#39;b&#39;=&gt;&#39;t&#39;),想让a加5，那么：
+$coll-&gt;update(
+    array(&#39;b&#39;=&gt;&#39;t&#39;),
+    array(&#39;$inc&#39;=&gt;array(&#39;a&#39;=&gt;5)),
+)
+$set
+让某节点等于给定值
+设结构记录结构为 array(&#39;a&#39;=&gt;1,&#39;b&#39;=&gt;&#39;t&#39;),b为加f，那么：
+$coll-&gt;update(
+    array(&#39;a&#39;=&gt;1),
+    array(&#39;$set&#39;=&gt;array(&#39;b&#39;=&gt;&#39;f&#39;)),
+)
+$unset
+删除某节点
+设记录结构为 array(&#39;a&#39;=&gt;1,&#39;b&#39;=&gt;&#39;t&#39;)，想删除b节点，那么：
+$coll-&gt;update(
+    array(&#39;a&#39;=&gt;1),
+    array(&#39;$unset&#39;=&gt;&#39;b&#39;),
+)
+$push
+如果对应节点是个数组，就附加一个新的值上去；不存在，就创建这个数组，并附加一个值在这个数组上；如果 该节点不是数组，返回错误。
+设记录结构为array(&#39;a&#39;=&gt;array(0=&gt;&#39;haha&#39;),&#39;b&#39;=&gt;1)，想附加新数据到节点a，那么：
+$coll-&gt;update(
+    array(&#39;b&#39;=&gt;1),
+    array(&#39;$push&#39;=&gt;array(&#39;a&#39;=&gt;&#39;wow&#39;)),
+)
+这样，该记录就会成为：array(&#39;a&#39;=&gt;array(0=&gt;&#39;haha&#39;,1=&gt;&#39;wow&#39;),&#39;b&#39;=&gt;1)
+$pushAll
+与$push类似，只是会一次附加多个数值到某节点
+$addToSet
+如果该阶段的数组中没有某值，就添加之
+设记录结构为array(&#39;a&#39;=&gt;array(0=&gt;&#39;haha&#39;),&#39;b&#39;=&gt;1)，如果想附加新的数据到该节点a，那么：
+$coll-&gt;update(
+    array(&#39;b&#39;=&gt;1),
+    array(&#39;$addToSet&#39;=&gt;array(&#39;a&#39;=&gt;&#39;wow&#39;)),
+)
+如果在a节点中已经有了wow,那么就不会再添加新的，如果没有，就会为该节点添加新的item——wow。
+$pop
+设该记录为array(&#39;a&#39;=&gt;array(0=&gt;&#39;haha&#39;,1=&gt;&#39;wow&#39;),&#39;b&#39;=&gt;1)
+删除某数组节点的最后一个元素:
+$coll-&gt;update(
+    array(&#39;b&#39;=&gt;1),
+    array(&#39;$pop=&gt;array(&#39;a&#39;=&gt;1)),
+)
+删除某数组阶段的第一个元素
+$coll-&gt;update(
+    array(&#39;b&#39;=&gt;1),
+    array(&#39;$pop=&gt;array(&#39;a&#39;=&gt;-1)),
+)
+$pull
+如果该节点是个数组，那么删除其值为value的子项，如果不是数组，会返回一个错误。
+设该记录为 array(&#39;a&#39;=&gt;array(0=&gt;&#39;haha&#39;,1=&gt;&#39;wow&#39;),&#39;b&#39;=&gt;1)，想要删除a中value为 haha的子项：
+$coll-&gt;update(
+    array(&#39;b&#39;=&gt;1),
+    array(&#39;$pull=&gt;array(&#39;a&#39;=&gt;&#39;haha&#39;)),
+)
+结果为： array(&#39;a&#39;=&gt;array(0=&gt;&#39;wow&#39;),&#39;b&#39;=&gt;1)
+$pullAll
+与$pull类似，只是可以删除一组符合条件的记录。
+*/
+?&gt;</code></pre>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/09/15/PHP%E6%93%8D%E4%BD%9CMongoDB%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" data-id="ckpr33l1100ssi9tf8bzr88qw" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-使用PHP导入Excel和导出数据为Excel文件" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2014/09/12/%E4%BD%BF%E7%94%A8PHP%E5%AF%BC%E5%85%A5Excel%E5%92%8C%E5%AF%BC%E5%87%BA%E6%95%B0%E6%8D%AE%E4%B8%BAExcel%E6%96%87%E4%BB%B6/" class="article-date">
@@ -705,59 +1080,6 @@ class HMongodb {
 
 
   
-    <article id="post-使用PHP导入和导出CSV文件" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2014/09/10/%E4%BD%BF%E7%94%A8PHP%E5%AF%BC%E5%85%A5%E5%92%8C%E5%AF%BC%E5%87%BACSV%E6%96%87%E4%BB%B6/" class="article-date">
-  <time datetime="2014-09-10T14:27:04.000Z" itemprop="datePublished">2014-09-10</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/php/">php</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2014/09/10/%E4%BD%BF%E7%94%A8PHP%E5%AF%BC%E5%85%A5%E5%92%8C%E5%AF%BC%E5%87%BACSV%E6%96%87%E4%BB%B6/">使用PHP导入和导出CSV文件</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>项目开发中，很多时候要将外部CSV文件导入到数据库中或者将数据导出为CSV文件，那么具体该如何实现呢？本文将使用PHP并结合mysql，实现了CSV格式数据的导入和导出功能。<br><a href="http://www.helloweba.com/down-171.html" target="_blank" rel="noopener">下载源码</a></p>
-<p>我们先准备mysql数据表，假设项目中有一张记录学生信息的表student，并有id，name，sex，age分别记录学生的姓名、性别、年龄等信息。</p>
-<pre><code>CREATE TABLE `student` ( 
-  `id` int(11) NOT NULL auto_increment, 
-  `name` varchar(50) NOT NULL, 
-  `sex` varchar(10) NOT NULL, 
-  `age` smallint(3) NOT NULL default &#39;0&#39;, 
-  PRIMARY KEY  (`id`) 
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8; </code></pre>
-        
-          <p class="article-more-link">
-            <a href="/2014/09/10/%E4%BD%BF%E7%94%A8PHP%E5%AF%BC%E5%85%A5%E5%92%8C%E5%AF%BC%E5%87%BACSV%E6%96%87%E4%BB%B6/#more">Read More</a>
-          </p>
-        
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2014/09/10/%E4%BD%BF%E7%94%A8PHP%E5%AF%BC%E5%85%A5%E5%92%8C%E5%AF%BC%E5%87%BACSV%E6%96%87%E4%BB%B6/" data-id="ckpr33lcj01n5i9tf14kn4fy7" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/page/111/">« Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/110/">110</a><a class="page-number" href="/page/111/">111</a><span class="page-number current">112</span><a class="page-number" href="/page/113/">113</a><a class="page-number" href="/page/114/">114</a><span class="space">&hellip;</span><a class="page-number" href="/page/191/">191</a><a class="extend next" rel="next" href="/page/113/">Next »</a>
@@ -774,7 +1096,7 @@ next_text: 'Next &raquo;' --></section>
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">113</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">70</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">52</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">82</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">22</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">16</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">113</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">70</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">52</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">82</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
     </div>
   </div>
 
@@ -814,7 +1136,7 @@ next_text: 'Next &raquo;' --></section>
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/AndroidStudio/" style="font-size: 13.53px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.18px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.82px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.88px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.94px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.41px;">DEDE</a> <a href="/tags/Flask/" style="font-size: 10.59px;">Flask</a> <a href="/tags/KindEditor/" style="font-size: 11.76px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.82px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/UEditor/" style="font-size: 12.35px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.35px;">VMware</a> <a href="/tags/Vue/" style="font-size: 17.65px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.94px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 14.12px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 14.71px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.12px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.35px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.71px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.76px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.35px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 16.47px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.76px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15.29px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.06px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.24px;">集群</a>
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 16.25px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/KindEditor/" style="font-size: 11.88px;">KindEditor</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/UEditor/" style="font-size: 12.5px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 17.5px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/eclipse/" style="font-size: 14.38px;">eclipse</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 16.88px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15.63px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
     </div>
   </div>
 
