@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Laravel核心概念梳理 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="依赖注入篇问题引出整个 Laravel 框架的基石是一个功能强大的 IoC 容器（控制反转容器），如果你想真正从底层理解 Laravel 框架，就必须好好掌握它。不过，也不要被这个名头吓住，要知道 IoC 容器只不过是一种用于方便我们实现「依赖注入」这种软件设计模式的工具。而且要实现依赖注入并不一定非要通过 IoC 容器，只是使用 IoC 容器会更容易一点儿。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Laravel核心概念梳理">
+<meta property="og:url" content="http://moqiang02.github.io/2021/07/05/Laravel%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E6%A2%B3%E7%90%86/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="依赖注入篇问题引出整个 Laravel 框架的基石是一个功能强大的 IoC 容器（控制反转容器），如果你想真正从底层理解 Laravel 框架，就必须好好掌握它。不过，也不要被这个名头吓住，要知道 IoC 容器只不过是一种用于方便我们实现「依赖注入」这种软件设计模式的工具。而且要实现依赖注入并不一定非要通过 IoC 容器，只是使用 IoC 容器会更容易一点儿。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-07-05T15:39:02.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.790Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="Laravel">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Laravel核心概念梳理" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2021/07/05/Laravel%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E6%A2%B3%E7%90%86/" class="article-date">
+  <time class="dt-published" datetime="2021-07-05T15:39:02.000Z" itemprop="datePublished">2021-07-05</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/php/">php</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Laravel核心概念梳理
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5%E7%AF%87"><span class="toc-number">1.</span> <span class="toc-text">依赖注入篇</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%97%AE%E9%A2%98%E5%BC%95%E5%87%BA"><span class="toc-number">1.1.</span> <span class="toc-text">问题引出</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BB%BA%E7%AB%8B%E7%BA%A6%E5%AE%9A"><span class="toc-number">1.2.</span> <span class="toc-text">建立约定</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9B%B4%E8%BF%9B%E4%B8%80%E6%AD%A5"><span class="toc-number">1.3.</span> <span class="toc-text">更进一步</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%AA%E5%83%8F-Java%EF%BC%9F"><span class="toc-number">1.4.</span> <span class="toc-text">太像 Java？</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9C%8D%E5%8A%A1%E5%AE%B9%E5%99%A8%E7%AF%87"><span class="toc-number">2.</span> <span class="toc-text">服务容器篇</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8E%A5%E5%8F%A3%E5%8D%B3%E5%A5%91%E7%BA%A6%E7%AF%87"><span class="toc-number">3.</span> <span class="toc-text">接口即契约篇</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%BA%E7%B1%BB%E5%9E%8B%E4%B8%8E%E9%B8%AD%E5%AD%90%E7%B1%BB%E5%9E%8B"><span class="toc-number">3.1.</span> <span class="toc-text">强类型与鸭子类型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E4%B8%AA%E5%A5%91%E7%BA%A6%E7%A4%BA%E4%BE%8B"><span class="toc-number">3.2.</span> <span class="toc-text">一个契约示例</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8E%A5%E5%8F%A3-amp-%E5%9B%A2%E9%98%9F%E5%BC%80%E5%8F%91"><span class="toc-number">3.3.</span> <span class="toc-text">接口&amp;团队开发</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9C%8D%E5%8A%A1%E6%8F%90%E4%BE%9B%E8%80%85%E7%AF%87"><span class="toc-number">4.</span> <span class="toc-text">服务提供者篇</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%9C%E4%B8%BA%E5%BC%95%E5%AF%BC%E8%80%85"><span class="toc-number">4.1.</span> <span class="toc-text">作为引导者</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%BB%B6%E8%BF%9F%E5%8A%A0%E8%BD%BD%E7%9A%84%E6%9C%8D%E5%8A%A1%E6%8F%90%E4%BE%9B%E8%80%85"><span class="toc-number">4.1.1.</span> <span class="toc-text">延迟加载的服务提供者</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%9C%E4%B8%BA%E7%AE%A1%E7%90%86%E8%80%85"><span class="toc-number">4.2.</span> <span class="toc-text">作为管理者</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%90%AF%E5%8A%A8%E6%8F%90%E4%BE%9B%E8%80%85"><span class="toc-number">4.3.</span> <span class="toc-text">启动提供者</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A1%86%E6%9E%B6%E6%A0%B8%E5%BF%83"><span class="toc-number">4.4.</span> <span class="toc-text">框架核心</span></a></li></ol></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <h2 id="依赖注入篇"><a href="#依赖注入篇" class="headerlink" title="依赖注入篇"></a>依赖注入篇</h2><h3 id="问题引出"><a href="#问题引出" class="headerlink" title="问题引出"></a>问题引出</h3><p>整个 Laravel 框架的基石是一个功能强大的 IoC 容器（控制反转容器），如果你想真正从底层理解 Laravel 框架，就必须好好掌握它。不过，也不要被这个名头吓住，要知道 IoC 容器只不过是一种用于方便我们实现「<a target="_blank" rel="noopener" href="https://laravelacademy.org/post/2792.html">依赖注入</a>」这种软件设计模式的工具。而且要实现依赖注入并不一定非要通过 IoC 容器，只是使用 IoC 容器会更容易一点儿。<span id="more"></span></p>
+<p>首先，来看看我们为何要使用依赖注入，或者说它能为我们的软件开发带来什么好处。考虑下列代码中的类和方法：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">UserController</span> <span class="keyword">extends</span> <span class="title">BaseController</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">getIndex</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="variable">$users</span> = <span class="title class_">User</span>::<span class="title function_ invoke__">all</span>();</span><br><span class="line">        <span class="keyword">return</span> <span class="title class_">View</span>::<span class="title function_ invoke__">make</span>(<span class="string">&#x27;users.index&#x27;</span>, <span class="title function_ invoke__">compact</span>(<span class="string">&#x27;users&#x27;</span>));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这段代码看起来很简洁，但是不与数据库打交道的话，我们将无法测试这段代码。也就是说，Eloquent ORM 和该控制器有着紧耦合关系。如果不使用 Eloquent ORM，不连接到实际数据库，我们就没办法运行或者测试这段代码。同时，这段代码也违背了「关注点分离」这个软件设计原则。简单来讲：控制器知道的太多了。控制器不需要去了解数据是从哪儿来的，只要知道如何访问就行。控制器也不需要知道数据在 MySQL 中是否有效，只需要知道它目前是可用的。</p>
+<blockquote>
+<p>关注点分离：每一个类都应该是单一职责的，并且这个职责应该完全被这个类封装。</p>
+</blockquote>
+<p>所以，如果可以完全解耦 Web 控制器层和数据访问层解耦，将会给我们带来诸多便利：这会使得迁移数据存储实现更容易；也会使得代码测试更容易。「Web控制器」的职责就是真实应用的传输层：仅负责收集用户请求数据，然后将其传递给处理方。</p>
+<p>假设你有一个类似于监控器的应用程序，该应用有很多线缆接口，你可以通过这些接口来访问监控器的功能，接口包括 HDMI，VGA，DVI 等。把互联网想象成另一个插进应用的线缆接口，显示器的大部分功能都是与线缆接口无关的、互相独立的。线缆接口只是一种传输机制，就像 HTTP 只是你程序的一种传输机制一样。所以，我们不想把传输机制（控制器）和业务逻辑混在一起。这样做的好处是很多其他的传输层比如 API 接口、移动 App 等都可以访问我们的业务逻辑。</p>
+<p>因此，以后开发代码就别再将控制器和 Eloquent ORM 耦合在一起了，咱们来注入一个仓库类吧。</p>
+<h3 id="建立约定"><a href="#建立约定" class="headerlink" title="建立约定"></a>建立约定</h3><p>首先，我们来定义一个接口，然后实现该接口。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">interface</span> <span class="title">UserRepositoryInterface</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">all</span>(<span class="params"></span>): <span class="title">array</span></span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">DbUserRepository</span> <span class="keyword">implements</span> <span class="title">UserRepositoryInterface</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">all</span>(<span class="params"></span>): <span class="title">array</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="title class_">User</span>::<span class="title function_ invoke__">all</span>()-&gt;<span class="title function_ invoke__">toArray</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后，我们将该接口的实现注入到我们的控制器。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">UserController</span> <span class="keyword">extends</span> <span class="title">BaseController</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params">UserRepositoryInterface <span class="variable">$users</span></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;users = <span class="variable">$users</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">getIndex</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="variable">$users</span>=<span class="variable language_">$this</span>-&gt;users-&gt;<span class="title function_ invoke__">all</span>();</span><br><span class="line">        <span class="keyword">return</span> <span class="title class_">View</span>::<span class="title function_ invoke__">make</span>(<span class="string">&#x27;users.index&#x27;</span>, <span class="title function_ invoke__">compact</span>(<span class="string">&#x27;users&#x27;</span>));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<p>现在，我们的控制器就完全不知道数据存储在哪了。在这里，无知是福！我们的数据可能来自 MySQL、MongoDB 或者 Redis，我们的控制器不知道也不需要知道到底用的是什么数据库，以及它们是如何存储数据的，在具体实现上有什么区别。仅仅做出了这么小小的改变，我们就可以独立于数据层来测试 Web 层了，将来如果需要的话，切换存储实现也会很容易，两者相互独立，只要调用方法名不改，我们的控制器代码不用做任何改动。</p>
+<blockquote>
+<p>严守边界：始终牢记保持明确的责任边界，控制器和路由是作为 HTTP 和应用程序之间的中介者来提供服务的（用户浏览应用的时候，路由/控制器作为中介将其引导到对应的服务）。当编写大型应用程序时，不要将你的领域逻辑混杂在控制器或路由中。</p>
+</blockquote>
+<p>为了巩固你对这一理念的理解，我们来写一个测试案例。首先，我们要通过 <a target="_blank" rel="noopener" href="https://github.com/mockery/mockery">Mockery</a> 动态模拟一个仓库类实例，并将其绑定到应用的 IoC 容器里。然后，发起一个请求，通过断言判定控制器是否正确地调用了这个仓库类：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">testUserTest</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="variable">$repository</span> = <span class="title class_">\Mockery</span>::<span class="title function_ invoke__">mock</span>(<span class="title class_">UserRepositoryInterface</span>::<span class="variable language_">class</span>);</span><br><span class="line">    <span class="variable">$repository</span>-&gt;<span class="title function_ invoke__">shouldReceive</span>(<span class="string">&#x27;all&#x27;</span>)-&gt;<span class="title function_ invoke__">once</span>()-&gt;<span class="title function_ invoke__">andReturn</span>([<span class="string">&#x27;学院君&#x27;</span>]);</span><br><span class="line">    <span class="variable language_">$this</span>-&gt;<span class="title function_ invoke__">instance</span>(<span class="title class_">UserRepositoryInterface</span>::<span class="variable language_">class</span>, <span class="variable">$repository</span>);</span><br><span class="line">    <span class="variable">$response</span> = <span class="variable language_">$this</span>-&gt;<span class="title function_ invoke__">get</span>(<span class="string">&#x27;/users&#x27;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="variable">$response</span>-&gt;<span class="title function_ invoke__">assertStatus</span>(<span class="number">200</span>);</span><br><span class="line">    <span class="variable">$response</span>-&gt;<span class="title function_ invoke__">assertViewHas</span>(<span class="string">&#x27;users&#x27;</span>, [<span class="string">&#x27;学院君&#x27;</span>]);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h3 id="更进一步"><a href="#更进一步" class="headerlink" title="更进一步"></a>更进一步</h3><p>让我们考虑另一个例子来巩固理解。当付费会员订阅的某项服务周期快结束了，可能需要去提醒用户该续费了。我们会定义两个接口，或者叫契约（这些契约使我们在更改实际实现时更加灵活），一个是支付接口，一个是通知接口：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">interface</span> <span class="title">BillerInterface</span> </span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">bill</span>(<span class="params"><span class="keyword">array</span> <span class="variable">$user</span>, <span class="variable">$amount</span></span>)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">interface</span> <span class="title">BillingNotifierInterface</span> </span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">notify</span>(<span class="params"><span class="keyword">array</span> <span class="variable">$user</span>, <span class="variable">$amount</span></span>)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<p>接下来我们要写一个 <code>BillerInterface</code> 接口的实现：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">StripeBiller</span> <span class="keyword">implements</span> <span class="title">BillerInterface</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params">BillingNotifierInterface <span class="variable">$notifier</span></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;notifier = <span class="variable">$notifier</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">bill</span>(<span class="params"><span class="keyword">array</span> <span class="variable">$user</span>, <span class="variable">$amount</span></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="comment">// Bill the user via Stripe...</span></span><br><span class="line">        <span class="variable language_">$this</span>-&gt;notifier-&gt;<span class="title function_ invoke__">notify</span>(<span class="variable">$user</span>, <span class="variable">$amount</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<p>通过将责任划分到不同类中，我们现在可以很容易将不同的通知实现类注入到账单类里面。比如，我们可以注入一个 <code>SmsNotifier</code> 或者 <code>EmailNotifier</code>。账单类只需遵守了自己的契约即可（实现了账单接口方法），不需要考虑如何实现通知功能。只要是遵守账单通知契约（接口）的类，账单类都可以用。这不仅让我们的开发维护更加灵活，而且还可以通过模拟<code>BillingNotifierInterface</code> 实现类来进行账单类的隔离测试，就像我们在上一个测试用例里做的那样。</p>
+<blockquote>
+<p>面向接口开发：编写接口看上去好像要多写一些代码，但是磨刀不误砍柴工，对于大型项目而言实际上反而能提升你的开发效率，这就是软件设计领域经常说的面向接口开发，而不是面向对象开发。从测试角度来说，你不用实现任何接口，就能通过 Mockery 库模拟接口实现实例，进而测试整个后端逻辑！</p>
+</blockquote>
+<p>前面说了这么多，回到我们的主题，我们要如何做依赖注入呢？很简单：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$biller</span> = <span class="keyword">new</span> <span class="title class_">StripeBiller</span>(<span class="keyword">new</span> <span class="title class_">SmsNotifier</span>);</span><br></pre></td></tr></table></figure>
+
+<p>这就是一个依赖注入。账单类 <code>StripeBiller</code> 不用考虑如何通知用户，我们直接传递给它一个通知实现类 <code>SmsNotifier</code> 的实例。从代码角度来说，这可能只是个微小的变动，但这种设计模式的引入，绝对会使你的整个应用架构焕然一新：因为明确指定了类的职责边界，实现了不同层和服务之间的解耦，你的代码变得更加容易维护；此外，从面向接口编程的角度来看，代码变得更加容易测试，你只需通过模拟注入依赖即可，不同类之间的测试完全可以隔离开来。</p>
+<p>那么 IoC 容器呢？难道依赖注入不需要 IoC 容器了么？当然不需要！在接下来的章节里面你会了解到，IoC 容器使得依赖注入更易于管理，但是容器本身不是依赖注入所必须的。只要遵循本章提出的原则，你可以在任何项目里面实现依赖注入，而不必管该项目是否提供了容器。</p>
+<h3 id="太像-Java？"><a href="#太像-Java？" class="headerlink" title="太像 Java？"></a>太像 Java？</h3><p>在 PHP 中使用接口的一个常见批评就是代码看上去太像 Java —— 意思是让代码显得太冗长，你必须定义接口然后实现它，要多按好多次键盘。</p>
+<p>对于小而简单的应用来说，以上说法也对，在这种规模的应用中，接口通常是不必要的。将代码耦合到那些你认为不会改变的地方也是可以的，比如都放在控制器方法中。在你确定以后不会发生改变的地方就没有必要使用接口了，比如一次性的任务，或者一些原型或演示项目，毕竟这种灵活性会带来更多的代码量。</p>
+<p>架构师可能会说「不会改变的地方是不存在的」。不过话说回来，有时候的确不会改。而且小型的应用也不需要架构师，架构师们都是为大型应用服务的。</p>
+<p>在大型应用中，接口是很有帮助的。和提升的代码灵活性、可测试性相比，多敲几下键盘花费的时间就显得微不足道了。当你在不同的接口实现类之间切换如飞的时候，你的经理一定会被你的神速惊到。此外，你也能够写出更能适应变化的代码。</p>
+<p>总而言之，记住本书提倡的「简单」架构。如果你在写小型应用的时候不想遵守接口原则，回退到原始模式，别觉得不好意思，那没什么不对。不管如何，我都希望你们牢记「Code Happy」，快乐撸码，这应该是我们的初心。如果你真的不喜欢写接口，那就怎么舒服怎么来吧，做人嘛，开心最重要，不过还是希望你闲暇的时候可以好好评估下这件事。</p>
+<h2 id="服务容器篇"><a href="#服务容器篇" class="headerlink" title="服务容器篇"></a>服务容器篇</h2><blockquote>
+<p>声明：原书中本章叫做 IoC 容器，在 Laravel 5 中，IoC 容器改名为服务容器，所以，在后续章节，IoC 容器和服务容器指代同一个东西。</p>
+</blockquote>
+<p>我们已经了解了依赖注入及其使用，接下来咱们一起来探索控制反转容器（IoC）。我们前面已经说过，通过 IoC 容器可以帮助我们更方便地管理类依赖，而且 Laravel 提供了一个功能强大的 IoC 容器。这个 IoC 容器在 Laravel 中被称作服务容器，是整个 Laravel 框架最核心的部分，在它的调度下，框架各个组件可以很好的组合在一起工作。实际上，Laravel 的<code>Application</code> 类就是一个继承自 <code>Container</code> 的容器类，它就是整个 Laravel 应用的服务容器。</p>
+<blockquote>
+<p>IoC 容器：控制反转容器让依赖注入更方便，它负责在整个应用生命周期内解析和注入那些定义在容器中的类和接口。<br>学院君注：在 Laravel 中经常提及的服务容器就是这里的 IoC 容器，你可以把服务容器看作 IoC 容器在 Laravel 框架中的方言别名，两者等价。</p>
+</blockquote>
+<p>在 Laravel 应用中，可以通过 <code>App</code> 门面来访问服务容器，还可以通过辅助函数 <code>app()</code> 来访问，如果是在服务提供者（可以理解为一个专门用于绑定接口与实现到服务容器的地方）中，则一般通过 <code>$this-&gt;app</code> 来访问容器。服务容器提供了很多方法，不过我们会从最基础的开始。下面我们继续使用上一章创建的 <code>BillerInterface</code> 和<code>BillingNotifierInterface</code> 为例，并且假设在应用中使用 Stripe 进行支付操作。我们可以将支付接口的 Stripe 实现类绑定到容器里，这项工作可以在服务提供者的 <code>register()</code> 方法中完成（在本系列文档中，不特别说明，我们使用的都是 <code>AppServiceProvider</code>），就像这样：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">register</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="variable language_">$this</span>-&gt;app-&gt;<span class="title function_ invoke__">bind</span>(<span class="title class_">BillerInterface</span>::<span class="variable language_">class</span>, function (<span class="variable">$app</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">StripeBiller</span>(<span class="variable">$app</span>-&gt;<span class="title function_ invoke__">make</span>(<span class="title class_">BillingNotifierInterface</span>::<span class="variable language_">class</span>));</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注意在我们在初始化 <code>BillingInterface</code> 实现类时，额外需要一个<code>BillingNotifierInterface</code> 的实现，为此，我们需要编写一个针对该接口的实现类 <code>EmailBillingNotifier</code>，具体实现先留空：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">namespace</span> <span class="title class_">App</span>\<span class="title class_">Services</span>;</span><br><span class="line"><span class="keyword">use</span> <span class="title">App</span>\<span class="title">Contracts</span>\<span class="title">BillingNotifierInterface</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">EmailBillingNotifier</span> <span class="keyword">implements</span> <span class="title">BillingNotifierInterface</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">notify</span>(<span class="params"><span class="keyword">array</span> <span class="variable">$user</span>, <span class="variable">$amount</span></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="comment">// <span class="doctag">TODO:</span> Implement notify() method.</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>然后在服务提供者中将其绑定到所实现的接口：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable language_">$this</span>-&gt;app-&gt;<span class="title function_ invoke__">bind</span>(<span class="title class_">BillingNotifierInterface</span>::<span class="variable language_">class</span>, function (<span class="variable">$app</span>) &#123;</span><br><span class="line">   <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">EmailBillingNotifier</span>();</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>注：注意到我们在定义绑定关系的时候使用的是匿名函数，这样做的好处是用到该依赖时才会实例化，从而提升了应用的性能。</p>
+</blockquote>
+<p>如你所见，这个服务容器就是个用来注册各种接口与实现绑定的地方。一旦一个类在容器里注册了以后，就可以很容易地在应用的任何位置解析并调用它。我们甚至还可以在一个绑定函数内解析其它的绑定关系，就像我们上面做的那样。</p>
+<p>一旦我们使用了服务容器，切换接口的实现就是一行代码的事儿。举个例子，考虑以下代码：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">UserController</span> <span class="keyword">extends</span> <span class="title">BaseController</span></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params">BillerInterface <span class="variable">$biller</span></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;biller = <span class="variable">$biller</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当这个控制器被服务容器实例化的时候，引用 <code>EmailBillingNotifier</code> 的 <code>StripeBiller</code> 会被注入到这个控制器中。现在，如果我们想要换一种通知的实现方式，比如通过短信发送通知（仿照 <code>EmailBillingNotifier</code> 新建一个 <code>SmsBillingNotifier</code> 类），只需在服务提供者中修改绑定到通知接口的实现类即可，其它任何地方都不用修改：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable language_">$this</span>-&gt;app-&gt;<span class="title function_ invoke__">bind</span>(<span class="title class_">BillingNotifierInterface</span>::<span class="variable language_">class</span>, function (<span class="variable">$app</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">SmsBillingNotifier</span>();</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>这样，不管在应用的哪个地方注入/解析账单通知接口，都会得到 <code>SmsBillingNotifier</code> 类的实例。利用这种架构设计，我们的应用可以在各种服务的不同实现方式之间快速切换。</p>
+<p>只改一行代码就能切换接口实现，真的是很强大。例如，如果我们想把短信服务的提供商从原来的联通替换为移动，可以开发一个新的基于移动接口实现的短信服务类，然后切换绑定语句。如果移动服务挂了，只需修改一行代码就可以快速切换回原来的短信提供商，这正是服务容器的强大之处。</p>
+<p>有时候，你可能想在整个应用生命周期中只实例化某类一次，类似单例模式，可以通过 <code>singleton</code> 方法来注册接口与实现类：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable language_">$this</span>-&gt;app-&gt;<span class="title function_ invoke__">singleton</span>(<span class="title class_">BillingNotifierInterface</span>::<span class="variable language_">class</span>, function (<span class="variable">$app</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">SmsBillingNotifier</span>();</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>现在，只要服务容器解析过这个账单通知对象实例一次，在剩余的请求生命周期中都会使用同一个实例。</p>
+<p>服务容器还提供了和 <code>singleton</code> 方法很类似的 <code>instance</code> 方法，区别是 <code>instance</code> 方法可以绑定一个已经存在的对象实例。然后容器每次解析的时候都会返回这个对象实例。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$notifier</span> = <span class="keyword">new</span> <span class="title class_">SmsBillingNotifier</span>;</span><br><span class="line"><span class="variable language_">$this</span>-&gt;app-&gt;<span class="title function_ invoke__">instance</span>(<span class="title class_">BillingNotifierInterface</span>::<span class="variable language_">class</span>, <span class="variable">$notifier</span>);</span><br></pre></td></tr></table></figure>
+
+<p>现在我们已经熟悉了服务容器的基本使用，接下来，让我们深入挖掘它更加强大的功能：依靠反射来动态解析类。</p>
+<blockquote>
+<p>单独使用容器：即使你的项目不是基于 Laravel 框架的，依然可以使用Laravel 的服务容器，只要通过 Composer 安装 <code>illuminate/container</code> 就好了。</p>
+</blockquote>
+<h2 id="接口即契约篇"><a href="#接口即契约篇" class="headerlink" title="接口即契约篇"></a>接口即契约篇</h2><h3 id="强类型与鸭子类型"><a href="#强类型与鸭子类型" class="headerlink" title="强类型与鸭子类型"></a>强类型与鸭子类型</h3><p>在之前的章节里，我们讨论了依赖注入的基础知识：什么是依赖注入；如何实现依赖注入；依赖注入有什么好处。之前的例子中也模拟了将接口注入到类里面的过程。在我们继续学习后续内容之前，有必要深入讨论一下接口，而这正是很多 PHP 开发者所不熟悉的。</p>
+<p>在我成为 PHP 程序员之前，我是写 .NET 的。你觉得我是喜欢原生代码还是什么？在 .NET 里到处都是接口，而且很多接口都定义在 .NET 框架核心中了，对此有充分理由：很多 .NET 语言比如 C# 和 VB.NET 都是强类型的。在强类型语言中，当你给一个函数传参时，必须指定变量类型。例如，在 C# 中我们会这么做：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title function_ invoke__">BillUser</span>(User user)</span><br><span class="line">&#123;</span><br><span class="line">    this.biller.<span class="title function_ invoke__">bill</span>(user.<span class="title function_ invoke__">GetId</span>(), this.amount)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注意，在这里，我们不仅要定义传进去的参数是什么类型的，还要定义这个方法的返回值是什么类型的。C# 鼓励类型安全。除了指定的 <code>User</code> 对象之外，它不允许我们传递其他类型的对象到 <code>BillUser</code> 方法中。</p>
+<p>然而 PHP 是一种鸭子类型语言。所谓鸭子类型语言，说的是一个对象的可用方法取决于其使用方式，而非这个对象继承自谁，或者实现了什么接口。我们先来看个例子：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">billUser</span>(<span class="params"><span class="variable">$user</span></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="variable language_">$this</span>-&gt;biller-&gt;<span class="title function_ invoke__">bill</span>(<span class="variable">$user</span>-&gt;<span class="title function_ invoke__">getId</span>(), <span class="variable">$this</span>-&gt;amount);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在 PHP 中，我们不必显式告诉一个方法需要什么类型的参数。实际上，我们可以传递任何类型的对象到 <code>billUser</code> 方法，只要这个对象提供了 <code>getId</code> 方法。这里有个关于鸭子类型的解释：如果一个东西看起来像鸭子，叫起来也像鸭子，那它就是鸭子。换言之，在本例中，如果一个对象看上去像 <code>User</code>，方法响应也像 <code>User</code>，那它就是个 <code>User</code> 对象。</p>
+<blockquote>
+<p>学院君注：套用《JavaScript权威指南》对鸭子类型的解释，在 PHP 中，如果一个对象可以像鸭子一样走路、游泳并且嘎嘎叫，就认为这个对象是鸭子对象，哪怕它不是从鸭子类继承而来。换句话说，PHP 是弱类型语言，对象类型在运行时动态判断。</p>
+</blockquote>
+<p>不过，PHP 到底有没有任何强类型功能呢？当然有！PHP 混合了强类型和鸭子类型（弱类型）结构。为了说明这点，我们来重写一下 <code>billUser</code> 方法：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">billUser</span>(<span class="params">User <span class="variable">$user</span></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="variable language_">$this</span>-&gt;biller-&gt;<span class="title function_ invoke__">bill</span>(<span class="variable">$user</span>-&gt;<span class="title function_ invoke__">getId</span>(), <span class="variable">$amount</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>给方法签名加上了 <code>User</code> 类型约束后，我们现在可以确保所有传入<code>billUser</code> 方法的对象，要么是 <code>User</code> 类的实例，要么是一个继承自 <code>User</code> 类的对象实例。</p>
+<p>强类型和弱类型各有优劣。在强类型语言中，编译器通常能提供编译时错误检查的功能，这个功能在提高代码质量方面非常有用，可以避免开发人员将危险代码交付到线上，此外，方法的输入和输出也更加明确。</p>
+<p>与此同时，强类型的特性也使得程序僵化。举个例子，在 Eloquent ORM 中，类似 <code>whereEmailOrName</code> 这样的动态方法就不可能在 C# 之类的强类型语言里实现。我们这里不讨论强类型和弱类型哪种编程范式更好，而是要记住它们各自的优劣之处。在 PHP 里面，不管使用强类型还是弱类型，都没问题，没犯什么错误。错误的是不假思索，不区分具体适用场景和问题，为了使用某种类型而使用。</p>
+<h3 id="一个契约示例"><a href="#一个契约示例" class="headerlink" title="一个契约示例"></a>一个契约示例</h3><p>接口如同契约。接口并不包含任何代码实现，只是定义了一个实现该接口的对象必须实现的一系列方法。如果一个对象实现了一个接口，那么我们就能保证这个接口所定义的一系列方法都能在这个对象上调用。由于有接口契约保证特定方法的实现，通过多态也能使类型安全的语言变得更灵活。</p>
+<blockquote>
+<p>关于多态：多态含义很广，从本质上说，是一个实体拥有多种形式。在本书中，我们讲多态说的是一个接口有多钟实现方式。例如，<code>UserRepositoryInterface</code> 可以有 MySQL 和 Redis 两种实现，并且每一种实现都是 <code>UserRepositoryInterface</code> 的一个实例。</p>
+</blockquote>
+<p>为了说明接口在强类型语言中的灵活性，我们们来写一个简单的酒店客房预订代码。考虑以下接口：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">interface</span> <span class="title">ProviderInterface</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">getLowestPrice</span>(<span class="params"><span class="variable">$location</span></span>)</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">book</span>(<span class="params"><span class="variable">$location</span></span>)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当用户预订房间时，我们需要将此事记录在系统里。所以在 <code>User</code> 类里添加如下方法：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">User</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">bookLocation</span>(<span class="params">ProviderInterface <span class="variable">$provider</span>, <span class="variable">$location</span></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="variable">$amountCharged</span> = <span class="variable">$provider</span>-&gt;<span class="title function_ invoke__">book</span>(<span class="variable">$location</span>);</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;<span class="title function_ invoke__">logBookedLocation</span>(<span class="variable">$location</span>, <span class="variable">$amountCharged</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>由于我们对 <code>$provider</code> 做了类型约束，在 <code>User</code> 类的 <code>bookLocation</code> 方法中，就可以放心大胆的认为 <code>$provider</code> 实例上的 <code>book</code> 方法是可以调用的。这给我们复用 <code>bookLocation</code> 方法带来了灵活性，完全不必关心用户倾向哪家酒店提供商。最后，我们编写一些代码来体验下这种灵活性：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$location</span> = <span class="string">&#x27;希尔顿, 达拉斯&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="variable">$cheapestProvider</span> = <span class="variable language_">$this</span>-&gt;<span class="title function_ invoke__">findCheapest</span>(<span class="variable">$location</span>, <span class="keyword">array</span>(</span><br><span class="line">    <span class="keyword">new</span> <span class="title class_">PricelineProvider</span>,</span><br><span class="line">    <span class="keyword">new</span> <span class="title class_">OrbitzProvider</span>,</span><br><span class="line">));</span><br><span class="line"></span><br><span class="line"><span class="variable">$user</span>-&gt;<span class="title function_ invoke__">bookLocation</span>(<span class="variable">$cheapestProvider</span>, <span class="variable">$location</span>);</span><br></pre></td></tr></table></figure>
+
+<p>太棒了！不管哪家酒店是最便宜的，我们都能够将它传入 <code>User</code> 对象来预订房间了。由于 <code>User</code> 对象只需要有一个遵从 <code>ProviderInterface</code> 契约的对象实例就可以了，所以未来如果有新的酒店供应商，我们的代码也可以很好的工作。</p>
+<blockquote>
+<p>忘掉细节：记住，接口实际上并不做任何事情。它只是简单的定义了实现类必须拥有的一系列方法。</p>
+</blockquote>
+<h3 id="接口-amp-团队开发"><a href="#接口-amp-团队开发" class="headerlink" title="接口&amp;团队开发"></a>接口&amp;团队开发</h3><p>当你的团队在构建大型应用时，不同的功能模块往往有着不同的开发进度。例如，一个开发人员在开发数据层，另一个开发人员在做前端和控制器层。前端开发者想要测试他的控制器，但是后端开发进度比较慢，无法联调。如果这两个开发者能以接口或契约的方式达成协议，然后后端开发的所有类都遵循这种协议，就像下面这段代码：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">interface</span> <span class="title">OrderRepositoryInterface</span> </span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">getMostRecent</span>(<span class="params">User <span class="variable">$user</span></span>)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>一旦建立了契约，就算契约还没有真正实现，前端开发者也可以测试他的控制器了！这样一来，应用中的不同组件就可以按不同的速度开发，同时仍然允许编写适当的单元测试。此外，这种方式还可以使组件内部的改动不会影响到其它不相关的组件。要始终牢记「无知是福」。我们不想让类知道依赖是如何工作的，只需要知道它们能做什么。所以，先定义好契约，再来写控制器：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">OrderController</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params">OrderRepositoryInterface <span class="variable">$orders</span></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;orders = <span class="variable">$orders</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">getRecent</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="variable">$recent</span> = <span class="variable language_">$this</span>-&gt;orders-&gt;<span class="title function_ invoke__">getMostRecent</span>(<span class="title class_">Auth</span>::<span class="title function_ invoke__">user</span>());</span><br><span class="line">        <span class="keyword">return</span> <span class="title class_">View</span>::<span class="title function_ invoke__">make</span>(<span class="string">&#x27;orders.recent&#x27;</span>, <span class="title function_ invoke__">compact</span>(<span class="string">&#x27;recent&#x27;</span>));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>前端开发者甚至可以为这接口写个「假」实现，然后这个应用的视图就可以用假数据渲染了：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">DummyOrderRepository</span> <span class="keyword">implements</span> <span class="title">OrderRepositoryInterface</span> </span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">getMostRecent</span>(<span class="params">User <span class="variable">$user</span></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">array</span>(<span class="string">&#x27;Order 1&#x27;</span>, <span class="string">&#x27;Order 2&#x27;</span>, <span class="string">&#x27;Order 3&#x27;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>编写好假实现之后，就可以在服务容器里将其绑定到契约上，然后在整个应用中都可以调用它了：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable language_">$this</span>-&gt;app-&gt;<span class="title function_ invoke__">bind</span>(<span class="title class_">OrderRepositoryInterface</span>::<span class="variable language_">class</span>, function (<span class="variable">$app</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">DummyOrderRepository</span>();</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>接下来，如果后台开发者写完了真正的实现代码，如<code>RedisOrderRepository</code>。服务容器中的绑定可以轻松切换到新的实现，整个应用将会使用开始从 Redis 读取出来的订单数据。</p>
+<blockquote>
+<p>接口即纲领：接口有助于开发应用所提供的、已定义好的功能「框架」。 在组件的设计阶段，团队里使用接口进行讨论是很方便的，例如，定义一个 <code>BillingNotifierInterface</code> 接口，然后讨论它提供哪些方法。在编写任何实现代码前，最好先通过接口讨论达成一致，这是构建一套好 API 的必要前提！</p>
+</blockquote>
+<h2 id="服务提供者篇"><a href="#服务提供者篇" class="headerlink" title="服务提供者篇"></a>服务提供者篇</h2><h3 id="作为引导者"><a href="#作为引导者" class="headerlink" title="作为引导者"></a>作为引导者</h3><p>Laravel 服务提供者主要用来进行注册服务容器绑定（即注册接口及其实现类的绑定）。事实上，Laravel 有好几十个服务提供者，用于管理框架核心组件的容器绑定。几乎框架里每一个组件的容器绑定都是靠服务提供者来完成的。你可以在 <code>config/app.php</code> 这个配置文件里查看项目目前有哪些服务提供者（从 Laravel 5.5 开始，Laravel 提供了包自动发现功能，所以这里也不一定全了）。</p>
+<p>一个服务提供者必须至少有一个 <code>register</code> 方法。你可以在这个方法里将类绑定到容器，就像我们前面做的那样。当一个请求进入应用，框架启动时，所有罗列在配置文件里的服务提供者的 <code>register</code> 方法就会被调用。这在应用请求生命周期很早的阶段就会发生，所以在我们编写业务逻辑代码时，所有的服务都已经准备好了。</p>
+<blockquote>
+<p><code>register</code> Vs. <code>boot</code> 方法：永远不要在 <code>register</code> 方法里面使用任何服务。该方法只是用来将对象绑定到服务容器的地方。所有关于绑定类的解析、交互都要在 <code>boot</code> 方法（服务提供者的另一个方法）里进行。</p>
+</blockquote>
+<p>一些通过 Composer 安装的第三方扩展包也会有服务提供者。这些第三方扩展包的安装说明里一般都会告诉你要在配置文件 <code>config/app.php</code> 的 <code>providers</code> 数组里注册其提供的服务提供者（如果支持包自动发现，则不必这么做）。只有注册了对应的服务提供者，才能使用扩展包提供的服务。</p>
+<blockquote>
+<p>包提供者：不是所有的第三方扩展包都需要服务提供者。实际上，任何扩展包都不需要服务提供者，因为服务提供者只是启动服务组件并让它们可以立即使用，它们只是一个用来组织启动代码和容器绑定的地方。</p>
+</blockquote>
+<h4 id="延迟加载的服务提供者"><a href="#延迟加载的服务提供者" class="headerlink" title="延迟加载的服务提供者"></a>延迟加载的服务提供者</h4><p>不是每一个罗列在配置文件 <code>config/app.php</code> 的 <code>providers</code> 数组里的服务提供者在每次请求时都需要被实例化。这会对性能有影响，尤其是服务提供者注册的服务在这个请求中根本用不到的情况下。例如，<code>QueueServiceProvider</code> 注册的服务就不是每次请求都用得到，只有在请求用到队列时才会用到。</p>
+<p>在 Laravel 4 中，延迟服务提供者加载是通过存放在 <code>app/storage/meta</code> 目录下的「服务清单」来实现的，清单中罗列了应用的所有服务提供者及其注册到容器中的名称。当需要获取 <code>queue</code> 容器绑定时，就会实例化并运行 <code>QueueServiceProvider</code>。</p>
+<p>在 Laravel 5 中，我们通过一种新的方式来实现延迟加载服务提供者，在需要延迟加载的服务提供者中将属性 <code>$defer</code> 设置为 <code>true</code>，并重写 <code>providers</code> 方法即可，在这个方法中，我们会以数组方式返回该服务提供者注册的服务容器绑定：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">App</span>\<span class="title class_">Providers</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">use</span> <span class="title">Riak</span>\<span class="title">Connection</span>;</span><br><span class="line"><span class="keyword">use</span> <span class="title">Illuminate</span>\<span class="title">Support</span>\<span class="title">ServiceProvider</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">RiakServiceProvider</span> <span class="keyword">extends</span> <span class="title">ServiceProvider</span></span>&#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 服务提供者加是否延迟加载.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@var</span> bool</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="variable">$defer</span> = <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 注册服务提供者</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> void</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">register</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;app-&gt;<span class="title function_ invoke__">singleton</span>(<span class="title class_">Connection</span>::<span class="variable language_">class</span>, function (<span class="variable">$app</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Connection</span>(<span class="variable">$app</span>[<span class="string">&#x27;config&#x27;</span>][<span class="string">&#x27;riak&#x27;</span>]);</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 获取由提供者提供的服务.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> array</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">provides</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> [<span class="title class_">Connection</span>::<span class="variable language_">class</span>];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="作为管理者"><a href="#作为管理者" class="headerlink" title="作为管理者"></a>作为管理者</h3><p>构建一个架构良好的 Laravel 应用的关键就是学习使用服务提供者作为管理工具。</p>
+<p>我们先来看个例子吧。也许我们的应用正在使用 <a target="_blank" rel="noopener" href="https://pusher.com/">Pusher</a> 通过 WebSocket 推送消息给客户端。为了将我们的应用和 Pusher 解耦，最好创建一个新的 <code>EventPusherInterface</code> 接口和对应的实现类 <code>PusherEventPusher</code>，这样随着需求变化或应用增长，我们就可以随时轻松切换 WebSocket 提供商：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">interface</span> <span class="title">EventPusherInterface</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">push</span>(<span class="params"><span class="variable">$message</span>, <span class="keyword">array</span> <span class="variable">$data</span> = <span class="keyword">array</span>(<span class="params"></span>)</span>)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">App</span>\<span class="title class_">Services</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">use</span> <span class="title">App</span>\<span class="title">Contracts</span>\<span class="title">EventPusherInterface</span>;</span><br><span class="line"><span class="keyword">use</span> <span class="title">App</span>\<span class="title">Contracts</span>\<span class="title">PusherSdkInterface</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">PusherEventPusher</span> <span class="keyword">implements</span> <span class="title">EventPusherInterface</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params">PusherSdkInterface <span class="variable">$pusher</span></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;pusher = <span class="variable">$pusher</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">push</span>(<span class="params"><span class="variable">$message</span>, <span class="keyword">array</span> <span class="variable">$data</span> = <span class="keyword">array</span>(<span class="params"></span>)</span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="comment">// 通过 Pusher SDK 推送消息</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>接下来，我们创建一个服务提供者 <code>EventPusherServiceProvider</code>：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">App</span>\<span class="title class_">Providers</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">use</span> <span class="title">App</span>\<span class="title">Contracts</span>\<span class="title">EventPusherInterface</span>;</span><br><span class="line"><span class="keyword">use</span> <span class="title">App</span>\<span class="title">Contracts</span>\<span class="title">PusherSdkInterface</span>;</span><br><span class="line"><span class="keyword">use</span> <span class="title">App</span>\<span class="title">Services</span>\<span class="title">PusherEventPusher</span>;</span><br><span class="line"><span class="keyword">use</span> <span class="title">Illuminate</span>\<span class="title">Support</span>\<span class="title">ServiceProvider</span>;</span><br><span class="line"><span class="keyword">use</span> <span class="title">Pusher</span>\<span class="title">Pusher</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">EventPusherServiceProvider</span> <span class="keyword">extends</span> <span class="title">ServiceProvider</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">register</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;app-&gt;<span class="title function_ invoke__">singleton</span>(<span class="title class_">PusherSdkInterface</span>::<span class="variable language_">class</span>, function () &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Pusher</span>(<span class="string">&#x27;app-key&#x27;</span>, <span class="string">&#x27;secret-key&#x27;</span>, <span class="string">&#x27;app-id&#x27;</span>);</span><br><span class="line">        &#125;);</span><br><span class="line"></span><br><span class="line">        <span class="variable language_">$this</span>-&gt;app-&gt;<span class="title function_ invoke__">singleton</span>(<span class="title class_">EventPusherInterface</span>::<span class="variable language_">class</span>, <span class="title class_">PusherEventPusher</span>::<span class="variable language_">class</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>很好！现在我们对事件推送进行了清晰的抽象，同时也有了一个很方便的地方注册和绑定其他相关对象到容器里。最后，只需要将 <code>EventPusherServiceProvider</code> 注册到 <code>config/app.php</code> 配置文件的<code>providers</code> 数组就可以了。现在我们就可以将 <code>EventPusherInterface</code> 注入到应用代码里的任何控制器或类中。</p>
+<blockquote>
+<p>在绑定接口实现类时使用 <code>bind</code> 还是 <code>singleton</code> 方法可以这样来考虑：如果在一次请求生命周期中该类只需要有一个实例，就使用 <code>singleton</code>；否则就使用 <code>bind</code>。</p>
+</blockquote>
+<p>我们在容器章节里面已经提到过，继承自 <code>Illuminate\Support\ServiceProvider</code> 的服务提供者都有一个 <code>$app</code> 属性，该属性是一个继承自 <code>Container</code> 类的完整 <code>Illuminate\Foundation\Application</code> 实例。因此，我们可以通过这个 <code>$app</code> 属性调用服务容器中的所有方法，如果你更喜欢用 <code>App</code> 门面，也可以这么做实现同样的功能：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="title class_">App</span>::<span class="title function_ invoke__">singleton</span>(<span class="title class_">EventPusherInterface</span>::<span class="variable language_">class</span>, <span class="title class_">PusherEventPusher</span>::<span class="variable language_">class</span>);</span><br></pre></td></tr></table></figure>
+
+<p>当然，服务提供者的功能不仅仅局限于注册特定类型的服务。我们还可以使用它们注册云存储服务、数据库访问服务、自定义的视图引擎如 Twig 等等。服务提供者只是应用程序的引导和管理工具，没什么其他的。</p>
+<p>所以，尽情的去创建你自己的服务提供者吧。并不是非要等到发布个什么扩展包才需要服务提供者，对 Laravel 应用而言，它们只是非常好的代码管理工具而已。你要学会善用它们去引导和管理应用中的各个组件，以便组件之间可以相互组合，协同工作。</p>
+<h3 id="启动提供者"><a href="#启动提供者" class="headerlink" title="启动提供者"></a>启动提供者</h3><p>在所有服务提供者都注册以后（<code>register</code> 方法调用完），它们就进入了「启动」状态。这将会触发每个服务提供者执行各自的 <code>boot</code> 方法。在使用服务提供者时，一种常见的错误就是在<code>register</code> 方法里面调用其他提供者注册的服务。由于在某个服务提供者的 <code>register</code> 方法里，不能保证所有其他服务都已经被注册，在该方法里调用别的服务有可能会出现该服务不可用。因此，调用其它服务的代码应该被定义在服务提供者的 <code>boot</code> 方法中。<code>register</code> 方法只能用于注册服务到容器。</p>
+<p>在 <code>boot</code> 方法中，你想做什么都可以：注册事件监听器、引入路由文件、注册过滤器、或者任何其他你能想到的事。再次强调，使用服务提供者作为管理工具的时候，如果你想将几个相关的事件监听器聚合到一起，就将它们放到该服务提供者的 <code>boot</code> 方法里。</p>
+<p>现在，我们已经学习了依赖注入，以及如何通过服务提供者来组织管理我们的项目。此时此刻，我们已经为构建可维护、可测试、架构良好的 Laravel 应用打下了一个很好的基础。接下来，我们将探索 Laravel 框架本身是如何使用服务提供者的，并且深究其原理！</p>
+<blockquote>
+<p>不要被条条框框束缚。记住，服务提供者并不只是扩展包才能使用。请尽情使用它来组织管理你的应用服务。</p>
+</blockquote>
+<h3 id="框架核心"><a href="#框架核心" class="headerlink" title="框架核心"></a>框架核心</h3><p>至此，你可能已经注意到，在 <code>config/app.php</code> 配置文件里面已经有了很多服务提供者，其中每一个都负责引导框架核心的一部分服务。比如<code>MigrationServiceProvider</code> 负责引导用于运行数据库迁移的类，包括Artisan 迁移命令。<code>EventServiceProvide</code> 负责引导和注册事件调度类。尽管不同的服务提供者有着不同的复杂度，有些比较大，另一些相对较小，但它们都负责引导核心的一部分功能。</p>
+<blockquote>
+<p>提升对 Laravel 核心代码理解的最好方法是去读核心服务提供者的源码。如果你对这些服务提供者的功能以及每个服务提供者注册了什么都很熟悉，那么你将会对Laravel 底层是如何工作的有更加深刻的理解。</p>
+</blockquote>
+<p>大部分核心服务提供者是延迟加载的，这意味着不是每次请求都会加载它们；不过，一些用于引导框架基础服务的服务提供者是每一次请求都会被加载的，比如 <code>FilesystemServiceProvide</code> 和 <code>ExceptionServiceProvider</code>。核心服务提供者和应用容器将框架的不同部分联系起来，形成一个单一的、内聚的整体。这些核心服务提供者就是框架的构建块。</p>
+<p>正如之前提到的那样，如果你想深入理解框架是如何运行的，请阅读 Laravel 框架的核心服务提供者的源码。通读之后，你将会对框架如何把各部分功能模块组合在一起，以及每一个服务提供者为应用提供了哪些功能有更加扎实的理解。此外，有了这些更深入的理解，你也可以为更好的 Laravel 生态系统添砖加瓦！</p>
+<blockquote>
+<p>转自：<a target="_blank" rel="noopener" href="https://laravelacademy.org/books/laravel-from-appreciate-to-artisan">Laravel 从学徒到工匠</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2021/07/05/Laravel%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E6%A2%B3%E7%90%86/" data-id="cl9pgenss00kmycv1fb8pg73h" data-title="Laravel核心概念梳理" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Laravel/" rel="tag">Laravel</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2021/07/22/left-join-on-%E5%90%8Eand-%E5%92%8C-where-%E7%9A%84%E5%8C%BA%E5%88%AB/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          left join on 后and 和 where 的区别
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2021/07/04/parse-ini-file-%E8%AF%BB%E5%8F%96-env-%E8%AF%BB%E5%8F%96%E4%B8%8D%E5%88%B0%E7%9A%84%E9%97%AE%E9%A2%98/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">parse_ini_file 读取.env 读取不到的问题</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

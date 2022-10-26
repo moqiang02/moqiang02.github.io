@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>ListView 中加入CheckBox/RadioButton选择状态保持、全选、反选实现 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="最近在一个项目中，需要在ListView的item中加入CheckBox，但是遇到的一个问题是上下滑动的时候如果有选择了的CheckBox，就会出现选择项错误的问题，下面将个人的解决方法总结如下;先说思路:在ListView的Adapter中，用一个Map保存每一项item的选择状态，在getView方法中，设置Map中保存的某一项的选择状态就实现了状态的保存；">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ListView 中加入CheckBox&#x2F;RadioButton选择状态保持、全选、反选实现">
+<meta property="og:url" content="http://moqiang02.github.io/2015/09/15/ListView-%E4%B8%AD%E5%8A%A0%E5%85%A5CheckBox-RadioButton%E9%80%89%E6%8B%A9%E7%8A%B6%E6%80%81%E4%BF%9D%E6%8C%81%E3%80%81%E5%85%A8%E9%80%89%E3%80%81%E5%8F%8D%E9%80%89%E5%AE%9E%E7%8E%B0/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="最近在一个项目中，需要在ListView的item中加入CheckBox，但是遇到的一个问题是上下滑动的时候如果有选择了的CheckBox，就会出现选择项错误的问题，下面将个人的解决方法总结如下;先说思路:在ListView的Adapter中，用一个Map保存每一项item的选择状态，在getView方法中，设置Map中保存的某一项的选择状态就实现了状态的保存；">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/ListView%E4%B8%AD%E5%8A%A0%E5%85%A5CheckBoxRadioButton%E9%80%89%E6%8B%A9%E7%8A%B6%E6%80%81%E4%BF%9D%E6%8C%81%E3%80%81%E5%85%A8%E9%80%89%E3%80%81%E5%8F%8D%E9%80%89%E5%AE%9E%E7%8E%B0/0.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/ListView%E4%B8%AD%E5%8A%A0%E5%85%A5CheckBoxRadioButton%E9%80%89%E6%8B%A9%E7%8A%B6%E6%80%81%E4%BF%9D%E6%8C%81%E3%80%81%E5%85%A8%E9%80%89%E3%80%81%E5%8F%8D%E9%80%89%E5%AE%9E%E7%8E%B0/1.png">
+<meta property="article:published_time" content="2015-09-15T04:19:28.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.804Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="AndroidUI">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/ListView%E4%B8%AD%E5%8A%A0%E5%85%A5CheckBoxRadioButton%E9%80%89%E6%8B%A9%E7%8A%B6%E6%80%81%E4%BF%9D%E6%8C%81%E3%80%81%E5%85%A8%E9%80%89%E3%80%81%E5%8F%8D%E9%80%89%E5%AE%9E%E7%8E%B0/0.png">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-ListView-中加入CheckBox-RadioButton选择状态保持、全选、反选实现" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2015/09/15/ListView-%E4%B8%AD%E5%8A%A0%E5%85%A5CheckBox-RadioButton%E9%80%89%E6%8B%A9%E7%8A%B6%E6%80%81%E4%BF%9D%E6%8C%81%E3%80%81%E5%85%A8%E9%80%89%E3%80%81%E5%8F%8D%E9%80%89%E5%AE%9E%E7%8E%B0/" class="article-date">
+  <time class="dt-published" datetime="2015-09-15T04:19:28.000Z" itemprop="datePublished">2015-09-15</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/android/">android</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      ListView 中加入CheckBox/RadioButton选择状态保持、全选、反选实现
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <p>最近在一个项目中，需要在ListView的item中加入CheckBox，但是遇到的一个问题是上下滑动的时候如果有选择了的CheckBox，就会出现选择项错误的问题，下面将个人的解决方法总结如下;<br>先说思路:<br>在ListView的Adapter中，用一个Map保存每一项item的选择状态，在getView方法中，设置Map中保存的某一项的选择状态就实现了状态的保存；<span id="more"></span><br>每一项的视图 child.xml</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=<span class="string">&quot;1.0&quot;</span> encoding=<span class="string">&quot;utf-8&quot;</span>?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">LinearLayout</span> <span class="attr">xmlns:android</span>=<span class="string">&quot;http://schemas.android.com/apk/res/android&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:layout_width</span>=<span class="string">&quot;match_parent&quot;</span> <span class="attr">android:layout_height</span>=<span class="string">&quot;match_parent&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">CheckBox</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:id</span>=<span class="string">&quot;@+id/item_cb&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:layout_width</span>=<span class="string">&quot;wrap_content&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:layout_height</span>=<span class="string">&quot;wrap_content&quot;</span> /&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">TextView</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:id</span>=<span class="string">&quot;@+id/item_tv&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:layout_width</span>=<span class="string">&quot;wrap_content&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:layout_height</span>=<span class="string">&quot;wrap_content&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:text</span>=<span class="string">&quot;hello&quot;</span> /&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">LinearLayout</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>Adapter.java</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CAdapter</span> <span class="keyword">extends</span> <span class="title class_">BaseAdapter</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> List&lt;String&gt; list;</span><br><span class="line">    <span class="keyword">private</span> LayoutInflater inflater;</span><br><span class="line">    Map&lt;Integer, Boolean&gt; map;</span><br><span class="line">    <span class="keyword">private</span> OnSelectedItemChanged listener;</span><br><span class="line">    <span class="keyword">private</span> <span class="type">Holder</span> <span class="variable">holder</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">CAdapter</span><span class="params">(Context context, List&lt;String&gt; list,</span></span><br><span class="line"><span class="params">            OnSelectedItemChanged listener)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>();</span><br><span class="line">        inflater = LayoutInflater.from(context);</span><br><span class="line">        <span class="built_in">this</span>.list = list;</span><br><span class="line">        map = <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;Integer, Boolean&gt;();</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; list.size(); i++) &#123;</span><br><span class="line">            map.put(i, <span class="literal">false</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="built_in">this</span>.listener = listener;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">int</span> <span class="title function_">getCount</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> list.size();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> Object <span class="title function_">getItem</span><span class="params">(<span class="type">int</span> position)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> list.get(position);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">long</span> <span class="title function_">getItemId</span><span class="params">(<span class="type">int</span> position)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> position;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> View <span class="title function_">getView</span><span class="params">(<span class="keyword">final</span> <span class="type">int</span> position, View convertView, ViewGroup parent)</span> &#123;</span><br><span class="line">        <span class="type">View</span> <span class="variable">view</span> <span class="operator">=</span> convertView;</span><br><span class="line">        <span class="type">String</span> <span class="variable">item</span> <span class="operator">=</span> list.get(position);</span><br><span class="line">        <span class="keyword">if</span> (view == <span class="literal">null</span>) &#123;</span><br><span class="line">            holder = <span class="keyword">new</span> <span class="title class_">Holder</span>();</span><br><span class="line">            view = inflater.inflate(R.layout.child, <span class="literal">null</span>);</span><br><span class="line">            <span class="type">TextView</span> <span class="variable">tv</span> <span class="operator">=</span> (TextView) view.findViewById(R.id.item_tv);</span><br><span class="line">            <span class="type">CheckBox</span> <span class="variable">cb</span> <span class="operator">=</span> (CheckBox) view.findViewById(R.id.item_cb);</span><br><span class="line">            holder.tv = tv;</span><br><span class="line">            holder.cb = cb;</span><br><span class="line">            view.setTag(holder);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            holder = (Holder) view.getTag();</span><br><span class="line">        &#125;</span><br><span class="line">        holder.tv.setText(list.get(position));</span><br><span class="line">        <span class="keyword">final</span> <span class="type">CheckBox</span> <span class="variable">cb</span> <span class="operator">=</span> holder.cb;</span><br><span class="line">        cb.setChecked(map.get(position));<span class="comment">// 设置选择状态</span></span><br><span class="line">        cb.setOnClickListener(<span class="keyword">new</span> <span class="title class_">OnClickListener</span>() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onClick</span><span class="params">(View v)</span> &#123;</span><br><span class="line">                map.put(position, cb.isChecked());</span><br><span class="line">                listener.selectedItemChange(getSelectedCount(map));</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">        <span class="keyword">return</span> view;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 获取选择的项的数目</span></span><br><span class="line"><span class="comment">     * </span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> map</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">int</span> <span class="title function_">getSelectedCount</span><span class="params">(Map&lt;Integer, Boolean&gt; map)</span> &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">for</span> (Entry&lt;Integer, Boolean&gt; entry : map.entrySet()) &#123;</span><br><span class="line">            <span class="keyword">if</span> (entry.getValue()) &#123;</span><br><span class="line">                i++;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> i;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">Holder</span> &#123;</span><br><span class="line">        TextView tv;</span><br><span class="line">        CheckBox cb;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 向Activity暴露选择了多少项</span></span><br><span class="line"><span class="comment">     * </span></span><br><span class="line"><span class="comment">     * <span class="doctag">@author</span> cj</span></span><br><span class="line"><span class="comment">     * </span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">OnSelectedItemChanged</span> &#123;</span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">selectedItemChange</span><span class="params">(<span class="type">int</span> count)</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">selectAll</span><span class="params">()</span> &#123; <span class="comment">// 全选</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; list.size(); i++) &#123;</span><br><span class="line">            map.put(i, <span class="literal">true</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        notifyDataSetChanged();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">disSelectAll</span><span class="params">()</span> &#123; <span class="comment">// 全不选</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; list.size(); i++) &#123;</span><br><span class="line">            map.put(i, <span class="literal">false</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        notifyDataSetChanged();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">switchSelect</span><span class="params">()</span> &#123; <span class="comment">// 反选</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; list.size(); i++) &#123;</span><br><span class="line">            <span class="type">boolean</span> <span class="variable">select</span> <span class="operator">=</span> map.get(i);</span><br><span class="line">            map.put(i, !select);</span><br><span class="line">        &#125;</span><br><span class="line">        notifyDataSetChanged();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>MainActivity.java</p>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line">public <span class="keyword">class</span> MainActivity extends Activity &#123;</span><br><span class="line">    <span class="keyword">private</span> ListView lv;</span><br><span class="line">    <span class="keyword">private</span> CAdapter adapter;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void on<span class="constructor">Create(Bundle <span class="params">savedInstanceState</span>)</span> &#123;</span><br><span class="line">        super.on<span class="constructor">Create(<span class="params">savedInstanceState</span>)</span>;</span><br><span class="line">        set<span class="constructor">ContentView(R.<span class="params">layout</span>.<span class="params">activity_main</span>)</span>;</span><br><span class="line">        lv = (ListView) find<span class="constructor">ViewById(R.<span class="params">id</span>.<span class="params">lv</span>)</span>;</span><br><span class="line">        set<span class="constructor">Adapter()</span>;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> void set<span class="constructor">Adapter()</span> &#123;</span><br><span class="line">        List&lt;String&gt; <span class="built_in">list</span> = <span class="keyword">new</span> ArrayList&lt;String&gt;<span class="literal">()</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="built_in">int</span> i = <span class="number">0</span>; i &lt; <span class="number">50</span>; i++) &#123;</span><br><span class="line">            <span class="built_in">list</span>.add(<span class="string">&quot;item - &quot;</span> + i);</span><br><span class="line">        &#125;</span><br><span class="line">        adapter = <span class="keyword">new</span> <span class="constructor">CAdapter(<span class="params">getApplicationContext</span>()</span>, <span class="built_in">list</span>,</span><br><span class="line">                <span class="keyword">new</span> <span class="constructor">OnSelectedItemChanged()</span> &#123;<span class="comment">// Adapter接口暴露出来的选择项状态改变时选择的项的数目</span></span><br><span class="line">                    @Override</span><br><span class="line">                    public void selected<span class="constructor">ItemChange(<span class="params">int</span> <span class="params">count</span>)</span> &#123;</span><br><span class="line">                        <span class="module-access"><span class="module"><span class="identifier">Log</span>.</span></span>e(<span class="string">&quot;SelectedCount - &quot;</span>, count + <span class="string">&quot;&quot;</span>);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;);</span><br><span class="line">        lv.set<span class="constructor">Adapter(<span class="params">adapter</span>)</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 全选</span></span><br><span class="line">    public void select<span class="constructor">All(View <span class="params">v</span>)</span> &#123;</span><br><span class="line">        adapter.select<span class="constructor">All()</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 全不选</span></span><br><span class="line">    public void dis<span class="constructor">SelectAll(View <span class="params">v</span>)</span> &#123;</span><br><span class="line">        adapter.dis<span class="constructor">SelectAll()</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 反选</span></span><br><span class="line">    public void switch<span class="constructor">Select(View <span class="params">v</span>)</span> &#123;</span><br><span class="line">        adapter.switch<span class="constructor">Select()</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>选择之后反选的效果(右边是点击反选之后的效果):<br><img src="/images/ListView%E4%B8%AD%E5%8A%A0%E5%85%A5CheckBoxRadioButton%E9%80%89%E6%8B%A9%E7%8A%B6%E6%80%81%E4%BF%9D%E6%8C%81%E3%80%81%E5%85%A8%E9%80%89%E3%80%81%E5%8F%8D%E9%80%89%E5%AE%9E%E7%8E%B0/0.png"><br><img src="/images/ListView%E4%B8%AD%E5%8A%A0%E5%85%A5CheckBoxRadioButton%E9%80%89%E6%8B%A9%E7%8A%B6%E6%80%81%E4%BF%9D%E6%8C%81%E3%80%81%E5%85%A8%E9%80%89%E3%80%81%E5%8F%8D%E9%80%89%E5%AE%9E%E7%8E%B0/1.png"></p>
+<p>在上面用到一个比较好的思想就是用类的内部接口向外部调用类暴露本类的一些状态改变时，外部类可能想要获取的数据信息；<br>延伸思考:上面保存的状态是CheckBox，当需要使用RadioButton的时候，使用方法也是类似的；<br>但是RadioButton可能会有另一种需求{选择某一项的时候其它项就不选择，也即只选择一项}，此种情况其实参考上面全选，反选的实现，实现起来也是比较简单，暂时没时间去写出来测试；</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2015/09/15/ListView-%E4%B8%AD%E5%8A%A0%E5%85%A5CheckBox-RadioButton%E9%80%89%E6%8B%A9%E7%8A%B6%E6%80%81%E4%BF%9D%E6%8C%81%E3%80%81%E5%85%A8%E9%80%89%E3%80%81%E5%8F%8D%E9%80%89%E5%AE%9E%E7%8E%B0/" data-id="cl9pgent900mfycv1guaig8vm" data-title="ListView 中加入CheckBox/RadioButton选择状态保持、全选、反选实现" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/AndroidUI/" rel="tag">AndroidUI</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/09/15/%E9%81%8D%E5%8E%86Map%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%96%B9%E6%B3%95%EF%BC%9AkeySet-%E5%92%8CentrySet/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          遍历Map的两种方法：keySet()和entrySet()
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/09/15/android%E4%B8%AD%E4%BD%BF%E7%94%A8net-sf-json/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">android中使用net.sf.json</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

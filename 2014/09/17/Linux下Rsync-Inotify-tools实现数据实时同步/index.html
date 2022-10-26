@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Linux下Rsync+Inotify-tools实现数据实时同步 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="操作系统：CentOS 5.X 源服务器：192.168.21.129 目标服务器：192.168.21.127，192.168.21.128 目的：把源服务器上&#x2F;home&#x2F;www.osyunwei.com目录实时同步到目标服务器的&#x2F;home&#x2F;www.osyunwei.com下">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linux下Rsync+Inotify-tools实现数据实时同步">
+<meta property="og:url" content="http://moqiang02.github.io/2014/09/17/Linux%E4%B8%8BRsync-Inotify-tools%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E5%AE%9E%E6%97%B6%E5%90%8C%E6%AD%A5/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="操作系统：CentOS 5.X 源服务器：192.168.21.129 目标服务器：192.168.21.127，192.168.21.128 目的：把源服务器上&#x2F;home&#x2F;www.osyunwei.com目录实时同步到目标服务器的&#x2F;home&#x2F;www.osyunwei.com下">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2014-09-17T03:09:59.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.798Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="集群">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Linux下Rsync-Inotify-tools实现数据实时同步" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2014/09/17/Linux%E4%B8%8BRsync-Inotify-tools%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E5%AE%9E%E6%97%B6%E5%90%8C%E6%AD%A5/" class="article-date">
+  <time class="dt-published" datetime="2014-09-17T03:09:59.000Z" itemprop="datePublished">2014-09-17</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/linux/">linux</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Linux下Rsync+Inotify-tools实现数据实时同步
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E9%83%A8%E5%88%86%EF%BC%9A%E5%88%86%E5%88%AB%E5%9C%A8%E4%B8%A4%E5%8F%B0%E7%9B%AE%E6%A0%87%E6%9C%8D%E5%8A%A1%E5%99%A8192-168-21-127%EF%BC%8C192-168-21-128%E4%B8%8A%E6%93%8D%E4%BD%9C"><span class="toc-number">1.</span> <span class="toc-text">第一部分：分别在两台目标服务器192.168.21.127，192.168.21.128上操作</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%88%86%E5%88%AB%E5%9C%A8%E4%B8%A4%E5%8F%B0%E5%9C%A8%E7%9B%AE%E6%A0%87%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%AE%89%E8%A3%85Rsync%E6%9C%8D%E5%8A%A1%E7%AB%AF"><span class="toc-number">1.1.</span> <span class="toc-text">一、分别在两台在目标服务器安装Rsync服务端</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E9%83%A8%E5%88%86%EF%BC%9A%E5%9C%A8%E6%BA%90%E6%9C%8D%E5%8A%A1%E5%99%A8192-168-21-129%E4%B8%8A%E6%93%8D%E4%BD%9C"><span class="toc-number">2.</span> <span class="toc-text">第二部分：在源服务器192.168.21.129上操作</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%AE%89%E8%A3%85Rsync%E5%AE%A2%E6%88%B7%E7%AB%AF"><span class="toc-number">2.1.</span> <span class="toc-text">一、安装Rsync客户端</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%AE%89%E8%A3%85Inotify-tools%E5%B7%A5%E5%85%B7%EF%BC%8C%E5%AE%9E%E6%97%B6%E8%A7%A6%E5%8F%91rsync%E8%BF%9B%E8%A1%8C%E5%90%8C%E6%AD%A5"><span class="toc-number">2.2.</span> <span class="toc-text">二、安装Inotify-tools工具，实时触发rsync进行同步</span></a></li></ol></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <p>操作系统：CentOS 5.X</p>
+<p>源服务器：192.168.21.129</p>
+<p>目标服务器：192.168.21.127，192.168.21.128</p>
+<p>目的：把源服务器上<code>/home/www.osyunwei.com</code>目录实时同步到目标服务器的<code>/home/www.osyunwei.com</code>下</p>
+<span id="more"></span>
+<p>具体操作：</p>
+<h2 id="第一部分：分别在两台目标服务器192-168-21-127，192-168-21-128上操作"><a href="#第一部分：分别在两台目标服务器192-168-21-127，192-168-21-128上操作" class="headerlink" title="第一部分：分别在两台目标服务器192.168.21.127，192.168.21.128上操作"></a>第一部分：分别在两台目标服务器192.168.21.127，192.168.21.128上操作</h2><h3 id="一、分别在两台在目标服务器安装Rsync服务端"><a href="#一、分别在两台在目标服务器安装Rsync服务端" class="headerlink" title="一、分别在两台在目标服务器安装Rsync服务端"></a>一、分别在两台在目标服务器安装Rsync服务端</h3><p>1、关闭SELINUX</p>
+<figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/selinux/config #编辑防火墙配置文件</span><br><span class="line"></span><br><span class="line">#SELINUX=enforcing #注释掉</span><br><span class="line"></span><br><span class="line">#SELINUXTYPE=targeted #注释掉</span><br><span class="line"></span><br><span class="line">SELINUX=disabled #增加</span><br><span class="line"></span><br><span class="line">:wq! #保存，退出</span><br><span class="line"></span><br><span class="line">setenforce 0  #立即生效</span><br></pre></td></tr></table></figure>
+<p>2、开启防火墙tcp 873端口（Rsync默认端口）</p>
+<figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/sysconfig/iptables #编辑防火墙配置文件</span><br><span class="line"></span><br><span class="line">-A RH-Firewall-1-INPUT -m state --state NEW -m tcp -p tcp --dport 873 -j ACCEPT</span><br><span class="line"></span><br><span class="line">:wq! #保存，退出</span><br><span class="line"></span><br><span class="line">/etc/init.d/iptables restart #最后重启防火墙使配置生效</span><br></pre></td></tr></table></figure>
+<p>3、安装Rsync服务端软件</p>
+<figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">yum install rsync xinetd #安装</span><br><span class="line"></span><br><span class="line">vi /etc/xinetd.d/rsync #编辑配置文件，设置开机启动rsync</span><br><span class="line"></span><br><span class="line">disable = no #修改为no</span><br><span class="line"></span><br><span class="line">:wq! #保存退出</span><br><span class="line"></span><br><span class="line">/etc/init.d/xinetd start #启动（CentOS中是以xinetd来管理Rsync服务的）</span><br></pre></td></tr></table></figure>
+<p>4、创建rsyncd.conf配置文件</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/rsyncd.conf <span class="comment">#创建配置文件，添加以下代码</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">log</span> file = /var/log/rsyncd.log <span class="comment">#日志文件位置，启动rsync后自动产生这个文件，无需提前创建</span></span><br><span class="line"></span><br><span class="line">pidfile = /var/run/rsyncd.pid  <span class="comment">#pid文件的存放位置</span></span><br><span class="line"></span><br><span class="line">lock file = /var/run/rsync.lock  <span class="comment">#支持max connections参数的锁文件</span></span><br><span class="line"></span><br><span class="line">secrets file = /etc/rsync.pass  <span class="comment">#用户认证配置文件，里面保存用户名称和密码，后面会创建这个文件</span></span><br><span class="line"></span><br><span class="line">motd file = /etc/rsyncd.Motd  <span class="comment">#rsync启动时欢迎信息页面文件位置（文件内容自定义）</span></span><br><span class="line"></span><br><span class="line">[home_www.osyunwei.com] <span class="comment">#自定义名称</span></span><br><span class="line"></span><br><span class="line">path = /home/www.osyunwei.com/ <span class="comment">#rsync服务端数据目录路径</span></span><br><span class="line"></span><br><span class="line">comment = home_www.osyunwei.com <span class="comment">#模块名称与[home_www.osyunwei.com]自定义名称相同</span></span><br><span class="line"></span><br><span class="line">uid = root <span class="comment">#设置rsync运行权限为root</span></span><br><span class="line"></span><br><span class="line">gid = root <span class="comment">#设置rsync运行权限为root</span></span><br><span class="line"></span><br><span class="line">port=873  <span class="comment">#默认端口</span></span><br><span class="line"></span><br><span class="line">use <span class="built_in">chroot</span> = no <span class="comment">#默认为true，修改为no，增加对目录文件软连接的备份</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">read</span> only = no  <span class="comment">#设置rsync服务端文件为读写权限</span></span><br><span class="line"></span><br><span class="line">list = no <span class="comment">#不显示rsync服务端资源列表</span></span><br><span class="line"></span><br><span class="line">max connections = 200 <span class="comment">#最大连接数</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">timeout</span> = 600  <span class="comment">#设置超时时间</span></span><br><span class="line"></span><br><span class="line">auth <span class="built_in">users</span> = home_www.osyunwei.com_user <span class="comment">#执行数据同步的用户名，可以设置多个，用英文状态下逗号隔开</span></span><br><span class="line"></span><br><span class="line">hosts allow = 192.168.21.129  <span class="comment">#允许进行数据同步的客户端IP地址，可以设置多个，用英文状态下逗号隔开</span></span><br><span class="line"></span><br><span class="line">hosts deny = 192.168.21.254 <span class="comment">#禁止数据同步的客户端IP地址，可以设置多个，用英文状态下逗号隔开</span></span><br><span class="line"></span><br><span class="line">:wq!  <span class="comment">#保存,退出</span></span><br></pre></td></tr></table></figure>
+<p>5、创建用户认证文件</p>
+<figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/rsync.pass #配置文件，添加以下内容</span><br><span class="line"></span><br><span class="line">home_www.osyunwei.com_user:123456  #格式，用户名:密码，可以设置多个，每行一个用户名:密码</span><br><span class="line"></span><br><span class="line">:wq!  #保存，退出</span><br></pre></td></tr></table></figure>
+<p>6、设置文件权限</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">chmod</span> 600 /etc/rsyncd.conf  <span class="comment">#设置文件所有者读取、写入权限</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">chmod</span> 600 /etc/rsync.pass  <span class="comment">#设置文件所有者读取、写入权限</span></span><br></pre></td></tr></table></figure>
+<p>7、启动rsync</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="regexp">/etc/i</span>nit.d/xinetd start  <span class="comment">#启动</span></span><br><span class="line"></span><br><span class="line">service xinetd stop   <span class="comment">#停止</span></span><br><span class="line"></span><br><span class="line">service xinetd restart <span class="comment">#重新启动</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="第二部分：在源服务器192-168-21-129上操作"><a href="#第二部分：在源服务器192-168-21-129上操作" class="headerlink" title="第二部分：在源服务器192.168.21.129上操作"></a>第二部分：在源服务器192.168.21.129上操作</h2><h3 id="一、安装Rsync客户端"><a href="#一、安装Rsync客户端" class="headerlink" title="一、安装Rsync客户端"></a>一、安装Rsync客户端</h3><p>1、关闭SELINUX</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">vi <span class="regexp">/etc/</span>selinux/config <span class="comment">#编辑防火墙配置文件</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#SELINUX=enforcing #注释掉</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#SELINUXTYPE=targeted #注释掉</span></span><br><span class="line"></span><br><span class="line">SELINUX=disabled <span class="comment">#增加</span></span><br><span class="line"></span><br><span class="line">:wq! <span class="comment">#保存，退出</span></span><br><span class="line"></span><br><span class="line">setenforce <span class="number">0</span> <span class="comment">#立即生效</span></span><br></pre></td></tr></table></figure>
+<p>2、开启防火墙tcp 873端口（Rsync默认端口，做为客户端的Rsync可以不用开启873端口）</p>
+<figure class="highlight pf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/sysconfig/iptables <span class="comment">#编辑防火墙配置文件</span></span><br><span class="line"></span><br><span class="line">-A RH-Firewall-<span class="number">1</span>-INPUT -m <span class="keyword">state</span> --state NEW -m tcp -p tcp --dport <span class="number">873</span> -j ACCEPT</span><br><span class="line"></span><br><span class="line">:wq! <span class="comment">#保存，退出</span></span><br><span class="line"></span><br><span class="line">/etc/init.d/iptables restart <span class="comment">#最后重启防火墙使配置生效</span></span><br></pre></td></tr></table></figure>
+
+<p>3、安装Rsync客户端软件</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">whereis rsync   <span class="comment">#查看系统是否已安装rsync,出现下面的提示，说明已经安装</span></span><br><span class="line"></span><br><span class="line">rsync: <span class="regexp">/usr/</span>bin<span class="regexp">/rsync /u</span>sr<span class="regexp">/share/m</span>an<span class="regexp">/man1/</span>rsync.<span class="number">1</span>.gz</span><br><span class="line"></span><br><span class="line">yum install  xinetd  <span class="comment">#只安装xinetd即可，CentOS中是以xinetd来管理rsync服务的</span></span><br><span class="line"></span><br><span class="line">yum install rsync xinetd <span class="comment">#如果默认没有rsync，运行此命令进行安装rsync和xinetd</span></span><br><span class="line"></span><br><span class="line">vi <span class="regexp">/etc/</span>xinetd.d/rsync <span class="comment">#编辑配置文件，设置开机启动rsync</span></span><br><span class="line"></span><br><span class="line">disable = no <span class="comment">#修改为</span></span><br><span class="line"></span><br><span class="line"><span class="regexp">/etc/i</span>nit.d/xinetd start <span class="comment">#启动（CentOS中是以xinetd来管理rsync服务的）</span></span><br></pre></td></tr></table></figure>
+<p>4、创建认证密码文件</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">vi <span class="regexp">/etc/</span>passwd.txt  <span class="comment">#编辑文件，添加以下内容</span></span><br><span class="line"></span><br><span class="line"><span class="number">123456</span> <span class="comment">#密码</span></span><br><span class="line"></span><br><span class="line">:wq! <span class="comment">#保存退出</span></span><br><span class="line"></span><br><span class="line">chmod <span class="number">600</span> <span class="regexp">/etc/</span>passwd.txt <span class="comment">#设置文件权限，只设置文件所有者具有读取、写入权限即可</span></span><br></pre></td></tr></table></figure>
+<p>5、测试源服务器192.168.21.129到两台目标服务器192.168.21.127，192.168.21.128之间的数据同步</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">mkdir /home/www<span class="selector-class">.osyunwei</span>.com/ceshi #在源服务器上创建测试文件夹，然后在源服务器运行下面<span class="number">2</span>行命令</span><br><span class="line"></span><br><span class="line">rsync -avH <span class="attr">--port</span>=<span class="number">873</span> <span class="attr">--progress</span> <span class="attr">--delete</span>  /home/www<span class="selector-class">.osyunwei</span>.com/  home_www<span class="selector-class">.osyunwei</span>.com_user@<span class="number">192.168</span>.<span class="number">21.127</span>::home_www<span class="selector-class">.osyunwei</span><span class="selector-class">.com</span> <span class="attr">--password-file</span>=/etc/passwd<span class="selector-class">.txt</span></span><br><span class="line"></span><br><span class="line">rsync -avH <span class="attr">--port</span>=<span class="number">873</span> <span class="attr">--progress</span> <span class="attr">--delete</span>  /home/www<span class="selector-class">.osyunwei</span>.com/  home_www<span class="selector-class">.osyunwei</span>.com_user@<span class="number">192.168</span>.<span class="number">21.128</span>::home_www<span class="selector-class">.osyunwei</span><span class="selector-class">.com</span> <span class="attr">--password-file</span>=/etc/passwd.txt</span><br></pre></td></tr></table></figure>
+<p>运行完成后，分别在两台目标服务器192.168.21.127，192.168.21.128上查看，在<code>/home/www.osyunwei.com</code>目录下有ceshi文件夹，说明数据同步成功。</p>
+<h3 id="二、安装Inotify-tools工具，实时触发rsync进行同步"><a href="#二、安装Inotify-tools工具，实时触发rsync进行同步" class="headerlink" title="二、安装Inotify-tools工具，实时触发rsync进行同步"></a>二、安装Inotify-tools工具，实时触发rsync进行同步</h3><p>1、查看服务器内核是否支持inotify</p>
+<figure class="highlight tap"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">ll /proc/sys/fs/inotify   <span class="comment">#列出文件目录，出现下面的内容，说明服务器内核支持inotify</span></span><br><span class="line"></span><br><span class="line">-rw-r--r--<span class="number"> 1 </span>root root<span class="number"> 0 </span>Mar <span class="number"> 7 </span>02:17 max_queued_events</span><br><span class="line"></span><br><span class="line">-rw-r--r--<span class="number"> 1 </span>root root<span class="number"> 0 </span>Mar <span class="number"> 7 </span>02:17 max_user_instances</span><br><span class="line"></span><br><span class="line">-rw-r--r--<span class="number"> 1 </span>root root<span class="number"> 0 </span>Mar <span class="number"> 7 </span>02:17 max_user_watches</span><br></pre></td></tr></table></figure>
+<p>备注：Linux下支持inotify的内核最小为2.6.13，可以输入命令：<code>uname -a</code>查看内核</p>
+<p>CentOS 5.X 内核为2.6.18，默认已经支持inotify</p>
+<p>2、安装inotify-tools</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum <span class="keyword">install</span> make  gcc gcc-c++  <span class="comment">#安装编译工具</span></span><br></pre></td></tr></table></figure>
+<p>inotify-tools下载地址：<a target="_blank" rel="noopener" href="http://github.com/downloads/rvoicilas/inotify-tools/inotify-tools-3.14.tar.gz">http://github.com/downloads/rvoicilas/inotify-tools/inotify-tools-3.14.tar.gz</a></p>
+<p>上传inotify-tools-3.14.tar.gz到<code>/usr/local/src</code>目录下</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">cd <span class="regexp">/usr/</span>local/src</span><br><span class="line"></span><br><span class="line">tar zxvf inotify-tools-<span class="number">3.14</span>.tar.gz  <span class="comment">#解压</span></span><br><span class="line"></span><br><span class="line">cd inotify-tools-<span class="number">3.14</span> <span class="comment">#进入解压目录</span></span><br><span class="line"></span><br><span class="line">.<span class="regexp">/configure --prefix=/u</span>sr<span class="regexp">/local/i</span>notify  <span class="comment">#配置</span></span><br><span class="line"></span><br><span class="line">make  <span class="comment">#编译</span></span><br><span class="line"></span><br><span class="line">make install  <span class="comment">#安装</span></span><br></pre></td></tr></table></figure>
+<p>3、设置系统环境变量，添加软连接</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">echo <span class="string">&quot;PATH=/usr/local/inotify/bin:$PATH&quot;</span> &gt;&gt;<span class="regexp">/etc/</span>profile.d/inotify.sh</span><br><span class="line"></span><br><span class="line">source <span class="regexp">/etc/</span>profile.d/inotify.sh  <span class="comment">#使设置立即生效</span></span><br><span class="line"></span><br><span class="line">echo <span class="string">&quot;/usr/local/inotify/lib&quot;</span> &gt;<span class="regexp">/etc/</span>ld.so.conf.d/inotify.conf</span><br><span class="line"></span><br><span class="line">ln -s <span class="regexp">/usr/</span>local<span class="regexp">/inotify/i</span>nclude  <span class="regexp">/usr/i</span>nclude/inotify</span><br></pre></td></tr></table></figure>
+<p>4、修改inotify默认参数（inotify默认内核参数值太小）</p>
+<p>查看系统默认参数值</p>
+<p><code>sysctl -a | grep max_queued_events</code></p>
+<p>结果是：<code>fs.inotify.max_queued_events = 16384</code></p>
+<p><code>sysctl -a | grep max_user_watches</code></p>
+<p>结果是：<code>fs.inotify.max_user_watches = 8192</code></p>
+<p><code>sysctl -a | grep max_user_instances</code></p>
+<p>结果是：<code>fs.inotify.max_user_instances = 128</code></p>
+<p>修改参数：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">sysctl -w fs.inotify.<span class="attribute">max_queued_events</span>=<span class="string">&quot;99999999&quot;</span></span><br><span class="line"></span><br><span class="line">sysctl -w fs.inotify.<span class="attribute">max_user_watches</span>=<span class="string">&quot;99999999&quot;</span></span><br><span class="line"></span><br><span class="line">sysctl -w fs.inotify.<span class="attribute">max_user_instances</span>=<span class="string">&quot;65535&quot;</span></span><br><span class="line"></span><br><span class="line">vi /etc/sysctl.conf #添加以下代码</span><br><span class="line"></span><br><span class="line">fs.inotify.<span class="attribute">max_queued_events</span>=99999999</span><br><span class="line"></span><br><span class="line">fs.inotify.<span class="attribute">max_user_watches</span>=99999999</span><br><span class="line"></span><br><span class="line">fs.inotify.<span class="attribute">max_user_instances</span>=65535</span><br><span class="line"></span><br><span class="line">:wq! #保存退出</span><br></pre></td></tr></table></figure>
+<p>参数说明：</p>
+<p>max_queued_events：</p>
+<p>inotify队列最大长度，如果值太小，会出现<strong>Event Queue Overflow</strong>错误，导致监控文件不准确</p>
+<p>max_user_watches：<br>要同步的文件包含多少目录，可以用：<code>find /home/www.osyunwei.com -type d | wc -l</code> 统计，必须保证max_user_watches值大于统计结果（这里<code>/home/www.osyunwei.com</code>为同步文件目录）</p>
+<p>max_user_instances：<br>每个用户创建inotify实例最大值</p>
+<p>5、创建脚本，实时触发rsync进行同步<br><code>vi /usr/local/inotify/rsync.sh   #编辑，添加以下代码</code></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/sh</span></span><br><span class="line"></span><br><span class="line">srcdir=/home/www.osyunwei.com/</span><br><span class="line"></span><br><span class="line">dstdir=home_www.osyunwei.com</span><br><span class="line"></span><br><span class="line">rsyncuser=home_www.osyunwei.com_user</span><br><span class="line"></span><br><span class="line">rsyncpassdir=/etc/passwd.txt</span><br><span class="line"></span><br><span class="line">dstip=<span class="string">&quot;192.168.21.127 192.168.21.128&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> ip <span class="keyword">in</span> <span class="variable">$dstip</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">do</span></span><br><span class="line"></span><br><span class="line">rsync -avH --port=873 --progress --delete  <span class="variable">$srcdir</span> <span class="variable">$rsyncuser</span>@<span class="variable">$ip</span>::<span class="variable">$dstdir</span> --password-file=<span class="variable">$rsyncpassdir</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">done</span></span><br><span class="line"></span><br><span class="line">/usr/local/inotify/bin/inotifywait -mrq --timefmt <span class="string">&#x27;%d/%m/%y %H:%M&#x27;</span> --format <span class="string">&#x27;%T %w%f%e&#x27;</span> -e close_write,modify,delete,create,attrib,move <span class="variable">$srcdir</span> |  <span class="keyword">while</span> <span class="built_in">read</span> file</span><br><span class="line"></span><br><span class="line"><span class="keyword">do</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> ip <span class="keyword">in</span> <span class="variable">$dstip</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">do</span></span><br><span class="line"></span><br><span class="line">rsync -avH --port=873 --progress --delete  <span class="variable">$srcdir</span> <span class="variable">$rsyncuser</span>@<span class="variable">$ip</span>::<span class="variable">$dstdir</span> --password-file=<span class="variable">$rsyncpassdir</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;  <span class="variable">$&#123;file&#125;</span> was rsynced&quot;</span> &gt;&gt; /tmp/rsync.log 2&gt;&amp;1</span><br><span class="line"></span><br><span class="line"><span class="keyword">done</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">done</span></span><br></pre></td></tr></table></figure>
+
+<p><code>chmod +x /usr/local/inotify/rsync.sh   #添加脚本执行权限</code></p>
+<p>脚本参数说明：</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">srcdir=<span class="regexp">/home/</span>www.osyunwei.com/  <span class="comment">#源服务器同步目录</span></span><br><span class="line"></span><br><span class="line">dstdir=home_www.osyunwei.com    <span class="comment">#目标服务器rsync同步目录模块名称</span></span><br><span class="line"></span><br><span class="line">rsyncuser=home_www.osyunwei.com_user  <span class="comment">#目标服务器rsync同步用户名</span></span><br><span class="line"></span><br><span class="line">rsyncpassdir=<span class="regexp">/etc/</span>passwd.txt  <span class="comment">#目标服务器rsync同步用户的密码在源服务器的存放路径</span></span><br><span class="line"></span><br><span class="line">dstip=<span class="string">&quot;192.168.21.127 192.168.21.128&quot;</span>  <span class="comment">#目标服务器ip，多个ip用空格分开</span></span><br><span class="line"></span><br><span class="line"><span class="regexp">/tmp/</span>rsync.log  <span class="comment">#脚本运行日志记录</span></span><br></pre></td></tr></table></figure>
+
+<p>6、设置脚本开机自动执行</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">vi <span class="regexp">/etc/</span>rc.d/rc.local  <span class="comment">#编辑，在最后添加一行</span></span><br><span class="line"></span><br><span class="line">sh <span class="regexp">/usr/</span>local<span class="regexp">/inotify/</span>rsync.sh &amp; ＃设置开机自动在后台运行脚本</span><br><span class="line"></span><br><span class="line">:wq!  <span class="comment">#保存退出</span></span><br></pre></td></tr></table></figure>
+<p>7、测试inotify实时触发rsync同步脚本是否正常运行</p>
+<p>在源服务器192.168.21.129上创建文件inotify_rsync_ceshi</p>
+<p><code>mkdir /home/www.osyunwei.com/inotify_rsync_ceshi</code></p>
+<p>重新启动源服务器：192.168.21.129</p>
+<p>等系统启动之后，查看两台目标服务器192.168.21.127，192.168.21.128的<code>/home/www.osyunwei.com</code>下是否有inotify_rsync_ceshi文件夹</p>
+<p>然后再在源服务器192.168.21.129创建文件夹inotify_rsync_ceshi_new</p>
+<p><code>mkdir /home/www.osyunwei.com/inotify_rsync_ceshi_new</code></p>
+<p>继续查看两台目标服务器192.168.21.127，192.168.21.128的<code>/home/www.osyunwei.com</code>下是否有inotify_rsync_ceshi_new文件夹</p>
+<p>如果以上测试都通过，说明inotify实时触发rsync同步脚本运行正常。</p>
+<p>至此，Linux下Rsync+Inotify-tools实现数据实时同步完成。</p>
+<p>扩展阅读：</p>
+<p>inotify参数</p>
+<figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="deletion">-m 是保持一直监听</span></span><br><span class="line"></span><br><span class="line"><span class="deletion">-r 是递归查看目录</span></span><br><span class="line"></span><br><span class="line"><span class="deletion">-q 是打印出事件</span></span><br><span class="line"></span><br><span class="line"><span class="deletion">-e create,move,delete,modify,attrib 是指 “监听 创建 移动 删除 写入 权限” 事件</span></span><br></pre></td></tr></table></figure>
+
+<p>rsync参数</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br></pre></td><td class="code"><pre><span class="line">-v, <span class="attr">--verbose</span> 详细模式输出</span><br><span class="line"></span><br><span class="line">-<span class="selector-tag">q</span>, <span class="attr">--quiet</span> 精简输出模式</span><br><span class="line"></span><br><span class="line">-c, <span class="attr">--checksum</span> 打开校验开关，强制对文件传输进行校验</span><br><span class="line"></span><br><span class="line">-<span class="selector-tag">a</span>, <span class="attr">--archive</span> 归档模式，表示以递归方式传输文件，并保持所有文件属性，等于-rlptgoD</span><br><span class="line"></span><br><span class="line">-r, <span class="attr">--recursive</span> 对子目录以递归模式处理</span><br><span class="line"></span><br><span class="line">-R, <span class="attr">--relative</span> 使用相对路径信息</span><br><span class="line"></span><br><span class="line">-<span class="selector-tag">b</span>, <span class="attr">--backup</span> 创建备份，也就是对于目的已经存在有同样的文件名时，将老的文件重新命名为~filename。可以使用<span class="attr">--suffix</span>选项来指定不同的备份文件前缀。</span><br><span class="line"></span><br><span class="line"><span class="attr">--backup-dir</span> 将备份文件(如~filename)存放在在目录下。</span><br><span class="line"></span><br><span class="line">-suffix=SUFFIX 定义备份文件前缀</span><br><span class="line"></span><br><span class="line">-u, <span class="attr">--update</span> 仅仅进行更新，也就是跳过所有已经存在于DST，并且文件时间晚于要备份的文件。(不覆盖更新的文件)</span><br><span class="line"></span><br><span class="line">-l, <span class="attr">--links</span> 保留软链结</span><br><span class="line"></span><br><span class="line">-L, <span class="attr">--copy-links</span> 想对待常规文件一样处理软链结</span><br><span class="line"></span><br><span class="line"><span class="attr">--copy-unsafe-links</span> 仅仅拷贝指向SRC路径目录树以外的链结</span><br><span class="line"></span><br><span class="line"><span class="attr">--safe-links</span> 忽略指向SRC路径目录树以外的链结</span><br><span class="line"></span><br><span class="line">-H, <span class="attr">--hard-links</span> 保留硬链结</span><br><span class="line"></span><br><span class="line">-<span class="selector-tag">p</span>, <span class="attr">--perms</span> 保持文件权限</span><br><span class="line"></span><br><span class="line">-o, <span class="attr">--owner</span> 保持文件属主信息</span><br><span class="line"></span><br><span class="line">-g, <span class="attr">--group</span> 保持文件属组信息</span><br><span class="line"></span><br><span class="line">-D, <span class="attr">--devices</span> 保持设备文件信息</span><br><span class="line"></span><br><span class="line">-t, <span class="attr">--times</span> 保持文件时间信息</span><br><span class="line"></span><br><span class="line">-S, <span class="attr">--sparse</span> 对稀疏文件进行特殊处理以节省DST的空间</span><br><span class="line"></span><br><span class="line">-n, <span class="attr">--dry-run</span>现实哪些文件将被传输</span><br><span class="line"></span><br><span class="line">-W, <span class="attr">--whole-file</span> 拷贝文件，不进行增量检测</span><br><span class="line"></span><br><span class="line">-x, <span class="attr">--one-file-system</span> 不要跨越文件系统边界</span><br><span class="line"></span><br><span class="line">-B, <span class="attr">--block-size</span>=SIZE 检验算法使用的块尺寸，默认是<span class="number">700</span>字节</span><br><span class="line"></span><br><span class="line">-e, <span class="attr">--rsh</span>=COMMAND 指定使用rsh、ssh方式进行数据同步</span><br><span class="line"></span><br><span class="line"><span class="attr">--rsync-path</span>=PATH 指定远程服务器上的rsync命令所在路径信息</span><br><span class="line"></span><br><span class="line">-C, <span class="attr">--cvs-exclude</span> 使用和CVS一样的方法自动忽略文件，用来排除那些不希望传输的文件</span><br><span class="line"></span><br><span class="line"><span class="attr">--existing</span> 仅仅更新那些已经存在于DST的文件，而不备份那些新创建的文件</span><br><span class="line"></span><br><span class="line"><span class="attr">--delete</span> 删除那些DST中SRC没有的文件</span><br><span class="line"></span><br><span class="line"><span class="attr">--delete-excluded</span> 同样删除接收端那些被该选项指定排除的文件</span><br><span class="line"></span><br><span class="line"><span class="attr">--delete-after</span> 传输结束以后再删除</span><br><span class="line"></span><br><span class="line"><span class="attr">--ignore-errors</span> 及时出现IO错误也进行删除</span><br><span class="line"></span><br><span class="line"><span class="attr">--max-delete</span>=NUM 最多删除NUM个文件</span><br><span class="line"></span><br><span class="line"><span class="attr">--partial</span> 保留那些因故没有完全传输的文件，以是加快随后的再次传输</span><br><span class="line"></span><br><span class="line"><span class="attr">--force</span> 强制删除目录，即使不为空</span><br><span class="line"></span><br><span class="line"><span class="attr">--numeric-ids</span> 不将数字的用户和组ID匹配为用户名和组名</span><br><span class="line"></span><br><span class="line"><span class="attr">--timeout</span>=TIME IP超时时间，单位为秒</span><br><span class="line"></span><br><span class="line">-I, <span class="attr">--ignore-times</span> 不跳过那些有同样的时间和长度的文件</span><br><span class="line"></span><br><span class="line"><span class="attr">--size-only</span> 当决定是否要备份文件时，仅仅察看文件大小而不考虑文件时间</span><br><span class="line"></span><br><span class="line"><span class="attr">--modify-window</span>=NUM 决定文件是否时间相同时使用的时间戳窗口，默认为<span class="number">0</span></span><br><span class="line"></span><br><span class="line">-T <span class="attr">--temp-dir</span>=DIR 在DIR中创建临时文件</span><br><span class="line"></span><br><span class="line"><span class="attr">--compare-dest</span>=DIR 同样比较DIR中的文件来决定是否需要备份</span><br><span class="line"></span><br><span class="line">-P 等同于 <span class="attr">--partial</span></span><br><span class="line"></span><br><span class="line"><span class="attr">--progress</span> 显示备份过程</span><br><span class="line"></span><br><span class="line">-z, <span class="attr">--compress</span> 对备份的文件在传输时进行压缩处理</span><br><span class="line"></span><br><span class="line"><span class="attr">--exclude</span>=PATTERN 指定排除不需要传输的文件模式</span><br><span class="line"></span><br><span class="line"><span class="attr">--include</span>=PATTERN 指定不排除而需要传输的文件模式</span><br><span class="line"></span><br><span class="line"><span class="attr">--exclude-from</span>=FILE 排除FILE中指定模式的文件</span><br><span class="line"></span><br><span class="line"><span class="attr">--include-from</span>=FILE 不排除FILE指定模式匹配的文件</span><br><span class="line"></span><br><span class="line"><span class="attr">--version</span> 打印版本信息</span><br><span class="line"></span><br><span class="line"><span class="attr">--address</span> 绑定到特定的地址</span><br><span class="line"></span><br><span class="line"><span class="attr">--config</span>=FILE 指定其他的配置文件，不使用默认的rsyncd.conf文件</span><br><span class="line"></span><br><span class="line"><span class="attr">--port</span>=PORT 指定其他的rsync服务端口</span><br><span class="line"></span><br><span class="line"><span class="attr">--blocking-io</span> 对远程shell使用阻塞IO</span><br><span class="line"></span><br><span class="line">-stats 给出某些文件的传输状态</span><br><span class="line"></span><br><span class="line"><span class="attr">--progress</span> 在传输时现实传输过程</span><br><span class="line"></span><br><span class="line"><span class="attr">--log-format</span>=formAT 指定日志文件格式</span><br><span class="line"></span><br><span class="line"><span class="attr">--password-file</span>=FILE 从FILE中得到密码</span><br><span class="line"></span><br><span class="line"><span class="attr">--bwlimit</span>=KBPS 限制I/O带宽，KBytes per second</span><br><span class="line"></span><br><span class="line">-h, <span class="attr">--help</span> 显示帮助信息</span><br></pre></td></tr></table></figure>
+<p>» 本文链接：<a target="_blank" rel="noopener" href="http://www.osyunwei.com/archives/7435.html">http://www.osyunwei.com/archives/7435.html</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/09/17/Linux%E4%B8%8BRsync-Inotify-tools%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E5%AE%9E%E6%97%B6%E5%90%8C%E6%AD%A5/" data-id="cl9pgent000liycv1ejyk1iiw" data-title="Linux下Rsync+Inotify-tools实现数据实时同步" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E9%9B%86%E7%BE%A4/" rel="tag">集群</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/09/17/MongoDB%E7%9A%84MapReduce%E7%94%A8%E6%B3%95%E5%8F%8Aphp%E7%A4%BA%E4%BE%8B%E4%BB%A3%E7%A0%81/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          MongoDB的MapReduce用法及php示例代码
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/09/16/%E9%80%9A%E8%BF%87rsync-inotify%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E7%9A%84%E5%AE%9E%E6%97%B6%E5%A4%87%E4%BB%BD%EF%BC%88%E5%A4%9A%E5%8F%B0%E5%A4%87%E4%BB%BD%E6%9C%BA%EF%BC%89/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">通过rsync+inotify实现数据的实时备份（多台备份机）</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

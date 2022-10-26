@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>通过rsync+inotify实现数据的实时备份（多台备份机） | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="在前面的博文中，我讲到过利用rsync实现数据的镜像和备份，但是要实现数据的实时备份，单独靠rsync还不能实现，本文就讲述下如何实现数据的实时备份。 一、rsync的优点与不足 与传统的cp、tar备份方式相比，rsync具有安全性高、备份迅速、支持增量备份等优点，通过rsync可以解决对实时性要求不高的数据备份需求，例如定期的备份文件服务器数据到远端服务器，对本地磁盘定期做数据镜像等。 随着应">
+<meta property="og:type" content="article">
+<meta property="og:title" content="通过rsync+inotify实现数据的实时备份（多台备份机）">
+<meta property="og:url" content="http://moqiang02.github.io/2014/09/16/%E9%80%9A%E8%BF%87rsync-inotify%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E7%9A%84%E5%AE%9E%E6%97%B6%E5%A4%87%E4%BB%BD%EF%BC%88%E5%A4%9A%E5%8F%B0%E5%A4%87%E4%BB%BD%E6%9C%BA%EF%BC%89/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="在前面的博文中，我讲到过利用rsync实现数据的镜像和备份，但是要实现数据的实时备份，单独靠rsync还不能实现，本文就讲述下如何实现数据的实时备份。 一、rsync的优点与不足 与传统的cp、tar备份方式相比，rsync具有安全性高、备份迅速、支持增量备份等优点，通过rsync可以解决对实时性要求不高的数据备份需求，例如定期的备份文件服务器数据到远端服务器，对本地磁盘定期做数据镜像等。 随着应">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E9%80%9A%E8%BF%87rsync+inotify%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E7%9A%84%E5%AE%9E%E6%97%B6%E5%A4%87%E4%BB%BD/1.jpg">
+<meta property="article:published_time" content="2014-09-16T14:53:54.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:54.189Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="集群">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/%E9%80%9A%E8%BF%87rsync+inotify%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E7%9A%84%E5%AE%9E%E6%97%B6%E5%A4%87%E4%BB%BD/1.jpg">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-通过rsync-inotify实现数据的实时备份（多台备份机）" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2014/09/16/%E9%80%9A%E8%BF%87rsync-inotify%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E7%9A%84%E5%AE%9E%E6%97%B6%E5%A4%87%E4%BB%BD%EF%BC%88%E5%A4%9A%E5%8F%B0%E5%A4%87%E4%BB%BD%E6%9C%BA%EF%BC%89/" class="article-date">
+  <time class="dt-published" datetime="2014-09-16T14:53:54.000Z" itemprop="datePublished">2014-09-16</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/linux/">linux</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      通过rsync+inotify实现数据的实时备份（多台备份机）
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <p>在前面的博文中，我讲到过利用rsync实现数据的镜像和备份，但是要实现数据的实时备份，单独靠rsync还不能实现，本文就讲述下如何实现数据的实时备份。</p>
+<h3 id="一、rsync的优点与不足"><a href="#一、rsync的优点与不足" class="headerlink" title="一、rsync的优点与不足"></a>一、rsync的优点与不足</h3><p> 与传统的cp、tar备份方式相比，rsync具有安全性高、备份迅速、支持增量备份等优点，通过rsync可以解决对实时性要求不高的数据备份需求，例如定期的备份文件服务器数据到远端服务器，对本地磁盘定期做数据镜像等。<br> 随着应用系统规模的不断扩大，对数据的安全性和可靠性也提出的更好的要求，rsync在高端业务系统中也逐渐暴露出了很多不足，首先，rsync同步数据时，需要扫描所有文件后进行比对，进行差量传输。如果文件数量达到了百万甚至千万量级，扫描所有文件将是非常耗时的。而且正在发生变化的往往是其中很少的一部分，这是非常低效的方式。其次，rsync不能实时的去监测、同步数据，虽然它可以通过linux守护进程的方式进行触发同步，但是两次触发动作一定会有时间差，这样就导致了服务端和客户端数据可能出现不一致，无法在应用故障时完全的恢复数据。基于以上原因，rsync+inotify组合出现了！</p>
+<span id="more"></span>
+<h3 id="二、-初识inotify"><a href="#二、-初识inotify" class="headerlink" title="二、 初识inotify"></a>二、 初识inotify</h3><p> Inotify 是一种强大的、细粒度的、异步的文件系统事件监控机制，linux内核从2.6.13起，加入了Inotify支持，通过Inotify可以监控文件系统中添加、删除，修改、移动等各种细微事件，利用这个内核接口，第三方软件就可以监控文件系统下文件的各种变化情况，而inotify-tools就是这样的一个第三方软件。<br>在上面章节中，我们讲到，rsync可以实现触发式的文件同步，但是通过crontab守护进程方式进行触发，同步的数据和实际数据会有差异，而inotify可以监控文件系统的各种变化，当文件有任何变动时，就触发rsync同步，这样刚好解决了同步数据的实时性问题。</p>
+<h3 id="三、-安装inotify工具inotify-tools"><a href="#三、-安装inotify工具inotify-tools" class="headerlink" title="三、 安装inotify工具inotify-tools"></a>三、 安装inotify工具inotify-tools</h3><p> 由于inotify特性需要Linux内核的支持，在安装inotify-tools前要先确认Linux系统内核是否达到了2.6.13以上，如果Linux内核低于2.6.13版本，就需要重新编译内核加入inotify的支持，也可以用如下方法判断，内核是否支持inotify：</p>
+<figure class="highlight tap"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost webdata]<span class="comment"># uname -r</span></span><br><span class="line">2.6.18-164.11.1.el5PAE</span><br><span class="line">[root@localhost webdata]<span class="comment"># ll /proc/sys/fs/inotify</span></span><br><span class="line">总计 0</span><br><span class="line">-rw-r--r--<span class="number"> 1 </span>root root<span class="number"> 0 </span>04-13 19:56 max_queued_events</span><br><span class="line">-rw-r--r--<span class="number"> 1 </span>root root<span class="number"> 0 </span>04-13 19:56 max_user_instances</span><br><span class="line">-rw-r--r--<span class="number"> 1 </span>root root<span class="number"> 0 </span>04-13 19:56 max_user_watches</span><br></pre></td></tr></table></figure>
+<p>如果有上面三项输出，表示系统已经默认支持inotify，接着就可以开始安装inotify-tools了。<br>可以到<a target="_blank" rel="noopener" href="http://inotify-tools.sourceforge.net/">http://inotify-tools.sourceforge.net/</a> 下载相应的inotify-tools版本，然后开始编译安装：</p>
+<figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost  ~]# tar zxvf inotify-tools-3.14.tar.gz </span><br><span class="line">[root@localhost  ~]# cd inotify-tools-3.14</span><br><span class="line">[root@localhost inotify-tools-3.14]# ./configure</span><br><span class="line">[root@localhost inotify-tools-3.14]# make</span><br><span class="line">[root@localhost inotify-tools-3.14]# make install</span><br><span class="line">[root@localhost inotify-tools-3.14]# ll /usr/local/bin/inotifywa*</span><br><span class="line">-rwxr-xr-x 1 root root 37264 04-14 13:42 /usr/local/bin/inotifywait</span><br><span class="line">-rwxr-xr-x 1 root root 35438 04-14 13:42 /usr/local/bin/inotifywatch</span><br></pre></td></tr></table></figure>
+<p>inotify-tools安装完成后，会生成inotifywait和inotifywatch两个指令，其中，inotifywait用于等待文件或文件集上的一个特定事件，它可以监控任何文件和目录设置，并且可以递归地监控整个目录树。<br>inotifywatch用于收集被监控的文件系统统计数据，包括每个inotify事件发生多少次等信息。</p>
+<h3 id="四、-inotify相关参数"><a href="#四、-inotify相关参数" class="headerlink" title="四、 inotify相关参数"></a>四、 inotify相关参数</h3><p>inotify定义了下列的接口参数，可以用来限制inotify消耗kernel memory的大小。由于这些参数都是内存参数，因此，可以根据应用需求，实时的调节其大小。下面分别做简单介绍。<br><code>/proc/sys/fs/inotify/max_queued_evnets </code><br>表示调用inotify_init时分配给inotify instance中可排队的event的数目的最大值，超出这个值的事件被丢弃，但会触发IN_Q_OVERFLOW事件。<br><code>/proc/sys/fs/inotify/max_user_instances</code><br>表示每一个real user ID可创建的inotify instatnces的数量上限。<br><code>/proc/sys/fs/inotify/max_user_watches</code><br>表示每个inotify instatnces可监控的最大目录数量。如果监控的文件数目巨大，需要根据情况，适当增加此值的大小，例如：<br><code>echo 30000000 &gt; /proc/sys/fs/inotify/max_user_watches</code></p>
+<h3 id="五、-inotifywait相关参数"><a href="#五、-inotifywait相关参数" class="headerlink" title="五、 inotifywait相关参数"></a>五、 inotifywait相关参数</h3><p>Inotifywait是一个监控等待事件，可以配合shell脚本使用它，下面介绍一下常用的一些参数：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">-m， 即--monitor，表示始终保持事件监听状态。</span><br><span class="line">-r， 即--recursive，表示递归查询目录。</span><br><span class="line">-q， 即--quiet，表示打印出监控事件。</span><br><span class="line">-e， 即--event，通过此参数可以指定要监控的事件，常见的事件有modify、delete、create、attrib等。</span><br></pre></td></tr></table></figure>
+<p>更详细的请参看<code>man inotifywait</code>。</p>
+<h3 id="六、-rsync-inotify企业应用案例"><a href="#六、-rsync-inotify企业应用案例" class="headerlink" title="六、 rsync+inotify企业应用案例"></a>六、 rsync+inotify企业应用案例</h3><p> 案例描述<br>这是一个CMS内容发布系统，后端采用负载均衡集群部署方案，有一个负载调度节点和三个服务节点以及一个内容发布节点构成，内容发布节点负责将用户发布的数据生成静态页面，同时将静态网页传输到三台服务节点，而负载调度节点负责将用户请求根据负载算法调度到相应的服务节点，实现用户访问。用户要求在前端访问到的网页数据始终是最新的、一致的。<br>解决方案<br>为了保证用户访问到的数据一致性和实时性，必须保证三个服务节点与内容发布节点的数据始终是一致的，这就需要通过文件同步工具来实现，这里采用rsync，同时又要保证数据是实时的，这就需要inotify，即：使用inotify监视内容发布节点文件的变化，如果文件有变动，那么就启动rsync，将文件实时同步到三个服务节点。<br>系统环境<br>这里所有服务器均采用Linux操作系统，系统内核版本与节点信息如表1 所示：<br>表1<br><img src="/images/%E9%80%9A%E8%BF%87rsync+inotify%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E7%9A%84%E5%AE%9E%E6%97%B6%E5%A4%87%E4%BB%BD/1.jpg"></p>
+<p>1 安装rsync与inotify-tools<br>inotify-tools是用来监控文件系统变化的工具，因此必须安装在内容发布节点，服务节点无需安装inotify-tools，另外需要在web1、web2、web3、webserver节点上安装rsync，由于安装非常简单，这里不在讲述。<br>在这个案例中，内容发布节点（即server）充当了rsync客户端的角色，而三个服务节点充当了rsync服务器端的角色，整个数据同步的过程，其实就是一个从客户端向服务端推送数据的过程。这点与上面我们讲述的案例刚好相反。</p>
+<p>2 在三个服务节点配置rsync<br> 这里给出三个服务节点的rsync配置文件，以供参考，读者可根据实际情况自行修改。<br>Web1节点rsyncd.conf配置如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line">uid = nobody</span><br><span class="line">gid = nobody</span><br><span class="line">use chroot = no</span><br><span class="line">max connections = 10</span><br><span class="line">strict modes = yes</span><br><span class="line">pid file = /var/run/rsyncd.pid</span><br><span class="line">lock file = /var/run/rsync.lock</span><br><span class="line">log file = /var/log/rsyncd.log</span><br><span class="line"></span><br><span class="line">[web1]</span><br><span class="line">path = /web1/wwwroot/</span><br><span class="line">comment = web1 file</span><br><span class="line">ignore errors</span><br><span class="line">read only = no</span><br><span class="line">write only = no</span><br><span class="line">hosts allow = 192.168.12.134</span><br><span class="line">hosts deny = *</span><br><span class="line">list = false</span><br><span class="line">uid = root</span><br><span class="line">gid = root</span><br><span class="line">auth users = web1user</span><br><span class="line">secrets file = /etc/web1.pass</span><br><span class="line">Web2节点rsyncd.conf配置如下：</span><br><span class="line">uid = nobody</span><br><span class="line">gid = nobody</span><br><span class="line">use chroot = no</span><br><span class="line">max connections = 10</span><br><span class="line">strict modes = yes</span><br><span class="line">pid file = /var/run/rsyncd.pid</span><br><span class="line">lock file = /var/run/rsync.lock</span><br><span class="line">log file = /var/log/rsyncd.log</span><br><span class="line"></span><br><span class="line">[web2]</span><br><span class="line">path = /web2/wwwroot/</span><br><span class="line">comment = web2 file</span><br><span class="line">ignore errors</span><br><span class="line">read only = no</span><br><span class="line">write only = no</span><br><span class="line">hosts allow = 192.168.12.134</span><br><span class="line">hosts deny = *</span><br><span class="line">list = false</span><br><span class="line">uid = root</span><br><span class="line">gid = root</span><br><span class="line">auth users = web2user</span><br><span class="line">secrets file = /etc/web2.pass</span><br><span class="line">Web3节点rsyncd.conf配置如下：</span><br><span class="line">uid = nobody</span><br><span class="line">gid = nobody</span><br><span class="line">use chroot = no</span><br><span class="line">max connections = 10</span><br><span class="line">strict modes = yes</span><br><span class="line">pid file = /var/run/rsyncd.pid</span><br><span class="line">lock file = /var/run/rsync.lock</span><br><span class="line">log file = /var/log/rsyncd.log</span><br><span class="line"></span><br><span class="line">[web3]</span><br><span class="line">path = /web3/wwwroot/</span><br><span class="line">comment = web3 file</span><br><span class="line">ignore errors</span><br><span class="line">read only = no</span><br><span class="line">write only = no</span><br><span class="line">hosts allow = 192.168.12.134</span><br><span class="line">hosts deny = *</span><br><span class="line">list = false</span><br><span class="line">uid = root</span><br><span class="line">gid = root</span><br><span class="line">auth users = web3user</span><br><span class="line">secrets file = /etc/web3.pass</span><br></pre></td></tr></table></figure>
+<p>在三台服务节点rsyncd.conf文件配置完成后，依次启动rsync守护进程，接着将rsync服务加入到自启动文件中：<br><code>echo  “/usr/local/bin/rsync --daemon” &gt;&gt;/etc/rc.local</code><br>到此为止，三个web服务节点已经配置完成。</p>
+<p>3 配置内容发布节点<br> 配置内容发布节点的主要工作是将生成的静态网页实时的同步到集群中三个服务节点，这个过程可以通过一个shell脚本来完成，脚本内容大致如下：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/bin/bash</span></span><br><span class="line"><span class="attribute">host1</span>=192.168.12.131</span><br><span class="line"><span class="attribute">host2</span>=192.168.12.132</span><br><span class="line"><span class="attribute">host3</span>=192.168.12.133</span><br><span class="line"></span><br><span class="line"><span class="attribute">src</span>=/web/wwwroot/</span><br><span class="line"><span class="attribute">dst1</span>=web1</span><br><span class="line"><span class="attribute">dst2</span>=web2</span><br><span class="line"><span class="attribute">dst3</span>=web3</span><br><span class="line"><span class="attribute">user1</span>=web1user</span><br><span class="line"><span class="attribute">user2</span>=web3user</span><br><span class="line"><span class="attribute">user3</span>=web3user</span><br><span class="line"></span><br><span class="line">/usr/local/bin/inotifywait -mrq --timefmt <span class="string">&#x27;%d/%m/%y %H:%M&#x27;</span> --format <span class="string">&#x27;%T %w%f%e&#x27;</span> -e modify,delete,create,attrib  <span class="variable">$src</span> \</span><br><span class="line">| <span class="keyword">while</span> read files</span><br><span class="line"><span class="keyword">do</span></span><br><span class="line">/usr/bin/rsync -vzrtopg --delete --progress <span class="attribute">--password-file</span>=/etc/server.pass <span class="variable">$src</span><span class="variable">$user1</span>@<span class="variable">$host1</span>::<span class="variable">$dst1</span></span><br><span class="line">/usr/bin/rsync -vzrtopg --delete --progress <span class="attribute">--password-file</span>=/etc/server.pass <span class="variable">$src</span><span class="variable">$user2</span>@<span class="variable">$host2</span>::<span class="variable">$dst2</span></span><br><span class="line">/usr/bin/rsync -vzrtopg --delete --progress <span class="attribute">--password-file</span>=/etc/server.pass <span class="variable">$src</span><span class="variable">$user3</span>@<span class="variable">$host3</span>::<span class="variable">$dst3</span></span><br><span class="line">echo <span class="string">&quot;<span class="variable">$&#123;files&#125;</span> was rsynced&quot;</span> &gt;&gt;/tmp/rsync.log 2&gt;&amp;1</span><br><span class="line">done</span><br></pre></td></tr></table></figure>
+<p>脚本相关解释如下：<br><code>--timefmt</code>：指定时间的输出格式。<br><code>--format</code>：指定变化文件的详细信息。<br>这两个参数一般配合使用，通过指定输出格式，输出类似与：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">15</span>/<span class="number">04</span>/<span class="number">10</span> <span class="number">00</span>:<span class="number">29</span> /web/wwwroot/ixdba.shDELETE,ISDIR was rsynced</span><br><span class="line"><span class="attribute">15</span>/<span class="number">04</span>/<span class="number">10</span> <span class="number">00</span>:<span class="number">30</span> /web/wwwroot/index.htmlMODIFY was rsynced</span><br><span class="line"><span class="attribute">15</span>/<span class="number">04</span>/<span class="number">10</span> <span class="number">00</span>:<span class="number">31</span> /web/wwwroot/pcre-<span class="number">8</span>.<span class="number">02</span>.tar.gzCREATE was rsynced</span><br></pre></td></tr></table></figure>
+<p>这个脚本的作用就是通过inotify监控文件目录的变化，进而触发rsync进行同步操作，由于这个过程是一种主动触发操作，通过系统内核完成的，所以，比起那些遍历整个目录的扫描方式，效率要高很多。<br>有时会遇到这样的情况：向inotify监控的目录（这里是<code>/web/wwwroot/</code>）写入一个很大文件时，由于写入这个大文件需要一段时间，此时inotify就会持续不停的输出该文件被更新的信息， 这样就会持续不停的触发rsync去执行同步操作，占用了大量系统资源，那么针对这种情况，最理想的做法是等待文件写完后再去触发rsync同步。 在这种情况下，可以修改inotify的监控事件，即：“-e close_write,delete,create,attrib”。<br>接着，将这个脚本命名为inotifyrsync.sh，放到<code>/web/wwwroot</code>目录下，然后给定可执行权限，放到后台运行：<br><code>chmod 755 /web/wwwroot/inotifyrsync.sh</code><br><code>/web/wwwroot/inotifyrsync.sh &amp;</code><br>最后，将此脚本加入系统自启动文件：<br><code>echo  “/web/wwwroot/inotifyrsync.sh &amp;”&gt;&gt;/etc/rc.local</code><br>这样就完成了内容发布节点的所有配置工作。</p>
+<p>4 测试rsync+inotify实时同步功能<br> 所有配置完成后，可以在网页发布节点的<code>/web/wwwroot</code>目录下添加、删除或者修改某个文件，然后到三个服务节点对应的目录查看文件是否跟随网页发布节点的<code>/web/wwwroot</code>目录下文件发生变化，如果你看到三个服务节点对应的目录文件跟着内容发布节点目录文件同步变化，那么我们这个业务系统就配置成功了。</p>
+<p>出自 “技术成就梦想” 博客，请务必保留此出处<a target="_blank" rel="noopener" href="http://ixdba.blog.51cto.com/2895551/580280">http://ixdba.blog.51cto.com/2895551/580280</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/09/16/%E9%80%9A%E8%BF%87rsync-inotify%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E7%9A%84%E5%AE%9E%E6%97%B6%E5%A4%87%E4%BB%BD%EF%BC%88%E5%A4%9A%E5%8F%B0%E5%A4%87%E4%BB%BD%E6%9C%BA%EF%BC%89/" data-id="cl9pgeoem025oycv11way7afd" data-title="通过rsync+inotify实现数据的实时备份（多台备份机）" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E9%9B%86%E7%BE%A4/" rel="tag">集群</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/09/17/Linux%E4%B8%8BRsync-Inotify-tools%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E5%AE%9E%E6%97%B6%E5%90%8C%E6%AD%A5/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          Linux下Rsync+Inotify-tools实现数据实时同步
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/09/16/%E8%AE%B0%E4%B8%80%E6%AC%A1MongoDB%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">记一次MongoDB性能问题</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

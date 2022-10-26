@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Python广为使用的并发处理库futures使用入门与内部原理 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="在使用Python处理任务时，限于单线程处理能力有限，需要将任务并行化，分散到多个线程或者是多个进程去执行。concurrent.futures就是这样一种库，它可以让用户可以非常方便的将任务并行化。这个名字有点长，后面我直接使用词汇concurrent来代替concurrent.futures。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Python广为使用的并发处理库futures使用入门与内部原理">
+<meta property="og:url" content="http://moqiang02.github.io/2018/01/19/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="在使用Python处理任务时，限于单线程处理能力有限，需要将任务并行化，分散到多个线程或者是多个进程去执行。concurrent.futures就是这样一种库，它可以让用户可以非常方便的将任务并行化。这个名字有点长，后面我直接使用词汇concurrent来代替concurrent.futures。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/1.webp">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/2.webp">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/3.webp">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/4.webp">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/5.webp">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/6.webp">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/7.webp">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/8.webp">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/9.webp">
+<meta property="article:published_time" content="2018-01-19T02:21:18.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.867Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/1.webp">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Python广为使用的并发处理库futures使用入门与内部原理" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2018/01/19/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/" class="article-date">
+  <time class="dt-published" datetime="2018-01-19T02:21:18.000Z" itemprop="datePublished">2018-01-19</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/python/">python</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Python广为使用的并发处理库futures使用入门与内部原理
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%9A%E7%BA%BF%E7%A8%8B"><span class="toc-number">1.</span> <span class="toc-text">多线程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%9A%E8%BF%9B%E7%A8%8B"><span class="toc-number">2.</span> <span class="toc-text">多进程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B7%B1%E5%85%A5%E5%8E%9F%E7%90%86"><span class="toc-number">3.</span> <span class="toc-text">深入原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%86%85%E9%83%A8%E7%BB%93%E6%9E%84"><span class="toc-number">4.</span> <span class="toc-text">线程池内部结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BA%BF%E7%A8%8B%E6%B1%A0%E7%9A%84%E7%BC%BA%E7%82%B9"><span class="toc-number">5.</span> <span class="toc-text">线程池的缺点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BF%9B%E7%A8%8B%E6%B1%A0%E5%86%85%E9%83%A8%E7%BB%93%E6%9E%84"><span class="toc-number">6.</span> <span class="toc-text">进程池内部结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%B7%A8%E8%BF%9B%E7%A8%8B%E9%98%9F%E5%88%97"><span class="toc-number">7.</span> <span class="toc-text">跨进程队列</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">8.</span> <span class="toc-text">总结</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <p>在使用Python处理任务时，限于单线程处理能力有限，需要将任务并行化，分散到多个线程或者是多个进程去执行。<br>concurrent.futures就是这样一种库，它可以让用户可以非常方便的将任务并行化。这个名字有点长，后面我直接使用词汇concurrent来代替concurrent.futures。<span id="more"></span><br><img src="/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/1.webp"><br>concurrent提供了两种并发模型，一个是多线程ThreadPoolExecutor，一个是多进程ProcessPoolExecutor(实测：爬虫用这种快)。对于IO密集型任务宜使用多线程模型。对于计算密集型任务应该使用多进程模型。<br>为什么要这样选择呢？是因为Python GIL的存在让Python虚拟机在进行运算时无法有效利用多核心。对于纯计算任务，它永远最多只能榨干单个CPU核心。如果要突破这个瓶颈，就必须fork出多个子进程来分担计算任务。而对于IO密集型任务，CPU使用率往往是极低的，使用多线程虽然会加倍CPU使用率，但是还远远到不了饱和(100%)的地步，在单核心可以应付整体计算的前提下，自然是应该选择资源占用少的模式，也就是多线程模式。<br>接下来我们分别尝试一下两种模式来进行并行计算。</p>
+<h3 id="多线程"><a href="#多线程" class="headerlink" title="多线程"></a>多线程</h3><p><img src="/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/2.webp"><br>多线程模式适合IO密集型运算，这里我要使用sleep来模拟一下慢速的IO任务。同时为了方便编写命令行程序，这里使用Google fire开源库来简化命令行参数处理。</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># coding: utf8</span></span><br><span class="line"><span class="comment"># t.py</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> fire</span><br><span class="line"><span class="keyword">import</span> threading</span><br><span class="line"><span class="keyword">from</span> concurrent.futures <span class="keyword">import</span> ThreadPoolExecutor, wait</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># 分割子任务</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">each_task</span>(<span class="params">index</span>):</span><br><span class="line">    time.sleep(<span class="number">1</span>)  <span class="comment"># 睡1s，模拟IO</span></span><br><span class="line">    <span class="built_in">print</span> <span class="string">&quot;thread %s square %d&quot;</span> % (threading.current_thread().ident, index)</span><br><span class="line">    <span class="keyword">return</span> index * index  <span class="comment"># 返回结果</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">run</span>(<span class="params">thread_num, task_num</span>):</span><br><span class="line">    <span class="comment"># 实例化线程池，thread_num个线程</span></span><br><span class="line">    executor = ThreadPoolExecutor(thread_num)</span><br><span class="line">    start = time.time()</span><br><span class="line">    fs = []  <span class="comment"># future列表</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(task_num):</span><br><span class="line">        fs.append(executor.submit(each_task, i))  <span class="comment"># 提交任务</span></span><br><span class="line">    wait(fs)  <span class="comment"># 等待计算结束</span></span><br><span class="line">    end = time.time()</span><br><span class="line">    duration = end - start</span><br><span class="line">    s = <span class="built_in">sum</span>([f.result() <span class="keyword">for</span> f <span class="keyword">in</span> fs])  <span class="comment"># 求和</span></span><br><span class="line">    <span class="built_in">print</span> <span class="string">&quot;total result=%s cost: %.2fs&quot;</span> % (s, duration)</span><br><span class="line">    executor.shutdown()  <span class="comment"># 销毁线程池</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    fire.Fire(run)</span><br></pre></td></tr></table></figure>
+<p>运行<code>python t.py 2 10</code>，也就是2个线程跑10个任务，观察输出</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">thread</span> <span class="number">123145422131200</span> square <span class="number">0</span>thread <span class="number">123145426337792</span> square <span class="number">1</span></span><br><span class="line"></span><br><span class="line"><span class="attribute">thread</span> <span class="number">123145426337792</span> square <span class="number">2</span></span><br><span class="line"> <span class="attribute">thread</span> <span class="number">123145422131200</span> square <span class="number">3</span></span><br><span class="line"><span class="attribute">thread</span> <span class="number">123145426337792</span> square <span class="number">4</span></span><br><span class="line"><span class="attribute">thread</span> <span class="number">123145422131200</span> square <span class="number">5</span></span><br><span class="line"><span class="attribute">thread</span> <span class="number">123145426337792</span> square <span class="number">6</span></span><br><span class="line"><span class="attribute">thread</span> <span class="number">123145422131200</span> square <span class="number">7</span></span><br><span class="line"><span class="attribute">thread</span> <span class="number">123145426337792</span> square <span class="number">8</span></span><br><span class="line"><span class="attribute">thread</span> <span class="number">123145422131200</span> square <span class="number">9</span></span><br><span class="line"><span class="attribute">total</span> result=<span class="number">285</span> cost: <span class="number">5</span>.<span class="number">02</span>s</span><br></pre></td></tr></table></figure>
+<p>我们看到计算总共花费了大概5s，总共sleep了10s由两个线程分担，所以是5s。读者也许会问，为什么输出乱了，这是因为print操作不是原子的，它是两个连续的write操作合成的，第一个write输出内容，第二个write输出换行符，write操作本身是原子的，但是在多线程环境下，这两个write操作会交错执行，所以输出就不整齐了。如果将代码稍作修改，将print改成单个write操作，输出就整齐了(关于write是否绝对原子性还需要进一步深入讨论)</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 分割子任务</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">each_task</span>(<span class="params">index</span>):</span><br><span class="line">    time.sleep(<span class="number">1</span>)  <span class="comment"># 睡1s，模拟IO</span></span><br><span class="line">    <span class="keyword">import</span> sys</span><br><span class="line">    sys.stdout.write(<span class="string">&quot;thread %s square %d\n&quot;</span> % (threading.current_thread().ident, index))</span><br><span class="line">    <span class="keyword">return</span> index * index  <span class="comment"># 返回结果</span></span><br></pre></td></tr></table></figure>
+<p>我们再跑一下<code>python t.py 2 10</code>，观察输出</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">thread</span> <span class="number">123145438244864</span> square <span class="number">0</span></span><br><span class="line"><span class="attribute">thread</span> <span class="number">123145442451456</span> square <span class="number">1</span></span><br><span class="line"><span class="attribute">thread</span> <span class="number">123145442451456</span> square <span class="number">2</span></span><br><span class="line"><span class="attribute">thread</span> <span class="number">123145438244864</span> square <span class="number">3</span></span><br><span class="line"><span class="attribute">thread</span> <span class="number">123145438244864</span> square <span class="number">4</span></span><br><span class="line"><span class="attribute">thread</span> <span class="number">123145442451456</span> square <span class="number">5</span></span><br><span class="line"><span class="attribute">thread</span> <span class="number">123145438244864</span> square <span class="number">6</span></span><br><span class="line"><span class="attribute">thread</span> <span class="number">123145442451456</span> square <span class="number">7</span></span><br><span class="line"><span class="attribute">thread</span> <span class="number">123145442451456</span> square <span class="number">9</span></span><br><span class="line"><span class="attribute">thread</span> <span class="number">123145438244864</span> square <span class="number">8</span></span><br><span class="line"><span class="attribute">total</span> result=<span class="number">285</span> cost: <span class="number">5</span>.<span class="number">02</span>s</span><br></pre></td></tr></table></figure>
+<p>接下来，我们改变参数，扩大到10个线程，看看所有任务总共需要多久完成</p>
+<figure class="highlight tap"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">&gt; python t.py<span class="number"> 10 </span>10</span><br><span class="line">thread<span class="number"> 123145327464448 </span>square 0</span><br><span class="line">thread<span class="number"> 123145335877632 </span>square 2</span><br><span class="line">thread<span class="number"> 123145331671040 </span>square 1</span><br><span class="line">thread<span class="number"> 123145344290816 </span>square 4</span><br><span class="line">thread<span class="number"> 123145340084224 </span>square 3</span><br><span class="line">thread<span class="number"> 123145348497408 </span>square 5</span><br><span class="line">thread<span class="number"> 123145352704000 </span>square 6</span><br><span class="line">thread<span class="number"> 123145356910592 </span>square 7</span><br><span class="line">thread<span class="number"> 123145365323776 </span>square 9</span><br><span class="line">thread<span class="number"> 123145361117184 </span>square 8</span><br><span class="line">total result=285 cost: 1.01s</span><br></pre></td></tr></table></figure>
+<p>可以看到1s中就完成了所有的任务。这就是多线程的魅力，可以将多个IO操作并行化，减少整体处理时间。</p>
+<h3 id="多进程"><a href="#多进程" class="headerlink" title="多进程"></a>多进程</h3><p><img src="/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/3.webp"><br>相比多线程适合处理IO密集型任务，多进程适合计算密集型。接下来我们要模拟一下计算密集型任务。我的个人电脑有2个核心，正好可以体验多核心计算的优势。<br>那这个密集型计算任务怎么模拟呢，我们可以使用圆周率计算公式。<br><img src="/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/4.webp"><br>通过扩大级数的长度n，就可以无限逼近圆周率。当n特别大时，计算会比较缓慢，这时候CPU就会一直处于繁忙状态，这正是我们所期望的。<br>好，下面开写多进程并行计算代码</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># coding: utf8</span></span><br><span class="line"><span class="comment"># p.py</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> math</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> fire</span><br><span class="line"><span class="keyword">from</span> concurrent.futures <span class="keyword">import</span> ProcessPoolExecutor, wait</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># 分割子任务</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">each_task</span>(<span class="params">n</span>):</span><br><span class="line">    <span class="comment"># 按公式计算圆周率</span></span><br><span class="line">    s = <span class="number">0.0</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(n):</span><br><span class="line">        s += <span class="number">1.0</span>/(i+<span class="number">1</span>)/(i+<span class="number">1</span>)</span><br><span class="line">    pi = math.sqrt(<span class="number">6</span>*s)</span><br><span class="line">    <span class="comment"># os.getpid可以获得子进程号</span></span><br><span class="line">    sys.stdout.write(<span class="string">&quot;process %s n=%d pi=%s\n&quot;</span> % (os.getpid(), n, pi))</span><br><span class="line">    <span class="keyword">return</span> pi</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">run</span>(<span class="params">process_num, *ns</span>):  <span class="comment"># 输入多个n值，分成多个子任务来计算结果</span></span><br><span class="line">    <span class="comment"># 实例化进程池，process_num个进程</span></span><br><span class="line">    executor = ProcessPoolExecutor(process_num)</span><br><span class="line">    start = time.time()</span><br><span class="line">    fs = []  <span class="comment"># future列表</span></span><br><span class="line">    <span class="keyword">for</span> n <span class="keyword">in</span> ns:</span><br><span class="line">        fs.append(executor.submit(each_task, <span class="built_in">int</span>(n)))  <span class="comment"># 提交任务</span></span><br><span class="line">    wait(fs)  <span class="comment"># 等待计算结束</span></span><br><span class="line">    end = time.time()</span><br><span class="line">    duration = end - start</span><br><span class="line">    <span class="built_in">print</span> <span class="string">&quot;total cost: %.2fs&quot;</span> % duration</span><br><span class="line">    executor.shutdown()  <span class="comment"># 销毁进程池</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    fire.Fire(run)</span><br></pre></td></tr></table></figure>
+<p>通过代码可以看出多进程模式在代码的编写上和多线程没有多大差异，仅仅是换了一个类名，其它都一摸一样。这也是concurrent库的魅力所在，将多线程和多进程模型抽象出了一样的使用接口。<br>接下来我们运行一下<code>python p.py 1 5000000 5001000 5002000 5003000</code>，总共计算4次pi，只用一个进程。观察输出</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">process</span> <span class="number">96354</span> n=<span class="number">5000000</span> pi=<span class="number">3</span>.<span class="number">1415924626</span></span><br><span class="line"><span class="attribute">process</span> <span class="number">96354</span> n=<span class="number">5001000</span> pi=<span class="number">3</span>.<span class="number">14159246264</span></span><br><span class="line"><span class="attribute">process</span> <span class="number">96354</span> n=<span class="number">5002000</span> pi=<span class="number">3</span>.<span class="number">14159246268</span></span><br><span class="line"><span class="attribute">process</span> <span class="number">96354</span> n=<span class="number">5003000</span> pi=<span class="number">3</span>.<span class="number">14159246272</span></span><br><span class="line"><span class="attribute">total</span> cost: <span class="number">9</span>.<span class="number">45</span>s</span><br></pre></td></tr></table></figure>
+<p>可以看出来随着n的增大，结果越来越逼近圆周率，因为只用了一个进程，所以任务是串行执行，总共花了大约9.5s。<br>接下来再增加一个进程，观察输出</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&gt; python p.py 2 5000000 5001000 5002000 5003000</span><br><span class="line">process 96529 <span class="attribute">n</span>=5001000 <span class="attribute">pi</span>=3.14159246264</span><br><span class="line">process 96530 <span class="attribute">n</span>=5000000 <span class="attribute">pi</span>=3.1415924626</span><br><span class="line">process 96529 <span class="attribute">n</span>=5002000 <span class="attribute">pi</span>=3.14159246268</span><br><span class="line">process 96530 <span class="attribute">n</span>=5003000 <span class="attribute">pi</span>=3.14159246272</span><br><span class="line">total cost: 4.98s</span><br></pre></td></tr></table></figure>
+<p>从耗时上看缩短了接近1半，说明多进程确实起到了计算并行化的效果。此刻如果使用top命令观察进程的CPU使用率，这两个进程的CPU使用率都占到了接近100%。<br>如果我们再增加2个进程，是不是还能继续压缩计算时间呢</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&gt; python p.py 4 5000000 5001000 5002000 5003000</span><br><span class="line">process 96864 <span class="attribute">n</span>=5002000 <span class="attribute">pi</span>=3.14159246268</span><br><span class="line">process 96862 <span class="attribute">n</span>=5000000 <span class="attribute">pi</span>=3.1415924626</span><br><span class="line">process 96863 <span class="attribute">n</span>=5001000 <span class="attribute">pi</span>=3.14159246264</span><br><span class="line">process 96865 <span class="attribute">n</span>=5003000 <span class="attribute">pi</span>=3.14159246272</span><br><span class="line">total cost: 4.86s</span><br></pre></td></tr></table></figure>
+<p>看来耗时不能继续节约了，因为只有2个计算核心，2个进程已经足以榨干它们了，即使再多加进程也只有2个计算核心可用。</p>
+<h3 id="深入原理"><a href="#深入原理" class="headerlink" title="深入原理"></a>深入原理</h3><p><img src="/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/5.webp"><br>concurrent用的时候非常简单，但是内部实现并不是很好理解。在深入分析内部的结构之前，我们需要先理解一下Future这个对象。在前面的例子中，executor提交(submit)任务后都会返回一个Future对象，它表示一个结果的坑，在任务刚刚提交时，这个坑是空的，一旦子线程运行任务结束，就会将运行的结果塞到这个坑里，主线程就可以通过Future对象获得这个结果。简单一点说，Future对象是主线程和子线程通信的媒介。</p>
+<p>Future对象的内部逻辑简单一点可以使用下面的代码进行表示</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Future</span>(<span class="title class_ inherited__">object</span>):</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):</span><br><span class="line">        self._condition = threading.Condition()  <span class="comment"># 条件变量</span></span><br><span class="line">        self._result = <span class="literal">None</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">result</span>(<span class="params">self, timeout=<span class="literal">None</span></span>):</span><br><span class="line">        self._condition.wait(timeout)</span><br><span class="line">        <span class="keyword">return</span> self._result</span><br><span class="line">        </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">set_result</span>(<span class="params">self, result</span>):</span><br><span class="line">        self._result = result</span><br><span class="line">        self._condition.notify_all()</span><br></pre></td></tr></table></figure>
+<p>主线程将任务塞进线程池后得到了这个Future对象，它内部的_result还是空的。如果主线程调用result()方法获取结果，就会阻塞在条件变量上。如果子线程计算任务完成了就会立即调用set_result()方法将结果填充进future对象，并唤醒阻塞在条件变量上的线程，也就是主线程。这时主线程立即醒过来并正常返回结果。</p>
+<h3 id="线程池内部结构"><a href="#线程池内部结构" class="headerlink" title="线程池内部结构"></a>线程池内部结构</h3><p>主线程和子线程交互分为两部分，第一部分是主线程如何将任务传递给子线程，第二部分是子线程如何将结果传递给主线程。第二部分已经讲过了是通过Future对象来完成的。那第一部分是怎么做到的呢？<br><img src="/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/6.webp"><br>如上图所示，秘密就在于这个队列，主线程是通过队列将任务传递给多个子线程的。一旦主线程将任务塞进任务队列，子线程们就会开始争抢，最终只有一个线程能抢到这个任务，并立即进行执行，执行完后将结果放进Future对象就完成了这个任务的完整执行过程。</p>
+<h3 id="线程池的缺点"><a href="#线程池的缺点" class="headerlink" title="线程池的缺点"></a>线程池的缺点</h3><p>concurrent的线程池有个重大的设计问题，那就是任务队列是无界的。如果队列的生产者任务生产的太快，而线程池消费太慢处理不过来，任务就会堆积。如果堆积一直持续下去，内存就会持续增长直到OOM，任务队列里堆积的所有任务全部彻底丢失。用户使用时一定要注意这点，并做好适当的控制。</p>
+<h3 id="进程池内部结构"><a href="#进程池内部结构" class="headerlink" title="进程池内部结构"></a>进程池内部结构</h3><p>进程池内部结构复杂，连concurent库的作者自己也觉得特别复杂，所以在代码里专门画了一张ascii图来讲解模型内部结构</p>
+<p><img src="/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/7.webp"><br><img src="/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/8.webp"></p>
+<p>我觉得作者的这张图还不够好懂，所以也单独画了一张图，请读者们仔细结合上面两张图，一起来过一边完整的任务处理过程。</p>
+<p>1.主线程将任务塞进TaskQueue(普通内存队列)，拿到Future对象<br>2.唯一的管理线程从TaskQueue获取任务，塞进CallQueue(分布式跨进程队列)<br>3.子进程从CallQueue中争抢任务进行处理<br>4.子进程将处理结果塞进ResultQueue(分布式跨进程队列)<br>5.管理线程从ResultQueue中获取结果，塞进Future对象<br>6.主线程从Future对象中拿到结果</p>
+<p>这个复杂的流程中涉及到3个队列，还有中间附加的管理线程。那为什么作者要设计的这么复杂，这样的设计有什么好处？<br>首先，我们看这张图的左半边，它和线程池的处理流程没有太多区别，区别仅仅是管理线程只有一个，而线程池的子线程会有多个。这样设计可以使得多进程模型和多线程模型的使用方法保持一致，这就是为什么两个模型使用起来没有任何区别的原因所在——通过中间的管理线程隐藏了背后的多进程交互逻辑。<br>然后我们再看这张图的右半边，管理线程通过两个队列来和子进程们进行交互，这两个队列都是跨进程队列(multiprocessing.Queue)。CallQueue是单生产者多消费者，ResultQueue是多生产者单消费者。<br>CallQueue是个有界队列，它的上限在代码里写死了为「子进程数+1」。如果子进程们处理不过来，CallQueue就会变满，管理线程就会停止往里面塞数据。但是这里也遭遇了和线程池一样的问题，TaskQueue是无界队列，它的内容可不管消费者是否在持续(管理线程)消费，TaskQueue会无限制的持续生长，于是最终也会会导致OOM。</p>
+<h3 id="跨进程队列"><a href="#跨进程队列" class="headerlink" title="跨进程队列"></a>跨进程队列</h3><p>进程池模型中的跨进程队列是用multiprocessing.Queue实现的。那这个跨进程队列内部细节是怎样的，它又是用什么高科技来实现的呢<br>笔者仔细阅读了multiprocessing.Queue的源码发现，它使用无名套接字sockerpair来完成的跨进程通信，socketpair和socket的区别就在于socketpair不需要端口，不需要走网络协议栈，通过内核的套接字读写缓冲区直接进行跨进程通信。</p>
+<p><img src="/images/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/9.webp"></p>
+<p>当父进程要传递任务给子进程时，先使用pickle将任务对象进行序列化成字节数组，然后将字节数组通过socketpair的写描述符写入内核的buffer中。子进程接下来就可以从buffer中读取到字节数组，然后再使用pickle对字节数组进行反序列化来得到任务对象，这样总算可以执行任务了。同样子进程将结果传递给父进程走的也是一样的流程，只不过这里的socketpair是ResultQueue内部创建的无名套接字。<br>multiprocessing.Queue是支持双工通信，数据流向可以是父到子，也可以是子到父，只不过在concurrent的进程池实现中只用到了单工通信。CallQueue是从父到子，ResultQueue是从子到父。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>concurrent.futures框架非常好用，虽然内部实现机制异常复杂，读者也无需完全理解内部细节就可以直接使用了。但是需要特别注意的是不管是线程池还是进程池其内部的任务队列都是无界的，一定要避免消费者处理不及时内存持续攀升的情况发生。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2018/01/19/Python%E5%B9%BF%E4%B8%BA%E4%BD%BF%E7%94%A8%E7%9A%84%E5%B9%B6%E5%8F%91%E5%A4%84%E7%90%86%E5%BA%93futures%E4%BD%BF%E7%94%A8%E5%85%A5%E9%97%A8%E4%B8%8E%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/" data-id="cl9pgenw400v6ycv10w97fy43" data-title="Python广为使用的并发处理库futures使用入门与内部原理" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/01/23/%E6%88%91%E7%9A%84%E7%A7%91%E5%AD%A6%E4%B8%8A%E7%BD%91%E6%8A%80%E5%B7%A7/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          我的科学上网技巧
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/01/18/%E8%BF%9C%E7%A8%8B%E8%BF%9E%E6%8E%A5mySql%E6%95%B0%E6%8D%AE%E5%BA%9310061%E9%94%99%E8%AF%AF/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">远程连接mySql数据库10061错误</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

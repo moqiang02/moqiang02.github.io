@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>使用PHP-redis操作Redis | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="PHP-redis扩展提供了丰富的操作Redis的API接口，使用PHP-redis可以轻松操作Redis。本文整理常用的基础的Redis操作方法，作为笔记方便大家查阅。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用PHP-redis操作Redis">
+<meta property="og:url" content="http://moqiang02.github.io/2018/08/29/%E4%BD%BF%E7%94%A8PHP-redis%E6%93%8D%E4%BD%9CRedis/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="PHP-redis扩展提供了丰富的操作Redis的API接口，使用PHP-redis可以轻松操作Redis。本文整理常用的基础的Redis操作方法，作为笔记方便大家查阅。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-08-29T05:01:04.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:54.070Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-使用PHP-redis操作Redis" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2018/08/29/%E4%BD%BF%E7%94%A8PHP-redis%E6%93%8D%E4%BD%9CRedis/" class="article-date">
+  <time class="dt-published" datetime="2018-08-29T05:01:04.000Z" itemprop="datePublished">2018-08-29</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/redis/">redis</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      使用PHP-redis操作Redis
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#PHP%E8%BF%9E%E6%8E%A5Redis"><span class="toc-number">1.</span> <span class="toc-text">PHP连接Redis</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#String%E5%AD%97%E7%AC%A6%E4%B8%B2"><span class="toc-number">2.</span> <span class="toc-text">String字符串</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#List%E5%88%97%E8%A1%A8"><span class="toc-number">3.</span> <span class="toc-text">List列表</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Hash%E5%AD%97%E5%85%B8"><span class="toc-number">4.</span> <span class="toc-text">Hash字典</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Set%E9%9B%86%E5%90%88"><span class="toc-number">5.</span> <span class="toc-text">Set集合</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Sorted-Set%E6%9C%89%E5%BA%8F%E9%9B%86%E5%90%88"><span class="toc-number">6.</span> <span class="toc-text">Sorted Set有序集合</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Server%E6%9C%8D%E5%8A%A1"><span class="toc-number">7.</span> <span class="toc-text">Server服务</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <p>PHP-redis扩展提供了丰富的操作Redis的API接口，使用PHP-redis可以轻松操作Redis。本文整理常用的基础的Redis操作方法，作为笔记方便大家查阅。<span id="more"></span></p>
+<h3 id="PHP连接Redis"><a href="#PHP连接Redis" class="headerlink" title="PHP连接Redis"></a>PHP连接Redis</h3><p>我们一般使用connect连接Redis，connect方法为短连接，提供了主机、端口、连接超时等参数设置，如：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">connect</span>(<span class="string">&#x27;127.0.0.1&#x27;</span>, <span class="number">6379</span>);</span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">connect</span>(<span class="string">&#x27;127.0.0.1&#x27;</span>); <span class="comment">// 默认端口6379，你可以设置为其他端口</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">connect</span>(<span class="string">&#x27;127.0.0.1&#x27;</span>, <span class="number">6379</span>, <span class="number">2.5</span>); <span class="comment">// 2.5秒也连接不上则为超时断开</span></span><br></pre></td></tr></table></figure>
+<p>也可以使用pconnect或popen方法支持长连接，使用同上。</p>
+<p>示例代码：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="comment">//连接本地的 Redis 服务</span></span><br><span class="line"><span class="variable">$redis</span> = <span class="keyword">new</span> <span class="title class_">Redis</span>();</span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">connect</span>(<span class="string">&#x27;127.0.0.1&#x27;</span>, <span class="number">6379</span>);</span><br><span class="line"><span class="keyword">echo</span> <span class="string">&quot;Connection to server sucessfully&quot;</span>;</span><br><span class="line"><span class="comment">//查看服务是否运行</span></span><br><span class="line"><span class="keyword">echo</span> <span class="string">&quot;Server is running: &quot;</span> . <span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">ping</span>();</span><br></pre></td></tr></table></figure>
+<p>此外，phpredis还提供了验证密码，选择库和关闭连接释放资源、过期时间（用于缓存）、移动库等方法。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">auth</span>(<span class="string">&#x27;password&#x27;</span>);  <span class="comment">//登录验证密码，返回【true | false】</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">select</span>(<span class="number">0</span>);  <span class="comment">//选择redis库, 0~15 共16个库</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">close</span>();  <span class="comment">//释放资源</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">expire</span>(<span class="string">&#x27;key&#x27;</span>, <span class="number">10</span>);  <span class="comment">//设置失效时间[true | false]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">move</span>(<span class="string">&#x27;key&#x27;</span>, <span class="number">15</span>);  <span class="comment">//把当前库中的key移动到15库中[0|1]</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="String字符串"><a href="#String字符串" class="headerlink" title="String字符串"></a>String字符串</h3><p>Redis 字符串数据类型的相关命令用于管理 redis 字符串值。可以设置、获取、删除键key的值，可以对键值自增和自减等。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">set</span>(<span class="string">&#x27;key&#x27;</span>, <span class="number">1</span>);  <span class="comment">//设置key=aa value=1 [true]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">mset</span>(<span class="variable">$arr</span>);  <span class="comment">//设置一个或多个键值[true]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">setnx</span>(<span class="string">&#x27;key&#x27;</span>, <span class="string">&#x27;value&#x27;</span>);  <span class="comment">//key=value, key存在返回false[|true]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">get</span>(<span class="string">&#x27;key&#x27;</span>);  <span class="comment">//获取key [value]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">mget</span>(<span class="variable">$arr</span>);  <span class="comment">//(string|arr), 返回所查询键的值</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">del</span>(<span class="variable">$key_arr</span>);  <span class="comment">//(string|arr)删除key，支持数组批量删除【返回删除个数】</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">delete</span>(<span class="variable">$key_str</span>, <span class="variable">$key2</span>, <span class="variable">$key3</span>);  <span class="comment">//删除keys, [del_num]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">getset</span>(<span class="string">&#x27;old_key&#x27;</span>, <span class="string">&#x27;new_value&#x27;</span>);  <span class="comment">//先获得key的值，然后重新赋值, [old_value | false]</span></span><br><span class="line"></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">strlen</span>(<span class="string">&#x27;key&#x27;</span>);  <span class="comment">//获取当前key的长度</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">append</span>(<span class="string">&#x27;key&#x27;</span>, <span class="string">&#x27;string&#x27;</span>);  <span class="comment">//把string追加到key现有的value中[追加后的个数]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">incr</span>(<span class="string">&#x27;key&#x27;</span>);  <span class="comment">//自增1，如不存在key, 赋值为1(只对整数有效, 存储以10进制64位，redis中为str)[new_num | false]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">incrby</span>(<span class="string">&#x27;key&#x27;</span>, <span class="variable">$num</span>);  <span class="comment">//自增$num, 不存在为赋值, 值需为整数[new_num | false]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">decr</span>(<span class="string">&#x27;key&#x27;</span>);  <span class="comment">//自减1，[new_num | false]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">decrby</span>(<span class="string">&#x27;key&#x27;</span>, <span class="variable">$num</span>);  <span class="comment">//自减$num，[ new_num | false]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">setex</span>(<span class="string">&#x27;key&#x27;</span>, <span class="number">10</span>, <span class="string">&#x27;value&#x27;</span>);  <span class="comment">//key=value，有效期为10秒[true]</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="List列表"><a href="#List列表" class="headerlink" title="List列表"></a>List列表</h3><p>Redis列表是简单的字符串列表，按照插入顺序排序。你可以添加一个元素到列表的头部（左边）或者尾部（右边） 一个列表最多可以包含 232-1 个元素 (4294967295, 每个列表超过40亿个元素)。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">llen</span>(<span class="string">&#x27;key&#x27;</span>);  <span class="comment">//返回列表key的长度, 不存在key返回0， [ len | 0]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">lpush</span>(<span class="string">&#x27;key&#x27;</span>, <span class="string">&#x27;value&#x27;</span>);  <span class="comment">//增，只能将一个值value插入到列表key的表头(左侧)，不存在就创建 [列表的长度 |false]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">rpush</span>(<span class="string">&#x27;key&#x27;</span>, <span class="string">&#x27;value&#x27;</span>);  <span class="comment">//增，只能将一个值value插入到列表key的表尾(右侧) [列表的长度 |false]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">lInsert</span>(<span class="string">&#x27;key&#x27;</span>,  <span class="title class_">Redis</span>::<span class="variable constant_">AFTER</span>,  <span class="string">&#x27;value&#x27;</span>,  <span class="string">&#x27;new_value&#x27;</span>);  <span class="comment">//增，将值value插入到列表key当中，位于值value之前或之后。[new_len | false]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">lpushx</span>(<span class="string">&#x27;key&#x27;</span>, <span class="string">&#x27;value&#x27;</span>);  <span class="comment">//增，只能将一个值value插入到列表key的表头，不存在不创建 [列表的长度 |false]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">rpushx</span>(<span class="string">&#x27;key&#x27;</span>, <span class="string">&#x27;value&#x27;</span>);  <span class="comment">//增，只能将一个值value插入到列表key的表尾，不存在不创建 [列表的长度 |false]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">lpop</span>(<span class="string">&#x27;key&#x27;</span>);  <span class="comment">//删，移除并返回列表key的头元素, [被删元素 | false]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">rpop</span>(<span class="string">&#x27;key&#x27;</span>);  <span class="comment">//删，移除并返回列表key的尾元素, [被删元素 | false]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">lrem</span>(<span class="string">&#x27;key&#x27;</span>, <span class="string">&#x27;value&#x27;</span>, <span class="number">0</span>);  <span class="comment">//删，根据参数count的值，移除列表中与参数value相等的元素count=(0|-n表头向尾|+n表尾向头移除n个value)  [被移除的数量 | 0]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">ltrim</span>(<span class="string">&#x27;key&#x27;</span>, start, end);  <span class="comment">//删，列表修剪，保留(start, end)之间的值 [true|false]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">lset</span>(<span class="string">&#x27;key&#x27;</span>, index, <span class="string">&#x27;new_v&#x27;</span>);  <span class="comment">//改，从表头数，将列表key下标为第index的元素的值为new_v,  [true | false]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">lindex</span>(<span class="string">&#x27;key&#x27;</span>, index);  <span class="comment">//查，返回列表key中，下标为index的元素[value|false]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">lrange</span>(<span class="string">&#x27;key&#x27;</span>, <span class="number">0</span>, -<span class="number">1</span>);  <span class="comment">//查，(start, stop|0, -1)返回列表key中指定区间内的元素，区间以偏移量start和stop指定。[array|false]</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Hash字典"><a href="#Hash字典" class="headerlink" title="Hash字典"></a>Hash字典</h3><p>Redis hash 是一个string类型的field和value的映射表，hash特别适合用于存储对象。Redis 中每个 hash 可以存储40多亿键值对。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">hset</span>(<span class="string">&#x27;key&#x27;</span>, <span class="string">&#x27;field&#x27;</span>, <span class="string">&#x27;value&#x27;</span>);  <span class="comment">//增，改，将哈希表key中的域field的值设为value, 不存在创建, 存在就覆盖【1 | 0】</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">hget</span>(<span class="string">&#x27;key&#x27;</span>, <span class="string">&#x27;field&#x27;</span>);  <span class="comment">//查，取值【value|false】</span></span><br><span class="line"><span class="variable">$arr</span> = <span class="keyword">array</span>(<span class="string">&#x27;one&#x27;</span>=&gt;<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>);<span class="variable">$arr2</span> = <span class="keyword">array</span>(<span class="string">&#x27;one&#x27;</span>, <span class="number">0</span>, <span class="number">1</span>);</span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">hmset</span>(<span class="string">&#x27;key&#x27;</span>, <span class="variable">$arr</span>);  <span class="comment">//增，改，设置多值$arr为(索引|关联)数组, $arr[key]=field,  [ true ]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">hmget</span>(<span class="string">&#x27;key&#x27;</span>, <span class="variable">$arr2</span>);  <span class="comment">//查，获取指定下标的field，[$arr | false]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">hgetall</span>(<span class="string">&#x27;key&#x27;</span>);  <span class="comment">//查，返回哈希表key中的所有域和值。[当key不存在时，返回一个空表]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">hkeys</span>(<span class="string">&#x27;key&#x27;</span>);  <span class="comment">//查，返回哈希表key中的所有域。[当key不存在时，返回一个空表]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">hvals</span>(<span class="string">&#x27;key&#x27;</span>);  <span class="comment">//查，返回哈希表key中的所有值。[当key不存在时，返回一个空表]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">hdel</span>(<span class="string">&#x27;key&#x27;</span>, <span class="variable">$arr2</span>);  <span class="comment">//删，删除指定下标的field, 不存在的域将被忽略, [num | false]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">hexists</span>(<span class="string">&#x27;key&#x27;</span>, <span class="string">&#x27;field&#x27;</span>);  <span class="comment">//查看hash中是否存在field, [1 | 0]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">hincrby</span>(<span class="string">&#x27;key&#x27;</span>, <span class="string">&#x27;field&#x27;</span>, <span class="variable">$int_num</span>);  <span class="comment">//为哈希表key中的域field的值加上量(+|-)num, [new_num | false]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">hlen</span>(<span class="string">&#x27;key&#x27;</span>);  <span class="comment">//返回哈希表key中域的数量。[ num | 0]</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Set集合"><a href="#Set集合" class="headerlink" title="Set集合"></a>Set集合</h3><p>Redis 的 Set 是 String 类型的无序集合。集合成员是唯一的，这就意味着集合中不能出现重复的数据。 Redis 中集合是通过哈希表实现的，所以添加，删除，查找的复杂度都是 O(1)。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">sadd</span>(<span class="string">&#x27;key&#x27;</span>, <span class="string">&#x27;value1&#x27;</span>, <span class="string">&#x27;value2&#x27;</span>, <span class="string">&#x27;valuen&#x27;</span>);  <span class="comment">//增，改，将一个或多个member元素加入到集合key当中，已经存在于集合的member元素将被忽略。[insert_num]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">srem</span>(<span class="string">&#x27;key&#x27;</span>, <span class="string">&#x27;value1&#x27;</span>, <span class="string">&#x27;value2&#x27;</span>, <span class="string">&#x27;valuen&#x27;</span>);  <span class="comment">//删，移除集合key中的一个或多个member元素，不存在的member元素会被忽略 [del_num | false]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">smembers</span>(<span class="string">&#x27;key&#x27;</span>);  <span class="comment">//查，返回集合key中的所有成员 [array | &#x27;&#x27;]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">sismember</span>(<span class="string">&#x27;key&#x27;</span>, <span class="string">&#x27;member&#x27;</span>);  <span class="comment">//判断member元素是否是集合key的成员 [1 | 0]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">spop</span>(<span class="string">&#x27;key&#x27;</span>);  <span class="comment">//删，移除并返回集合中的一个随机元素 [member | false]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">srandmember</span>(<span class="string">&#x27;key&#x27;</span>);  <span class="comment">//查，返回集合中的一个随机元素 [member | false]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">sinter</span>(<span class="string">&#x27;key1&#x27;</span>, <span class="string">&#x27;key2&#x27;</span>, <span class="string">&#x27;keyn&#x27;</span>);  <span class="comment">//查，返回所有给定集合的交集 [array | false]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">sunion</span>(<span class="string">&#x27;key1&#x27;</span>, <span class="string">&#x27;key2&#x27;</span>, <span class="string">&#x27;keyn&#x27;</span>);  <span class="comment">//查，返回所有给定集合的并集 [array | false]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">sdiff</span>(<span class="string">&#x27;key1&#x27;</span>, <span class="string">&#x27;key2&#x27;</span>, <span class="string">&#x27;keyn&#x27;</span>);  <span class="comment">//查，返回所有给定集合的差集 [array | false]</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Sorted-Set有序集合"><a href="#Sorted-Set有序集合" class="headerlink" title="Sorted Set有序集合"></a>Sorted Set有序集合</h3><p>Redis 有序集合和集合一样也是string类型元素的集合,且不允许重复的成员。 不同的是每个元素都会关联一个double类型的分数。redis正是通过分数来为集合中的成员进行从小到大的排序。 有序集合的成员是唯一的,但分数(score)却可以重复。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">zAdd</span>(<span class="string">&#x27;key&#x27;</span>, <span class="variable">$score1</span>, <span class="variable">$member1</span>, <span class="variable">$scoreN</span>, <span class="variable">$memberN</span>);  <span class="comment">//增，改，将一个或多个member元素及其score值加入到有序集key当中。[num | 0]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">zrem</span>(<span class="string">&#x27;key&#x27;</span>, <span class="string">&#x27;member1&#x27;</span>, <span class="string">&#x27;membern&#x27;</span>);  <span class="comment">//删，移除有序集key中的一个或多个成员，不存在的成员将被忽略。[del_num | 0]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">zscore</span>(<span class="string">&#x27;key&#x27;</span>, <span class="string">&#x27;member&#x27;</span>);  <span class="comment">//查, 通过值反拿权 [num | null]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">zrange</span>(<span class="string">&#x27;key&#x27;</span>, <span class="variable">$start</span>, <span class="variable">$stop</span>);  <span class="comment">//查，通过(score从小到大)【排序名次范围】拿member值，返回有序集key中，【指定区间内】的成员 [array | null]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">zrevrange</span>(<span class="string">&#x27;key&#x27;</span>, <span class="variable">$start</span>, <span class="variable">$stop</span>);  <span class="comment">//查，通过(score从大到小)【排序名次范围】拿member值，返回有序集key中，【指定区间内】的成员 [array | null]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">zrangebyscore</span>(<span class="string">&#x27;key&#x27;</span>, <span class="variable">$min</span>, <span class="variable">$max</span>[, <span class="variable">$config</span>]);  <span class="comment">//查，通过scroe权范围拿member值，返回有序集key中，指定区间内的(从小到大排)成员[array | null]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">zrevrangebyscore</span>(<span class="string">&#x27;key&#x27;</span>, <span class="variable">$max</span>, <span class="variable">$min</span>[, <span class="variable">$config</span>]);  <span class="comment">//查，通过scroe权范围拿member值，返回有序集key中，指定区间内的(从大到小排)成员[array | null]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">zrank</span>(<span class="string">&#x27;key&#x27;</span>, <span class="string">&#x27;member&#x27;</span>);  <span class="comment">//查，通过member值查(score从小到大)排名结果中的【member排序名次】[order | null]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">zrevrank</span>(<span class="string">&#x27;key&#x27;</span>, <span class="string">&#x27;member&#x27;</span>);  <span class="comment">//查，通过member值查(score从大到小)排名结果中的【member排序名次】[order | null]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">ZINTERSTORE</span>();  <span class="comment">//交集</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">ZUNIONSTORE</span>();  <span class="comment">//差集</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Server服务"><a href="#Server服务" class="headerlink" title="Server服务"></a>Server服务</h3><p>Phpredis提供服务级别的操作方法，轻松管理redis。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">dbSize</span>();  <span class="comment">//返回当前库中的key的个数</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">flushAll</span>();  <span class="comment">//清空整个redis[总true]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">flushDB</span>();  <span class="comment">//清空当前redis库[总true]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">save</span>();  <span class="comment">//同步??把数据存储到磁盘-dump.rdb[true]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">bgsave</span>();  <span class="comment">//异步？？把数据存储到磁盘-dump.rdb[true]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">info</span>();  <span class="comment">//查询当前redis的状态 [verson:2.4.5....]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">lastSave</span>();  <span class="comment">//上次存储时间key的时间[timestamp]</span></span><br><span class="line"></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">watch</span>(<span class="string">&#x27;key&#x27;</span>, <span class="string">&#x27;keyn&#x27;</span>);  <span class="comment">//监视一个(或多个) key ，如果在事务执行之前这个(或这些) key 被其他命令所改动，那么事务将被打断 [true]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">unwatch</span>(<span class="string">&#x27;key&#x27;</span>, <span class="string">&#x27;keyn&#x27;</span>);  <span class="comment">//取消监视一个(或多个) key [true]</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">multi</span>(<span class="title class_">Redis</span>::<span class="variable constant_">MULTI</span>);  <span class="comment">//开启事务，事务块内的多条命令会按照先后顺序被放进一个队列当中，最后由 EXEC 命令在一个原子时间内执行。</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">multi</span>(<span class="title class_">Redis</span>::<span class="variable constant_">PIPELINE</span>);  <span class="comment">//开启管道，事务块内的多条命令会按照先后顺序被放进一个队列当中，最后由 EXEC 命令在一个原子时间内执行。</span></span><br><span class="line"><span class="variable">$redis</span>-&gt;<span class="title function_ invoke__">exec</span>();  <span class="comment">//执行所有事务块内的命令，；【事务块内所有命令的返回值，按命令执行的先后顺序排列，当操作被打断时，返回空值 false】</span></span><br></pre></td></tr></table></figure>
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2018/08/29/%E4%BD%BF%E7%94%A8PHP-redis%E6%93%8D%E4%BD%9CRedis/" data-id="cl9pgeo7a01p2ycv18olngb5r" data-title="使用PHP-redis操作Redis" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/09/29/Ubuntu%E5%AE%89%E8%A3%85%E8%AE%B0%E5%BD%95/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          Ubuntu安装记录
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/07/30/scrapy%E4%B8%ADsettings%E5%8F%82%E6%95%B0%E7%9A%84%E4%BD%BF%E7%94%A8%E8%AF%A6%E8%A7%A3/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">scrapy中settings参数的使用详解</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

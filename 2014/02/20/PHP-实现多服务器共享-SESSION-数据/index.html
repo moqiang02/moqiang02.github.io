@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>PHP 实现多服务器共享 SESSION 数据 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="一、问题起源稍大一些的网站，通常都会有好几个服务器，每个服务器运行着不同功能的模块，使用不同的二级域名，而一个整体性强的网站，用户系统是统一的，即一套用户名、密码在整个网站的各个模块中都是可以登录使用的。各个服务器共享用户数据是比较容易实现的，只需要在后端放个数据库服务器，各个服务器通过统一接口对用户数据进行访问即可。但还存在一个问题，就是用户在这个服务器登录之后，进入另一个服务器的别的模块时，仍">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PHP 实现多服务器共享 SESSION 数据">
+<meta property="og:url" content="http://moqiang02.github.io/2014/02/20/PHP-%E5%AE%9E%E7%8E%B0%E5%A4%9A%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B1%E4%BA%AB-SESSION-%E6%95%B0%E6%8D%AE/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="一、问题起源稍大一些的网站，通常都会有好几个服务器，每个服务器运行着不同功能的模块，使用不同的二级域名，而一个整体性强的网站，用户系统是统一的，即一套用户名、密码在整个网站的各个模块中都是可以登录使用的。各个服务器共享用户数据是比较容易实现的，只需要在后端放个数据库服务器，各个服务器通过统一接口对用户数据进行访问即可。但还存在一个问题，就是用户在这个服务器登录之后，进入另一个服务器的别的模块时，仍">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E5%AE%9E%E7%8E%B0%E5%A4%9A%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B1%E4%BA%ABSESSION%E6%95%B0%E6%8D%AE/1.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E5%AE%9E%E7%8E%B0%E5%A4%9A%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B1%E4%BA%ABSESSION%E6%95%B0%E6%8D%AE/2.jpg">
+<meta property="article:published_time" content="2014-02-20T02:46:20.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.840Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/%E5%AE%9E%E7%8E%B0%E5%A4%9A%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B1%E4%BA%ABSESSION%E6%95%B0%E6%8D%AE/1.jpg">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-PHP-实现多服务器共享-SESSION-数据" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2014/02/20/PHP-%E5%AE%9E%E7%8E%B0%E5%A4%9A%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B1%E4%BA%AB-SESSION-%E6%95%B0%E6%8D%AE/" class="article-date">
+  <time class="dt-published" datetime="2014-02-20T02:46:20.000Z" itemprop="datePublished">2014-02-20</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/php/">php</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      PHP 实现多服务器共享 SESSION 数据
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E9%97%AE%E9%A2%98%E8%B5%B7%E6%BA%90"><span class="toc-number">1.</span> <span class="toc-text">一、问题起源</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8C%E3%80%81PHP-SESSION-%E7%9A%84%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86"><span class="toc-number">2.</span> <span class="toc-text">二、PHP SESSION 的工作原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E5%A4%9A%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B1%E4%BA%AB-SESSION-%E7%9A%84%E4%B8%BB%E8%A6%81%E9%9A%9C%E7%A2%8D%E5%8F%8A%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95"><span class="toc-number">3.</span> <span class="toc-text">三、多服务器共享 SESSION 的主要障碍及解决办法</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <h3 id="一、问题起源"><a href="#一、问题起源" class="headerlink" title="一、问题起源"></a>一、问题起源</h3><p>稍大一些的网站，通常都会有好几个服务器，每个服务器运行着不同功能的模块，使用不同的二级域名，而一个整体性强的网站，用户系统是统一的，即一套用户名、密码在整个网站的各个模块中都是可以登录使用的。各个服务器共享用户数据是比较容易实现的，只需要在后端放个数据库服务器，各个服务器通过统一接口对用户数据进行访问即可。但还存在一个问题，就是用户在这个服务器登录之后，进入另一个服务器的别的模块时，仍然需要重新登录，这就是一次登录，全部通行的问题，映射到技术上，其实就是各个服务器之间如何实现共享 SESSION 数据的问题。</p>
+<span id="more"></span>
+<h3 id="二、PHP-SESSION-的工作原理"><a href="#二、PHP-SESSION-的工作原理" class="headerlink" title="二、PHP SESSION 的工作原理"></a>二、PHP SESSION 的工作原理</h3><p>在解决问题之前，先来了解一下 PHP SESSION 的工作原理。在客户端（如浏览器）登录网站时，被访问的 PHP 页面可以使用 session_start() 打开 SESSION，这样就会产生客户端的唯一标识 SESSION ID（此 ID 可通过函数 session_id() 获取/设置）。SESSION ID 可以通过两种方式保留在客户端，使得请求不同的页面时，PHP 程序可以获知客户端的 SESSION ID；一种是将 SESSION ID 自动加入到 GET 的 URL 中，或者 POST 的表单中，默认情况下，变量名为 PHPSESSID；另一种是通过 COOKIE，将 SESSION ID 保存在 COOKIE 中，默认情况下，这个 COOKIE 的名字为 PHPSESSID。这里我们主要以 COOKIE 方式进行说明，因为应用比较广泛。</p>
+<p>那么 SESSION 的数据保存在哪里呢？当然是在服务器端，但不是保存在内存中，而是保存在文件或数据库中。默认情况下，php.ini 中设置的 SESSION 保存方式是 files（session.save_handler = files），即使用读写文件的方式保存 SESSION 数据，而 SESSION 文件保存的目录由 session.save_path 指定，文件名以 sess_ 为前缀，后跟 SESSION ID，如：sess_c72665af28a8b14c0fe11afe3b59b51b。文件中的数据即是序列化之后的 SESSION 数据了。如果访问量大，可能产生的 SESSION 文件会比较多，这时可以设置分级目录进行 SESSION 文件的保存，效率会提高很多，设置方法为：session.save_path=”N;/save_path”，N 为分级的级数，save_path 为开始目录。当写入 SESSION 数据的时候，PHP 会获取到客户端的 SESSION_ID，然后根据这个 SESSION ID 到指定的 SESSION 文件保存目录中找到相应的 SESSION 文件，不存在则创建之，最后将数据序列化之后写入文件。读取 SESSION 数据是也是类似的操作流程，对读出来的数据需要进行解序列化，生成相应的 SESSION 变量。</p>
+<h3 id="三、多服务器共享-SESSION-的主要障碍及解决办法"><a href="#三、多服务器共享-SESSION-的主要障碍及解决办法" class="headerlink" title="三、多服务器共享 SESSION 的主要障碍及解决办法"></a>三、多服务器共享 SESSION 的主要障碍及解决办法</h3><p>通过了解 SESSION 的工作原理，我们可以发现，在默认情况下，各个服务器会各自分别对同一个客户端产生 SESSION ID，如对于同一个用户浏览器，A 服务器产生的 SESSION ID 是 30de1e9de3192ba6ce2992d27a1b6a0a，而 B 服务器生成的则是 c72665af28a8b14c0fe11afe3b59b51b。另外，PHP 的 SESSION 数据都是分别保存在本服务器的文件系统中。如下图所示：<br><img src="/images/%E5%AE%9E%E7%8E%B0%E5%A4%9A%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B1%E4%BA%ABSESSION%E6%95%B0%E6%8D%AE/1.jpg"><br>确定了问题所在之后，就可以着手进行解决了。想要共享 SESSION 数据，那就必须实现两个目标：一个是各个服务器对同一个客户端产生的 SESSION ID 必须相同，并且可通过同一个 COOKIE 进行传递，也就是说各个服务器必须可以读取同一个名为 PHPSESSID 的 COOKIE；另一个是 SESSION 数据的存储方式/位置必须保证各个服务器都能够访问到。简单地说就是多服务器共享客户端的 SESSION ID，同时还必须共享服务器端的 SESSION 数据。</p>
+<p>第一个目标的实现其实很简单，只需要对 COOKIE 的域（domain）进行特殊地设置即可，默认情况下，COOKIE 的域是当前服务器的域名/IP 地址，而域不同的话，各个服务器所设置的 COOKIE 是不能相互访问的，如 <a target="_blank" rel="noopener" href="http://www.aaa.com/">www.aaa.com</a> 的服务器是不能读写 <a target="_blank" rel="noopener" href="http://www.bbb.com/">www.bbb.com</a> 服务器设置的 COOKIE 的。这里我们所说的同一网站的服务器有其特殊性，那就是他们同属于同一个一级域，如：aaa.infor96.com 和 <a target="_blank" rel="noopener" href="http://www.infor96.com/">www.infor96.com</a> 都属于域 .infor96.com，那么我们就可以设置 COOKIE 的域为 .infor96.com，这样 aaa.infor96.com、<a target="_blank" rel="noopener" href="http://www.infor96.com/">www.infor96.com</a> 等等都可以访问此 COOKIE。PHP 代码中的设置方法如下：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span>  </span><br><span class="line"><span class="title function_ invoke__">ini_set</span>(<span class="string">&#x27;session.cookie_domain&#x27;</span>, <span class="string">&#x27;.infor96.com&#x27;</span>);  </span><br><span class="line"><span class="meta">?&gt;</span>  </span><br></pre></td></tr></table></figure>
+<p>这样各个服务器共享同一客户端 SESSION ID 的目的就达到了。</p>
+<p>第二个目标的实现可以使用文件共享方式，如 NFS 方式，但设置、操作上有些复杂。我们可以参考先前所说的统一用户系统的方式，即使用数据库来保存 SESSION 数据，这样各个服务器就可以方便地访问同一个数据源，获取相同的 SESSION 数据了。</p>
+<p>解决办法如下图所示：<br><img src="/images/%E5%AE%9E%E7%8E%B0%E5%A4%9A%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B1%E4%BA%ABSESSION%E6%95%B0%E6%8D%AE/2.jpg"><br>四、代码实现</p>
+<p>首先创建数据表，MySQL 的 SQL 语句如下： </p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> `sess` (</span><br><span class="line"></span><br><span class="line">  `sesskey` <span class="type">varchar</span>(<span class="number">32</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span> <span class="keyword">default</span> <span class="string">&#x27;&#x27;</span>,</span><br><span class="line"></span><br><span class="line">   `expiry` <span class="type">bigint</span>(<span class="number">20</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span> <span class="keyword">default</span> <span class="string">&#x27;0&#x27;</span>,</span><br><span class="line"></span><br><span class="line">   `data` longtext <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line"></span><br><span class="line">   <span class="keyword">PRIMARY</span> KEY  (`sesskey`),</span><br><span class="line"></span><br><span class="line">   KEY `expiry` (`expiry`)</span><br><span class="line"></span><br><span class="line"> ) TYPE<span class="operator">=</span>MyISAM</span><br></pre></td></tr></table></figure>
+<p>sesskey 为 SESSION ID，expiry 为 SESSION 过期时间，data 用于保存 SESSION 数据。</p>
+<p>默认情况下 SESSION 数据是以文件方式保存，想要使用数据库方式保存，就必须重新定义 SESSION 各个操作的处理函数。PHP 提供了session_set_save_handle() 函数，可以用此函数自定义 SESSION 的处理过程，当然首先要先将 session.save_handler 改成 user，可在 PHP 中进行设置：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span>   </span><br><span class="line"><span class="title function_ invoke__">session_module_name</span>(<span class="string">&#x27;user&#x27;</span>);  </span><br><span class="line"><span class="meta">?&gt;</span>   </span><br></pre></td></tr></table></figure>
+<p>接下来着重讲一下 session_set_save_handle() 函数，此函数有六个参数： </p>
+<p>session_set_save_handler ( string open, string close, string read, string write, string destroy, string gc )</p>
+<p>各个参数为各项操作的函数名，这些操作依次是：打开、关闭、读取、写入、销毁、垃圾回收。PHP 手册中有详细的例子，在这里我们使用 OO 的方式来实现这些操作，详细代码如下： </p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span>  </span><br><span class="line"><span class="title function_ invoke__">define</span>(<span class="string">&#x27;MY_SESS_TIME&#x27;</span>, <span class="number">3600</span>);   <span class="comment">//SESSION 生存时长  </span></span><br><span class="line"><span class="comment">//类定义  </span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">My_Sess</span>  </span></span><br><span class="line"><span class="class"></span>&#123;  </span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">init</span>(<span class="params"></span>)  </span></span><br><span class="line"><span class="function">    </span>&#123;  </span><br><span class="line">        <span class="variable">$domain</span> = <span class="string">&#x27;.infor96.com&#x27;</span>;  </span><br><span class="line">        <span class="comment">//不使用 GET/POST 变量方式  </span></span><br><span class="line">        <span class="title function_ invoke__">ini_set</span>(<span class="string">&#x27;session.use_trans_sid&#x27;</span>,    <span class="number">0</span>);  </span><br><span class="line">        <span class="comment">//设置垃圾回收最大生存时间  </span></span><br><span class="line">        <span class="title function_ invoke__">ini_set</span>(<span class="string">&#x27;session.gc_maxlifetime&#x27;</span>,   MY_SESS_TIME);  </span><br><span class="line">   </span><br><span class="line">        <span class="comment">//使用 COOKIE 保存 SESSION ID 的方式  </span></span><br><span class="line">        <span class="title function_ invoke__">ini_set</span>(<span class="string">&#x27;session.use_cookies&#x27;</span>,      <span class="number">1</span>);  </span><br><span class="line">        <span class="title function_ invoke__">ini_set</span>(<span class="string">&#x27;session.cookie_path&#x27;</span>,      <span class="string">&#x27;/&#x27;</span>);  </span><br><span class="line">        <span class="comment">//多主机共享保存 SESSION ID 的 COOKIE  </span></span><br><span class="line">        <span class="title function_ invoke__">ini_set</span>(<span class="string">&#x27;session.cookie_domain&#x27;</span>,    <span class="variable">$domain</span>);  </span><br><span class="line">   </span><br><span class="line">        <span class="comment">//将 session.save_handler 设置为 user，而不是默认的 files  </span></span><br><span class="line">        <span class="title function_ invoke__">session_module_name</span>(<span class="string">&#x27;user&#x27;</span>);  </span><br><span class="line">        <span class="comment">//定义 SESSION 各项操作所对应的方法名：  </span></span><br><span class="line">        <span class="title function_ invoke__">session_set_save_handler</span>(  </span><br><span class="line">            <span class="keyword">array</span>(<span class="string">&#x27;My_Sess&#x27;</span>, <span class="string">&#x27;open&#x27;</span>),   <span class="comment">//对应于静态方法 My_Sess::open()，下同。  </span></span><br><span class="line">            <span class="keyword">array</span>(<span class="string">&#x27;My_Sess&#x27;</span>, <span class="string">&#x27;close&#x27;</span>),  </span><br><span class="line">            <span class="keyword">array</span>(<span class="string">&#x27;My_Sess&#x27;</span>, <span class="string">&#x27;read&#x27;</span>),  </span><br><span class="line">            <span class="keyword">array</span>(<span class="string">&#x27;My_Sess&#x27;</span>, <span class="string">&#x27;write&#x27;</span>),  </span><br><span class="line">            <span class="keyword">array</span>(<span class="string">&#x27;My_Sess&#x27;</span>, <span class="string">&#x27;destroy&#x27;</span>),  </span><br><span class="line">            <span class="keyword">array</span>(<span class="string">&#x27;My_Sess&#x27;</span>, <span class="string">&#x27;gc&#x27;</span>)  </span><br><span class="line">        );  </span><br><span class="line">    &#125;   <span class="comment">//end function  </span></span><br><span class="line">   </span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">open</span>(<span class="params"><span class="variable">$save_path</span>, <span class="variable">$session_name</span></span>) </span>&#123;  </span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;  </span><br><span class="line">    &#125;   <span class="comment">//end function  </span></span><br><span class="line">   </span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">close</span>(<span class="params"></span>) </span>&#123;  </span><br><span class="line">        <span class="keyword">global</span> <span class="variable">$MY_SESS_CONN</span>;  </span><br><span class="line">   </span><br><span class="line">        <span class="keyword">if</span> (<span class="variable">$MY_SESS_CONN</span>) &#123;    <span class="comment">//关闭数据库连接  </span></span><br><span class="line">            <span class="variable">$MY_SESS_CONN</span>-&gt;<span class="title function_ invoke__">Close</span>();  </span><br><span class="line">        &#125;  </span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;  </span><br><span class="line">    &#125;   <span class="comment">//end function  </span></span><br><span class="line">   </span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">read</span>(<span class="params"><span class="variable">$sesskey</span></span>) </span>&#123;  </span><br><span class="line">        <span class="keyword">global</span> <span class="variable">$MY_SESS_CONN</span>;  </span><br><span class="line">   </span><br><span class="line">        <span class="variable">$sql</span> = <span class="string">&#x27;SELECT data FROM sess WHERE sesskey=&#x27;</span> . <span class="variable">$MY_SESS_CONN</span>-&gt;<span class="title function_ invoke__">qstr</span>(<span class="variable">$sesskey</span>) . <span class="string">&#x27; AND expiry&gt;=&#x27;</span> . <span class="title function_ invoke__">time</span>();  </span><br><span class="line">        <span class="variable">$rs</span> =&amp; <span class="variable">$MY_SESS_CONN</span>-&gt;<span class="title function_ invoke__">Execute</span>(<span class="variable">$sql</span>);  </span><br><span class="line">        <span class="keyword">if</span> (<span class="variable">$rs</span>) &#123;  </span><br><span class="line">            <span class="keyword">if</span> (<span class="variable">$rs</span>-&gt;EOF) &#123;  </span><br><span class="line">                <span class="keyword">return</span> <span class="string">&quot;;  </span></span><br><span class="line"><span class="string">            &#125; else &#123;    //读取到对应于 SESSION ID 的 SESSION 数据  </span></span><br><span class="line"><span class="string">                <span class="subst">$v</span> = <span class="subst">$rs</span>-&gt;fields[0];  </span></span><br><span class="line"><span class="string">                <span class="subst">$rs</span>-&gt;Close();  </span></span><br><span class="line"><span class="string">                return <span class="subst">$v</span>;  </span></span><br><span class="line"><span class="string">            &#125;   //end if  </span></span><br><span class="line"><span class="string">        &#125;   //end if  </span></span><br><span class="line"><span class="string">        return &quot;</span>;  </span><br><span class="line">    &#125;   <span class="comment">//end function  </span></span><br><span class="line">   </span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">write</span>(<span class="params"><span class="variable">$sesskey</span>, <span class="variable">$data</span></span>) </span>&#123;  </span><br><span class="line">        <span class="keyword">global</span> <span class="variable">$MY_SESS_CONN</span>;  </span><br><span class="line">          </span><br><span class="line">        <span class="variable">$qkey</span> = <span class="variable">$MY_SESS_CONN</span>-&gt;<span class="title function_ invoke__">qstr</span>(<span class="variable">$sesskey</span>);  </span><br><span class="line">        <span class="variable">$expiry</span> = <span class="title function_ invoke__">time</span>() + My_SESS_TIME;    <span class="comment">//设置过期时间  </span></span><br><span class="line">          </span><br><span class="line">        <span class="comment">//写入 SESSION  </span></span><br><span class="line">        <span class="variable">$arr</span> = <span class="keyword">array</span>(  </span><br><span class="line">            <span class="string">&#x27;sesskey&#x27;</span> =&gt; <span class="variable">$qkey</span>,  </span><br><span class="line">            <span class="string">&#x27;expiry&#x27;</span>  =&gt; <span class="variable">$expiry</span>,  </span><br><span class="line">            <span class="string">&#x27;data&#x27;</span>    =&gt; <span class="variable">$data</span>);  </span><br><span class="line">        <span class="variable">$MY_SESS_CONN</span>-&gt;<span class="title function_ invoke__">Replace</span>(<span class="string">&#x27;sess&#x27;</span>, <span class="variable">$arr</span>, <span class="string">&#x27;sesskey&#x27;</span>, <span class="variable">$autoQuote</span> = <span class="literal">true</span>);  </span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;  </span><br><span class="line">    &#125;   <span class="comment">//end function  </span></span><br><span class="line">   </span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">destroy</span>(<span class="params"><span class="variable">$sesskey</span></span>) </span>&#123;  </span><br><span class="line">        <span class="keyword">global</span> <span class="variable">$MY_SESS_CONN</span>;  </span><br><span class="line">   </span><br><span class="line">        <span class="variable">$sql</span> = <span class="string">&#x27;DELETE FROM sess WHERE sesskey=&#x27;</span> . <span class="variable">$MY_SESS_CONN</span>-&gt;<span class="title function_ invoke__">qstr</span>(<span class="variable">$sesskey</span>);  </span><br><span class="line">        <span class="variable">$rs</span> =&amp; <span class="variable">$MY_SESS_CONN</span>-&gt;<span class="title function_ invoke__">Execute</span>(<span class="variable">$sql</span>);  </span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;  </span><br><span class="line">    &#125;   <span class="comment">//end function  </span></span><br><span class="line">   </span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">gc</span>(<span class="params"><span class="variable">$maxlifetime</span> = <span class="literal">null</span></span>) </span>&#123;  </span><br><span class="line">        <span class="keyword">global</span> <span class="variable">$MY_SESS_CONN</span>;  </span><br><span class="line">   </span><br><span class="line">        <span class="variable">$sql</span> = <span class="string">&#x27;DELETE FROM sess WHERE expiry&lt;&#x27;</span> . <span class="title function_ invoke__">time</span>();  </span><br><span class="line">        <span class="variable">$MY_SESS_CONN</span>-&gt;<span class="title function_ invoke__">Execute</span>(<span class="variable">$sql</span>);  </span><br><span class="line">        <span class="comment">//由于经常性的对表 sess 做删除操作，容易产生碎片，  </span></span><br><span class="line">        <span class="comment">//所以在垃圾回收中对该表进行优化操作。  </span></span><br><span class="line">        <span class="variable">$sql</span> = <span class="string">&#x27;OPTIMIZE TABLE sess&#x27;</span>;  </span><br><span class="line">        <span class="variable">$MY_SESS_CONN</span>-&gt;<span class="title function_ invoke__">Execute</span>(<span class="variable">$sql</span>);  </span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;  </span><br><span class="line">    &#125;   <span class="comment">//end function  </span></span><br><span class="line">&#125;   <span class="comment">///:~  </span></span><br><span class="line">   </span><br><span class="line"><span class="comment">//使用 ADOdb 作为数据库抽象层。  </span></span><br><span class="line"><span class="keyword">require_once</span>(<span class="string">&#x27;adodb/adodb.inc.php&#x27;</span>);  </span><br><span class="line"><span class="comment">//数据库配置项，可放入配置文件中（如：config.inc.php）。  </span></span><br><span class="line"><span class="variable">$db_type</span> = <span class="string">&#x27;mysql&#x27;</span>;  </span><br><span class="line"><span class="variable">$db_host</span> = <span class="string">&#x27;192.168.212.1&#x27;</span>;  </span><br><span class="line"><span class="variable">$db_user</span> = <span class="string">&#x27;sess_user&#x27;</span>;  </span><br><span class="line"><span class="variable">$db_pass</span> = <span class="string">&#x27;sess_pass&#x27;</span>;  </span><br><span class="line"><span class="variable">$db_name</span> = <span class="string">&#x27;sess_db&#x27;</span>;  </span><br><span class="line"><span class="comment">//创建数据库连接，这是一个全局变量。  </span></span><br><span class="line"><span class="variable">$GLOBALS</span>[<span class="string">&#x27;MY_SESS_CONN&#x27;</span>] =&amp; <span class="title function_ invoke__">ADONewConnection</span>(<span class="variable">$db_type</span>);  </span><br><span class="line"><span class="variable">$GLOBALS</span>[<span class="string">&#x27;MY_SESS_CONN&#x27;</span>]-&gt;<span class="title function_ invoke__">Connect</span>( <span class="variable">$db_host</span>, <span class="variable">$db_user</span>, <span class="variable">$db_pass</span>, <span class="variable">$db_name</span>);  </span><br><span class="line"><span class="comment">//初始化 SESSION 设置，必须在 session_start() 之前运行！！  </span></span><br><span class="line"><span class="title class_">My_Sess</span>::<span class="title function_ invoke__">init</span>();  </span><br><span class="line"><span class="meta">?&gt;</span>  </span><br></pre></td></tr></table></figure>
+<p>五、遗留问题</p>
+<p>如果网站的访问量很大的话，SESSION 的读写会频繁地对数据库进行操作，这样效率就会明显降低。考虑到 SESSION 数据一般不会很大，可以尝试用 C/Java 写个多线程的程序，用 HASH 表保存 SESSION 数据，并通过 socket 通信进行数据读写，这样 SESSION 就保存在内存中，读写速度应该会快很多。另外还可以通过负载均衡来分担服务器负载。不过这些都只是我自己的一些想法和假设，并没有实践过 。。。。。。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/02/20/PHP-%E5%AE%9E%E7%8E%B0%E5%A4%9A%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%B1%E4%BA%AB-SESSION-%E6%95%B0%E6%8D%AE/" data-id="cl9pgenv100riycv130vectj6" data-title="PHP 实现多服务器共享 SESSION 数据" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/02/20/php%E5%AD%A6%E4%B9%A0%E4%B9%8Btry-catch/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          php学习之try catch
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/02/20/php%E6%9C%8D%E5%8A%A1%E7%AB%AF%E6%8E%A5%E6%94%B6post%E7%9A%84json%E6%95%B0%E6%8D%AE/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">php服务端接收post的json数据</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

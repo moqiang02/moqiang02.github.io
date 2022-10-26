@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>使用Amoeba for mysql实现mysql读写分离（测试可行） | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="Amoeba for MySQL致力于MySQL的分布式数据库前端代理层，它主要在应用层访问MySQL的时候充当query 路由功能，专注于分布式数据库 proxy 开发。座落与Client、DB Server(s)之间。对客户端透明。具有负载均衡、高可用性、Query过滤、读写分离、可路由相关的query到目标数据库、可并发请求多台数据库合并结果。 在Amoeba上面你能够完成多数据源的高可用、">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用Amoeba for mysql实现mysql读写分离（测试可行）">
+<meta property="og:url" content="http://moqiang02.github.io/2014/04/23/%E4%BD%BF%E7%94%A8Amoeba-for-mysql%E5%AE%9E%E7%8E%B0mysql%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="Amoeba for MySQL致力于MySQL的分布式数据库前端代理层，它主要在应用层访问MySQL的时候充当query 路由功能，专注于分布式数据库 proxy 开发。座落与Client、DB Server(s)之间。对客户端透明。具有负载均衡、高可用性、Query过滤、读写分离、可路由相关的query到目标数据库、可并发请求多台数据库合并结果。 在Amoeba上面你能够完成多数据源的高可用、">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E4%BD%BF%E7%94%A8Amoeba%E5%AE%9E%E7%8E%B0mysql%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/1.jpg">
+<meta property="article:published_time" content="2014-04-23T12:46:19.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:54.064Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="集群">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/%E4%BD%BF%E7%94%A8Amoeba%E5%AE%9E%E7%8E%B0mysql%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/1.jpg">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-使用Amoeba-for-mysql实现mysql读写分离" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2014/04/23/%E4%BD%BF%E7%94%A8Amoeba-for-mysql%E5%AE%9E%E7%8E%B0mysql%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/" class="article-date">
+  <time class="dt-published" datetime="2014-04-23T12:46:19.000Z" itemprop="datePublished">2014-04-23</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/mysql/">mysql</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      使用Amoeba for mysql实现mysql读写分离（测试可行）
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#mysql%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6%E9%85%8D%E7%BD%AE"><span class="toc-number">1.</span> <span class="toc-text">mysql主从复制配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#java%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE"><span class="toc-number">2.</span> <span class="toc-text">java环境配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Amoeba%E7%9A%84%E5%AE%89%E8%A3%85"><span class="toc-number">3.</span> <span class="toc-text">Amoeba的安装</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%85%8D%E7%BD%AE%E7%94%A8%E6%88%B7%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F"><span class="toc-number">4.</span> <span class="toc-text">配置用户环境变量</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Amoeba-for-mysql%E9%85%8D%E7%BD%AE"><span class="toc-number">5.</span> <span class="toc-text">Amoeba for mysql配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#dbServers-xml%E6%96%87%E4%BB%B6%E9%85%8D%E7%BD%AE"><span class="toc-number">6.</span> <span class="toc-text">dbServers.xml文件配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#amoeba-xml%E9%85%8D%E7%BD%AE"><span class="toc-number">7.</span> <span class="toc-text">amoeba.xml配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#amoeba%E5%90%AF%E5%8A%A8"><span class="toc-number">8.</span> <span class="toc-text">amoeba启动</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FAQ"><span class="toc-number">9.</span> <span class="toc-text">FAQ</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <p>Amoeba for MySQL致力于MySQL的分布式数据库前端代理层，它主要在应用层访问MySQL的时候充当query 路由功能，专注于分布式数据库 proxy 开发。座落与Client、DB Server(s)之间。对客户端透明。具有负载均衡、高可用性、Query过滤、读写分离、可路由相关的query到目标数据库、可并发请求多台数据库合并结果。 在Amoeba上面你能够完成多数据源的高可用、负载均衡、数据切片的功能。目前在很多企业的生产线上面使用。</p>
+<p>这里使用Amoeba for mysql来实现mysql的读写分离，起到缓解主数据库服务器的压力，下面是实现这一方案的架构图：<br><img src="/images/%E4%BD%BF%E7%94%A8Amoeba%E5%AE%9E%E7%8E%B0mysql%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/1.jpg"></p>
+<span id="more"></span>
+<h3 id="mysql主从复制配置"><a href="#mysql主从复制配置" class="headerlink" title="mysql主从复制配置"></a>mysql主从复制配置</h3><p>因为读写分离，所以一台负责mysql的写操作，另一台负责mysql的读操作，所以我们这里使用mysql的主从复制再合适不过了。关于这一配置，请移步：<a target="_blank" rel="noopener" href="http://blog.csdn.net/moqiang02/article/details/39924401">http://blog.csdn.net/moqiang02/article/details/39924401</a></p>
+<h3 id="java环境配置"><a href="#java环境配置" class="headerlink" title="java环境配置"></a>java环境配置</h3><p>Amoeba框架是基于Java SE1.5开发的，建议使用Java SE 1.5版本。目前Amoeba经验证在JavaTM SE 1.5和Java SE 1.6能正常运行，（可能包括其他未经验证的版本）。<br>Java SE 1.6下载地址：<a target="_blank" rel="noopener" href="http://www.oracle.com/technetwork/java/javase/downloads/jdk-6u32-downloads-1594644.html">http://www.oracle.com/technetwork/java/javase/downloads/jdk-6u32-downloads-1594644.html</a><br>我这里下载jdk-6u32-linux-i586-rpm.bin。</p>
+<p>下载完成后执行sh jdk-6u32-linux-i586-rpm.bin开始安装，将会安装到/usr/java/jdk1.6.0_32目录。</p>
+<h3 id="Amoeba的安装"><a href="#Amoeba的安装" class="headerlink" title="Amoeba的安装"></a>Amoeba的安装</h3><p>Amoeba下载地址：<a target="_blank" rel="noopener" href="http://sourceforge.net/projects/amoeba/">http://sourceforge.net/projects/amoeba/</a><br>下面是安装步骤：</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">cd /tmp</span><br><span class="line">mkdir <span class="regexp">/usr/</span>local/amoeba</span><br><span class="line">wget http:<span class="regexp">//</span>softlayer.dl.sourceforge.net<span class="regexp">/project/</span>amoeba<span class="regexp">/Amoeba%20for%20mysql/</span><span class="number">2</span>.x/amoeba-mysql-binary-<span class="number">2.1</span>.<span class="number">0</span>-RC5.tar.gz</span><br><span class="line">tar xzf amoeba-mysql-binary-<span class="number">2.1</span>.<span class="number">0</span>-RC5.tar.gz -C <span class="regexp">/usr/</span>local/amoeba</span><br></pre></td></tr></table></figure>
+
+<h3 id="配置用户环境变量"><a href="#配置用户环境变量" class="headerlink" title="配置用户环境变量"></a>配置用户环境变量</h3><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">vi ~/.bash_profile</span><br><span class="line">设置为：</span><br><span class="line"><span class="attribute">PATH</span>=<span class="variable">$PATH</span>:$HOME/bin:/usr/local/amoeba/bin</span><br><span class="line"><span class="attribute">JAVA_HOME</span>=/usr/java/jdk1.6.0_32</span><br><span class="line"><span class="built_in">export</span> JAVA_HOME</span><br><span class="line"><span class="built_in">export</span> PATH</span><br></pre></td></tr></table></figure>
+<p>立即生效：<br><code>source  ~/.bash_profile</code></p>
+<h3 id="Amoeba-for-mysql配置"><a href="#Amoeba-for-mysql配置" class="headerlink" title="Amoeba for mysql配置"></a>Amoeba for mysql配置</h3><p>配置Amoeba for mysql的读写分离主要涉及两个文件：<br>1、/usr/local/amoeba/conf/dbServers.xml<br>此文件定义由Amoeba代理的数据库如何连接，比如最基础的：主机IP、端口、Amoeba使用的用户名和密码等等。<br>2、/usr/local/amoeba/conf/amoeba.xml<br>此文件定义了Amoeba代理的相关配置。</p>
+<h3 id="dbServers-xml文件配置"><a href="#dbServers-xml文件配置" class="headerlink" title="dbServers.xml文件配置"></a>dbServers.xml文件配置</h3><p>abstractServer配置:</p>
+<figure class="highlight dust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">dbServer</span> <span class="attr">name</span>=<span class="string">&quot;abstractServer&quot;</span> <span class="attr">abstractive</span>=<span class="string">&quot;true&quot;</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml">    <span class="tag">&lt;<span class="name">factoryConfig</span> <span class="attr">class</span>=<span class="string">&quot;com.meidusa.amoeba.mysql.net.MysqlServerConnectionFactory&quot;</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;manager&quot;</span>&gt;</span>$</span><span class="template-variable">&#123;defaultManager&#125;</span><span class="language-xml"><span class="tag">&lt;/<span class="name">property</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;sendBufferSize&quot;</span>&gt;</span>64<span class="tag">&lt;/<span class="name">property</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;receiveBufferSize&quot;</span>&gt;</span>128<span class="tag">&lt;/<span class="name">property</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml">  </span></span><br><span class="line"><span class="language-xml">        <span class="comment">&lt;!-- mysql port --&gt;</span>  </span></span><br><span class="line"><span class="language-xml">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;port&quot;</span>&gt;</span>3306<span class="tag">&lt;/<span class="name">property</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml">  </span></span><br><span class="line"><span class="language-xml">        <span class="comment">&lt;!-- mysql schema --&gt;</span>  </span></span><br><span class="line"><span class="language-xml">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;schema&quot;</span>&gt;</span>dbname<span class="tag">&lt;/<span class="name">property</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml">  </span></span><br><span class="line"><span class="language-xml">        <span class="comment">&lt;!-- mysql user --&gt;</span>  </span></span><br><span class="line"><span class="language-xml">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;user&quot;</span>&gt;</span>root<span class="tag">&lt;/<span class="name">property</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml">  </span></span><br><span class="line"><span class="language-xml">        <span class="comment">&lt;!--  mysql password --&gt;</span>  </span></span><br><span class="line"><span class="language-xml">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;password&quot;</span>&gt;</span>root<span class="tag">&lt;/<span class="name">property</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml">    <span class="tag">&lt;/<span class="name">factoryConfig</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml">   </span></span><br><span class="line"><span class="language-xml">    <span class="tag">&lt;<span class="name">poolConfig</span> <span class="attr">class</span>=<span class="string">&quot;com.meidusa.amoeba.net.poolable.PoolableObjectPool&quot;</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;maxActive&quot;</span>&gt;</span>500<span class="tag">&lt;/<span class="name">property</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;maxIdle&quot;</span>&gt;</span>500<span class="tag">&lt;/<span class="name">property</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;minIdle&quot;</span>&gt;</span>10<span class="tag">&lt;/<span class="name">property</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;minEvictableIdleTimeMillis&quot;</span>&gt;</span>600000<span class="tag">&lt;/<span class="name">property</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;timeBetweenEvictionRunsMillis&quot;</span>&gt;</span>600000<span class="tag">&lt;/<span class="name">property</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;testOnBorrow&quot;</span>&gt;</span>true<span class="tag">&lt;/<span class="name">property</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;testWhileIdle&quot;</span>&gt;</span>true<span class="tag">&lt;/<span class="name">property</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml">    <span class="tag">&lt;/<span class="name">poolConfig</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;/<span class="name">dbServer</span>&gt;</span>  </span></span><br></pre></td></tr></table></figure>
+<p>此部分定义真实mysql服务器的端口，数据库名称，mysql用户及密码。<br>主从数据库定义：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dbServer</span> <span class="attr">name</span>=<span class="string">&quot;Master&quot;</span>  <span class="attr">parent</span>=<span class="string">&quot;abstractServer&quot;</span>&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;<span class="name">factoryConfig</span>&gt;</span>  </span><br><span class="line">        <span class="comment">&lt;!-- mysql ip --&gt;</span>  </span><br><span class="line">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;ipAddress&quot;</span>&gt;</span>192.168.0.1<span class="tag">&lt;/<span class="name">property</span>&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;/<span class="name">factoryConfig</span>&gt;</span>  </span><br><span class="line"><span class="tag">&lt;/<span class="name">dbServer</span>&gt;</span>  </span><br><span class="line"><span class="tag">&lt;<span class="name">dbServer</span> <span class="attr">name</span>=<span class="string">&quot;Slave1&quot;</span>  <span class="attr">parent</span>=<span class="string">&quot;abstractServer&quot;</span>&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;<span class="name">factoryConfig</span>&gt;</span>  </span><br><span class="line">        <span class="comment">&lt;!-- mysql ip --&gt;</span>  </span><br><span class="line">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;ipAddress&quot;</span>&gt;</span>192.168.0.2<span class="tag">&lt;/<span class="name">property</span>&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;/<span class="name">factoryConfig</span>&gt;</span>  </span><br><span class="line"><span class="tag">&lt;/<span class="name">dbServer</span>&gt;</span>  </span><br><span class="line"><span class="tag">&lt;<span class="name">dbServer</span> <span class="attr">name</span>=<span class="string">&quot;Slave2&quot;</span>  <span class="attr">parent</span>=<span class="string">&quot;abstractServer&quot;</span>&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;<span class="name">factoryConfig</span>&gt;</span>  </span><br><span class="line">        <span class="comment">&lt;!-- mysql ip --&gt;</span>  </span><br><span class="line">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;ipAddress&quot;</span>&gt;</span>192.168.0.3<span class="tag">&lt;/<span class="name">property</span>&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;/<span class="name">factoryConfig</span>&gt;</span>  </span><br><span class="line"><span class="tag">&lt;/<span class="name">dbServer</span>&gt;</span>  </span><br><span class="line"><span class="tag">&lt;<span class="name">dbServer</span> <span class="attr">name</span>=<span class="string">&quot;virtualSlave&quot;</span> <span class="attr">virtual</span>=<span class="string">&quot;true&quot;</span>&gt;</span>   #注意：name=&quot;virtualSlave&quot;  </span><br><span class="line">    <span class="tag">&lt;<span class="name">poolConfig</span> <span class="attr">class</span>=<span class="string">&quot;com.meidusa.amoeba.server.MultipleServerPool&quot;</span>&gt;</span>  </span><br><span class="line">        <span class="comment">&lt;!-- Load balancing strategy: 1=ROUNDROBIN , 2=WEIGHTBASED , 3=HA--&gt;</span>  </span><br><span class="line">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;loadbalance&quot;</span>&gt;</span>1<span class="tag">&lt;/<span class="name">property</span>&gt;</span>  </span><br><span class="line">  </span><br><span class="line">        <span class="comment">&lt;!-- Separated by commas,such as: server1,server2,server1 --&gt;</span>  </span><br><span class="line">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;poolNames&quot;</span>&gt;</span>Slave1,Slave2<span class="tag">&lt;/<span class="name">property</span>&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;/<span class="name">poolConfig</span>&gt;</span>  </span><br><span class="line"><span class="tag">&lt;/<span class="name">dbServer</span>&gt;</span>  </span><br></pre></td></tr></table></figure>
+<p>此部分定义主服务器，从服务器，及从服务器连接池。这里只定义数据库地址，它们的用户及密码就是上面的abstractServer里的设置。注意用来连接真实mysql服务器的用户必须拥有远程连接权限。</p>
+<p>测试之前先要保证amoeba-server有访问两个主从服务器test库的权限,在主从mysql上都执行：（至关重要！！）<br>grant all on test.* to rex@’192.168.0.%’ identified by ‘123456’;</p>
+<p>备注：当使用ROUNDROBIN模式时，如果服务器连接池中某台服务器出现故障时，其它的服务器仍然正常工作，不会因为单台数据库的故障而造成全部瘫痪的后果。</p>
+<h3 id="amoeba-xml配置"><a href="#amoeba-xml配置" class="headerlink" title="amoeba.xml配置"></a>amoeba.xml配置</h3><p>amoeba连接验证配置：</p>
+<figure class="highlight dust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;authenticator&quot;</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml">    <span class="tag">&lt;<span class="name">bean</span> <span class="attr">class</span>=<span class="string">&quot;com.meidusa.amoeba.mysql.server.MysqlClientAuthenticator&quot;</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;user&quot;</span>&gt;</span>root<span class="tag">&lt;/<span class="name">property</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;password&quot;</span>&gt;</span>root<span class="tag">&lt;/<span class="name">property</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;filter&quot;</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml">            <span class="tag">&lt;<span class="name">bean</span> <span class="attr">class</span>=<span class="string">&quot;com.meidusa.amoeba.server.IPAccessController&quot;</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml">                <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;ipFile&quot;</span>&gt;</span>$</span><span class="template-variable">&#123;amoeba.home&#125;</span><span class="language-xml">/conf/access_list.conf<span class="tag">&lt;/<span class="name">property</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml">            <span class="tag">&lt;/<span class="name">bean</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml">        <span class="tag">&lt;/<span class="name">property</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml">    <span class="tag">&lt;/<span class="name">bean</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;/<span class="name">property</span>&gt;</span>  </span></span><br></pre></td></tr></table></figure>
+<p>这里定义连接amoeba时用来验证的用户及密码。<br>读写分离配置：</p>
+<figure class="highlight qml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;<span class="keyword">property</span><span class="string"> name</span>=<span class="string">&quot;defaultPool&quot;</span>&gt;Master&lt;/<span class="keyword">property</span><span class="string">&gt;  </span></span><br><span class="line">&lt;<span class="keyword">property</span><span class="string"> name</span>=<span class="string">&quot;writePool&quot;</span>&gt;Master&lt;/<span class="keyword">property</span><span class="string">&gt;  </span></span><br><span class="line">&lt;<span class="keyword">property</span><span class="string"> name</span>=<span class="string">&quot;readPool&quot;</span>&gt;virtualSlave&lt;/<span class="keyword">property</span><span class="string">&gt;  </span></span><br></pre></td></tr></table></figure>
+<p>defaultPool:配置了默认的数据库节点，一些除了SELECTUPDATEINSERTDELETE的语句都会在defaultPool执行。<br>writePool :配置了数据库写库，通常配为Master，如这里就配置为之前定义的Master数据库。<br>readPool :配置了数据库读库，通常配为Slave或者Slave组成的数据库池，如这里就配置之前的virtualSlave数据库池。</p>
+<h3 id="amoeba启动"><a href="#amoeba启动" class="headerlink" title="amoeba启动"></a>amoeba启动</h3><p>启动命令：<br><code>amoeba start</code><br>此命令以前台的方式启动，会输出启动时的信息，检查没有错误信息后，中断，并后台运行：<br><code>amoeba start &amp;</code></p>
+<h3 id="FAQ"><a href="#FAQ" class="headerlink" title="FAQ"></a>FAQ</h3><p>1、无法正常连接？<br>首先根据执行amoeba start输出的信息排除配置文件没有问题，之后确认mysql用户是否有远程连接的权限，然后检查网站的数据库配置文件是否设置正确。<br>2、如何配置网站数据库连接文件?<br>默认的端口应该为8066,用户及密码在amoeba.xml里设置。<br>参考：<a target="_blank" rel="noopener" href="http://docs.hexnova.com/amoeba/single-dbserver.html">通过Amoeba对一个数据库实例进行操作</a><br><a target="_blank" rel="noopener" href="http://docs.hexnova.com/amoeba/rw-splitting.html">在Master/Slave结构下的读写分离</a></p>
+<p>转载请标明文章来源:<a target="_blank" rel="noopener" href="https://www.centos.bz/2012/05/amoeba-for-mysql/">https://www.centos.bz/2012/05/amoeba-for-mysql/</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/04/23/%E4%BD%BF%E7%94%A8Amoeba-for-mysql%E5%AE%9E%E7%8E%B0mysql%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/" data-id="cl9pgeo6z01obycv1co5a4sdd" data-title="使用Amoeba for mysql实现mysql读写分离（测试可行）" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E9%9B%86%E7%BE%A4/" rel="tag">集群</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/04/25/memcache%E5%92%8Ciptables%E5%BC%80%E5%90%AF11211%E7%AB%AF%E5%8F%A3/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          memcache和iptables开启11211端口
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/04/22/Linux%E4%B8%8BMySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5%E9%85%8D%E7%BD%AE/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">Linux下MySQL数据库主从同步配置</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

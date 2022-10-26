@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Vue中computed和watch的区别 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="我们在 Vue 项目中多多少少都会有用到 computed 和 watch，这两个看似都能实现对数据的监听，但还是有区别。所以以下通过一个小栗子来理解一下这两者的区别。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Vue中computed和watch的区别">
+<meta property="og:url" content="http://moqiang02.github.io/2021/09/26/Vue%E4%B8%ADcomputed%E5%92%8Cwatch%E7%9A%84%E5%8C%BA%E5%88%AB/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="我们在 Vue 项目中多多少少都会有用到 computed 和 watch，这两个看似都能实现对数据的监听，但还是有区别。所以以下通过一个小栗子来理解一下这两者的区别。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/Vue%E4%B8%ADcomputed%E5%92%8Cwatch%E7%9A%84%E5%8C%BA%E5%88%AB/1.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/Vue%E4%B8%ADcomputed%E5%92%8Cwatch%E7%9A%84%E5%8C%BA%E5%88%AB/2.png">
+<meta property="article:published_time" content="2021-09-25T16:07:18.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.914Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="Vue">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/Vue%E4%B8%ADcomputed%E5%92%8Cwatch%E7%9A%84%E5%8C%BA%E5%88%AB/1.png">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Vue中computed和watch的区别" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2021/09/26/Vue%E4%B8%ADcomputed%E5%92%8Cwatch%E7%9A%84%E5%8C%BA%E5%88%AB/" class="article-date">
+  <time class="dt-published" datetime="2021-09-25T16:07:18.000Z" itemprop="datePublished">2021-09-26</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/javascript/">javascript</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Vue中computed和watch的区别
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <p>我们在 Vue 项目中多多少少都会有用到 computed 和 watch，这两个看似都能实现对数据的监听，但还是有区别。所以以下通过一个小栗子来理解一下这两者的区别。<span id="more"></span></p>
+<p><strong>computed 计算属性</strong><br>计算属性基于 data 中声明过或者父组件传递的 props 中的数据通过计算得到的一个<strong>新值</strong>，这个新值只会根据已知值的变化而变化，简言之：这个属性依赖其他属性，由<strong>其他属性计算而来</strong>的。</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">&lt;p&gt;姓名：&#123;&#123; fullName &#125;&#125;&lt;/p&gt;</span><br><span class="line">... ...</span><br><span class="line"><span class="keyword">data</span>: &#123;</span><br><span class="line">    firstName: <span class="string">&#x27;David&#x27;</span>,</span><br><span class="line">    lastName: <span class="string">&#x27;Beckham&#x27;</span></span><br><span class="line">&#125;,</span><br><span class="line">computed: &#123;</span><br><span class="line">    fullName: function() &#123; <span class="comment">//方法的返回值作为属性值</span></span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">this</span>.firstName + <span class="string">&#x27; &#x27;</span> + <span class="keyword">this</span>.lastName</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在 computed 属性对象中定义计算属性的方法，和取data对象里的数据属性一样以<strong>属性访问</strong>的形式调用，即在页面中使用  来显示计算的结果。</p>
+<p><strong>注</strong>：计算属性 fullName 不能在 data 中定义，而计算属性值的相关已知值在data中；<br>如果 fullName 在 data 中定义了会报错如下图：</p>
+<p><img src="/images/Vue%E4%B8%ADcomputed%E5%92%8Cwatch%E7%9A%84%E5%8C%BA%E5%88%AB/1.png"><br>因为如果 computed 属性值是一个函数，那么默认会走 get 方法，必须要有一个返回值，函数的返回值就是属性的属性值。计算属性定义了 fullName 并返回对应的结果给这个变量，变量不可被重复定义和赋值。</p>
+<p>在官方文档中，还强调了 computed 一个重要的特点，就是 <strong>computed 带有缓存功能</strong>。比如我在页面中多次显示 fullName：</p>
+<figure class="highlight handlebars"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">p</span>&gt;</span>姓名：</span><span class="template-variable">&#123;&#123; <span class="name">fullName</span> &#125;&#125;</span><span class="language-xml"><span class="tag">&lt;/<span class="name">p</span>&gt;</span></span></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">p</span>&gt;</span>姓名：</span><span class="template-variable">&#123;&#123; <span class="name">fullName</span> &#125;&#125;</span><span class="language-xml"><span class="tag">&lt;/<span class="name">p</span>&gt;</span></span></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">p</span>&gt;</span>姓名：</span><span class="template-variable">&#123;&#123; <span class="name">fullName</span> &#125;&#125;</span><span class="language-xml"><span class="tag">&lt;/<span class="name">p</span>&gt;</span></span></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">p</span>&gt;</span>姓名：</span><span class="template-variable">&#123;&#123; <span class="name">fullName</span> &#125;&#125;</span><span class="language-xml"><span class="tag">&lt;/<span class="name">p</span>&gt;</span></span></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">p</span>&gt;</span>姓名：</span><span class="template-variable">&#123;&#123; <span class="name">fullName</span> &#125;&#125;</span><span class="language-xml"><span class="tag">&lt;/<span class="name">p</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">... ...</span></span><br><span class="line"><span class="language-xml"></span></span><br><span class="line"><span class="language-xml">computed: &#123;</span></span><br><span class="line"><span class="language-xml">    fullName: function () &#123;</span></span><br><span class="line"><span class="language-xml">         console.log(&#x27;computed&#x27;) // 在控制台只打印了一次</span></span><br><span class="line"><span class="language-xml">         return this.firstName + &#x27; &#x27; + this.lastName</span></span><br><span class="line"><span class="language-xml">    &#125;</span></span><br><span class="line"><span class="language-xml">&#125;</span></span><br></pre></td></tr></table></figure>
+<p>我们知道 computed 内定义的 function 只执行一次，仅当初始化显示或者相关的 data、props 等属性数据发生变化的时候调用；<br>而 computed 属性值默认会缓存计算结果，计算属性是基于它们的响应式依赖进行缓存的；<br>只有当 computed 属性被使用后，才会执行 computed 的代码，在重复的调用中，只要依赖数据不变，直接取缓存中的计算结果。只有<strong>依赖型数据</strong>发生<strong>改变</strong>，computed 才会重新计算。</p>
+<p><strong>计算属性的高级</strong>：<br>在computed 中的属性都有一个 <strong>get</strong> 和一个 <strong>set</strong> 方法，当数据变化时，调用 set 方法。下面我们通过计算属性的 getter/setter 方法来实现对属性数据的显示和监视，即双向绑定。</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">computed: &#123;</span><br><span class="line">    fullName: &#123;</span><br><span class="line">        <span class="keyword">get</span>() &#123; <span class="comment">//读取当前属性值的回调，根据相关的数据计算并返回当前属性的值</span></span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">this</span>.firstName + <span class="string">&#x27; &#x27;</span> + <span class="keyword">this</span>.lastName</span><br><span class="line">        &#125;,</span><br><span class="line">        <span class="keyword">set</span>(<span class="keyword">val</span>) &#123; <span class="comment">// 当属性值发生改变时回调，更新相关的属性数据，val就是fullName的最新属性值</span></span><br><span class="line">            <span class="keyword">const</span> names = <span class="keyword">val</span> ? <span class="keyword">val</span>.split(<span class="string">&#x27; &#x27;</span>) : [];</span><br><span class="line">            <span class="keyword">this</span>.firstName = names[<span class="number">0</span>]</span><br><span class="line">            <span class="keyword">this</span>.lastName = names[<span class="number">1</span>]</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>watch 监听属性</strong><br>通过 vm 对象的 <code>$watch()</code> 或 watch 配置来监听 Vue 实例上的属性变化，或某些特定数据的变化，然后执行某些具体的业务逻辑操作。当属性变化时，回调函数自动调用，在函数内部进行计算。其可以监听的数据来源：data，props，computed 内的数据。</p>
+<p>以上示例通过 watch 来实现：</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">watch: &#123;</span><br><span class="line">    <span class="comment">// 监听 data 中的 firstName，如果发生了变化，就把变化的值给 data 中的 fullName， val 就是 firstName 的最新值</span></span><br><span class="line">    firstName: function(<span class="keyword">val</span>) &#123;</span><br><span class="line">        <span class="keyword">this</span>.fullName = <span class="keyword">val</span> + <span class="string">&#x27; &#x27;</span> + <span class="keyword">this</span>.lastName</span><br><span class="line">    &#125;,</span><br><span class="line">    lastName: function(<span class="keyword">val</span>) &#123;</span><br><span class="line">        <span class="keyword">this</span>.fullName = <span class="keyword">this</span>.firstName + <span class="string">&#x27; &#x27;</span> + <span class="keyword">val</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 由上可以看出 watch 要监听两个数据，而且代码是同类型的重复的，所以相比用 computed 更简洁</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>注：</strong>监听函数有两个参数，第一个参数是最新的值，第二个参数是输入之前的值，顺序一定是<strong>新值，旧值</strong>，如果只写一个参数，那就是最新属性值。</p>
+<p>在使用时选择 watch 还是 computed，还有一个参考点就是官网说的：当需要在数据变化时执行异步或开销较大的操作时，watch方式是最有用的。所以 watch 一定是<strong>支持异步</strong>的。</p>
+<p>上面仅限监听简单数据类型，监听复杂数据类型就需要用到深度监听 deep。<br><strong>deep：</strong>为了发现对象内部值的变化，可以在选项参数中指定 <code>deep: true</code>。注意监听数组的变更不需要这么做。</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">data: &#123;</span><br><span class="line">    fullName: &#123;</span><br><span class="line">        firstName: <span class="string">&#x27;David&#x27;</span>,</span><br><span class="line">        lastName: <span class="string">&#x27;Beckham&#x27;</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;,</span><br><span class="line">watch: &#123;</span><br><span class="line">    fullName: &#123;</span><br><span class="line">        handler(newVal, oldVal) &#123;</span><br><span class="line">            console<span class="selector-class">.log</span>(newVal);</span><br><span class="line">            console<span class="selector-class">.log</span>(oldVal);</span><br><span class="line">        &#125;,</span><br><span class="line">        deep: true</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>以上打印结果：<br><img src="/images/Vue%E4%B8%ADcomputed%E5%92%8Cwatch%E7%9A%84%E5%8C%BA%E5%88%AB/2.png"><br>打印出来的 newVal 和 oldVal 值是一样的，所以深度监听虽然可以监听到对象的变化，但是无法监听到对象里面哪个具体属性的变化。这是因为它们的引用指向同一个对象/数组。Vue 不会保留变更之前值的副本。<a target="_blank" rel="noopener" href="https://cn.vuejs.org/v2/api/#vm-watch">vm.$watch深度监听</a></p>
+<p>若果要监听对象的单个属性的变化，有两种方法：<br>1.直接监听对象的属性</p>
+<figure class="highlight arcade"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">watch:&#123;</span><br><span class="line">    fullName.firstName: <span class="keyword">function</span>(<span class="params">newVal,oldVal</span>)&#123;</span><br><span class="line">        <span class="built_in">console</span>.<span class="built_in">log</span>(newVal,oldVal);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>2.与 computed 属性配合使用，computed 返回想要监听的属性值，watch 用来监听</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">computed</span>: &#123;</span><br><span class="line">    <span class="title function_">firstNameChange</span>(<span class="params"></span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="variable language_">this</span>.<span class="property">fullName</span>.<span class="property">firstName</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;,</span><br><span class="line"><span class="attr">watch</span>: &#123;</span><br><span class="line">    <span class="title function_">firstNameChange</span>(<span class="params"></span>) &#123;</span><br><span class="line">        <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="variable language_">this</span>.<span class="property">fullName</span>)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>总结：</strong></p>
+<p><strong>watch和computed都是以Vue的依赖追踪机制为基础</strong>的，当某一个依赖型数据（依赖型数据：简单理解即放在 data 等对象下的实例数据）发生变化的时候，所有依赖这个数据的相关数据会自动发生变化，即自动调用相关的函数，来实现数据的变动。<br><strong>当依赖的值变化时，在watch中，是可以做一些复杂的操作的，而computed中的依赖，仅仅是一个值依赖于另一个值，是值上的依赖。</strong></p>
+<p>应用场景：<br>　　computed：用于处理复杂的逻辑运算；一个数据受一个或多个数据影响；用来处理watch和methods无法处理的，或处理起来不方便的情况。例如处理模板中的复杂表达式、购物车里面的商品数量和总金额之间的变化关系等。<br>　　watch：用来处理当一个属性发生变化时，需要执行某些具体的业务逻辑操作，或要在数据变化时执行异步或开销较大的操作；一个数据改变影响多个数据。例如用来监控路由、inpurt 输入框值的特殊处理等。</p>
+<p>区别：<br><strong>computed</strong></p>
+<ul>
+<li>  初始化显示或者相关的 data、props 等属性数据发生变化的时候调用；</li>
+<li>  计算属性不在 data 中，它是基于data 或 props 中的数据通过计算得到的一个新值，这个新值根据已知值的变化而变化；</li>
+<li>  在 computed 属性对象中定义计算属性的方法，和取data对象里的数据属性一样，以属性访问的形式调用；</li>
+<li>  如果 computed 属性值是函数，那么默认会走 get 方法，必须要有一个返回值，函数的返回值就是属性的属性值；</li>
+<li>  computed 属性值默认会<strong>缓存</strong>计算结果，在重复的调用中，只要依赖数据不变，直接取缓存中的计算结果，只有<strong>依赖型数据</strong>发生<strong>改变</strong>，computed 才会重新计算；</li>
+<li>  在computed中的，属性都有一个 get 和一个 set 方法，当数据变化时，调用 set 方法。</li>
+</ul>
+<p><strong>watch</strong></p>
+<ul>
+<li>  主要用来监听某些特定数据的变化，从而进行某些具体的业务逻辑操作，可以看作是 computed 和 methods 的结合体；</li>
+<li>  可以监听的数据来源：data，props，computed内的数据；</li>
+<li>  watch<strong>支持异步</strong>；</li>
+<li>  <strong>不支持缓存</strong>，监听的数据改变，直接会触发相应的操作；</li>
+<li>  监听函数有两个参数，第一个参数是最新的值，第二个参数是输入之前的值，顺序一定是新值，旧值。</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2021/09/26/Vue%E4%B8%ADcomputed%E5%92%8Cwatch%E7%9A%84%E5%8C%BA%E5%88%AB/" data-id="cl9pgenyn0136ycv19jgj9wsb" data-title="Vue中computed和watch的区别" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Vue/" rel="tag">Vue</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2021/10/15/Go%E8%AF%AD%E8%A8%80%E5%9C%A8goroutine%E4%B8%AD%E6%8B%BF%E5%88%B0%E5%8D%8F%E7%A8%8B%E8%BF%94%E5%9B%9E%E5%80%BC/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          Go语言在goroutine中拿到协程返回值
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2021/09/10/Guzzle7%E4%B8%AD%E6%96%87%E6%96%87%E6%A1%A3/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">Guzzle7中文文档</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

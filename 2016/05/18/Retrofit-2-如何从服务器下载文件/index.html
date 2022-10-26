@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Retrofit 2 - 如何从服务器下载文件 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="如何声明Retrofit请求如果你在阅读本文前没有写过任何一行Retrofit请求代码，那么最好看一下前面几篇博客。对于很多Retrofit使用者来说：定义一个下载文件的请求与其他请求几乎无异： 1234567&#x2F;&#x2F; option 1: a resource relative to your base URL@GET(&quot;&#x2F;resource&#x2F;example.zip&quot;)Call&amp;lt">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Retrofit 2 - 如何从服务器下载文件">
+<meta property="og:url" content="http://moqiang02.github.io/2016/05/18/Retrofit-2-%E5%A6%82%E4%BD%95%E4%BB%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8B%E8%BD%BD%E6%96%87%E4%BB%B6/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="如何声明Retrofit请求如果你在阅读本文前没有写过任何一行Retrofit请求代码，那么最好看一下前面几篇博客。对于很多Retrofit使用者来说：定义一个下载文件的请求与其他请求几乎无异： 1234567&#x2F;&#x2F; option 1: a resource relative to your base URL@GET(&quot;&#x2F;resource&#x2F;example.zip&quot;)Call&amp;lt">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2016-05-18T00:06:01.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.879Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="Android开源">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Retrofit-2-如何从服务器下载文件" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2016/05/18/Retrofit-2-%E5%A6%82%E4%BD%95%E4%BB%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8B%E8%BD%BD%E6%96%87%E4%BB%B6/" class="article-date">
+  <time class="dt-published" datetime="2016-05-18T00:06:01.000Z" itemprop="datePublished">2016-05-18</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/android/">android</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Retrofit 2 - 如何从服务器下载文件
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <h4 id="如何声明Retrofit请求"><a href="#如何声明Retrofit请求" class="headerlink" title="如何声明Retrofit请求"></a>如何声明Retrofit请求</h4><p>如果你在阅读本文前没有写过任何一行Retrofit请求代码，那么最好看一下前面几篇博客。对于很多Retrofit使用者来说：定义一个下载文件的请求与其他请求几乎无异：</p>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// option 1: a resource relative to your base URL</span></span><br><span class="line"><span class="variable">@GET</span>(<span class="string">&quot;/resource/example.zip&quot;</span>)</span><br><span class="line">Call&lt;ResponseBody&gt; <span class="built_in">downloadFileWithFixedUrl</span>();</span><br><span class="line"></span><br><span class="line"><span class="comment">// option 2: using a dynamic URL</span></span><br><span class="line"><span class="variable">@GET</span></span><br><span class="line">Call&lt;ResponseBody&gt; <span class="built_in">downloadFileWithDynamicUrlSync</span>(<span class="variable">@Url</span> String fileUrl);</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+<p>如果你要下载的文件是一个静态资源（存在于服务器上的同一个地点），Base URL指向的就是所在的服务器，这种情况下可以选择使用方案一。正如你所看到的,它看上去就像一个普通的Retrofit 2请求。值得注意的是，我们将ResponseBody作为了返回类型。Retrofit会试图解析并转换它，所以你不能使用任何其他返回类型，否则当你下载文件的时候，是毫无意义的。</p>
+<p>第二种方案是Retrofit 2的新特性。现在你可以轻松构造一个动态地址来作为全路径请求。这对于一些特殊文件的下载是非常有用的，也就是说这个请求可能要依赖一些参数，比如用户信息或者时间戳等。你可以在运行时构造URL地址，并精确的请求文件。如果你还没有试过动态URL方式，可以翻到开头，看看这篇专题博客<a target="_blank" rel="noopener" href="https://futurestud.io/blog/retrofit-2-how-to-use-dynamic-urls-for-requests">Retrofit 2中的动态URL</a>。</p>
+<p>哪一种方案对你有用呢，我们接着往下看。</p>
+<h4 id="如何调用请求"><a href="#如何调用请求" class="headerlink" title="如何调用请求"></a>如何调用请求</h4><p>声明请求后，实际调用方式如下：</p>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">FileDownloadService downloadService = <span class="module-access"><span class="module"><span class="identifier">ServiceGenerator</span>.</span></span>create(<span class="module-access"><span class="module"><span class="identifier">FileDownloadService</span>.</span></span><span class="keyword">class</span>);</span><br><span class="line"></span><br><span class="line">Call&lt;ResponseBody&gt; call = downloadService.download<span class="constructor">FileWithDynamicUrlSync(<span class="params">fileUrl</span>)</span>;</span><br><span class="line"></span><br><span class="line">call.enqueue(<span class="keyword">new</span> Callback&lt;ResponseBody&gt;<span class="literal">()</span> &#123;  </span><br><span class="line">    @Override</span><br><span class="line">    public void on<span class="constructor">Response(Call&lt;ResponseBody&gt; <span class="params">call</span>, Response&lt;ResponseBody&gt; <span class="params">response</span>)</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (response.is<span class="constructor">Success()</span>) &#123;</span><br><span class="line">            <span class="module-access"><span class="module"><span class="identifier">Log</span>.</span></span>d(TAG, <span class="string">&quot;server contacted and has file&quot;</span>);</span><br><span class="line"></span><br><span class="line">            boolean writtenToDisk = write<span class="constructor">ResponseBodyToDisk(<span class="params">response</span>.<span class="params">body</span>()</span>);</span><br><span class="line"></span><br><span class="line">            <span class="module-access"><span class="module"><span class="identifier">Log</span>.</span></span>d(TAG, <span class="string">&quot;file download was a success? &quot;</span> + writtenToDisk);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="module-access"><span class="module"><span class="identifier">Log</span>.</span></span>d(TAG, <span class="string">&quot;server contact failed&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void on<span class="constructor">Failure(Call&lt;ResponseBody&gt; <span class="params">call</span>, Throwable <span class="params">t</span>)</span> &#123;</span><br><span class="line">        <span class="module-access"><span class="module"><span class="identifier">Log</span>.</span></span>e(TAG, <span class="string">&quot;error&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>如果你对<code>ServiceGenerator.create()</code>感到困惑，可以阅读我们的<a target="_blank" rel="noopener" href="https://futurestud.io/blog/retrofit-getting-started-and-android-client">第一篇博客</a> 。一旦创建了service，我们就能像其他Retrofit调用一样做网络请求了。</p>
+<p>还剩下一件很重要的事，隐藏在代码块中的<code>writeResponseBodyToDisk()</code>函数：负责将文件写进磁盘。</p>
+<h4 id="如何保存文件"><a href="#如何保存文件" class="headerlink" title="如何保存文件"></a>如何保存文件</h4><p><code>writeResponseBodyToDisk()</code>方法持有ResponseBody对象，通过读取它的字节，并写入磁盘。代码看起来比实际略复杂：</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">boolean</span> writeResponseBodyToDisk(ResponseBody body) &#123;  </span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// todo change the file location/name according to your needs</span></span><br><span class="line">        <span class="keyword">File</span> futureStudioIconFile = <span class="keyword">new</span> <span class="keyword">File</span>(getExternalFilesDir(<span class="keyword">null</span>) + <span class="keyword">File</span>.separator + <span class="string">&quot;Future Studio Icon.png&quot;</span>);</span><br><span class="line"></span><br><span class="line">        InputStream inputStream = <span class="keyword">null</span>;</span><br><span class="line">        OutputStream outputStream = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">byte</span>[] fileReader = <span class="keyword">new</span> <span class="keyword">byte</span>[<span class="number">4096</span>];</span><br><span class="line"></span><br><span class="line">            <span class="keyword">long</span> fileSize = body.contentLength();</span><br><span class="line">            <span class="keyword">long</span> fileSizeDownloaded = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">            inputStream = body.byteStream();</span><br><span class="line">            outputStream = <span class="keyword">new</span> FileOutputStream(futureStudioIconFile);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">                <span class="keyword">int</span> <span class="keyword">read</span> = inputStream.<span class="keyword">read</span>(fileReader);</span><br><span class="line"></span><br><span class="line">                <span class="keyword">if</span> (<span class="keyword">read</span> == -<span class="number">1</span>) &#123;</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                outputStream.<span class="keyword">write</span>(fileReader, <span class="number">0</span>, <span class="keyword">read</span>);</span><br><span class="line"></span><br><span class="line">                fileSizeDownloaded += <span class="keyword">read</span>;</span><br><span class="line"></span><br><span class="line">                Log.d(TAG, <span class="string">&quot;file download: &quot;</span> + fileSizeDownloaded + <span class="string">&quot; of &quot;</span> + fileSize);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            outputStream.flush();</span><br><span class="line"></span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (inputStream != <span class="keyword">null</span>) &#123;</span><br><span class="line">                inputStream.close();</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (outputStream != <span class="keyword">null</span>) &#123;</span><br><span class="line">                outputStream.close();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>大部分都是一般Java I/O流的样板代码。你只需要关心第一行代码就行了，也就是文件最终以什么命名被保存。当你做完这些工作，就能够用Retrofit来下载文件了。</p>
+<p>但是我们并没有完全做好准备。而且这里存在一个大问题：默认情况下，Retrofit在处理结果前会将整个Server Response读进内存，这在JSON或者XML等Response上表现还算良好，但如果是一个非常大的文件，就可能造成OutofMemory异常。</p>
+<p>如果你的应用需要下载略大的文件，我们强烈建议阅读下一节内容。</p>
+<h4 id="当心大文件：请使用-Streaming！"><a href="#当心大文件：请使用-Streaming！" class="headerlink" title="当心大文件：请使用@Streaming！"></a>当心大文件：请使用@Streaming！</h4><p>如果下载一个非常大的文件，Retrofit会试图将整个文件读进内存。为了避免这种现象的发生，我们添加了一个特殊的注解来声明请求。</p>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">@Streaming</span></span><br><span class="line"><span class="variable">@GET</span></span><br><span class="line">Call&lt;ResponseBody&gt; <span class="built_in">downloadFileWithDynamicUrlAsync</span>(<span class="variable">@Url</span> String fileUrl);</span><br></pre></td></tr></table></figure>
+<p>声明<code>@Streaming</code>并不是意味着你需要观察一个Netflix文件。它意味着立刻传递字节码，而不需要把整个文件读进内存。值得注意的是，如果你使用了<code>@Streaming</code>，并且依然使用以上的代码片段来进行处理。Android将会抛出<code>android.os.NetworkOnMainThreadException</code>异常。</p>
+<p>因此，最后一步就是把这些操作放进一个单独的工作线程中，例如ASyncTask：</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> FileDownloadService downloadService =  </span><br><span class="line">                ServiceGenerator.create(FileDownloadService.<span class="keyword">class</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">new</span> AsyncTask&lt;<span class="keyword">Void</span>, <span class="keyword">Long</span>, <span class="keyword">Void</span>&gt;() &#123;  </span><br><span class="line">   @Override</span><br><span class="line">   <span class="keyword">protected</span> <span class="keyword">Void</span> doInBackground(<span class="keyword">Void</span>... voids) &#123;</span><br><span class="line">       <span class="keyword">Call</span>&lt;ResponseBody&gt; <span class="keyword">call</span> = downloadService.downloadFileWithDynamicUrlSync(fileUrl);</span><br><span class="line">       <span class="keyword">call</span>.enqueue(<span class="keyword">new</span> Callback&lt;ResponseBody&gt;() &#123;</span><br><span class="line">           @Override</span><br><span class="line">           <span class="keyword">public</span> <span class="keyword">void</span> onResponse(<span class="keyword">Call</span>&lt;ResponseBody&gt; <span class="keyword">call</span>, Response&lt;ResponseBody&gt; response) &#123;</span><br><span class="line">               <span class="keyword">if</span> (response.isSuccess()) &#123;</span><br><span class="line">                   Log.d(TAG, <span class="string">&quot;server contacted and has file&quot;</span>);</span><br><span class="line"></span><br><span class="line">                   <span class="keyword">boolean</span> writtenToDisk = writeResponseBodyToDisk(response.body());</span><br><span class="line"></span><br><span class="line">                   Log.d(TAG, <span class="string">&quot;file download was a success? &quot;</span> + writtenToDisk);</span><br><span class="line">               &#125;</span><br><span class="line">               <span class="keyword">else</span> &#123;</span><br><span class="line">                   Log.d(TAG, <span class="string">&quot;server contact failed&quot;</span>);</span><br><span class="line">               &#125;</span><br><span class="line">           &#125;</span><br><span class="line">       <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">   &#125;</span><br><span class="line">&#125;.execute();</span><br></pre></td></tr></table></figure>
+<p>至此，如果你能够记住<code>@Streaming</code>的使用和以上代码片段，那么就能够使用Retrofit高效下载大文件了。</p>
+<blockquote>
+<p>文／小鄧子（简书作者）<br>原文链接：<a target="_blank" rel="noopener" href="http://www.jianshu.com/p/92bb85fc07e8">http://www.jianshu.com/p/92bb85fc07e8</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2016/05/18/Retrofit-2-%E5%A6%82%E4%BD%95%E4%BB%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8B%E8%BD%BD%E6%96%87%E4%BB%B6/" data-id="cl9pgenwl00x2ycv10h456yh1" data-title="Retrofit 2 - 如何从服务器下载文件" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Android%E5%BC%80%E6%BA%90/" rel="tag">Android开源</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/06/02/mysql%E5%88%86%E8%A1%A8%EF%BC%8C%E5%88%86%E5%8C%BA%E7%9A%84%E5%8C%BA%E5%88%AB%E5%92%8C%E8%81%94%E7%B3%BB/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          mysql分表，分区的区别和联系
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/05/18/Retrofit2%E4%B8%8ERxJava%E7%94%A8%E6%B3%95%E8%A7%A3%E6%9E%90/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">Retrofit2与RxJava用法解析</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

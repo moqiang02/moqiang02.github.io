@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>妙用AccessibilityService黑科技实现微信自动加好友拉人进群聊 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="AccessibilityService类似与按键精灵的东西，编写脚本让他自动点点点，自动化测试这其实不是一个新的东西了，老久之前就有了，官方原意：优化残障人士的使用体验的，而在我大天朝：抢红包，自动安装，一键XXX等等，可谓欣欣向荣。使用AccessibilityService也非常Easy，核心要点就是：通过UI Automator找到节点，通过resource-id，text，content">
+<meta property="og:type" content="article">
+<meta property="og:title" content="妙用AccessibilityService黑科技实现微信自动加好友拉人进群聊">
+<meta property="og:url" content="http://moqiang02.github.io/2018/10/24/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="AccessibilityService类似与按键精灵的东西，编写脚本让他自动点点点，自动化测试这其实不是一个新的东西了，老久之前就有了，官方原意：优化残障人士的使用体验的，而在我大天朝：抢红包，自动安装，一键XXX等等，可谓欣欣向荣。使用AccessibilityService也非常Easy，核心要点就是：通过UI Automator找到节点，通过resource-id，text，content">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/0.gif">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/1.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/2.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/3.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/4.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/5.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/6.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/7.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/8.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/9.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/10.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/11.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/12.png">
+<meta property="article:published_time" content="2018-10-24T12:42:47.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:54.121Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/0.gif">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-妙用AccessibilityService黑科技实现微信自动加好友拉人进群聊" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2018/10/24/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/" class="article-date">
+  <time class="dt-published" datetime="2018-10-24T12:42:47.000Z" itemprop="datePublished">2018-10-24</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/android/">android</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      妙用AccessibilityService黑科技实现微信自动加好友拉人进群聊
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#AccessibilityService%E7%94%A8%E6%B3%95%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">AccessibilityService用法简介</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E8%87%AA%E5%AE%9A%E4%B9%89Service%E7%BB%A7%E6%89%BFAccessibilityService"><span class="toc-number">1.1.</span> <span class="toc-text">1.自定义Service继承AccessibilityService</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E6%9C%8D%E5%8A%A1%E7%9A%84%E9%85%8D%E7%BD%AE"><span class="toc-number">1.2.</span> <span class="toc-text">2.服务的配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E6%89%BE%E6%8E%A7%E4%BB%B6"><span class="toc-number">1.3.</span> <span class="toc-text">3.找控件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E8%A7%A6%E5%8F%91%E4%BA%8B%E4%BB%B6"><span class="toc-number">1.4.</span> <span class="toc-text">4.触发事件</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B0%8F%E7%BB%93"><span class="toc-number">2.</span> <span class="toc-text">小结</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <p>AccessibilityService类似与按键精灵的东西，编写脚本让他自动点点点，自动化测试<br>这其实不是一个新的东西了，老久之前就有了，<br>官方原意：优化残障人士的使用体验的，而在我大天朝：<br>抢红包，自动安装，一键XXX等等，可谓欣欣向荣。<br>使用AccessibilityService也非常Easy，核心要点就是：<br>通过UI Automator找到节点，通过resource-id，text，content-desc等<br>唯一特征定位到具体的节点，接着执行各种模拟操作，点，滚动，填充，<br>用法比较简单的，大部分时间会花在试错和逻辑调整上！<span id="more"></span><br>来一发通过AccessibilityService实现的自动加好友以及拉人进群聊的Gif体验下：<br><img src="/images/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/0.gif"><br>Gif加速了一点，不过完成加好友以及拉人总共也就耗时15s，是相当客观的啦。<br>下面就来介绍下AccessibilityService这个玩意怎么用吧～</p>
+<h2 id="AccessibilityService用法简介"><a href="#AccessibilityService用法简介" class="headerlink" title="AccessibilityService用法简介"></a>AccessibilityService用法简介</h2><h3 id="1-自定义Service继承AccessibilityService"><a href="#1-自定义Service继承AccessibilityService" class="headerlink" title="1.自定义Service继承AccessibilityService"></a>1.自定义Service继承AccessibilityService</h3><p>如题，自定义一个AccessibilityService类，重写两个主要方法：<br><code>onInterrupt()</code>：辅助功能中断的回调，基本不用理，核心还是<br><code>onAccessibilityEvent(AccessibilityEvent event)</code>。<br>当界面发生了什么事情，比如顶部Notification，界面更新，内容变化等，<br>会触发这个方法，你可以根据不同的事件响应不同的操作，比如小猪这个<br>就是当顶部出现加好友的Notification的event时，跳转到加好友页。<br>点开AccessibilityEvent类可以看到一堆的事件类型～</p>
+<table>
+<thead>
+<tr>
+<th>事件类型</th>
+<th align="right">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>TYPE_VIEW_CLICKED</td>
+<td align="right">View被点击</td>
+</tr>
+<tr>
+<td>TYPE_VIEW_LONG_CLICKED</td>
+<td align="right">View被长按</td>
+</tr>
+<tr>
+<td>TYPE_VIEW_SELECTED</td>
+<td align="right">View被选中</td>
+</tr>
+<tr>
+<td>TYPE_VIEW_FOCUSED</td>
+<td align="right">View获得焦点</td>
+</tr>
+<tr>
+<td>TYPE_VIEW_TEXT_CHANGED</td>
+<td align="right">View文本变化</td>
+</tr>
+<tr>
+<td>TYPE_WINDOW_STATE_CHANGED</td>
+<td align="right">打开了一个PopupWindow，Menu或Dialog</td>
+</tr>
+<tr>
+<td>TYPE_NOTIFICATION_STATE_CHANGED</td>
+<td align="right">Notification变化</td>
+</tr>
+<tr>
+<td>TYPE_VIEW_HOVER_ENTER</td>
+<td align="right">一个View进入悬停</td>
+</tr>
+<tr>
+<td>TYPE_VIEW_HOVER_EXIT</td>
+<td align="right">一个View退出悬停</td>
+</tr>
+<tr>
+<td>TYPE_TOUCH_EXPLORATION_GESTURE_START</td>
+<td align="right">触摸浏览事件开始</td>
+</tr>
+<tr>
+<td>TYPE_TOUCH_EXPLORATION_GESTURE_END</td>
+<td align="right">触摸浏览事件完成</td>
+</tr>
+<tr>
+<td>TYPE_WINDOW_CONTENT_CHANGED</td>
+<td align="right">窗口的内容发生变化，或子树根布局发生变化</td>
+</tr>
+<tr>
+<td>TYPE_VIEW_SCROLLED</td>
+<td align="right">View滚动</td>
+</tr>
+<tr>
+<td>TYPE_VIEW_TEXT_SELECTION_CHANGED</td>
+<td align="right">Edittext文字选中发生改变事件</td>
+</tr>
+<tr>
+<td>TYPE_ANNOUNCEMENT</td>
+<td align="right">应用产生一个通知事件</td>
+</tr>
+<tr>
+<td>TYPE_VIEW_ACCESSIBILITY_FOCUSED</td>
+<td align="right">获得无障碍焦点事件</td>
+</tr>
+<tr>
+<td>TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED</td>
+<td align="right">无障碍焦点事件清除</td>
+</tr>
+<tr>
+<td>TYPE_VIEW_TEXT_TRAVERSED_AT_MOVEMENT_GRANULARITY</td>
+<td align="right">在给定的移动粒度下遍历视图文本的事件</td>
+</tr>
+<tr>
+<td>TYPE_GESTURE_DETECTION_START</td>
+<td align="right">开始手势监测</td>
+</tr>
+<tr>
+<td>TYPE_GESTURE_DETECTION_END</td>
+<td align="right">结束手势监测</td>
+</tr>
+<tr>
+<td>TYPE_TOUCH_INTERACTION_START</td>
+<td align="right">触摸屏幕事件开始</td>
+</tr>
+<tr>
+<td>TYPE_TOUCH_INTERACTION_END</td>
+<td align="right">触摸屏幕事件结束</td>
+</tr>
+<tr>
+<td>TYPE_WINDOWS_CHANGED</td>
+<td align="right">屏幕上的窗口变化事件，需要API 21+</td>
+</tr>
+<tr>
+<td>TYPE_VIEW_CONTEXT_CLICKED</td>
+<td align="right">View中的上下文点击事件</td>
+</tr>
+<tr>
+<td>TYPE_ASSIST_READING_CONTEXT</td>
+<td align="right">辅助用户读取当前屏幕事件</td>
+</tr>
+</tbody></table>
+<p>好吧，上面的表其实并没什么大用，我还是习惯直接把<code>event.toString()</code>给打印出来，<br>然后自行去判断～<br><img src="/images/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/1.png"><br>如图就可以拿到event类型，以及产生对应事件的类名，核心是这两个，<br>除此之外还有Text和ContentDescription等。<br>比如我那个监听Notification跳转到添加好友页的：<br><img src="/images/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/2.png"></p>
+<p>这里就是对事件类型做了下判断，然后获取contentIntent，跳转而已。<br>简单点讲就是：<br>你在这个方法里，去判断一波事件类型和className，<br>然后再获取控件，做一些点击，滚动，填充文本等。</p>
+<h3 id="2-服务的配置"><a href="#2-服务的配置" class="headerlink" title="2.服务的配置"></a>2.服务的配置</h3><p>自定义完这个服务要想让他启用你还得执行下面的操作：<br><strong>Step 1</strong>：在res文件夹下创建xml文件夹，新建一个配置的xml文件(名字自己定)<br><img src="/images/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/3.png"></p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=<span class="string">&quot;1.0&quot;</span> encoding=<span class="string">&quot;utf-8&quot;</span>?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">accessibility-service</span> <span class="attr">xmlns:android</span>=<span class="string">&quot;http://schemas.android.com/apk/res/android&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:accessibilityEventTypes</span>=<span class="string">&quot;typeNotificationStateChanged|typeWindowStateChanged|typeWindowContentChanged&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:accessibilityFeedbackType</span>=<span class="string">&quot;feedbackGeneric&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:accessibilityFlags</span>=<span class="string">&quot;flagDefault&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:canRetrieveWindowContent</span>=<span class="string">&quot;true&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:notificationTimeout</span>=<span class="string">&quot;100&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:packageNames</span>=<span class="string">&quot;com.tencent.mm&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:settingsActivity</span>=<span class="string">&quot;com.coderpig.wechathelper.MainActivity&quot;</span> /&gt;</span></span><br></pre></td></tr></table></figure>
+<p>属性简介如下：<br>accessibilityEventTypes：设置监听的事件种类，用<code>|</code>隔开，监听所有可以用typeAllMask；<br>accessibilityFeedbackType：服务提供的反馈类型，feedbackGeneric通用反馈；<br>accessibilityFlags：辅助功能附加的标志，flagDefault默认的配置<br>canRetrieveWindowContent：辅助功能服务是否能够取回活动窗口内容的属性<br>notificationTimeout：响应时间<br>packageNames：监听的应用包名，用<code>|</code>隔开，不填，默认监听所有应用的事件<br>settingsActivity：允许用户修改辅助功能的activity类名</p>
+<p><strong>Step 2</strong>：接着AndroidManifest.xml文件中对该Service进行配置<br>先是添加一个权限：<br><code>android:permission=&quot;android.permission.BIND_ACCESSIBILITY_SERVICE&quot; </code><br>接着是Service的配置：<br><img src="/images/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/4.png"></p>
+<p>这里是你那个配置文件xml文件的文件名，其他照抄。<br><strong>Step 3</strong>：安装到手机后，需要在手机设置的无障碍处开启服务<br>一般在设置的辅助功能处能找到：<br><img src="/images/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/5.png"></p>
+<p>如果Logcat那里能看到打印的LOG，说明服务正常运行，接下来要找控件节点</p>
+<h3 id="3-找控件"><a href="#3-找控件" class="headerlink" title="3.找控件"></a>3.找控件</h3><p>这里可以用到神器UI Automator来查看布局层次，打开Android Studio，<br><code>Ctrl + Shift + A</code>，输入 monitor<br><img src="/images/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/6.png"></p>
+<p>依次点击：选中设备 -&gt; Dump View Hierarchy for UI Automator<br><img src="/images/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/7.png"></p>
+<blockquote>
+<p>注：AndroidStudio3中monitor已经去掉了，需要到到SDK/tools中运行</p>
+</blockquote>
+<p>稍等一会，右侧就会出现当前页面的布局层次图，如图随手选中一个邀请的节点：<br><img src="/images/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/8.png"></p>
+<p>右侧可以拿到对应的信息，一般比较常用的是这几个，有一点要注意！！！<br>resource-id不一定是唯一的<br>获得控件基本都会通过下述这个方法：<br>getRootInActiveWindow( )：获取当前整个活动窗口的根节点<br>返回的是一个<strong>AccessibilityNodeInfo</strong>类，代表View的状态信息，<br>提供了下述几个非常实用的方法：</p>
+<ul>
+<li>getParent：获取父节点。</li>
+<li>getChild：获取子节点。</li>
+<li>performAction：在节点上执行一个动作。</li>
+<li>findAccessibilityNodeInfosByText：通过字符串查找节点元素。</li>
+<li>findAccessibilityNodeInfosByViewId：通过视图id查找节点元素。</li>
+</ul>
+<p>后面的这两个方法会返回一个AccessibilityNodeInfo列表，一般操作是<br>遍历，然后筛选特定节点，比如我程序里的，获得底部Tab节点为”通讯录”，<br>然后点击，跳转后遍历，筛选”群聊”的节点，点击。<br><img src="/images/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/9.png"></p>
+<p>另外，UI Automator有时并不可靠(实时问题)，我建议写多一个遍历节点<br>的方法，可以更清楚里面的控件情况：<br><img src="/images/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/10.png"></p>
+<p>拿到控件，接着就到触发事件了。</p>
+<h3 id="4-触发事件"><a href="#4-触发事件" class="headerlink" title="4.触发事件"></a>4.触发事件</h3><p>通过调用<code>performAction()</code>传入一个时间类型即可触发相应时间，比如点击，长按等<br>事件就多了，自己点开AccessibilityNodeInfo类查看吧，这里介绍下最常用的几个事件：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//点击</span></span><br><span class="line">performAction(AccessibilityNodeInfo.ACTION_CLICK);</span><br><span class="line"></span><br><span class="line"><span class="comment">//长按</span></span><br><span class="line">performAction(AccessibilityNodeInfo.ACTION_LONG_CLICK);</span><br><span class="line"></span><br><span class="line"><span class="comment">//滚动</span></span><br><span class="line">performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD); <span class="comment">//向下滚一下</span></span><br><span class="line">performAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD); <span class="comment">//向上滚一下</span></span><br><span class="line"></span><br><span class="line"><span class="comment">//填充EditText(API版本需要&gt;18可用方法1，API&gt;21两种方法都可以使用)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">//方法1：</span></span><br><span class="line"><span class="type">ClipboardManager</span> <span class="variable">clipboard</span> <span class="operator">=</span> (ClipboardManager)<span class="built_in">this</span>.getSystemService(Context.CLIPBOARD_SERVICE);  </span><br><span class="line"><span class="type">ClipData</span> <span class="variable">clip</span> <span class="operator">=</span> ClipData.newPlainText(<span class="string">&quot;text&quot;</span>, <span class="string">&quot;填充内容&quot;</span>);  </span><br><span class="line">clipboard.setPrimaryClip(clip);  </span><br><span class="line"><span class="comment">//获得焦点</span></span><br><span class="line">info.performAction(AccessibilityNodeInfo.ACTION_FOCUS);  </span><br><span class="line"><span class="comment">////粘贴进入内容  </span></span><br><span class="line">info.performAction(AccessibilityNodeInfo.ACTION_PASTE);  </span><br><span class="line"></span><br><span class="line"><span class="comment">//方法2：</span></span><br><span class="line"><span class="type">Bundle</span> <span class="variable">arguments</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Bundle</span>();  </span><br><span class="line">arguments.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, <span class="string">&quot;填充内容&quot;</span>);  </span><br><span class="line">info.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments);  </span><br></pre></td></tr></table></figure>
+<p>除了控件触发事件外，AccessibilityService提供了一个<code>performGlobalAction()</code>，用于执行<br>一些通用的事件：</p>
+<table>
+<thead>
+<tr>
+<th>事件类型</th>
+<th align="right">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GLOBAL_ACTION_BACK</td>
+<td align="right">点击返回按钮</td>
+</tr>
+<tr>
+<td>GLOBAL_ACTION_HOME</td>
+<td align="right">点击home</td>
+</tr>
+<tr>
+<td>GLOBAL_ACTION_NOTIFICATIONS</td>
+<td align="right">打开通知</td>
+</tr>
+<tr>
+<td>GLOBAL_ACTION_RECENTS</td>
+<td align="right">打开最近应用</td>
+</tr>
+<tr>
+<td>GLOBAL_ACTION_QUICK_SETTINGS</td>
+<td align="right">打开快速设置</td>
+</tr>
+<tr>
+<td>GLOBAL_ACTION_POWER_DIALOG</td>
+<td align="right">打开长按电源键的弹框</td>
+</tr>
+</tbody></table>
+<p>另外在实际开发中，直接调用这些全局方法又是并没有生效，<br>我在调GLOBAL_ACTION_BACK的时候就发现有时不会回退，<br>个人的解决方案是使用<code>handler.postDelay()</code>延时执行：<br><img src="/images/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/11.png"></p>
+<p>除了这样玩以外，我还利用时间差，串行去执行几个任务，比如：<br><img src="/images/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/12.png"></p>
+<p>上面的步骤是：<br>进入群聊聊天信息页后，列表滚动两次，接着依次：<br>1.延时1s后，找到添加成员按钮并点击；<br>2.延时2.3s后，把名字填充到EditText里<br>3.延时3s后，点击确定按钮</p>
+<p>就不用过于依赖onAccessibilityEvent方法，除了用handler.postDelay外，<br>还可以用Thread.sleep(休眠时长)，用到的点大概就这么多，其余的自行探究吧。</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>本节讲解一波如何通过AccessibilityService来实现自动加好友以及拉人进群，<br>之前是打算用xposed来写的，后面发现没我想像中简单，而且很多用安卓机的都<br>不会搞机(基)，root也不会，后来还是选择了AccessibilityService，简单易用，<br>当然后面还是会研究一波xposed实现的，敬请期待～<br>对了，还有，之前那个网页端的机器人被封原因估计是信息秒回，如果有还用<br>itchat那个做机器人的，建议回复的时间可以稍微延长些；<br>关于AccessibilityService更多内容可见：<br><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_24800377/article/details/78283662">Android辅助功能</a><br><a target="_blank" rel="noopener" href="https://developer.android.com/guide/topics/ui/accessibility/services">Building Accessibility Services</a><br><a target="_blank" rel="noopener" href="https://developer.android.com/training/accessibility/service">Developing an Accessibility Service</a></p>
+<p>附：关键代码<br>代码有Bug的话正常，后续会优化下逻辑，感觉写得有点杂～</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br><span class="line">258</span><br><span class="line">259</span><br><span class="line">260</span><br><span class="line">261</span><br><span class="line">262</span><br><span class="line">263</span><br><span class="line">264</span><br><span class="line">265</span><br><span class="line">266</span><br><span class="line">267</span><br><span class="line">268</span><br><span class="line">269</span><br><span class="line">270</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.coderpig.wechathelper;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> android.accessibilityservice.AccessibilityService;</span><br><span class="line"><span class="keyword">import</span> android.app.Notification;</span><br><span class="line"><span class="keyword">import</span> android.app.PendingIntent;</span><br><span class="line"><span class="keyword">import</span> android.os.Bundle;</span><br><span class="line"><span class="keyword">import</span> android.os.Handler;</span><br><span class="line"><span class="keyword">import</span> android.util.Log;</span><br><span class="line"><span class="keyword">import</span> android.view.accessibility.AccessibilityEvent;</span><br><span class="line"><span class="keyword">import</span> android.view.accessibility.AccessibilityNodeInfo;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.List;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 描述：微信监控服务类</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> CoderPig on 2018/04/04 13:46.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">HelperService</span> <span class="keyword">extends</span> <span class="title class_">AccessibilityService</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">String</span> <span class="variable">TAG</span> <span class="operator">=</span> <span class="string">&quot;HelperService&quot;</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="type">Handler</span> <span class="variable">handler</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Handler</span>();</span><br><span class="line">    <span class="keyword">private</span> <span class="type">String</span> <span class="variable">userName</span> <span class="operator">=</span> <span class="string">&quot;123&quot;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onAccessibilityEvent</span><span class="params">(AccessibilityEvent event)</span> &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">eventType</span> <span class="operator">=</span> event.getEventType();</span><br><span class="line">        <span class="type">CharSequence</span> <span class="variable">classNameChr</span> <span class="operator">=</span> event.getClassName();</span><br><span class="line">        <span class="type">String</span> <span class="variable">className</span> <span class="operator">=</span> classNameChr.toString();</span><br><span class="line">        Log.d(TAG, event.toString());</span><br><span class="line">        <span class="keyword">switch</span> (eventType) &#123;</span><br><span class="line">            <span class="keyword">case</span> AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED:</span><br><span class="line">                <span class="keyword">if</span> (event.getParcelableData() != <span class="literal">null</span> &amp;&amp; event.getParcelableData() <span class="keyword">instanceof</span> Notification) &#123;</span><br><span class="line">                    <span class="type">Notification</span> <span class="variable">notification</span> <span class="operator">=</span> (Notification) event.getParcelableData();</span><br><span class="line">                    <span class="type">String</span> <span class="variable">content</span> <span class="operator">=</span> notification.tickerText.toString();</span><br><span class="line">                    <span class="keyword">if</span> (content.contains(<span class="string">&quot;请求添加你为朋友&quot;</span>)) &#123;</span><br><span class="line">                        <span class="type">PendingIntent</span> <span class="variable">pendingIntent</span> <span class="operator">=</span> notification.contentIntent;</span><br><span class="line">                        <span class="keyword">try</span> &#123;</span><br><span class="line">                            pendingIntent.send();</span><br><span class="line">                        &#125; <span class="keyword">catch</span> (PendingIntent.CanceledException e) &#123;</span><br><span class="line">                            e.printStackTrace();</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED:</span><br><span class="line">                <span class="keyword">switch</span> (className) &#123;</span><br><span class="line">                    <span class="keyword">case</span> <span class="string">&quot;com.tencent.mm.plugin.subapp.ui.friend.FMessageConversationUI&quot;</span>:</span><br><span class="line">                        addFriend();</span><br><span class="line">                        <span class="keyword">break</span>;</span><br><span class="line">                    <span class="keyword">case</span> <span class="string">&quot;com.tencent.mm.plugin.profile.ui.SayHiWithSnsPermissionUI&quot;</span>:</span><br><span class="line">                        verifyFriend();</span><br><span class="line">                        <span class="keyword">break</span>;</span><br><span class="line">                    <span class="keyword">case</span> <span class="string">&quot;com.tencent.mm.plugin.profile.ui.ContactInfoUI&quot;</span>:</span><br><span class="line">                        performBackClick();</span><br><span class="line">                        <span class="keyword">break</span>;</span><br><span class="line">                    <span class="keyword">case</span> <span class="string">&quot;com.tencent.mm.ui.LauncherUI&quot;</span>:</span><br><span class="line">                        <span class="keyword">if</span> (!userName.equals(<span class="string">&quot;123&quot;</span>)) &#123;</span><br><span class="line">                            openGroup();</span><br><span class="line">                        &#125;</span><br><span class="line">                        <span class="keyword">break</span>;</span><br><span class="line">                    <span class="keyword">case</span> <span class="string">&quot;com.tencent.mm.ui.contact.ChatroomContactUI&quot;</span>:</span><br><span class="line">                        <span class="keyword">if</span> (!userName.equals(<span class="string">&quot;123&quot;</span>)) &#123;</span><br><span class="line">                            inviteGroup();</span><br><span class="line">                        &#125;</span><br><span class="line">                        <span class="keyword">break</span>;</span><br><span class="line">                    <span class="keyword">case</span> <span class="string">&quot;com.tencent.mm.ui.chatting.ChattingUI&quot;</span>:</span><br><span class="line">                        <span class="keyword">if</span> (!userName.equals(<span class="string">&quot;123&quot;</span>)) &#123;</span><br><span class="line">                            openGroupSetting();</span><br><span class="line">                        &#125;</span><br><span class="line">                        <span class="keyword">break</span>;</span><br><span class="line">                    <span class="keyword">case</span> <span class="string">&quot;com.tencent.mm.plugin.chatroom.ui.ChatroomInfoUI&quot;</span>:</span><br><span class="line">                        <span class="keyword">if</span> (userName.equals(<span class="string">&quot;123&quot;</span>)) &#123;</span><br><span class="line">                            performBackClick();</span><br><span class="line">                        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                            addToGroup();</span><br><span class="line">                        &#125;</span><br><span class="line">                        <span class="keyword">break</span>;</span><br><span class="line">                    <span class="keyword">case</span> <span class="string">&quot;com.tencent.mm.ui.base.i&quot;</span>:</span><br><span class="line">                        dialogClick();</span><br><span class="line">                        <span class="keyword">break</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED:</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">addFriend</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">AccessibilityNodeInfo</span> <span class="variable">nodeInfo</span> <span class="operator">=</span> getRootInActiveWindow();</span><br><span class="line">        <span class="keyword">if</span> (nodeInfo != <span class="literal">null</span>) &#123;</span><br><span class="line">            List&lt;AccessibilityNodeInfo&gt; list = nodeInfo</span><br><span class="line">                    .findAccessibilityNodeInfosByText(<span class="string">&quot;接受&quot;</span>);</span><br><span class="line">            <span class="keyword">if</span> (list != <span class="literal">null</span> &amp;&amp; list.size() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="keyword">for</span> (AccessibilityNodeInfo n : list) &#123;</span><br><span class="line">                    n.performAction(AccessibilityNodeInfo.ACTION_CLICK);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                performBackClick();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">verifyFriend</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">AccessibilityNodeInfo</span> <span class="variable">nodeInfo</span> <span class="operator">=</span> getRootInActiveWindow();</span><br><span class="line">        <span class="comment">//获得用户名</span></span><br><span class="line">        <span class="keyword">if</span> (nodeInfo != <span class="literal">null</span>) &#123;</span><br><span class="line">            userName = nodeInfo.findAccessibilityNodeInfosByViewId(<span class="string">&quot;com.tencent.mm:id/d0n&quot;</span>).get(<span class="number">0</span>).getText().toString();</span><br><span class="line">            <span class="type">AccessibilityNodeInfo</span> <span class="variable">finishNode</span> <span class="operator">=</span> nodeInfo.findAccessibilityNodeInfosByViewId(<span class="string">&quot;com.tencent.mm:id/hd&quot;</span>).get(<span class="number">0</span>);</span><br><span class="line">            finishNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">openGroup</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">AccessibilityNodeInfo</span> <span class="variable">nodeInfo</span> <span class="operator">=</span> getRootInActiveWindow();</span><br><span class="line">        <span class="keyword">if</span> (nodeInfo != <span class="literal">null</span>) &#123;</span><br><span class="line">            List&lt;AccessibilityNodeInfo&gt; nodes = nodeInfo.findAccessibilityNodeInfosByViewId(<span class="string">&quot;com.tencent.mm:id/ca5&quot;</span>);</span><br><span class="line">            <span class="keyword">for</span> (AccessibilityNodeInfo info : nodes) &#123;</span><br><span class="line">                <span class="keyword">if</span> (info.getText().toString().equals(<span class="string">&quot;通讯录&quot;</span>)) &#123;</span><br><span class="line">                    info.getParent().performAction(AccessibilityNodeInfo.ACTION_CLICK);</span><br><span class="line">                    handler.postDelayed(<span class="keyword">new</span> <span class="title class_">Runnable</span>() &#123;</span><br><span class="line">                        <span class="meta">@Override</span></span><br><span class="line">                        <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> &#123;</span><br><span class="line">                            <span class="type">AccessibilityNodeInfo</span> <span class="variable">nodeInfo</span> <span class="operator">=</span> getRootInActiveWindow();</span><br><span class="line">                            <span class="keyword">if</span> (nodeInfo != <span class="literal">null</span>) &#123;</span><br><span class="line">                                List&lt;AccessibilityNodeInfo&gt; nodes = nodeInfo.findAccessibilityNodeInfosByViewId(<span class="string">&quot;com.tencent.mm:id/j5&quot;</span>);</span><br><span class="line">                                <span class="keyword">for</span> (AccessibilityNodeInfo info : nodes) &#123;</span><br><span class="line">                                    <span class="keyword">if</span> (info.getText().toString().equals(<span class="string">&quot;群聊&quot;</span>)) &#123;</span><br><span class="line">                                        info.getParent().getParent().performAction(AccessibilityNodeInfo.ACTION_CLICK);</span><br><span class="line">                                        <span class="keyword">break</span>;</span><br><span class="line">                                    &#125;</span><br><span class="line">                                &#125;</span><br><span class="line">                            &#125;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;, <span class="number">500L</span>);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">inviteGroup</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">AccessibilityNodeInfo</span> <span class="variable">nodeInfo</span> <span class="operator">=</span> getRootInActiveWindow();</span><br><span class="line">        <span class="keyword">if</span> (nodeInfo != <span class="literal">null</span>) &#123;</span><br><span class="line">            List&lt;AccessibilityNodeInfo&gt; nodes = nodeInfo.findAccessibilityNodeInfosByViewId(<span class="string">&quot;com.tencent.mm:id/a9v&quot;</span>);</span><br><span class="line">            <span class="keyword">for</span> (AccessibilityNodeInfo info : nodes) &#123;</span><br><span class="line">                <span class="keyword">if</span> (info.getText().toString().equals(<span class="string">&quot;小猪的Python学习交流群&quot;</span>)) &#123;</span><br><span class="line">                    info.getParent().performAction(AccessibilityNodeInfo.ACTION_CLICK);</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">openGroupSetting</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">AccessibilityNodeInfo</span> <span class="variable">nodeInfo</span> <span class="operator">=</span> getRootInActiveWindow();</span><br><span class="line">        <span class="keyword">if</span> (nodeInfo != <span class="literal">null</span>) &#123;</span><br><span class="line">            nodeInfo.findAccessibilityNodeInfosByViewId(<span class="string">&quot;com.tencent.mm:id/he&quot;</span>).get(<span class="number">0</span>).performAction(AccessibilityNodeInfo.ACTION_CLICK);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">addToGroup</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">AccessibilityNodeInfo</span> <span class="variable">nodeInfo</span> <span class="operator">=</span> getRootInActiveWindow();</span><br><span class="line">        <span class="keyword">if</span> (nodeInfo != <span class="literal">null</span>) &#123;</span><br><span class="line">            List&lt;AccessibilityNodeInfo&gt; listNodes = nodeInfo.findAccessibilityNodeInfosByViewId(<span class="string">&quot;android:id/list&quot;</span>);</span><br><span class="line">            <span class="keyword">if</span>(listNodes != <span class="literal">null</span> &amp;&amp; listNodes.size() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="type">AccessibilityNodeInfo</span> <span class="variable">listNode</span> <span class="operator">=</span> listNodes.get(<span class="number">0</span>);</span><br><span class="line">                listNode.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD);</span><br><span class="line">                listNode.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD);</span><br><span class="line">                <span class="keyword">final</span> <span class="type">AccessibilityNodeInfo</span> <span class="variable">scrollNodeInfo</span> <span class="operator">=</span> getRootInActiveWindow();</span><br><span class="line">                <span class="keyword">if</span> (scrollNodeInfo != <span class="literal">null</span>) &#123;</span><br><span class="line">                    handler.postDelayed(<span class="keyword">new</span> <span class="title class_">Runnable</span>() &#123;</span><br><span class="line">                        <span class="meta">@Override</span></span><br><span class="line">                        <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> &#123;</span><br><span class="line">                            List&lt;AccessibilityNodeInfo&gt; nodes = scrollNodeInfo.findAccessibilityNodeInfosByViewId(<span class="string">&quot;com.tencent.mm:id/d0b&quot;</span>);</span><br><span class="line">                            <span class="keyword">for</span> (AccessibilityNodeInfo info : nodes) &#123;</span><br><span class="line">                                <span class="keyword">if</span> (info.getContentDescription().toString().equals(<span class="string">&quot;添加成员&quot;</span>)) &#123;</span><br><span class="line">                                    info.getParent().performAction(AccessibilityNodeInfo.ACTION_CLICK);</span><br><span class="line">                                    <span class="keyword">break</span>;</span><br><span class="line">                                &#125;</span><br><span class="line">                            &#125;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;,<span class="number">1000L</span>);</span><br><span class="line">                    handler.postDelayed(<span class="keyword">new</span> <span class="title class_">Runnable</span>() &#123;</span><br><span class="line">                        <span class="meta">@Override</span></span><br><span class="line">                        <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> &#123;</span><br><span class="line">                            List&lt;AccessibilityNodeInfo&gt; editNodes = getRootInActiveWindow().findAccessibilityNodeInfosByViewId(<span class="string">&quot;com.tencent.mm:id/arz&quot;</span>);</span><br><span class="line">                            <span class="keyword">if</span>(editNodes != <span class="literal">null</span> &amp;&amp; editNodes.size() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                                <span class="type">AccessibilityNodeInfo</span> <span class="variable">editNode</span> <span class="operator">=</span> editNodes.get(<span class="number">0</span>);</span><br><span class="line">                                <span class="type">Bundle</span> <span class="variable">arguments</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Bundle</span>();</span><br><span class="line">                                arguments.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, userName);</span><br><span class="line">                                editNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments);</span><br><span class="line">                            &#125;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;, <span class="number">2300L</span>);</span><br><span class="line">                    handler.postDelayed(<span class="keyword">new</span> <span class="title class_">Runnable</span>() &#123;</span><br><span class="line">                        <span class="meta">@Override</span></span><br><span class="line">                        <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> &#123;</span><br><span class="line">                            List&lt;AccessibilityNodeInfo&gt; cbNodes = getRootInActiveWindow().findAccessibilityNodeInfosByViewId(<span class="string">&quot;com.tencent.mm:id/kr&quot;</span>);</span><br><span class="line">                            <span class="keyword">if</span>(cbNodes != <span class="literal">null</span>) &#123;</span><br><span class="line">                                <span class="type">AccessibilityNodeInfo</span> <span class="variable">cbNode</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">                                <span class="keyword">if</span>(cbNodes.size() == <span class="number">1</span>) &#123;</span><br><span class="line">                                    cbNode = cbNodes.get(<span class="number">0</span>);</span><br><span class="line">                                &#125; <span class="keyword">else</span> <span class="keyword">if</span>(cbNodes.size() == <span class="number">2</span>) &#123;</span><br><span class="line">                                    cbNode = cbNodes.get(<span class="number">1</span>);</span><br><span class="line">                                &#125;</span><br><span class="line">                                <span class="keyword">if</span> (cbNode != <span class="literal">null</span>) &#123;</span><br><span class="line">                                    cbNode.getParent().performAction(AccessibilityNodeInfo.ACTION_CLICK);</span><br><span class="line">                                    <span class="type">AccessibilityNodeInfo</span> <span class="variable">sureNode</span> <span class="operator">=</span> getRootInActiveWindow().findAccessibilityNodeInfosByViewId(<span class="string">&quot;com.tencent.mm:id/hd&quot;</span>).get(<span class="number">0</span>);</span><br><span class="line">                                    sureNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);</span><br><span class="line">                                &#125;</span><br><span class="line">                            &#125;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;, <span class="number">3000L</span>);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">dialogClick</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">AccessibilityNodeInfo</span> <span class="variable">inviteNode</span> <span class="operator">=</span> getRootInActiveWindow().findAccessibilityNodeInfosByViewId(<span class="string">&quot;com.tencent.mm:id/aln&quot;</span>).get(<span class="number">0</span>);</span><br><span class="line">        inviteNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);</span><br><span class="line">        userName = <span class="string">&quot;123&quot;</span>;</span><br><span class="line">        handler.postDelayed(<span class="keyword">new</span> <span class="title class_">Runnable</span>() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> &#123;</span><br><span class="line">                List&lt;AccessibilityNodeInfo&gt; sureNodes = getRootInActiveWindow().findAccessibilityNodeInfosByViewId(<span class="string">&quot;com.tencent.mm:id/aln&quot;</span>);</span><br><span class="line">                <span class="keyword">if</span>(sureNodes != <span class="literal">null</span> &amp;&amp; sureNodes.size() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                    <span class="type">AccessibilityNodeInfo</span> <span class="variable">sureNode</span> <span class="operator">=</span> sureNodes.get(<span class="number">0</span>);</span><br><span class="line">                    sureNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;,<span class="number">1000L</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">performBackClick</span><span class="params">()</span> &#123;</span><br><span class="line">        handler.postDelayed(<span class="keyword">new</span> <span class="title class_">Runnable</span>() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> &#123;</span><br><span class="line">                performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;, <span class="number">300L</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//遍历控件的方法</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">recycle</span><span class="params">(AccessibilityNodeInfo info)</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (info.getChildCount() == <span class="number">0</span>) &#123;</span><br><span class="line">            Log.i(TAG, <span class="string">&quot;child widget----------------------------&quot;</span> + info.getClassName().toString());</span><br><span class="line">            Log.i(TAG, <span class="string">&quot;showDialog:&quot;</span> + info.canOpenPopup());</span><br><span class="line">            Log.i(TAG, <span class="string">&quot;Text：&quot;</span> + info.getText());</span><br><span class="line">            Log.i(TAG, <span class="string">&quot;windowId:&quot;</span> + info.getWindowId());</span><br><span class="line">            Log.i(TAG, <span class="string">&quot;desc:&quot;</span> + info.getContentDescription());</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; info.getChildCount(); i++) &#123;</span><br><span class="line">                <span class="keyword">if</span> (info.getChild(i) != <span class="literal">null</span>) &#123;</span><br><span class="line">                    recycle(info.getChild(i));</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onInterrupt</span><span class="params">()</span> &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>转自：<a target="_blank" rel="noopener" href="https://blog.csdn.net/coder_pig/article/details/79871063">https://blog.csdn.net/coder_pig/article/details/79871063</a><br>扩展阅读：<br><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/959217070c87">AccessibilityService Android 辅助功能笔记</a><br><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/ef01ce654302">辅助功能 AccessibilityService笔记（2）</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2018/10/24/%E5%A6%99%E7%94%A8AccessibilityService%E9%BB%91%E7%A7%91%E6%8A%80%E5%AE%9E%E7%8E%B0%E5%BE%AE%E4%BF%A1%E8%87%AA%E5%8A%A8%E5%8A%A0%E5%A5%BD%E5%8F%8B%E6%8B%89%E4%BA%BA%E8%BF%9B%E7%BE%A4%E8%81%8A/" data-id="cl9pgeoah01wdycv146zg6rvy" data-title="妙用AccessibilityService黑科技实现微信自动加好友拉人进群聊" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/10/25/Android%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1AlarmManager/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          Android定时任务AlarmManager
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/10/21/%E4%BD%BF%E7%94%A8ContentObserver%E8%8E%B7%E5%8F%96%E7%9F%AD%E4%BF%A1/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">使用ContentObserver获取短信</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

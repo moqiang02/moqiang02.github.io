@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>合理设置apache的连接数及进程工作方式 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="手头有一个网站在线人数增多，访问时很慢。初步认为是服务器资源不足了，但经反复测试，一旦连接上，不断点击同一个页面上不同的链接，都能迅速打开，这种现象就是说明apache最大连接数已经满了，新的访客只能排队等待有空闲的链接，而如果一旦连接上，在keeyalive 的存活时间内（KeepAliveTimeout，默认5秒）都不用重新打开连接，因此解决的方法就是加大apache的最大连接数。 1.在哪里">
+<meta property="og:type" content="article">
+<meta property="og:title" content="合理设置apache的连接数及进程工作方式">
+<meta property="og:url" content="http://moqiang02.github.io/2014/03/19/%E5%90%88%E7%90%86%E8%AE%BE%E7%BD%AEapache%E7%9A%84%E8%BF%9E%E6%8E%A5%E6%95%B0%E5%8F%8A%E8%BF%9B%E7%A8%8B%E5%B7%A5%E4%BD%9C%E6%96%B9%E5%BC%8F/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="手头有一个网站在线人数增多，访问时很慢。初步认为是服务器资源不足了，但经反复测试，一旦连接上，不断点击同一个页面上不同的链接，都能迅速打开，这种现象就是说明apache最大连接数已经满了，新的访客只能排队等待有空闲的链接，而如果一旦连接上，在keeyalive 的存活时间内（KeepAliveTimeout，默认5秒）都不用重新打开连接，因此解决的方法就是加大apache的最大连接数。 1.在哪里">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2014-03-19T11:20:52.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:54.098Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-合理设置apache的连接数及进程工作方式" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2014/03/19/%E5%90%88%E7%90%86%E8%AE%BE%E7%BD%AEapache%E7%9A%84%E8%BF%9E%E6%8E%A5%E6%95%B0%E5%8F%8A%E8%BF%9B%E7%A8%8B%E5%B7%A5%E4%BD%9C%E6%96%B9%E5%BC%8F/" class="article-date">
+  <time class="dt-published" datetime="2014-03-19T11:20:52.000Z" itemprop="datePublished">2014-03-19</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/apache/">apache</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      合理设置apache的连接数及进程工作方式
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <p>手头有一个网站在线人数增多，访问时很慢。初步认为是服务器资源不足了，但经反复测试，一旦连接上，不断点击同一个页面上不同的链接，都能迅速打开，这种现象就是说明apache最大连接数已经满了，新的访客只能排队等待有空闲的链接，而如果一旦连接上，在keeyalive 的存活时间内（KeepAliveTimeout，默认5秒）都不用重新打开连接，因此解决的方法就是加大apache的最大连接数。</p>
+<p>1.在哪里设置？</p>
+<p>服务器的为FreeBSD 6.2 ，apache 2.24，使用默认配置（FreeBSD 默认不加载<a target="_blank" rel="noopener" href="http://httpd.apache.org/docs/2.2/mod/mpm_common.html">自定义MPM配置</a>），默认最大连接数是250</p>
+<p>在/usr/local/etc/apache22/httpd.conf中加载MPM配置（去掉前面的注释）：<br># Server-pool management (MPM specific)<br>Include etc/apache22/extra/httpd-mpm.conf</p>
+<span id="more"></span>
+<p>可见的MPM配置在/usr/local/etc/apache22/extra/httpd-mpm.conf，但里面根据httpd的工作模式分了很多块，哪一部才是当前httpd的工作模式呢？可通过执行 apachectl -l 来查看：<br>Compiled in modules:<br>      core.c<br>      prefork.c<br>      http_core.c<br>      mod_so.c</p>
+<p>看到prefork 字眼，因此可见当前httpd应该是工作在prefork模式，prefork模式的默认配置是：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">&lt;IfModule mpm_prefork_module&gt;</span></span><br><span class="line">    <span class="attribute">StartServers</span>                      <span class="number">5</span></span><br><span class="line">    <span class="attribute">MinSpareServers</span>                   <span class="number">5</span></span><br><span class="line">    <span class="attribute">MaxSpareServers</span>                  <span class="number">10</span></span><br><span class="line">    <span class="attribute">MaxClients</span>                      <span class="number">150</span></span><br><span class="line">    <span class="attribute">MaxRequestsPerChild</span>               <span class="number">0</span></span><br><span class="line"><span class="section">&lt;/IfModule&gt;</span></span><br></pre></td></tr></table></figure>
+<p>2.要加到多少？</p>
+<p>连接数理论上当然是支持越大越好，但要在服务器的能力范围内，这跟服务器的CPU、内存、带宽等都有关系。</p>
+<p>查看当前的连接数可以用：<br>ps aux | grep httpd | wc -l</p>
+<p>或：<br>pgrep httpd|wc -l</p>
+<p>计算httpd占用内存的平均数:<br>ps aux|grep -v grep|awk ‘/httpd/{sum+=$6;n++};END{print sum/n}’</p>
+<p>由于基本都是静态页面，CPU消耗很低，每进程占用内存也不算多，大约200K。</p>
+<p>服务器内存有2G，除去常规启动的服务大约需要500M（保守估计），还剩1.5G可用，那么理论上可以支持1.5*1024*1024*1024/200000 = 8053.06368</p>
+<p>约8K个进程，支持2W人同时访问应该是没有问题的（能保证其中8K的人访问很快，其他的可能需要等待1、2秒才能连上，而一旦连上就会很流畅）</p>
+<p>控制最大连接数的MaxClients ，因此可以尝试配置为：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">&lt;IfModule mpm_prefork_module&gt;</span></span><br><span class="line">    <span class="attribute">StartServers</span>                      <span class="number">5</span></span><br><span class="line">    <span class="attribute">MinSpareServers</span>                   <span class="number">5</span></span><br><span class="line">    <span class="attribute">MaxSpareServers</span>                  <span class="number">10</span></span><br><span class="line">    <span class="attribute">ServerLimit</span>                    <span class="number">5500</span></span><br><span class="line">    <span class="attribute">MaxClients</span>                     <span class="number">5000</span></span><br><span class="line">    <span class="attribute">MaxRequestsPerChild</span>             <span class="number">100</span></span><br><span class="line"><span class="section">&lt;/IfModule&gt;</span></span><br></pre></td></tr></table></figure>
+<p>注意，MaxClients默认最大为250，若要超过这个值就要显式设置ServerLimit，且ServerLimit要放在MaxClients之前，值要不小于MaxClients，不然重启httpd时会有提示。</p>
+<p>重启httpd后，通过反复执行pgrep httpd|wc -l 来观察连接数，可以看到连接数在达到MaxClients的设值后不再增加，但此时访问网站也很流畅，那就不用贪心再设置更高的值了，不然以后如果网站访问突增不小心就会耗光服务器内存，可根据以后访问压力趋势及内存的占用变化再逐渐调整，直到找到一个最优的设置值。</p>
+<p>(MaxRequestsPerChild不能设置为0，可能会因内存泄露导致服务器崩溃）</p>
+<p><a target="_blank" rel="noopener" href="http://www.chedong.com/tech/apache_install.html#scale">更佳最大值计算的公式</a>：</p>
+<p>apache_max_process_with_good_perfermance &lt; (total_hardware_memory / apache_memory_per_process ) * 2<br>apache_max_process = apache_max_process_with_good_perfermance * 1.5</p>
+<p>参考：</p>
+<p><a target="_blank" rel="noopener" href="http://hi.baidu.com/thinkinginlamp/blog/item/6f969f3d8965d601bba1676f.html">apache的参数设置</a><br><a target="_blank" rel="noopener" href="http://bbs.chinaunix.net/viewthread.php?tid=544063">Apache 2.0性能优化—MPM的选择与配置</a><br><a target="_blank" rel="noopener" href="http://hi.baidu.com/acquiesce/blog/item/6875e710821115ffc2ce7961.html">如何避免apache的httpd进程占用比较多的内存</a><br><a target="_blank" rel="noopener" href="http://www.php-oa.com/2008/02/22/prefork/">对apache中并发控制参数prefork理解和调优</a></p>
+<p>附：</p>
+<p>实时检测HTTPD连接数：<br>watch -n 1 -d “pgrep httpd|wc -l”</p>
+<hr>
+<p>持久连接<br>一 个客户机连接到 Web 服务器时，允许客户机通过同一个 TCP 连接发出多个请求，这减少了与多个连接相关的延迟。在一个 Web 页面引用了多幅图片时，这就很有用：客户机可以通过一个连接先请求页面，再请求所有图片。其缺点在于服务器上的 worker 进程必须等待客户机要关闭的会话，之后才能转到下一个请求。<br>Apache 使您能够配置如何处理持久连接(称为 keepalives)，httpd.conf 全局级的 KeepAlive 5 允许服务器在连接强制关闭之前处理一个连接上的 5 个请求。将此值设置为 0 将禁用持久连接。同样位于全局级上的 KeepAliveTimeout 确定在会话关闭之前，Apache 将等待另外一个连接多久。<br>持久连接的处理并非 “一刀切” 式的配置。对于某些 Web 站点，禁用 keepalives 更合适(KeepAlive 0)；而对于其他一些站点，启用它会带来巨大的收益。惟一的解决之道就是尝试使用这两种配置，自己观察哪种更合适。但若启用了 keepalives，使用较小的超时时间较为明智，例如 2，即 KeepAliveTimeout 2。这能确保希望发出另外一个请求的客户机有充足的时间，还能确保 worker 进程不会一直空闲，等待可能永远不会出现的下一个请求。</p>
+<p>压缩<br>Web 服务器能够在将输出发回给客户机之前压缩它。这将使通过 Internet 发送的页面更小，代价是 Web 服务器上的 CPU 周期。对于那些负担得起 CPU 开销的服务器来说，这是提高页面下载速度的好办法 —— 页面压缩后大小变为原来的三分之一这种事情并不罕见。<br>图片通常已经是压缩过的，因此压缩应仅限于文本输出。Apache 通过 mod_deflate 提供压缩。尽管 mod_deflate 可轻松启用，但它涉及到太多的复杂性，很多手册都解释了这些复杂的内容。本文不会介绍压缩的配置，但提供了相应文档的链接。</p>
+<p>调优PHP<br>PHP 是运行应用程序代码的引擎。应该仅安装计划使用的那些模块，并配置您的 Web 服务器，使之仅为脚本文件(通常是以 .php 结尾的那些文件)使用 PHP，而非所有静态文件。</p>
+<p>操作码缓存<br>请 求一个 PHP 脚本时，PHP 会读取该脚本，并将其编译为 Zend 操作码，这是要执行的代码的一种二进制表示形式。随后，此操作码由 PHP 执行并丢弃。操作码缓存将保存这个编译后的操作码，并在下一次调用该页面时重用它。这会节省很多时间。有多种缓存可用，我比较常用的是 eAccelerator。<br>要安装 eAccelerator，您的计算机上需要有 PHP 开发库。由于不同的 Linux 发布版存放文件的位置不同，所以最好直接从 eAccelerator 的 Web 站点获得安装说明(参见 参考资料部分获得链接)。您的发布版也有可能已经包含了一个操作码缓存，只需安装即可。<br>无论如何在系统上安装 eAccelerator，都有一些配置选项需要注意。配置文件通常是 /etc/php.d/eaccelerator.ini。eaccelerator.shm_size 定义共享高速缓存的大小，编译后的脚本就存储在这里。该值的单位是兆字节(MB)。根据您的应用程序确定恰当的大小。eAccelerator 提供了一个脚本来显示缓存的状态，其中包含内存占用，64MB 是个不错的选择(eaccelerator.shm_size=”64”)。如果您选择的值未被接受，那么必须修改内核的最大共享内存的大小。向 /etc/sysctl.conf 添加 kernel.shmmax=67108864，运行 sysctl -p 来使设置生效。kernel.shmmax 值的单位是字节。<br>如果共享内存的分配超出极限，eAccelerator 必须将旧脚本从内存中清除。默认情况下，这是被禁用的；eaccelerator.shm_ttl = “60” 指定：当 eAccelerator 用完共享内存时，60 秒内未被访问的所有脚本都将被清除。<br>另一种流行的 eAccelerator 替代工具是 Alternative PHP Cache(APC)。Zend 的厂商也提供了一种商业操作码缓存，包括一个进一步提高效率的优化器。</p>
+<p>php.ini<br>PHP 的配置是在 php.ini 中完成的。四个重要的设置控制 PHP 可使用多少系统资源，如表 1 所列。<br>表 1. php.ini 中与资源相关的设置设置 描述 建议值<br>max_execution_time 一个脚本可使用多少 CPU 秒 30<br>max_input_time 一个脚本等待输入数据的时间有多长(秒) 60<br>memory_limit 在被取消之前，一个脚本可使用多少内存(字节) 32M<br>output_buffering 数据发送给客户机之前，有多少数据(字节)需要缓存 4096</p>
+<p>具 体数字主要取决于您的应用程序。如果要从用户处接收大文件，那么 max_input_time 可能必须增加，可以在 php.ini 中修改，也可以通过代码重写它。与之类似，CPU 或内存占用较多的程序也可能需要更大的设置值。目标就是缓解超标程序的影响，因此不建议全局禁用这些设置。关于 max_execution_time，还有一点需要注意：它表示进程的 CPU 时间，而不是绝对时间。因此一个进行大量 I/O 和少量计算的程序的运行时间可能远远超过 max_execution_time。这也是 max_input_time 可以大于 max_execution_time 的原因所在。<br>PHP 可执行的日志记录数是可配置的。在生产环境中，禁用除最重要的日志以外的一切日志记录能够减少磁盘写操作。如果需要使用日志来排除问题，那么可以按需启用日志记录。error_reporting = E_COMPILE_ERROR|E_ERROR|E_CORE_ERROR 将启用足够的日志记录，使您发现问题，同时从脚本中消除大量无用的内容。</p>
+<p>apache的参数设置<br>如何知道apache是工作在哪个模式下的，答案很简单：apachectl -l即可。这里，我先以prefork模式为例来说明参数的设置，其缺省设置一般如下：</p>
+<p>StartServers 5<br>MinSpareServers 5<br>MaxSpareServers 10<br>MaxClients 150<br>MaxRequestsPerChild 0</p>
+<p>prefork 控制进程在最初建立“StartServers”个子进程后，为了满足MinSpareServers设置的需要创建一个进程，等待一秒钟，继续创建两个，再等待一秒钟，继续创建四个……如此按指数级增加创建的进程数，最多达到每秒32个，直到满足MinSpareServers设置的值为止。这种模式可以不必在请求到来时再产生新的进程，从而减小了系统开销以增加性能。MaxSpareServers设置了最大的空闲进程数，如果空闲进程数大于这个值，Apache会自动kill掉一些多余进程。这个值不要设得过大，但如果设的值比MinSpareServers小，Apache会自动把其调整为 MinSpareServers+1。如果站点负载较大，可考虑同时加大MinSpareServers和MaxSpareServers。 MaxRequestsPerChild设置的是每个子进程可处理的请求数。每个子进程在处理了“MaxRequestsPerChild”个请求后将自动销毁。0意味着无限，即子进程永不销毁。虽然缺省设为0可以使每个子进程处理更多的请求，但如果设成非零值也有两点重要的好处：1、可防止意外的内存泄漏。2、在服务器负载下降的时侯会自动减少子进程数。因此，可根据服务器的负载来调整这个值。MaxClients是这些指令中最为重要的一个，设定的是 Apache可以同时处理的请求，是对Apache性能影响最大的参数。其缺省值150是远远不够的，如果请求总数已达到这个值(可通过ps -ef|grep httpd|wc -l来确认)，那么后面的请求就要排队，直到某个已处理请求完毕。这就是系统资源还剩下很多而HTTP访问却很慢的主要原因。虽然理论上这个值越大，可以处理的请求就越多，但Apache默认的限制不能大于256。ServerLimit指令无须重编译Apache就可以加大MaxClients。<br>注意，虽然通过设置ServerLimit，我们可以把MaxClients加得很大，但是往往会适得其反，系统耗光所有内存。以我手头的一台服务器为例：内存2G，每个apache进程消耗大约0.5%(可通过ps aux来确认)的内存，也就是10M，这样，理论上这台服务器最多跑200个apache进程就会耗光系统所有内存，所以，设置MaxClients要慎重。</p>
+<p>再来看看work模式，缺省参数一般如下：</p>
+<p>StartServers 2<br>MaxClients 150<br>MinSpareThreads 25<br>MaxSpareThreads 75<br>ThreadsPerChild 25<br>MaxRequestsPerChild 0</p>
+<p>Worker 由主控制进程生成“StartServers”个子进程，每个子进程中包含固定的ThreadsPerChild线程数，各个线程独立地处理请求。同样，为了不在请求到来时再生成线程，MinSpareThreads和MaxSpareThreads设置了最少和最多的空闲线程数；而MaxClients 设置了同时连入的clients最大总数。如果现有子进程中的线程总数不能满足负载，控制进程将派生新的子进程。MinSpareThreads和 MaxSpareThreads的最大缺省值分别是75和250。这两个参数对Apache的性能影响并不大，可以按照实际情况相应调节。 ThreadsPerChild是worker MPM中与性能相关最密切的指令。ThreadsPerChild的最大缺省值是64，如果负载较大，64也是不够的。这时要显式使用 ThreadLimit指令，它的最大缺省值是20000。Worker模式下所能同时处理的请求总数是由子进程总数乘以ThreadsPerChild 值决定的，应该大于等于MaxClients。如果负载很大，现有的子进程数不能满足时，控制进程会派生新的子进程。默认最大的子进程总数是16，加大时也需要显式声明ServerLimit(最大值是20000)。需要注意的是，如果显式声明了ServerLimit，那么它乘以 ThreadsPerChild的值必须大于等于MaxClients，而且MaxClients必须是ThreadsPerChild的整数倍，否则 Apache将会自动调节到一个相应值。</p>
+<hr>
+<p>对apache中并发控制参数prefork理解和调优<br>一个apache有linux下的并发不是很高的，大约到3K的样子(其实处理的http的请求可能只有300/s)，普通的服务器都会不同程度的出现问题.apache有关并发控制主要是 prefork和worker二个其中一个来控制.我们可以使用httpd -l来确定当前使用的MPM是prefork.c，还是Worker.c.下面是apache中有关prefork的配置.下面是我优化过的参数.</p>
+<p>#有这个参数就不必像apache1一样修改源码才能修改256客户数的限制，听讲要放到最前面才会生效，2000是这个参数的最大值<br>ServerLimit 2000<br>#指定服务器启动时建立的子进程数量，prefork默认为5。<br>StartServers 25<br>#指定空闲子进程的最小数量，默认为5。如果当前空闲子进程数少于MinSpareServers ，那么Apache将以最大每秒一个的速度产生新的子进程。此参数不要设的太大。<br>MinSpareServers 25<br># 设置空闲子进程的最大数量，默认为10。如果当前有超过MaxSpareServers数量的空闲子进程，那么父进程将杀死多余的子进程。此参数不要设的太大。如果你将该指令的值设置为比MinSpareServers小，Apache将会自动将其修改成”MinSpareServers+1”。<br>MaxSpareServers 50<br>#限定同一时间客户端最大接入请求的数量(单个进程并发线程数)，默认为256。任何超过MaxClients限制的请求都将进入等候队列，一旦一个链接被释放，队列中的请求将得到服务。要增大这个值，你必须同时增大ServerLimit 。<br>MaxClients 2000<br>#每个子进程在其生存期内允许伺服的最大请求数量，默认为10000.到达MaxRequestsPerChild的限制后，子进程将会结束。如果MaxRequestsPerChild为”0”，子进程将永远不会结束。<br>MaxRequestsPerChild 10000</p>
+<p>将MaxRequestsPerChild设置成非零值有两个好处：<br>1.可以防止(偶然的)内存泄漏无限进行，从而耗尽内存。<br>2.给进程一个有限寿命，从而有助于当服务器负载减轻的时候减少活动进程的数量。</p>
+<p>工作方式：<br>一 个单独的控制进程(父进程)负责产生子进程，这些子进程用于监听请求并作出应答。Apache总是试图保持一些备用的 (spare)或者是空闲的子进程用于迎接即将到来的请求。这样客户端就不需要在得到服务前等候子进程的产生。在Unix系统中，父进程通常以root身份运行以便邦定80端口，而 Apache产生的子进程通常以一个低特权的用户运行。User和Group指令用于设置子进程的低特权用户。运行子进程的用户必须要对它所服务的内容有读取的权限，但是对服务内容之外的其他资源必须拥有尽可能少的权限。</p>
+<p>对上面的有些值，一定要记的不是越大越好.这个需要经过几次尝试和出错之后才能选好要使用的值(不同的硬件处理水平不一样)。最重要的值是maxclient允许足够多的工作进程，同时又不会导致服务器进行过度的交换(死机)。如果传入的请求超出处理能力而让服务器当掉的话，那么至少满足此值的那些请求会得到服务，其他请求被阻塞这样会更加好。</p>
+<p>我们调优常常要查看httpd进程数(即prefork模式下Apache能够处理的并发请求数)：<br>#ps -ef | grep httpd | wc -l<br>出现的结果，就是当前Apache能够处理的多少个并发请求，这个值Apache根据负载情况自动调.<br>查看Apache的并发请求数及其TCP连接状态：<br>#netstat -n | awk ‘/^tcp/ {++S[$NF]} END {for(a in S) print a， S[a]}’</p>
+<p>返回结果示例：<br>LAST_ACK 5<br>SYN_RECV 38<br>ESTABLISHED 1600<br>FIN_WAIT1 51<br>FIN_WAIT2 515<br>TIME_WAIT 1857<br>其中的SYN_RECV表示正在等待处理的请求数；ESTABLISHED表示正常数据传输状态；TIME_WAIT表示处理完毕，等待超时结束的请求数。<br>状态：描述<br>CLOSED：无连接是活动的或正在进行<br>LISTEN：服务器在等待进入呼叫<br>SYN_RECV：一个连接请求已经到达，等待确认<br>SYN_SENT：应用已经开始，打开一个连接<br>ESTABLISHED：正常数据传输状态<br>FIN_WAIT1：应用说它已经完成<br>FIN_WAIT2：另一边已同意释放<br>ITMED_WAIT：等待所有分组死掉<br>CLOSING：两边同时尝试关闭<br>TIME_WAIT：另一边已初始化一个释放<br>LAST_ACK：等待所有分组死掉</p>
+<p>可以使用Linux下的webbench来作压力测试.<br>apache 的 MaxRequestsPerChild 指令设置不合理导致并发连接过高会导致服务器负荷增大，尝试优化和调整服务器，首先是从 Apache 的优化和调整开始的。<br>从网络上搜索到一篇文章，说加大 MaxRequestsPerChild 可以促使增加子进程的复用，从而提高效率。不记得那篇文章是否提到了其使用的 Apache 的 MPM ，版本是 2.0 的没错，反正不是 woker 就是 prefork 了。<br>我使用的 prefork ，参考那篇文章，将 MaxRequestsPerChild 由 300 调整到了 3000 。<br>结果，后两天的监控结果是，在网站访问期的高峰期，服务器负荷很重，数据库的并发连接频频超过最高限制。Apache 的并发连接也几乎一直保持在最高，网站访问速度很慢，频繁出现访问超时的问题。<br>最开始以为是网站访问量过大，达到服务器硬件极限导致的正常现象，不过，手动重启 Apache 后，数据库并发连接迅速降低，之后缓慢增加，一直达到最高并发连接限制，并且很长时间无法减小。<br>之后，认为是数据库并发连接过高，导致系统负荷过大，而 Apache 过多的 KeepAlice 连接导致数据库的并发连接无法及时释放从而消耗大量系统资源，导致系统负荷过重。最后，怀疑到 MaxRequestsPerChild 的 300 设置是否合理。<br>阅 读 Apache 手册关于 MaxRequestsPerChild 的说明后，认为 prefork 下，KeepAlice 开启的情况下，每一个新连接都会导致一个 Apache 子进程开启， MaxRequestsPerChild 设置过大，导致新连接产生新的子进程后，长期 idle ，这样并不一定合理。<br>根据网站的访问情况，并不需要那么大的 MaxRequestsPerChild ，客户端和 Apache 采用 http 进行连接，网站都是一些大小不大的文件，客户端在和 Apache 服务器数次交互后，就应该完成一次访问了，用户点击网站的频率也不会那么高，所以 MaxRequestsPerChild 不应该设置那么高，而应该设置低一些，以尽快释放数据库连接，尽快回收系统资源，以尽可能快速的满足新的请求的连接需求。将 MaxRequestsPerChild 重新调整回默认的 300 ，情况有所改观。<br>最后，就像那句古话所说的，尽信书不如无书，换到互联网上也一样。不能盲目的参考网上的资料，特别是非严格发表的个人经验文档。网上的资料始终都只能作为参考，必须要经过自己的理解，再结合实际情况，进行调整。不然，导致的结果可能是无法预计的。<br>MaxRequestsPerChild 这个指令设定一个独立的子进程将能处理的请求数量。在处理“MaxRequestsPerChild 数字”个请求之后，子进程将会被父进程终止，这时候子进程占用的内存就会释放，如果再有访问请求，父进程会重新产生子进程进行处理。如果 MaxRequestsPerChild缺省设为0(无限)或较大的数字(例如10000以上)可以使每个子进程处理更多的请求，不会因为不断终止、启动子进程降低访问效率，但MaxRequestsPerChild设置为0时，如果占用了200～300M内存，即使负载下来时占用的内存也不会减少。内存较大的服务器可以设置为0或较大的数字。内存较小的服务器不妨设置成30、50、100，以防内存溢出。</p>
+<p>如何避免apache的httpd进程占用比较多的内存<br>目前apache的主流工作模式MPM模式。MPM是Multi-Processing-Modules的简称，意思是多道处理模块。MPM模块有不同的种类。现在用的比较多的MPM种类主要是prefork和worker。prefork的工作方式是多个进程工作，每个进程会在处理一定数量的请求后结束 (这个数量可能是无穷)，没有线程的概念。worker被看作apache未来的主流工作模式，它是一种多进程与多线程混合的模式。<br>最近发现一个比较奇怪的现象，某台以prefork模式工作的服务器的内存使用率在每次重启apache之后会不停的上涨，直到swap用完，直到死机。后来查出来是因为apache使用的某一些脚本存在内存泄露的代码段。而apache启动的调用这些代码段的进程的处理请求数被设置为无穷。也就是说这些进程只有在 apache重启(stop-start模式)或者服务器(指的是机器)重启的情况下才会被kill，否则将一直运行下去，直到耗尽系统的最后一点资源 (主要是内存)。<br>问题貌似已经解决了。但是，还有点不对，就是为什么有将近4G的可用空间(内存2G加上swap2G，除去操作系统部分)，资源还是很快就耗尽了？虽然进程在每处理一个请求的情况下都会吃掉一点内存，但是在看了内存泄露的那段代码后发现每次处理泄露的内存也不过2K左右。要消耗掉 3G的空间，需要至少15.7w次请求。但是目前的手机统计平台上一天的点击量也不过5w。其实top命令下就能看出来，每个httpd进程的内存使用率有2.4%，3.2%等等。对于一个2G内存的服务器，一个进程2%就等于是40M。仅仅一个普通的请求，没有post参数的，没有大规模数据库查询的，怎么会用这么多内存？httpd的进程在被apache的主控进程创建的时候，会预先加载一些包，这些包是在apache配置文件里设置的。然后发现在 apache加载的包目录下，有一个很大的包，是用来根据手机号查找手机卡的信息的。去掉这个包之后，每个httpd的进程使用内存就正常了。<br>总结有两点：<br>1、MaxRequestsPerChild不能设置为0，最好设置为一个相对不大的数字，防止httpd进程有意外的内存泄露(当然，也不建议设置为1，否则apache就会不停的fork新的进程了，cpu的资源也就过多消耗了)；<br>2、不要加载过多的包，尤其是比较大的包。如果费用不可，最好能够用数据库来存储包里的一些静态信息。</p>
+<p>Apache连接数的设置方法<br>prefork几乎还是目前的唯一MPM，我在下面主要还是讨论它的工作原理和相关指令调整。查看缺省生成的httpd.conf配置文件，会发现里面包含如下的配置段：<br>以下为引用的内容：</p>
+<p>StartServers 5<br>MinSpareServers 5<br>MaxSpareServers 10<br>MaxClients 150<br>MaxRequestsPerChild 0</p>
+<p>prefork 的工作原理是这样的：控制进程在最初建立StartServers个子进程后，为了满足MinSpareServers设置的需要，创建一个进程，等待一秒钟，继续创建第二个，等待一秒钟，继而创建四个，如此按指数级增加创建的进程数，最多达到每秒32个，直到满足MinSpareServers设置的值为止，这也就是预派生(prefork)的由来。这种模式可以使得不必在请求到来时再产生新的进程，从而减小了系统开销以增加性能。<br>axSpareServers 设置了最大的空闲进程数，如果空闲进程数大于这个值，apache(Unix平台最流行的WEB服务器平台)会自动kill某些多余进程。这个值一般不要设的过大，但如果设的比MinSpareServers小，apache(Unix平台最流行的WEB服务器平台)会自动把它调整为 MinSpareServers+1。如果站点负载较大的话，可考虑同时加大MinSpareServers和MaxSpareServers。<br>MaxRequestsPerChild 设置的是每个子进程可以处理的请求数。每个子进程在处理了MaxRequestsPerChild个请求后将自动销毁。0意味着无限，即子进程永不销毁。虽然缺省设为0可以使每个子进程处理更多的请求，但如果设成非零值也有两点重要的好处：<br>1、可防止意外的内存卸漏；<br>2、在服务器负载下降的时侯会自动减少子进程数。<br>因此，可根据服务器的负载来调整这个值，如果非零的话，笔者认为10000左右是比较合适的。事实上这个值对apache(Unix平台最流行的WEB服务器平台)的性能影响不是很大。<br>MaxClients 是这些指令中最为重要的一个，它设定的就是apache(Unix平台最流行的WEB服务器平台)可以同时处理的请求，这是对apache(Unix平台最流行的WEB服务器平台)性能影响最大的参数.在我个人看来，缺省的150是远远不够的，如果请求总数已达到这个值(可通过ps –ef|grep httpd|wc –l来确认)，那么下面的请求就要排队，直到某个已处理请求完毕。这就是为什么系统资源还剩下很多，而http访问却很慢的主要原因。系统管理员可以根据硬件配置和负载情况来动态调整这个值，虽然理论上这个值越大，可以处理的请求就越多，但apache(Unix平台最流行的WEB服务器平台)默认的限制是不能大于256。如果把这个值设为大于256那么apache(Unix平台最流行的WEB服务器平台)将无法起动。事实上，256对于负载稍重的站点也是很不够的。在apache(Unix平台最流行的WEB服务器平台)1.3 中这是个硬限制，如果要加大这个值，必须在configure前手工修改源代码树下的src/include/httpd.h，查找256，会发现#define HARD_SERVER_LIMIT 256这行，把256改为你要增大的值如4000，然后重新编译apache(Unix平台最流行的WEB服务器平台)即可。我想这个方法稍有些经验的 apache(Unix平台最流行的WEB服务器平台)系统管理员都知道，不过我相信在apache(Unix平台最流行的WEB服务器平台)2.0中知道如何加大这个值的人就不会太多了。<br>在apache(Unix平台最流行的WEB服务器平台)2.0中新加入了ServerLimit指令，使得无须重编译apache(Unix平台最流行的WEB服务器平台)就可以加大MaxClients。下面是笔者的prefork配置段。</p>
+<p>以下为引用的内容：</p>
+<p>StartServers 10<br>MinSpareServers 10<br>MaxSpareServers 15<br>ServerLimit 2000<br>MaxClients 1500<br>MaxRequestsPerChild 10000</p>
+<p>BTW: ServerLimit的最大值是20000，这对于大多数站点是足够了，但如果你一定要再加大的话，那么这个值位于源代码树下的server/mpm/prefork/prefork.c中。里面的<br>#define DEFAULT_SERVER_LIMIT 256<br>#define MAX_SERVER_LIMIT 20000</p>
+<p>这两行就对应着MaxClients和ServerLimit的限制值。但我相信很少有人可以用到20000的并发连接数。  </p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/03/19/%E5%90%88%E7%90%86%E8%AE%BE%E7%BD%AEapache%E7%9A%84%E8%BF%9E%E6%8E%A5%E6%95%B0%E5%8F%8A%E8%BF%9B%E7%A8%8B%E5%B7%A5%E4%BD%9C%E6%96%B9%E5%BC%8F/" data-id="cl9pgeo9101t3ycv1d7sfe0kh" data-title="合理设置apache的连接数及进程工作方式" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/03/20/%E5%BC%82%E6%AD%A5%E8%B0%83%E7%94%A8%E4%B8%8E%E5%A4%9A%E7%BA%BF%E7%A8%8B%E7%9A%84%E5%8C%BA%E5%88%AB/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          异步调用与多线程的区别
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/03/19/%E6%9C%8D%E5%8A%A1%E5%99%A8php-cgi-exe%E8%BF%9B%E7%A8%8B%E8%BF%87%E5%A4%9A%EF%BC%8C%E5%AF%BC%E8%87%B4CPU%E5%8D%A0%E7%94%A8100-%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">服务器php-cgi.exe进程过多，导致CPU占用100%的解决方法</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

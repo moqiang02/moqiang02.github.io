@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>MySQL share mode和for update读锁的区别和应用场景分析 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="读锁的概念和区别如果在MySQL的事务里查询数据，然后在同一事务中插入或更新相关数据，常规的SELECT语句不能提供足够的保护。其他并行的事务可以更新或删除第一个事务里刚查询的相同行。 InnoDB支持两种类型的读锁，提供了额外的安全性：  SELECT … LOCK IN SHARE MODE   在读取到的行上设置共享锁。其他会话可以读取行，也可以继续给行加共享锁，但是在当前事务提交之前其他会">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL share mode和for update读锁的区别和应用场景分析">
+<meta property="og:url" content="http://moqiang02.github.io/2021/12/21/MySQL-share-mode%E5%92%8Cfor-update%E8%AF%BB%E9%94%81%E7%9A%84%E5%8C%BA%E5%88%AB%E5%92%8C%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF%E5%88%86%E6%9E%90/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="读锁的概念和区别如果在MySQL的事务里查询数据，然后在同一事务中插入或更新相关数据，常规的SELECT语句不能提供足够的保护。其他并行的事务可以更新或删除第一个事务里刚查询的相同行。 InnoDB支持两种类型的读锁，提供了额外的安全性：  SELECT … LOCK IN SHARE MODE   在读取到的行上设置共享锁。其他会话可以读取行，也可以继续给行加共享锁，但是在当前事务提交之前其他会">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-12-21T10:56:14.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.816Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-MySQL-share-mode和for-update读锁的区别和应用场景分析" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2021/12/21/MySQL-share-mode%E5%92%8Cfor-update%E8%AF%BB%E9%94%81%E7%9A%84%E5%8C%BA%E5%88%AB%E5%92%8C%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF%E5%88%86%E6%9E%90/" class="article-date">
+  <time class="dt-published" datetime="2021-12-21T10:56:14.000Z" itemprop="datePublished">2021-12-21</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/mysql/">mysql</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      MySQL share mode和for update读锁的区别和应用场景分析
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <h3 id="读锁的概念和区别"><a href="#读锁的概念和区别" class="headerlink" title="读锁的概念和区别"></a>读锁的概念和区别</h3><p>如果在<code>MySQL</code>的事务里查询数据，然后在同一事务中插入或更新相关数据，常规的<code>SELECT</code>语句不能提供足够的保护。其他并行的事务可以更新或删除第一个事务里刚查询的相同行。 <code>InnoDB</code>支持两种类型的读锁，提供了额外的安全性：</p>
+<ul>
+<li><p><strong>SELECT … LOCK IN SHARE MODE</strong></p>
+<p>  在读取到的行上设置共享锁。其他会话可以读取行，也可以继续给行加共享锁，但是在当前事务提交之前其他会话不能修改加了共享锁的行。如果这些行中的任何一个被尚未提交的另一个事务更改，则当前查询将等待直到该事务结束，然后使用最新值。</p>
+</li>
+<li><p><strong>SELECT … FOR UPDATE</strong></p>
+<p>  用排他锁锁定行和任何关联的索引条目，就像在这些行上执行<code>UPDATE</code>语句一样。禁止其他事务在这些加了锁的行上进行<code>UPDATE</code>、执行<code>SELECT ... LOCK IN SHARE MODE</code>或者读取某些事务隔离级别的数据。</p>
+</li>
+</ul>
+<p>通过对比，发现<code>FOR UPDATE</code>的加锁方式类似并发编程里的写锁，而<code>LOCK IN SHARE MODE</code>则是读锁，同一时间点相同的行上只允许出现一个写锁，或者是多个读锁。一旦有一种锁在数据行上成功加上了锁，另外一种加锁尝试就会进入等待。<span id="more"></span></p>
+<p>这两种锁都不会阻塞普通<code>SELECT</code>语句读取这些行，一致的读（快照读）将忽略行记录上设置的任何锁。 （行记录的旧版本无法锁定；可以通过在行记录的内存副本上应用undo log重构它们。）</p>
+<h3 id="应用场景"><a href="#应用场景" class="headerlink" title="应用场景"></a>应用场景</h3><p><code>SELECT ... LOCK IN SHARE MODE</code>的应用场景适合于两张表存在关系时的写操作，拿<code>MySQL</code>官方文档的例子来说，假如存在两张有关系的表：PARENT和CHILD，使用普通的SELECT语句（快照读）来查询表PARENT并验证父行是否存在后再将子行插入CHILD表，这种方式安全吗？答案是否定的，因为其他会话可能会在你这个会话的SELECT和INSERT之间的某个时间点删除了父行，这个删除操作你是无法察觉到的。</p>
+<p>为避免这种潜在的问题，我们使用“加共享锁”的方式执行SELECT：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> parent <span class="keyword">WHERE</span> NAME <span class="operator">=</span> <span class="string">&#x27;Jones&#x27;</span> LOCK <span class="keyword">IN</span> SHARE MODE;</span><br></pre></td></tr></table></figure>
+
+<p>在<code>LOCK IN SHARE MODE</code>查询返回PARENT表里名为” Jones”的数据行之后，你就可以安全地将子记录添加到CHILD表中并提交事务。在事务提交前任何试图在PARENT表的对应行上获取排他锁的事务都将等到你完成操作提交事务后再进行。</p>
+<p>但是如果是同一张表的应用场景，举个例子，电商系统中在产生订单之前需要确认商品数量大于1,产生订单之后应该将商品数量减1。</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">select id, amount <span class="keyword">from</span> products where <span class="attribute">product_name</span>=<span class="string">&#x27;Apple11&#x27;</span>;</span><br><span class="line">update product <span class="built_in">set</span> <span class="attribute">amount</span>=amount-1 where id = &#123;id&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>显然上面的做法是是有问题，因为如果1查询出amount的值为1，但是这时正好其他会话也买了该商品并产生了订单，那么amount就变成了0，这时这个会话里的第二步再执行就有问题。</p>
+<p>那么可以使用<code>LOCK IN SHARE MODE</code>给这行加共享锁可行吗？也是不合理的，因为两个会话同时用共享读锁锁定该行记录时，这时两个会话再进行第二步的UPDATE时都会等待其他事务的读锁释放，这必然会产生死锁导致其中一个事务回滚。</p>
+<table>
+<thead>
+<tr>
+<th><div style="width: 50px"></div>时间</th>
+<th>事务1</th>
+<th>事务2</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>SELECT id, amount FROM products WHERE product_name=’Apple11’ LOCK IN SHARE MODE;</td>
+<td></td>
+</tr>
+<tr>
+<td>2</td>
+<td>判断amount &gt; 1</td>
+<td>SELECT id, amount FROM products WHERE product_name=’Apple11’ LOCK IN SHARE MODE;</td>
+</tr>
+<tr>
+<td>3</td>
+<td>UPDATE products SET amount=amount-1 WHERE id = {id};</td>
+<td>判断amount &gt; 1</td>
+</tr>
+<tr>
+<td>4</td>
+<td>等待事务2释放读锁</td>
+<td>UPDATE products SET amount=amount-1 WHERE id = {id};</td>
+</tr>
+<tr>
+<td>5</td>
+<td>继续等待</td>
+<td>检测到死锁 （ Deadlock found when trying to get lock; try restarting transaction）</td>
+</tr>
+<tr>
+<td>6</td>
+<td>继续等待</td>
+<td>回滚事务</td>
+</tr>
+<tr>
+<td>7</td>
+<td>事务提交</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>通过上面这个案例可知LOCK IN SHARE MODE的方式在这个场景中不适用，如果两个事务以共享模式锁定该行，则任何人都将无法更新该行（当其他事务持有该行的锁时，不允许进行更新）。在这种情况下真正发生的是，两者之一将超时，释放锁，然后另一个将成功更新该行。</p>
+<p>我们需要使用FOR UPDATE的方式直接加写锁，从而短暂地阻塞事务2。下面是两个操作根据发生时间的推演过程</p>
+<table>
+<thead>
+<tr>
+<th><div style="width: 50px"></div>时间</th>
+<th>事务1</th>
+<th>事务2</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>SELECT id, amount FROM products WHERE product_name=’Apple11’ FOR UPDATE</td>
+<td></td>
+</tr>
+<tr>
+<td>2</td>
+<td>判断amount &gt; 1</td>
+<td>SELECT id, amount FROM products WHERE product_name=’Apple11’ FOR UPDATE</td>
+</tr>
+<tr>
+<td>3</td>
+<td>UPDATE products SET amount=amount-1 WHERE id = {id}</td>
+<td>等待事务1释放写锁</td>
+</tr>
+<tr>
+<td>4</td>
+<td>事务提交</td>
+<td>等待事务1释放写锁</td>
+</tr>
+<tr>
+<td>5</td>
+<td></td>
+<td>判断amount &gt; 1 不成立</td>
+</tr>
+<tr>
+<td>6</td>
+<td></td>
+<td>事务提交退出</td>
+</tr>
+</tbody></table>
+<p>通过上面两个案例的分析，我们可以得出两种读锁的适用场景。<code>LOCK IN SHARE MODE</code>适合用于两张表存在业务关系时的一致性要求，而<code>FOR UPDATE</code>适用于操作同一张表时保证业务的一致性要求。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><ul>
+<li>  LOCK IN SHARE MODE是共享锁，多个事务允许同时持有一行的读锁。</li>
+<li>  FOR UPDATE 是独占锁，事务用FOR UPDATE锁定行后，会阻塞其他事务对该行的写锁和读锁的获取，反之亦然。</li>
+<li>  任何行锁都不影响普通SELECT查询的快照读，保证了MySQL的并发能力。</li>
+<li>  <code>LOCK IN SHARE MODE</code>适合用于两张表存在业务关系上的一致性要求时的操作场景。</li>
+<li>  <code>FOR UPDATE</code>适用于操作同一张表时保证业务的一致性要求。</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2021/12/21/MySQL-share-mode%E5%92%8Cfor-update%E8%AF%BB%E9%94%81%E7%9A%84%E5%8C%BA%E5%88%AB%E5%92%8C%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF%E5%88%86%E6%9E%90/" data-id="cl9pgentr00o6ycv1858pes72" data-title="MySQL share mode和for update读锁的区别和应用场景分析" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2022/01/07/GORM%E6%9F%A5%E8%AF%A2%E6%9D%A1%E4%BB%B6%E4%B9%8B%E4%B8%8D%E5%AE%9A%E5%8F%82%E6%95%B0%E7%9A%84%E7%94%A8%E6%B3%95/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          GORM查询条件之不定参数的用法
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2021/12/04/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B-%E9%80%9A%E9%81%93%E4%BD%BF%E7%94%A8/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">并发编程-通道使用</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

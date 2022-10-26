@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Gson使用技巧小结 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="背景json格式在移动端开发中再熟悉不过了，相较xml等格式，json有易读、体积小等优点。在解析json格式时，个人比较习惯使用Google的gson工具包，之前看过gson和阿里fastjson的性能比较，貌似gson在数据量不大时性能更好。目前项目级别使用gson完全能够胜任。开始的时候使用gson只是简单的新建Gson实例，调用from方法解析成对应model类。随着业务发展和http模块">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Gson使用技巧小结">
+<meta property="og:url" content="http://moqiang02.github.io/2016/04/26/Gson%E4%BD%BF%E7%94%A8%E6%8A%80%E5%B7%A7%E5%B0%8F%E7%BB%93/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="背景json格式在移动端开发中再熟悉不过了，相较xml等格式，json有易读、体积小等优点。在解析json格式时，个人比较习惯使用Google的gson工具包，之前看过gson和阿里fastjson的性能比较，貌似gson在数据量不大时性能更好。目前项目级别使用gson完全能够胜任。开始的时候使用gson只是简单的新建Gson实例，调用from方法解析成对应model类。随着业务发展和http模块">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2016-04-26T13:36:20.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.755Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Gson使用技巧小结" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2016/04/26/Gson%E4%BD%BF%E7%94%A8%E6%8A%80%E5%B7%A7%E5%B0%8F%E7%BB%93/" class="article-date">
+  <time class="dt-published" datetime="2016-04-26T13:36:20.000Z" itemprop="datePublished">2016-04-26</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/android/">android</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Gson使用技巧小结
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>json格式在移动端开发中再熟悉不过了，相较xml等格式，json有易读、体积小等优点。在解析json格式时，个人比较习惯使用Google的gson工具包，之前看过gson和阿里fastjson的性能比较，貌似gson在数据量不大时性能更好。目前项目级别使用gson完全能够胜任。<br>开始的时候使用gson只是简单的新建Gson实例，调用from方法解析成对应model类。随着业务发展和http模块的升级，简单的toJson和from方法已经不能满足需求了。因为接口返回数据的差异性，不同情形下可能使用不同的解析策略，最简单的方法当然是针对每个接口返回的数据使用相对应的model，但这样很容易造成model对象过多过杂难以管理和分辨。另外接口返回数据命名策略也可能因人而异，下划线和驼峰式都有可能，为了保证Application端代码的一致性，就要想办法把下划线风格的转为驼峰式风格。这些需求gson通通能够解决。<span id="more"></span></p>
+<h3 id="Gson基础"><a href="#Gson基础" class="headerlink" title="Gson基础"></a>Gson基础</h3><p>from和toJson方法，分别用于json格式字符串转为Model对象、对象转json。很好理解。</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="built_in">void</span> <span class="title function_">baseGson</span>(<span class="params"></span>) &#123;</span><br><span class="line">    <span class="title class_">String</span> json = <span class="string">&quot;&#123;\&quot;name\&quot;:\&quot;gson\&quot;,\&quot;date\&quot;:\&quot;2015/12/29\&quot;&#125;&quot;</span>;</span><br><span class="line">    <span class="title class_">BaseGson</span> fromJson = <span class="title function_">getSimpleGson</span>().<span class="title function_">fromJson</span>(json, <span class="title class_">BaseGson</span>.<span class="property">class</span>);</span><br><span class="line"></span><br><span class="line">    <span class="title class_">String</span> toJson = <span class="title function_">getSimpleGson</span>().<span class="title function_">toJson</span>(fromJson);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">BaseGson</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="title class_">String</span> name;</span><br><span class="line">    <span class="keyword">public</span> <span class="title class_">String</span> date;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="title class_">String</span> <span class="title function_">toString</span>(<span class="params"></span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;BaseGson&#123;&quot;</span> +</span><br><span class="line">                <span class="string">&quot;name=&#x27;&quot;</span> + name + <span class="string">&#x27;\&#x27;&#x27;</span> +</span><br><span class="line">                <span class="string">&quot;, date=&#x27;&quot;</span> + date + <span class="string">&#x27;\&#x27;&#x27;</span> +</span><br><span class="line">                <span class="string">&#x27;&#125;&#x27;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>注意这里的fromJson方法后可以跟type类型或class类型。解析List时多用TypeToken，如下：</p>
+<p><code>new TypeToken&lt;List&lt;BaseGson&gt;&gt;()&#123;&#125;.getType();</code></p>
+<h3 id="Gson注解"><a href="#Gson注解" class="headerlink" title="Gson注解"></a>Gson注解</h3><p>介绍下常用几个注解，Expose和SerializedName。</p>
+<h4 id="SerializedName"><a href="#SerializedName" class="headerlink" title="SerializedName"></a>SerializedName</h4><p>举个例子，解决接口和本地model风格差异问题，比如返回的字段mobile_phone要解析为mobilePhone，只需在本地model类中添加注解<code>@SerializedName(&quot;mobile_phone&quot;)</code>即可，代码如下：</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">public</span> static <span class="type">void</span> annotataionGson()&#123;</span><br><span class="line">    String <span class="type">json</span> = &quot;&#123;\&quot;<span class="type">name</span>\&quot;:\&quot;gson\&quot;,\&quot;<span class="type">date</span>\&quot;:\&quot;<span class="number">2015</span>/<span class="number">12</span>/<span class="number">29</span>\&quot;, \&quot;mobile_phone\&quot;:\&quot;<span class="number">13111111111</span>\&quot;&#125;&quot;;</span><br><span class="line">    BaseGson fromJson = getSimpleGson().fromJson(<span class="type">json</span>, BaseGson.<span class="keyword">class</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">Log</span>.d(&quot;Gson&quot;, fromJson.toString());</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">static <span class="keyword">class</span> BaseGson &#123;</span><br><span class="line">    <span class="built_in">public</span> String <span class="type">name</span>;</span><br><span class="line">    <span class="built_in">public</span> String <span class="type">date</span>;</span><br><span class="line">    @SerializedName(&quot;mobile_phone&quot;)</span><br><span class="line">    <span class="built_in">public</span> String mobilePhone;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    <span class="built_in">public</span> String toString() &#123;</span><br><span class="line">        <span class="keyword">return</span> &quot;BaseGson&#123;&quot; +</span><br><span class="line">                &quot;name=&#x27;&quot; + <span class="type">name</span> + <span class="string">&#x27;\&#x27;&#x27; +</span></span><br><span class="line"><span class="string">                &quot;, date=&#x27;</span>&quot; + date + &#x27;\&#x27;&#x27; +</span><br><span class="line">                &quot;, mobilePhone=<span class="string">&#x27;&quot; + mobilePhone + &#x27;</span>\<span class="string">&#x27;&#x27;</span> +</span><br><span class="line">                <span class="string">&#x27;&#125;&#x27;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>输出为<br><code> 12-29 05:59:27.490 15245-15245/? D/Gson: BaseGson&#123;name=&#39;gson&#39;, date=&#39;2015/12/29&#39;, mobilePhone=&#39;13111111111&#39;&#125;</code></p>
+<p>相当方便吧，SerializedName后跟的字段就是转化后/被转化前json字符串时显示的字段。此外，除了注解Gson还提供Builder方式建造不同策略的gson对象，例如</p>
+<p><code>Gson policyGson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)             .create();</code></p>
+<p>使用这样的policyGson，toJson时会按照“小写下划线”格式输出(toJson)。不过对<code>@SerializedName</code>不生效，即优先级小于<code>@SerializedName</code>。</p>
+<h4 id="Expose"><a href="#Expose" class="headerlink" title="Expose"></a>Expose</h4><p>用来标示toJson时输出的字段。<br>比如对name字段使用Expose。同时开启excludeFieldsWithoutExposeAnnotation。代码如下：</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">public</span> static <span class="type">void</span> annotataionGson()&#123;</span><br><span class="line">    String <span class="type">json</span> = &quot;&#123;\&quot;<span class="type">name</span>\&quot;:\&quot;gson\&quot;,\&quot;<span class="type">date</span>\&quot;:\&quot;<span class="number">2015</span>/<span class="number">12</span>/<span class="number">29</span>\&quot;, \&quot;mobile_phone\&quot;:\&quot;<span class="number">13111111111</span>\&quot;&#125;&quot;;</span><br><span class="line">    Gson g = <span class="built_in">new</span> GsonBuilder().excludeFieldsWithoutExposeAnnotation().<span class="keyword">create</span>();</span><br><span class="line">    BaseGson fromJson = g.fromJson(<span class="type">json</span>, BaseGson.<span class="keyword">class</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">Log</span>.d(&quot;Gson&quot;, fromJson.toString());</span><br><span class="line"></span><br><span class="line">    <span class="keyword">Log</span>.d(&quot;Gson&quot;, g.toJson(fromJson));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">static <span class="keyword">class</span> BaseGson &#123;</span><br><span class="line">    @Expose</span><br><span class="line">    <span class="built_in">public</span> String <span class="type">name</span>;</span><br><span class="line">    <span class="built_in">public</span> String <span class="type">date</span>;</span><br><span class="line">    @SerializedName(&quot;mobile_phone&quot;)</span><br><span class="line">    <span class="built_in">public</span> String mobilePhone;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    <span class="built_in">public</span> String toString() &#123;</span><br><span class="line">        <span class="keyword">return</span> &quot;BaseGson&#123;&quot; +</span><br><span class="line">                &quot;name=&#x27;&quot; + <span class="type">name</span> + <span class="string">&#x27;\&#x27;&#x27; +</span></span><br><span class="line"><span class="string">                &quot;, date=&#x27;</span>&quot; + date + &#x27;\&#x27;&#x27; +</span><br><span class="line">                &quot;, mobilePhone=<span class="string">&#x27;&quot; + mobilePhone + &#x27;</span>\<span class="string">&#x27;&#x27;</span> +</span><br><span class="line">                <span class="string">&#x27;&#125;&#x27;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>则输出</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">12</span>-<span class="number">29</span> <span class="number">08</span>:<span class="number">02</span>:<span class="number">08</span>.<span class="number">922</span> <span class="number">26266</span>-<span class="number">26266</span>/? D/Gson: BaseGson&#123;name=&#x27;gson&#x27;, date=&#x27;null&#x27;, mobilePhone=&#x27;null&#x27;&#125;</span><br><span class="line"><span class="attribute">12</span>-<span class="number">29</span> <span class="number">08</span>:<span class="number">02</span>:<span class="number">08</span>.<span class="number">926</span> <span class="number">26266</span>-<span class="number">26266</span>/? D/Gson: &#123;<span class="string">&quot;name&quot;</span>:<span class="string">&quot;gson&quot;</span>&#125;</span><br></pre></td></tr></table></figure>
+<p>除此，还有根据关键字来筛选序列化、反序列化时要忽略的字段，<code>new GsonBuilder().excludeFieldsWithModifiers(Modifier.TRANSIENT).create();</code>这样transient修饰的字段就会被忽略啦。</p>
+<blockquote>
+<p>1.1 deserialize (boolean) 反序列化 默认true 例：<code>@Expose(deserialize=false)</code><br>1.2 serialize  (boolean) 序列化 默认true 例：<code>@Expose(serialize=false)</code><br>使用<code>new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();</code>创建Gson对象，没有@Expose注释的属性将不会被序列化。</p>
+</blockquote>
+<h3 id="Gson的TypeAdapter"><a href="#Gson的TypeAdapter" class="headerlink" title="Gson的TypeAdapter"></a>Gson的TypeAdapter</h3><p>typeAdapter是灵活使用Gson的一大利器，使用场景：服务器的小伙伴传来的json为（这里使用了<a target="_blank" rel="noopener" href="http://httpbin.org/">测试站Get数据</a>）</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;args&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;intValue&quot;</span><span class="punctuation">:</span> <span class="string">&quot;123&quot;</span><span class="punctuation">,</span> </span><br><span class="line">    <span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;test&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span><span class="punctuation">,</span> </span><br><span class="line">  <span class="attr">&quot;headers&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;Accept&quot;</span><span class="punctuation">:</span> <span class="string">&quot;text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8&quot;</span><span class="punctuation">,</span> </span><br><span class="line">    <span class="attr">&quot;Accept-Encoding&quot;</span><span class="punctuation">:</span> <span class="string">&quot;gzip, deflate, sdch&quot;</span><span class="punctuation">,</span> </span><br><span class="line">    <span class="attr">&quot;Accept-Language&quot;</span><span class="punctuation">:</span> <span class="string">&quot;zh-CN,zh;q=0.8&quot;</span><span class="punctuation">,</span> </span><br><span class="line">    <span class="attr">&quot;Cookie&quot;</span><span class="punctuation">:</span> <span class="string">&quot;_ga=GA1.2.867290806.1451279087&quot;</span><span class="punctuation">,</span> </span><br><span class="line">    <span class="attr">&quot;Host&quot;</span><span class="punctuation">:</span> <span class="string">&quot;httpbin.org&quot;</span><span class="punctuation">,</span> </span><br><span class="line">    <span class="attr">&quot;Upgrade-Insecure-Requests&quot;</span><span class="punctuation">:</span> <span class="string">&quot;1&quot;</span><span class="punctuation">,</span> </span><br><span class="line">    <span class="attr">&quot;User-Agent&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span><span class="punctuation">,</span> </span><br><span class="line">  <span class="attr">&quot;origin&quot;</span><span class="punctuation">:</span> <span class="string">&quot;123.126.22.222&quot;</span><span class="punctuation">,</span> </span><br><span class="line">  <span class="attr">&quot;url&quot;</span><span class="punctuation">:</span> <span class="string">&quot;http://httpbin.org/get?name=test&amp;intValue=123&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+<p>很不幸本地model类没有考虑这么复杂，所有字段均为String类型，且并不需要嵌套过深过细的数据结构。要是能转化为以下数据结构对应的model就好了。</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;args&quot;</span><span class="punctuation">:</span> <span class="string">&quot;xx&quot;</span><span class="punctuation">,</span> </span><br><span class="line">  <span class="attr">&quot;headers&quot;</span><span class="punctuation">:</span> <span class="string">&quot;xx&quot;</span><span class="punctuation">,</span> </span><br><span class="line">  <span class="attr">&quot;origin&quot;</span><span class="punctuation">:</span> <span class="string">&quot;123.126.22.222&quot;</span><span class="punctuation">,</span> </span><br><span class="line">  <span class="attr">&quot;url&quot;</span><span class="punctuation">:</span> <span class="string">&quot;http://httpbin.org/get?name=test&amp;intValue=123&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+<p>使用typeAdapter就可以自定义解析格式。首先要自己新建TypeAdapter的子类，有点类似于实现Parcelable接口，需要实现write和read方法。</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Created by opticalix@gmail.com on 15/12/28.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="built_in">public</span> <span class="keyword">class</span> HttpBinTypeAdapter extends TypeAdapter&lt;HttpBinModel&gt; &#123;</span><br><span class="line">    @Override</span><br><span class="line">    <span class="built_in">public</span> <span class="type">void</span> <span class="keyword">write</span>(JsonWriter <span class="keyword">out</span>, HttpBinModel <span class="keyword">value</span>) throws IOException &#123;</span><br><span class="line">        //<span class="keyword">value</span> <span class="keyword">write</span> <span class="keyword">to</span> <span class="type">json</span></span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">value</span> == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">out</span>.nullValue();</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">out</span>.beginObject();</span><br><span class="line">            <span class="keyword">out</span>.name(&quot;args&quot;).<span class="keyword">value</span>(<span class="keyword">value</span>.args);</span><br><span class="line">            <span class="keyword">out</span>.name(&quot;headers&quot;).<span class="keyword">value</span>(<span class="keyword">value</span>.headers);</span><br><span class="line">            <span class="keyword">out</span>.name(&quot;origin&quot;).<span class="keyword">value</span>(<span class="keyword">value</span>.origin);</span><br><span class="line">            <span class="keyword">out</span>.name(&quot;url&quot;).<span class="keyword">value</span>(<span class="keyword">value</span>.url);</span><br><span class="line">            <span class="keyword">out</span>.endObject();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    @Override</span><br><span class="line">    <span class="built_in">public</span> HttpBinModel <span class="keyword">read</span>(JsonReader <span class="keyword">in</span>) throws IOException &#123;</span><br><span class="line">        //<span class="keyword">read</span> <span class="type">json</span>, <span class="keyword">return</span> model</span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">in</span>.peek() == JsonToken.<span class="keyword">NULL</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">in</span>.beginObject();</span><br><span class="line">            HttpBinModel model = <span class="built_in">new</span> HttpBinModel();</span><br><span class="line">            <span class="keyword">if</span> (<span class="keyword">in</span>.nextName().equals(&quot;args&quot;)) &#123;</span><br><span class="line">                <span class="keyword">in</span>.beginObject();</span><br><span class="line">                String args = &quot;&quot;;</span><br><span class="line">                <span class="keyword">while</span> (<span class="keyword">in</span>.hasNext()) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (!TextUtils.isEmpty(args)) args += &quot;, &quot;;</span><br><span class="line">                    args += <span class="keyword">in</span>.nextName() + &quot;=&quot; + <span class="keyword">in</span>.nextString();</span><br><span class="line">                &#125;</span><br><span class="line">                model.args = args;</span><br><span class="line">                <span class="keyword">in</span>.endObject();</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (<span class="keyword">in</span>.nextName().equals(&quot;headers&quot;)) &#123;</span><br><span class="line">                <span class="keyword">in</span>.beginObject();</span><br><span class="line">                String headers = &quot;&quot;;</span><br><span class="line">                <span class="keyword">while</span> (<span class="keyword">in</span>.hasNext()) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (!TextUtils.isEmpty(headers)) headers += &quot;, &quot;;</span><br><span class="line">                    headers += <span class="keyword">in</span>.nextName() + &quot;=&quot; + <span class="keyword">in</span>.nextString();</span><br><span class="line">                &#125;</span><br><span class="line">                model.headers = headers;</span><br><span class="line">                <span class="keyword">in</span>.endObject();</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (<span class="keyword">in</span>.nextName().equals(&quot;origin&quot;)) &#123;</span><br><span class="line">                model.origin = <span class="keyword">in</span>.nextString();</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (<span class="keyword">in</span>.nextName().equals(&quot;url&quot;)) &#123;</span><br><span class="line">                model.url = <span class="keyword">in</span>.nextString();</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">in</span>.endObject();</span><br><span class="line">            <span class="keyword">return</span> model;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>write比较简单，如果model不为空，则输出model中各个字段到JsonWriter。注意<code>out.beginObject();</code>和<code>out.endObject();</code>，它处理的是json中的大小括号。<br>read方法，实现的是从reader中恢复model的过程，关键代码在于</p>
+<figure class="highlight maxima"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> (<span class="keyword">in</span>.hasNext()) &#123;</span><br><span class="line">    <span class="keyword">if</span> (!TextUtils.isEmpty(<span class="built_in">args</span>)) <span class="built_in">args</span> += <span class="string">&quot;, &quot;</span>;</span><br><span class="line">    <span class="built_in">args</span> += <span class="keyword">in</span>.nextName() + <span class="string">&quot;=&quot;</span> + <span class="keyword">in</span>.nextString();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>由于我们不希望Gson死板地解析args为一个jsonObject，这就需要手动空读‘{’即in.beginObject();，循环读args中子字段但都只做拼接操作，最终将拼接好的String赋值给本地model：</p>
+<figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">model.args <span class="operator">=</span> args<span class="comment">;</span></span><br><span class="line">in.endObject()<span class="comment">;</span></span><br></pre></td></tr></table></figure>
+<p>最后别忘了返回model。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>Gson用法远比我之前想象的灵活（才学疏浅 - -），Gson建造者模式能够创建出各式各样策略的gson对象，本文也只是总结自己项目中用到的一些点，像复杂map的解析什么的都没有涉及，日后可以补充。</p>
+<blockquote>
+<p>参考:<br><a target="_blank" rel="noopener" href="http://www.javacreed.com/gson-typeadapter-example/">Gson TypeAdapter Example</a><br><a target="_blank" rel="noopener" href="http://blog.163.com/zhang_91026/blog/static/141094533201222033158561/">gson的@Expose注解和@SerializedName注解</a><br>转自：<a target="_blank" rel="noopener" href="https://opticalix.github.io/2016/01/03/gson-skill/">https://opticalix.github.io/2016/01/03/gson-skill/</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2016/04/26/Gson%E4%BD%BF%E7%94%A8%E6%8A%80%E5%B7%A7%E5%B0%8F%E7%BB%93/" data-id="cl9pgenrf00fqycv17n0bdx65" data-title="Gson使用技巧小结" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/04/27/%E4%BD%BF%E7%94%A8Android-Support-Annotations%E4%BC%98%E5%8C%96%E4%BD%A0%E7%9A%84%E4%BB%A3%E7%A0%81/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          使用Android Support Annotations优化你的代码
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/04/26/Android%E5%AE%A2%E6%88%B7%E7%AB%AF%E5%92%8C%E6%9C%8D%E5%8A%A1%E7%AB%AF%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8Token%E5%92%8CSession/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">Android客户端和服务端如何使用Token和Session</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

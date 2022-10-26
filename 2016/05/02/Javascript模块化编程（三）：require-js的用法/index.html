@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Javascript模块化编程（三）：require.js的用法 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="这个系列的第一部分和第二部分，介绍了Javascript模块原型和理论概念，今天介绍如何将它们用于实战。 我采用的是一个非常流行的库require.js。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Javascript模块化编程（三）：require.js的用法">
+<meta property="og:url" content="http://moqiang02.github.io/2016/05/02/Javascript%E6%A8%A1%E5%9D%97%E5%8C%96%E7%BC%96%E7%A8%8B%EF%BC%88%E4%B8%89%EF%BC%89%EF%BC%9Arequire-js%E7%9A%84%E7%94%A8%E6%B3%95/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="这个系列的第一部分和第二部分，介绍了Javascript模块原型和理论概念，今天介绍如何将它们用于实战。 我采用的是一个非常流行的库require.js。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2016-05-01T23:33:55.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.781Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Javascript模块化编程（三）：require-js的用法" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2016/05/02/Javascript%E6%A8%A1%E5%9D%97%E5%8C%96%E7%BC%96%E7%A8%8B%EF%BC%88%E4%B8%89%EF%BC%89%EF%BC%9Arequire-js%E7%9A%84%E7%94%A8%E6%B3%95/" class="article-date">
+  <time class="dt-published" datetime="2016-05-01T23:33:55.000Z" itemprop="datePublished">2016-05-02</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/javascript/">javascript</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Javascript模块化编程（三）：require.js的用法
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <p>这个系列的第一部分和第二部分，介绍了Javascript模块原型和理论概念，今天介绍如何将它们用于实战。</p>
+<p>我采用的是一个非常流行的库<a target="_blank" rel="noopener" href="http://requirejs.org/">require.js</a>。<span id="more"></span></p>
+<h3 id="一、为什么要用require-js？"><a href="#一、为什么要用require-js？" class="headerlink" title="一、为什么要用require.js？"></a>一、为什么要用require.js？</h3><p>最早的时候，所有Javascript代码都写在一个文件里面，只要加载这一个文件就够了。后来，代码越来越多，一个文件不够了，必须分成多个文件，依次加载。下面的网页代码，相信很多人都见过。</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">    　　<span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;1.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">    　　<span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;2.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">    　　<span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;3.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">    　　<span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;4.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">    　　<span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;5.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">    　　<span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;6.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>这段代码依次加载多个js文件。</p>
+<p>这样的写法有很大的缺点。首先，加载的时候，浏览器会停止网页渲染，加载文件越多，网页失去响应的时间就会越长；其次，由于js文件之间存在依赖关系，因此必须严格保证加载顺序（比如上例的1.js要在2.js的前面），依赖性最大的模块一定要放到最后加载，当依赖关系很复杂的时候，代码的编写和维护都会变得困难。</p>
+<p>require.js的诞生，就是为了解决这两个问题：<br>（1）实现js文件的异步加载，避免网页失去响应；<br>（2）管理模块之间的依赖性，便于代码的编写和维护。</p>
+<h3 id="二、require-js的加载"><a href="#二、require-js的加载" class="headerlink" title="二、require.js的加载"></a>二、require.js的加载</h3><p>使用require.js的第一步，是先去官方网站下载最新版本。</p>
+<p>下载后，假定把它放在js子目录下面，就可以加载了。</p>
+<p><code>&lt;script src=&quot;js/require.js&quot;&gt;&lt;/script&gt;</code></p>
+<p>有人可能会想到，加载这个文件，也可能造成网页失去响应。解决办法有两个，一个是把它放在网页底部加载，另一个是写成下面这样：</p>
+<p><code>&lt;script src=&quot;js/require.js&quot; defer async=&quot;true&quot; &gt;&lt;/script&gt;</code></p>
+<p>async属性表明这个文件需要异步加载，避免网页失去响应。IE不支持这个属性，只支持defer，所以把defer也写上。</p>
+<p>加载require.js以后，下一步就要加载我们自己的代码了。假定我们自己的代码文件是main.js，也放在js目录下面。那么，只需要写成下面这样就行了：</p>
+<p><code>&lt;script src=&quot;js/require.js&quot; data-main=&quot;js/main&quot;&gt;&lt;/script&gt;</code></p>
+<p>data-main属性的作用是，指定网页程序的主模块。在上例中，就是js目录下面的main.js，这个文件会第一个被require.js加载。由于require.js默认的文件后缀名是js，所以可以把main.js简写成main。</p>
+<h3 id="三、主模块的写法"><a href="#三、主模块的写法" class="headerlink" title="三、主模块的写法"></a>三、主模块的写法</h3><p>上一节的main.js，我把它称为”主模块”，意思是整个网页的入口代码。它有点像C语言的main()函数，所有代码都从这儿开始运行。</p>
+<p>下面就来看，怎么写main.js。</p>
+<p>如果我们的代码不依赖任何其他模块，那么可以直接写入javascript代码。</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">    　　<span class="regexp">//</span> main.js</span><br><span class="line"></span><br><span class="line">    　　alert(<span class="string">&quot;加载成功！&quot;</span>);</span><br></pre></td></tr></table></figure>
+<p>但这样的话，就没必要使用require.js了。真正常见的情况是，主模块依赖于其他模块，这时就要使用AMD规范定义的的require()函数。</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">    　　<span class="regexp">//</span> main.js</span><br><span class="line"></span><br><span class="line">    　　require([<span class="string">&#x27;moduleA&#x27;</span>, <span class="string">&#x27;moduleB&#x27;</span>, <span class="string">&#x27;moduleC&#x27;</span>], <span class="keyword">function</span> (moduleA, moduleB, moduleC)&#123;</span><br><span class="line"></span><br><span class="line">    　　　　<span class="regexp">//</span> some code here</span><br><span class="line"></span><br><span class="line">    　　&#125;);</span><br></pre></td></tr></table></figure>
+<p>require()函数接受两个参数。第一个参数是一个数组，表示所依赖的模块，上例就是<code>[&#39;moduleA&#39;, &#39;moduleB&#39;, &#39;moduleC&#39;]</code>，即主模块依赖这三个模块；第二个参数是一个回调函数，当前面指定的模块都加载成功后，它将被调用。加载的模块会以参数形式传入该函数，从而在回调函数内部就可以使用这些模块。</p>
+<p>require()异步加载moduleA，moduleB和moduleC，浏览器不会失去响应；它指定的回调函数，只有前面的模块都加载成功后，才会运行，解决了依赖性的问题。</p>
+<p>下面，我们看一个实际的例子。</p>
+<p>假定主模块依赖jquery、underscore和backbone这三个模块，main.js就可以这样写：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">    　　<span class="built_in">require</span>([<span class="string">&#x27;jquery&#x27;</span>, <span class="string">&#x27;underscore&#x27;</span>, <span class="string">&#x27;backbone&#x27;</span>], <span class="keyword">function</span> (<span class="params">$, _, Backbone</span>)&#123;</span><br><span class="line"></span><br><span class="line">    　　　　<span class="comment">// some code here</span></span><br><span class="line"></span><br><span class="line">    　　&#125;);</span><br></pre></td></tr></table></figure>
+<p>require.js会先加载jQuery、underscore和backbone，然后再运行回调函数。主模块的代码就写在回调函数中。</p>
+<h3 id="四、模块的加载"><a href="#四、模块的加载" class="headerlink" title="四、模块的加载"></a>四、模块的加载</h3><p>上一节最后的示例中，主模块的依赖模块是<code>[&#39;jquery&#39;, &#39;underscore&#39;, &#39;backbone&#39;]</code>。默认情况下，require.js假定这三个模块与main.js在同一个目录，文件名分别为jquery.js，underscore.js和backbone.js，然后自动加载。</p>
+<p>使用<code>require.config()</code>方法，我们可以对模块的加载行为进行自定义。<code>require.config()</code>就写在主模块（main.js）的头部。参数就是一个对象，这个对象的paths属性指定各个模块的加载路径。</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">    　　<span class="built_in">require</span>.<span class="built_in">config</span>(&#123;</span><br><span class="line"></span><br><span class="line">    　　　　paths: &#123;</span><br><span class="line"></span><br><span class="line">    　　　　　　<span class="string">&quot;jquery&quot;</span>: <span class="string">&quot;jquery.min&quot;</span>,</span><br><span class="line">    　　　　　　<span class="string">&quot;underscore&quot;</span>: <span class="string">&quot;underscore.min&quot;</span>,</span><br><span class="line">    　　　　　　<span class="string">&quot;backbone&quot;</span>: <span class="string">&quot;backbone.min&quot;</span></span><br><span class="line"></span><br><span class="line">    　　　　&#125;</span><br><span class="line"></span><br><span class="line">    　　&#125;);</span><br></pre></td></tr></table></figure>
+<p>上面的代码给出了三个模块的文件名，路径默认与main.js在同一个目录（js子目录）。如果这些模块在其他目录，比如js/lib目录，则有两种写法。一种是逐一指定路径。</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">    　　<span class="built_in">require</span>.<span class="built_in">config</span>(&#123;</span><br><span class="line"></span><br><span class="line">    　　　　paths: &#123;</span><br><span class="line"></span><br><span class="line">    　　　　　　<span class="string">&quot;jquery&quot;</span>: <span class="string">&quot;lib/jquery.min&quot;</span>,</span><br><span class="line">    　　　　　　<span class="string">&quot;underscore&quot;</span>: <span class="string">&quot;lib/underscore.min&quot;</span>,</span><br><span class="line">    　　　　　　<span class="string">&quot;backbone&quot;</span>: <span class="string">&quot;lib/backbone.min&quot;</span></span><br><span class="line"></span><br><span class="line">    　　　　&#125;</span><br><span class="line"></span><br><span class="line">    　　&#125;);</span><br></pre></td></tr></table></figure>
+<p>另一种则是直接改变基目录（baseUrl）。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">    　　<span class="keyword">require</span>.<span class="title function_ invoke__">config</span>(&#123;</span><br><span class="line"></span><br><span class="line">    　　　　<span class="attr">baseUrl</span>: <span class="string">&quot;js/lib&quot;</span>,</span><br><span class="line"></span><br><span class="line">    　　　　<span class="attr">paths</span>: &#123;</span><br><span class="line"></span><br><span class="line">    　　　　　　<span class="string">&quot;jquery&quot;</span>: <span class="string">&quot;jquery.min&quot;</span>,</span><br><span class="line">    　　　　　　<span class="string">&quot;underscore&quot;</span>: <span class="string">&quot;underscore.min&quot;</span>,</span><br><span class="line">    　　　　　　<span class="string">&quot;backbone&quot;</span>: <span class="string">&quot;backbone.min&quot;</span></span><br><span class="line"></span><br><span class="line">    　　　　&#125;</span><br><span class="line"></span><br><span class="line">    　　&#125;);</span><br></pre></td></tr></table></figure>
+<p>如果某个模块在另一台主机上，也可以直接指定它的网址，比如：</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="code">    　　require.config(&#123;</span></span><br><span class="line"><span class="code"></span></span><br><span class="line"><span class="code">    　　　　paths: &#123;</span></span><br><span class="line"><span class="code"></span></span><br><span class="line"><span class="code">    　　　　　　&quot;jquery&quot;: &quot;https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min&quot;</span></span><br><span class="line"><span class="code"></span></span><br><span class="line"><span class="code">    　　　　&#125;</span></span><br><span class="line"><span class="code"></span></span><br><span class="line"><span class="code">    　　&#125;);</span></span><br></pre></td></tr></table></figure>
+<p>require.js要求，每个模块是一个单独的js文件。这样的话，如果加载多个模块，就会发出多次HTTP请求，会影响网页的加载速度。因此，require.js提供了一个<a target="_blank" rel="noopener" href="http://requirejs.org/docs/optimization.html">优化工具</a>，当模块部署完毕以后，可以用这个工具将多个模块合并在一个文件中，减少HTTP请求数。</p>
+<h3 id="五、AMD模块的写法"><a href="#五、AMD模块的写法" class="headerlink" title="五、AMD模块的写法"></a>五、AMD模块的写法</h3><p>require.js加载的模块，采用AMD规范。也就是说，模块必须按照AMD的规定来写。</p>
+<p>具体来说，就是模块必须采用特定的define()函数来定义。如果一个模块不依赖其他模块，那么可以直接定义在define()函数之中。</p>
+<p>假定现在有一个math.js文件，它定义了一个math模块。那么，math.js就要这样写：</p>
+<figure class="highlight actionscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">    　　<span class="comment">// math.js</span></span><br><span class="line"></span><br><span class="line">    　　define(<span class="keyword">function</span> <span class="params">()</span>&#123;</span><br><span class="line"></span><br><span class="line">    　　　　<span class="keyword">var</span> add = <span class="keyword">function</span> <span class="params">(x,y)</span>&#123;</span><br><span class="line"></span><br><span class="line">    　　　　　　<span class="keyword">return</span> x+y;</span><br><span class="line"></span><br><span class="line">    　　　　&#125;;</span><br><span class="line"></span><br><span class="line">    　　　　<span class="keyword">return</span> &#123;</span><br><span class="line"></span><br><span class="line">    　　　　　　add: add</span><br><span class="line">    　　　　&#125;;</span><br><span class="line"></span><br><span class="line">    　　&#125;);</span><br></pre></td></tr></table></figure>
+<p>加载方法如下：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">    　　<span class="comment">// main.js</span></span><br><span class="line"></span><br><span class="line">    　　<span class="built_in">require</span>([<span class="string">&#x27;math&#x27;</span>], <span class="keyword">function</span> (<span class="params">math</span>)&#123;</span><br><span class="line"></span><br><span class="line">    　　　　<span class="title function_">alert</span>(math.<span class="title function_">add</span>(<span class="number">1</span>,<span class="number">1</span>));</span><br><span class="line"></span><br><span class="line">    　　&#125;);</span><br></pre></td></tr></table></figure>
+<p>如果这个模块还依赖其他模块，那么define()函数的第一个参数，必须是一个数组，指明该模块的依赖性。</p>
+<figure class="highlight ada"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">    　　define([<span class="symbol">&#x27;myLib</span>&#x27;], <span class="keyword">function</span>(myLib)&#123;</span><br><span class="line"></span><br><span class="line">    　　　　<span class="keyword">function</span> <span class="title">foo</span>()&#123;</span><br><span class="line"></span><br><span class="line">    　　　　　　myLib.doSomething();</span><br><span class="line"></span><br><span class="line">    　　　　&#125;</span><br><span class="line"></span><br><span class="line">    　　　　<span class="keyword">return</span> &#123;</span><br><span class="line"></span><br><span class="line">    　　　　　　foo : <span class="type">foo</span></span><br><span class="line"></span><br><span class="line">    　　　　&#125;;</span><br><span class="line"></span><br><span class="line">    　　&#125;);</span><br></pre></td></tr></table></figure>
+<p>当require()函数加载上面这个模块的时候，就会先加载myLib.js文件。</p>
+<h3 id="六、加载非规范的模块"><a href="#六、加载非规范的模块" class="headerlink" title="六、加载非规范的模块"></a>六、加载非规范的模块</h3><p>理论上，require.js加载的模块，必须是按照AMD规范、用define()函数定义的模块。但是实际上，虽然已经有一部分流行的函数库（比如jQuery）符合AMD规范，更多的库并不符合。那么，require.js是否能够加载非规范的模块呢？</p>
+<p>回答是可以的。</p>
+<p>这样的模块在用require()加载之前，要先用<code>require.config()</code>方法，定义它们的一些特征。</p>
+<p>举例来说，underscore和backbone这两个库，都没有采用AMD规范编写。如果要加载它们的话，必须先定义它们的特征。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">    　　<span class="keyword">require</span>.<span class="title function_ invoke__">config</span>(&#123;</span><br><span class="line"></span><br><span class="line">    　　　　<span class="attr">shim</span>: &#123;</span><br><span class="line"></span><br><span class="line">    　　　　　　<span class="string">&#x27;underscore&#x27;</span>:&#123;</span><br><span class="line">    　　　　　　　　<span class="attr">exports</span>: <span class="string">&#x27;_&#x27;</span></span><br><span class="line">    　　　　　　&#125;,</span><br><span class="line"></span><br><span class="line">    　　　　　　<span class="string">&#x27;backbone&#x27;</span>: &#123;</span><br><span class="line">    　　　　　　　　<span class="attr">deps</span>: [<span class="string">&#x27;underscore&#x27;</span>, <span class="string">&#x27;jquery&#x27;</span>],</span><br><span class="line">    　　　　　　　　<span class="attr">exports</span>: <span class="string">&#x27;Backbone&#x27;</span></span><br><span class="line">    　　　　　　&#125;</span><br><span class="line"></span><br><span class="line">    　　　　&#125;</span><br><span class="line"></span><br><span class="line">    　　&#125;);</span><br></pre></td></tr></table></figure>
+<p><code>require.config()</code>接受一个配置对象，这个对象除了有前面说过的paths属性之外，还有一个shim属性，专门用来配置不兼容的模块。具体来说，每个模块要定义（1）exports值（输出的变量名），表明这个模块外部调用时的名称；（2）deps数组，表明该模块的依赖性。</p>
+<p>比如，jQuery的插件可以这样定义：</p>
+<figure class="highlight sml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">    　　shim: &#123;</span><br><span class="line"></span><br><span class="line">    　　　　<span class="symbol">&#x27;jquery</span>.scroll&#x27;: &#123;</span><br><span class="line"></span><br><span class="line">    　　　　　　deps: [<span class="symbol">&#x27;jquery&#x27;</span>],</span><br><span class="line"></span><br><span class="line">    　　　　　　exports: <span class="symbol">&#x27;jQuery</span>.<span class="keyword">fn</span>.scroll&#x27;</span><br><span class="line"></span><br><span class="line">    　　　　&#125;</span><br><span class="line"></span><br><span class="line">    　　&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="七、require-js插件"><a href="#七、require-js插件" class="headerlink" title="七、require.js插件"></a>七、require.js插件</h3><p>require.js还提供一系列插件，实现一些特定的功能。</p>
+<p>domready插件，可以让回调函数在页面DOM结构加载完成后再运行。</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">    　　<span class="built_in">require</span>([<span class="string">&#x27;domready!&#x27;</span>], <span class="keyword">function</span> (<span class="params">doc</span>)&#123;</span><br><span class="line"></span><br><span class="line">    　　　　<span class="comment">// called once the DOM is ready</span></span><br><span class="line"></span><br><span class="line">    　　&#125;);</span><br></pre></td></tr></table></figure>
+<p>text和image插件，则是允许require.js加载文本和图片文件。</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="code">    　　define([</span></span><br><span class="line"><span class="code"></span></span><br><span class="line"><span class="code">    　　　　&#x27;text!review.txt&#x27;,</span></span><br><span class="line"><span class="code"></span></span><br><span class="line"><span class="code">    　　　　&#x27;image!cat.jpg&#x27;</span></span><br><span class="line"><span class="code"></span></span><br><span class="line"><span class="code">    　　　　],</span></span><br><span class="line"><span class="code"></span></span><br><span class="line"><span class="code">    　　　　function(review,cat)&#123;</span></span><br><span class="line"><span class="code"></span></span><br><span class="line"><span class="code">    　　　　　　console.log(review);</span></span><br><span class="line"><span class="code"></span></span><br><span class="line"><span class="code">    　　　　　　document.body.appendChild(cat);</span></span><br><span class="line"><span class="code"></span></span><br><span class="line"><span class="code">    　　　　&#125;</span></span><br><span class="line"><span class="code"></span></span><br><span class="line"><span class="code">    　　);</span></span><br></pre></td></tr></table></figure>
+<p>类似的插件还有json和mdown，用于加载json文件和markdown文件。</p>
+<p>（完）</p>
+<blockquote>
+<p>转自：<a target="_blank" rel="noopener" href="http://www.ruanyifeng.com/blog/2012/11/require_js.html">http://www.ruanyifeng.com/blog/2012/11/require_js.html</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2016/05/02/Javascript%E6%A8%A1%E5%9D%97%E5%8C%96%E7%BC%96%E7%A8%8B%EF%BC%88%E4%B8%89%EF%BC%89%EF%BC%9Arequire-js%E7%9A%84%E7%94%A8%E6%B3%95/" data-id="cl9pgense00j3ycv1hovc4b4i" data-title="Javascript模块化编程（三）：require.js的用法" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/05/02/JS%E6%A8%A1%E5%9D%97%E5%8C%96%E5%B7%A5%E5%85%B7requirejs%E6%95%99%E7%A8%8B-%E4%B8%80-%EF%BC%9A%E5%88%9D%E8%AF%86requirejs/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          JS模块化工具requirejs教程(一)：初识requirejs
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/05/02/Javascript%E6%A8%A1%E5%9D%97%E5%8C%96%E7%BC%96%E7%A8%8B%EF%BC%88%E4%BA%8C%EF%BC%89%EF%BC%9AAMD%E8%A7%84%E8%8C%83/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">Javascript模块化编程（二）：AMD规范</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

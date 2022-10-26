@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Retrofit2.0+okhttp3缓存机制 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="简介retrofit本身并没有缓存。 如果想缓存，它要么必须让retrofit之上的应用层知道你的域和如何缓存事物，或它需要在retrofit之下HTTP client层知道HTTP的语义。 OkHttp是由Square发布的一个HTTP client，它支持高速缓存服务器响应的语义。如果服务器的响应具有Cache-Control头，例如，它将被缓存，以便随后的请求可以从高速缓存中的获得之前的资源">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Retrofit2.0+okhttp3缓存机制">
+<meta property="og:url" content="http://moqiang02.github.io/2016/04/29/Retrofit2-0-okhttp3%E7%BC%93%E5%AD%98%E6%9C%BA%E5%88%B6/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="简介retrofit本身并没有缓存。 如果想缓存，它要么必须让retrofit之上的应用层知道你的域和如何缓存事物，或它需要在retrofit之下HTTP client层知道HTTP的语义。 OkHttp是由Square发布的一个HTTP client，它支持高速缓存服务器响应的语义。如果服务器的响应具有Cache-Control头，例如，它将被缓存，以便随后的请求可以从高速缓存中的获得之前的资源">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/Retrofit20+okhttp3%E7%BC%93%E5%AD%98%E6%9C%BA%E5%88%B6/1.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/Retrofit20+okhttp3%E7%BC%93%E5%AD%98%E6%9C%BA%E5%88%B6/2.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/Retrofit20+okhttp3%E7%BC%93%E5%AD%98%E6%9C%BA%E5%88%B6/3.jpg">
+<meta property="article:published_time" content="2016-04-28T23:56:32.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.879Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="Android开源">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/Retrofit20+okhttp3%E7%BC%93%E5%AD%98%E6%9C%BA%E5%88%B6/1.jpg">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Retrofit2-0-okhttp3缓存机制" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2016/04/29/Retrofit2-0-okhttp3%E7%BC%93%E5%AD%98%E6%9C%BA%E5%88%B6/" class="article-date">
+  <time class="dt-published" datetime="2016-04-28T23:56:32.000Z" itemprop="datePublished">2016-04-29</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/android/">android</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Retrofit2.0+okhttp3缓存机制
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">简介</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E7%A7%8D%E7%B1%BB%E5%9E%8B%EF%BC%88%E6%9C%89%E7%BD%91%E5%92%8C%E6%B2%A1%E6%9C%89%E7%BD%91%E9%83%BD%E6%98%AF%E5%85%88%E8%AF%BB%E7%BC%93%E5%AD%98%EF%BC%89"><span class="toc-number">2.</span> <span class="toc-text">第一种类型（有网和没有网都是先读缓存）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E7%A7%8D%E7%B1%BB%E5%9E%8B%EF%BC%88%E7%A6%BB%E7%BA%BF%E5%8F%AF%E4%BB%A5%E7%BC%93%E5%AD%98%EF%BC%8C%E5%9C%A8%E7%BA%BF%E5%B0%B1%E8%8E%B7%E5%8F%96%E6%9C%80%E6%96%B0%E6%95%B0%E6%8D%AE%EF%BC%89"><span class="toc-number">3.</span> <span class="toc-text">第二种类型（离线可以缓存，在线就获取最新数据）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9F%A5%E7%9C%8B%E7%BC%93%E5%AD%98%E6%96%87%E4%BB%B6"><span class="toc-number">4.</span> <span class="toc-text">查看缓存文件</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><p>retrofit本身并没有缓存。</p>
+<p>如果想缓存，它要么必须让retrofit之上的应用层知道你的域和如何缓存事物，或它需要在retrofit之下HTTP client层知道HTTP的语义。</p>
+<p>OkHttp是由Square发布的一个HTTP client，它支持高速缓存服务器响应的语义。如果服务器的响应具有Cache-Control头，例如，它将被缓存，以便随后的请求可以从高速缓存中的获得之前的资源。</p>
+<p>因此，设备处于断网情况下，retrofit与OKHttp配合可以实现缓存。<span id="more"></span></p>
+<p>但是大家必须注意一点，okhttp的缓存设计和浏览器的一样，是用来提升用户体验降低服务器负荷的，比如：我们在有网的时候也会先调用缓存，但是有个时间限制，例如1分钟之内，有网和没有网都是先读缓存，这个可以参考下面讲解的第一种类型。</p>
+<p>如果你想要做成那种离线可以缓存，在线就获取最新数据的功能，可以参考第二种类型。</p>
+<h3 id="第一种类型（有网和没有网都是先读缓存）"><a href="#第一种类型（有网和没有网都是先读缓存）" class="headerlink" title="第一种类型（有网和没有网都是先读缓存）"></a>第一种类型（有网和没有网都是先读缓存）</h3><p>1、创建拦截器：</p>
+<figure class="highlight vbscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">Interceptor interceptor = <span class="keyword">new</span> Interceptor() &#123;</span><br><span class="line">        @Override</span><br><span class="line">        <span class="keyword">public</span> <span class="built_in">Response</span> intercept(Chain chain) throws IOException &#123;</span><br><span class="line">            <span class="built_in">Request</span> <span class="built_in">request</span> = chain.<span class="built_in">request</span>();</span><br><span class="line">            LogCat.i(<span class="string">&quot;request=&quot;</span>+<span class="built_in">request</span>);</span><br><span class="line">            <span class="built_in">Response</span> <span class="built_in">response</span> = chain.proceed(<span class="built_in">request</span>);</span><br><span class="line">            LogCat.i(<span class="string">&quot;response=&quot;</span>+<span class="built_in">response</span>);</span><br><span class="line"></span><br><span class="line">            String cacheControl = <span class="built_in">request</span>.cacheControl().<span class="keyword">to</span><span class="built_in">String</span>();</span><br><span class="line">            <span class="keyword">if</span> (TextUtils.<span class="built_in">isEmpty</span>(cacheControl)) &#123;</span><br><span class="line">                cacheControl = <span class="string">&quot;public, max-age=60&quot;</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            return <span class="built_in">response</span>.newBuilder()</span><br><span class="line">                    .header(<span class="string">&quot;Cache-Control&quot;</span>, cacheControl)</span><br><span class="line">                    .removeHeader(<span class="string">&quot;Pragma&quot;</span>)</span><br><span class="line">                    .build();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br></pre></td></tr></table></figure>
+<p>设置max-age为60s之后，这60s之内不管你有没有网,都读缓存。（这也就说明了为什么不能实现我上面说的功能）；max-stale设置为4周，意思是，网络未连接的情况下设置缓存时间为4周。</p>
+<p>2、设置client</p>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//设置缓存路径</span></span><br><span class="line">File httpCacheDirectory = <span class="keyword">new</span> <span class="constructor">File(FileUtil.<span class="params">getAvailableCacheDir</span>()</span>, <span class="string">&quot;responses&quot;</span>);</span><br><span class="line"><span class="comment">//设置缓存 10M</span></span><br><span class="line">Cache cache = <span class="keyword">new</span> <span class="constructor">Cache(<span class="params">httpCacheDirectory</span>, 10 <span class="operator">*</span> 1024 <span class="operator">*</span> 1024)</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">//创建OkHttpClient，并添加拦截器和缓存代码</span></span><br><span class="line">OkHttpClient client = <span class="keyword">new</span> OkHttpClient.<span class="constructor">Builder()</span></span><br><span class="line">        .add<span class="constructor">NetworkInterceptor(<span class="params">interceptor</span>)</span></span><br><span class="line">        .cache(cache).build<span class="literal">()</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">//创建retrofit，把OkHttpClient对象写入</span></span><br><span class="line">Retrofit retrofit = <span class="keyword">new</span> Retrofit.<span class="constructor">Builder()</span></span><br><span class="line">        .base<span class="constructor">Url(HttpUtil.URL_BASE)</span></span><br><span class="line">        .client(client)</span><br><span class="line">        .add<span class="constructor">ConverterFactory(GsonConverterFactory.<span class="params">create</span>()</span>)</span><br><span class="line">        .build<span class="literal">()</span>;</span><br><span class="line"></span><br><span class="line">service = retrofit.create(<span class="module-access"><span class="module"><span class="identifier">APIService</span>.</span></span><span class="keyword">class</span>);</span><br></pre></td></tr></table></figure>
+
+<p>代码可知，我们在cache下新建了个文件夹responses，并设置了10M的缓存，并设置okhttp，（写这篇文章之前，参考了篇<a target="_blank" rel="noopener" href="http://stackoverflow.com/questions/23429046/can-retrofit-with-okhttp-use-cache-data-when-offline?lq=1">博客</a><br>，但是你会发现，当时他们用的时候，okhttp还没到3.0,3.0以后很多接口都不一样了，但是思想还是可以借鉴的），这样用service调接口的时候，就会进行缓存了。</p>
+<h3 id="第二种类型（离线可以缓存，在线就获取最新数据）"><a href="#第二种类型（离线可以缓存，在线就获取最新数据）" class="headerlink" title="第二种类型（离线可以缓存，在线就获取最新数据）"></a>第二种类型（离线可以缓存，在线就获取最新数据）</h3><p>这种方法和第一种方法的区别是在设置的拦截器上，这里不能使用NetworkInterceptor，而是需要使用Interceptor，（不知道为什么用NetworkInterceptor就不行）<br>先讲一下步骤：<br>1、 首先，给OkHttp设置拦截器<br>2、然后，在拦截器内做Request拦截操作，在每个请求发出前，判断一下网络状况，如果没问题继续访问，如果有问题，则设置从本地缓存中读取<br>3、接下来是设置Response，先判断网络，网络好的时候，移除header后添加cache失效时间为0小时，网络未连接的情况下设置缓存时间为4周</p>
+<p>代码：<br>1、给OkHttp设置拦截器（用Interceptor）</p>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">OkHttpClient client = <span class="keyword">new</span> OkHttpClient.<span class="constructor">Builder()</span></span><br><span class="line">        .add<span class="constructor">Interceptor(<span class="params">interceptor</span>)</span></span><br><span class="line">        .cache(cache).build<span class="literal">()</span>;</span><br><span class="line">Retrofit retrofit = <span class="keyword">new</span> Retrofit.<span class="constructor">Builder()</span></span><br><span class="line">        .base<span class="constructor">Url(HttpUtil.URL_BASE)</span></span><br><span class="line">        .client(client)</span><br><span class="line">        .add<span class="constructor">ConverterFactory(GsonConverterFactory.<span class="params">create</span>()</span>)</span><br><span class="line">        .build<span class="literal">()</span>;</span><br></pre></td></tr></table></figure>
+
+<p>2、Request拦截操作</p>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Request request = chain.request<span class="literal">()</span>;</span><br><span class="line"><span class="keyword">if</span> (!<span class="module-access"><span class="module"><span class="identifier">StringsUtil</span>.</span></span>is<span class="constructor">NetworkReachable(App.<span class="params">app</span>)</span>) &#123;</span><br><span class="line">    request = request.<span class="keyword">new</span><span class="constructor">Builder()</span></span><br><span class="line">            .cache<span class="constructor">Control(CacheControl.FORCE_CACHE)</span></span><br><span class="line">            .build<span class="literal">()</span>;</span><br><span class="line">   <span class="module-access"><span class="module"><span class="identifier">LogCat</span>.</span></span>i(<span class="string">&quot;no network&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>3、设置Response</p>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">Response response = chain.proceed(request);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (<span class="module-access"><span class="module"><span class="identifier">StringsUtil</span>.</span></span>is<span class="constructor">NetworkReachable(App.<span class="params">app</span>)</span>) &#123;</span><br><span class="line">                <span class="built_in">int</span> maxAge = <span class="number">0</span><span class="operator"> * </span><span class="number">60</span>; <span class="comment">// 有网络时 设置缓存超时时间0个小时</span></span><br><span class="line">                <span class="module-access"><span class="module"><span class="identifier">LogCat</span>.</span></span>i(<span class="string">&quot;has network maxAge=&quot;</span>+maxAge);</span><br><span class="line">                response.<span class="keyword">new</span><span class="constructor">Builder()</span></span><br><span class="line">                        .header(<span class="string">&quot;Cache-Control&quot;</span>, <span class="string">&quot;public, max-age=&quot;</span> + maxAge)</span><br><span class="line">                        .remove<span class="constructor">Header(<span class="string">&quot;Pragma&quot;</span>)</span><span class="comment">// 清除头信息，因为服务器如果不支持，会返回一些干扰信息，不清除下面无法生效</span></span><br><span class="line">                        .build<span class="literal">()</span>;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="module-access"><span class="module"><span class="identifier">LogCat</span>.</span></span>i(<span class="string">&quot;network error&quot;</span>);</span><br><span class="line">                <span class="built_in">int</span> maxStale = <span class="number">60</span><span class="operator"> * </span><span class="number">60</span><span class="operator"> * </span><span class="number">24</span><span class="operator"> * </span><span class="number">28</span>; <span class="comment">// 无网络时，设置超时为4周</span></span><br><span class="line">                <span class="module-access"><span class="module"><span class="identifier">LogCat</span>.</span></span>i(<span class="string">&quot;has maxStale=&quot;</span>+maxStale);</span><br><span class="line">                response.<span class="keyword">new</span><span class="constructor">Builder()</span></span><br><span class="line">                        .header(<span class="string">&quot;Cache-Control&quot;</span>, <span class="string">&quot;public, only-if-cached, max-stale=&quot;</span> + maxStale)</span><br><span class="line">                        .remove<span class="constructor">Header(<span class="string">&quot;Pragma&quot;</span>)</span></span><br><span class="line">                        .build<span class="literal">()</span>;</span><br><span class="line">                <span class="module-access"><span class="module"><span class="identifier">LogCat</span>.</span></span>i(<span class="string">&quot;response build maxStale=&quot;</span>+maxStale);</span><br><span class="line">            &#125;</span><br><span class="line">            return response;</span><br></pre></td></tr></table></figure>
+
+<p>这样就ok了。</p>
+<h3 id="查看缓存文件"><a href="#查看缓存文件" class="headerlink" title="查看缓存文件"></a>查看缓存文件</h3><p>下面我们讲一下缓存的文件，发现缓存文件全是以url的md5加密字段为文件名，每一个response分两个文件保存，以.0和.1结尾的文件区分。 进去看里面的内容如下： .0的文件里面是header：</p>
+<p>运行程序，在<code>Android/data/xxxxxx(包名)/responses</code>下会发现很多缓存文件，这些缓存文件全是以url的md5加密字段为文件名，每一个response分两个文件保存，以.0和.1结尾的文件区分。举个例子：<br>2d58c369c11640eafe880241d31ad7a2.0<br>2d58c369c11640eafe880241d31ad7a2.1</p>
+<p>.0的文件里面是header<br><img src="/images/Retrofit20+okhttp3%E7%BC%93%E5%AD%98%E6%9C%BA%E5%88%B6/1.jpg"></p>
+<p>而.1文件里面是返回的具体内容，即json数据。<br><img src="/images/Retrofit20+okhttp3%E7%BC%93%E5%AD%98%E6%9C%BA%E5%88%B6/2.jpg"><br>由此可见，这里的缓存机制也是一开始先把json缓存进文件，没有网络的时候再读取json进行解析。</p>
+<p>但是还有一个journal.文件，这个里面是什么呢。</p>
+<p><img src="/images/Retrofit20+okhttp3%E7%BC%93%E5%AD%98%E6%9C%BA%E5%88%B6/3.jpg"></p>
+<p>可以看到里面保存的是每一条reponse记录状态。包括读取，删除，写入等动作。</p>
+<blockquote>
+<p>参考文献：<br><a target="_blank" rel="noopener" href="http://www.jianshu.com/p/9c3b4ea108a7">使用Retrofit和Okhttp实现网络缓存。无网读缓存，有网根据过期时间重新请求</a><br><a target="_blank" rel="noopener" href="http://stackoverflow.com/questions/23429046/can-retrofit-with-okhttp-use-cache-data-when-offline?lq=1">Can Retrofit with OKHttp use cache data when offline</a><br><a target="_blank" rel="noopener" href="http://www.jianshu.com/p/3a8d910cce38">Retrofit 源码解读之离线缓存策略的实现</a><br><a target="_blank" rel="noopener" href="http://souly.cn/%E6%8A%80%E6%9C%AF%E5%8D%9A%E6%96%87/2015/09/08/okhttp%E7%BC%93%E5%AD%98%E6%B5%85%E6%9E%90/">okhttp缓存浅析</a><br><a target="_blank" rel="noopener" href="http://blog.qiji.tech/archives/1690">Retrofit 2.0如何实现缓存</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2016/04/29/Retrofit2-0-okhttp3%E7%BC%93%E5%AD%98%E6%9C%BA%E5%88%B6/" data-id="cl9pgenwn00x6ycv16jz1gfbx" data-title="Retrofit2.0+okhttp3缓存机制" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Android%E5%BC%80%E6%BA%90/" rel="tag">Android开源</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/05/02/Javascript%E6%A8%A1%E5%9D%97%E5%8C%96%E7%BC%96%E7%A8%8B%EF%BC%88%E4%B8%80%EF%BC%89%EF%BC%9A%E6%A8%A1%E5%9D%97%E7%9A%84%E5%86%99%E6%B3%95/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          Javascript模块化编程（一）：模块的写法
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/04/27/Android%E5%BC%80%E5%8F%91%E4%B9%8BEnum-%EF%BC%88%E6%9E%9A%E4%B8%BE%EF%BC%89%E2%80%94-IntDef%E7%9A%84%E4%BD%BF%E7%94%A8/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">Android开发之Enum （枚举）— @IntDef的使用</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

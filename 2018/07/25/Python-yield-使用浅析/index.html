@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Python yield 使用浅析 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="您可能听说过，带有 yield 的函数在 Python 中被称之为 generator（生成器），何谓 generator ？ 我们先抛开 generator，以一个常见的编程题目来展示 yield 的概念。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Python yield 使用浅析">
+<meta property="og:url" content="http://moqiang02.github.io/2018/07/25/Python-yield-%E4%BD%BF%E7%94%A8%E6%B5%85%E6%9E%90/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="您可能听说过，带有 yield 的函数在 Python 中被称之为 generator（生成器），何谓 generator ？ 我们先抛开 generator，以一个常见的编程题目来展示 yield 的概念。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-07-25T14:50:56.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.863Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Python-yield-使用浅析" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2018/07/25/Python-yield-%E4%BD%BF%E7%94%A8%E6%B5%85%E6%9E%90/" class="article-date">
+  <time class="dt-published" datetime="2018-07-25T14:50:56.000Z" itemprop="datePublished">2018-07-25</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/python/">python</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Python yield 使用浅析
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <p>您可能听说过，带有 yield 的函数在 Python 中被称之为 generator（生成器），何谓 generator ？</p>
+<p>我们先抛开 generator，以一个常见的编程题目来展示 yield 的概念。</p>
+<span id="more"></span>
+<h3 id="如何生成斐波那契數列"><a href="#如何生成斐波那契數列" class="headerlink" title="如何生成斐波那契數列"></a>如何生成斐波那契數列</h3><p>斐波那契（Fibonacci）數列是一个非常简单的递归数列，除第一个和第二个数外，任意一个数都可由前两个数相加得到。用计算机程序输出斐波那契數列的前 N 个数是一个非常简单的问题，许多初学者都可以轻易写出如下函数：</p>
+<p>清单 1. 简单输出斐波那契數列前 N 个数</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">fab</span>(<span class="params"><span class="built_in">max</span></span>): </span><br><span class="line">   n, a, b = <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span> </span><br><span class="line">   <span class="keyword">while</span> n &lt; <span class="built_in">max</span>: </span><br><span class="line">       <span class="built_in">print</span> b </span><br><span class="line">       a, b = b, a + b </span><br><span class="line">       n = n + <span class="number">1</span></span><br></pre></td></tr></table></figure>
+<p>执行 fab(5)，我们可以得到如下输出：</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>fab(<span class="number">5</span>) </span><br><span class="line"><span class="number">1</span> </span><br><span class="line"><span class="number">1</span> </span><br><span class="line"><span class="number">2</span> </span><br><span class="line"><span class="number">3</span> </span><br><span class="line"><span class="number">5</span></span><br></pre></td></tr></table></figure>
+<p>结果没有问题，但有经验的开发者会指出，直接在 fab 函数中用 print 打印数字会导致该函数可复用性较差，因为 fab 函数返回 None，其他函数无法获得该函数生成的数列。</p>
+<p>要提高 fab 函数的可复用性，最好不要直接打印出数列，而是返回一个 List。以下是 fab 函数改写后的第二个版本：</p>
+<p>清单 2. 输出斐波那契數列前 N 个数第二版</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">fab</span>(<span class="params"><span class="built_in">max</span></span>): </span><br><span class="line">   n, a, b = <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span> </span><br><span class="line">   L = [] </span><br><span class="line">   <span class="keyword">while</span> n &lt; <span class="built_in">max</span>: </span><br><span class="line">       L.append(b) </span><br><span class="line">       a, b = b, a + b </span><br><span class="line">       n = n + <span class="number">1</span> </span><br><span class="line">   <span class="keyword">return</span> L</span><br></pre></td></tr></table></figure>
+<p>可以使用如下方式打印出 fab 函数返回的 List：</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">for</span> n <span class="keyword">in</span> fab(<span class="number">5</span>): </span><br><span class="line"><span class="meta">... </span>    <span class="built_in">print</span> n </span><br><span class="line"><span class="meta">... </span></span><br><span class="line"><span class="number">1</span> </span><br><span class="line"><span class="number">1</span> </span><br><span class="line"><span class="number">2</span> </span><br><span class="line"><span class="number">3</span> </span><br><span class="line"><span class="number">5</span></span><br></pre></td></tr></table></figure>
+<p>改写后的 fab 函数通过返回 List 能满足复用性的要求，但是更有经验的开发者会指出，该函数在运行中占用的内存会随着参数 max 的增大而增大，如果要控制内存占用，最好不要用 List来保存中间结果，而是通过 iterable 对象来迭代。例如，在 Python2.x 中，代码：</p>
+<p>清单 3. 通过 iterable 对象来迭代<br><code>for i in range(1000): pass</code><br>会导致生成一个 1000 个元素的 List，而代码：<br><code>for i in xrange(1000): pass</code><br>则不会生成一个 1000 个元素的 List，而是在每次迭代中返回下一个数值，内存空间占用很小。因为 xrange 不返回 List，而是返回一个 iterable 对象。</p>
+<p>利用 iterable 我们可以把 fab 函数改写为一个支持 iterable 的 class，以下是第三个版本的 Fab：</p>
+<p>清单 4. 第三个版本</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Fab</span>(<span class="title class_ inherited__">object</span>): </span><br><span class="line"> </span><br><span class="line">   <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, <span class="built_in">max</span></span>): </span><br><span class="line">       self.<span class="built_in">max</span> = <span class="built_in">max</span> </span><br><span class="line">       self.n, self.a, self.b = <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span> </span><br><span class="line"> </span><br><span class="line">   <span class="keyword">def</span> <span class="title function_">__iter__</span>(<span class="params">self</span>): </span><br><span class="line">       <span class="keyword">return</span> self </span><br><span class="line"> </span><br><span class="line">   <span class="keyword">def</span> <span class="title function_">next</span>(<span class="params">self</span>): </span><br><span class="line">       <span class="keyword">if</span> self.n &lt; self.<span class="built_in">max</span>: </span><br><span class="line">           r = self.b </span><br><span class="line">           self.a, self.b = self.b, self.a + self.b </span><br><span class="line">           self.n = self.n + <span class="number">1</span> </span><br><span class="line">           <span class="keyword">return</span> r </span><br><span class="line">       <span class="keyword">raise</span> StopIteration()</span><br></pre></td></tr></table></figure>
+<p>Fab 类通过 next() 不断返回数列的下一个数，内存占用始终为常数：</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">for</span> n <span class="keyword">in</span> Fab(<span class="number">5</span>): </span><br><span class="line"><span class="meta">... </span>    <span class="built_in">print</span> n </span><br><span class="line"><span class="meta">... </span></span><br><span class="line"><span class="number">1</span> </span><br><span class="line"><span class="number">1</span> </span><br><span class="line"><span class="number">2</span> </span><br><span class="line"><span class="number">3</span> </span><br><span class="line"><span class="number">5</span></span><br></pre></td></tr></table></figure>
+<p>然而，使用 class 改写的这个版本，代码远远没有第一版的 fab 函数来得简洁。如果我们想要保持第一版 fab 函数的简洁性，同时又要获得 iterable 的效果，yield 就派上用场了：</p>
+<p>清单 5. 使用 yield 的第四版</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">fab</span>(<span class="params"><span class="built_in">max</span></span>): </span><br><span class="line">    n, a, b = <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span> </span><br><span class="line">    <span class="keyword">while</span> n &lt; <span class="built_in">max</span>: </span><br><span class="line">        <span class="keyword">yield</span> b </span><br><span class="line">        <span class="comment"># print b </span></span><br><span class="line">        a, b = b, a + b </span><br><span class="line">        n = n + <span class="number">1</span> </span><br><span class="line"> </span><br><span class="line"><span class="string">&#x27;&#x27;&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>第四个版本的 fab 和第一版相比，仅仅把 print b 改为了 yield b，就在保持简洁性的同时获得了 iterable 的效果。</p>
+<p>调用第四版的 fab 和第二版的 fab 完全一致：</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">for</span> n <span class="keyword">in</span> fab(<span class="number">5</span>): </span><br><span class="line"><span class="meta">... </span>    <span class="built_in">print</span> n </span><br><span class="line"><span class="meta">... </span></span><br><span class="line"><span class="number">1</span> </span><br><span class="line"><span class="number">1</span> </span><br><span class="line"><span class="number">2</span> </span><br><span class="line"><span class="number">3</span> </span><br><span class="line"><span class="number">5</span></span><br></pre></td></tr></table></figure>
+<p>简单地讲，yield 的作用就是把一个函数变成一个 generator，带有 yield 的函数不再是一个普通函数，Python 解释器会将其视为一个 generator，调用 fab(5) 不会执行 fab 函数，而是返回一个 iterable 对象！在 for 循环执行时，每次循环都会执行 fab 函数内部的代码，执行到 yield b 时，fab 函数就返回一个迭代值，下次迭代时，代码从 yield b 的下一条语句继续执行，而函数的本地变量看起来和上次中断执行前是完全一样的，于是函数继续执行，直到再次遇到 yield。</p>
+<p>也可以手动调用 fab(5) 的 next() 方法（因为 fab(5) 是一个 generator 对象，该对象具有 next() 方法），这样我们就可以更清楚地看到 fab 的执行流程：</p>
+<p>清单 6. 执行流程</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>f = fab(<span class="number">5</span>) </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>f.<span class="built_in">next</span>() </span><br><span class="line"><span class="number">1</span> </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>f.<span class="built_in">next</span>() </span><br><span class="line"><span class="number">1</span> </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>f.<span class="built_in">next</span>() </span><br><span class="line"><span class="number">2</span> </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>f.<span class="built_in">next</span>() </span><br><span class="line"><span class="number">3</span> </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>f.<span class="built_in">next</span>() </span><br><span class="line"><span class="number">5</span> </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>f.<span class="built_in">next</span>() </span><br><span class="line">Traceback (most recent call last): </span><br><span class="line"> File <span class="string">&quot;&lt;stdin&gt;&quot;</span>, line <span class="number">1</span>, <span class="keyword">in</span> &lt;module&gt; </span><br><span class="line">StopIteration</span><br></pre></td></tr></table></figure>
+<p>当函数执行结束时，generator 自动抛出 StopIteration 异常，表示迭代完成。在 for 循环里，无需处理 StopIteration 异常，循环会正常结束。</p>
+<p>我们可以得出以下结论：</p>
+<p>一个带有 yield 的函数就是一个 generator，它和普通函数不同，生成一个 generator 看起来像函数调用，但不会执行任何函数代码，直到对其调用 next()（在 for 循环中会自动调用 next()）才开始执行。虽然执行流程仍按函数的流程执行，但每执行到一个 yield 语句就会中断，并返回一个迭代值，下次执行时从 yield 的下一个语句继续执行。看起来就好像一个函数在正常执行的过程中被 yield 中断了数次，每次中断都会通过 yield 返回当前的迭代值。</p>
+<p>yield 的好处是显而易见的，把一个函数改写为一个 generator 就获得了迭代能力，比起用类的实例保存状态来计算下一个 next() 的值，不仅代码简洁，而且执行流程异常清晰。</p>
+<p>如何判断一个函数是否是一个特殊的 generator 函数？可以利用 isgeneratorfunction 判断：</p>
+<p>清单 7. 使用 isgeneratorfunction 判断</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> inspect <span class="keyword">import</span> isgeneratorfunction </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>isgeneratorfunction(fab) </span><br><span class="line"><span class="literal">True</span></span><br></pre></td></tr></table></figure>
+<p>要注意区分 fab 和 fab(5)，fab 是一个 generator function，而 fab(5) 是调用 fab 返回的一个 generator，好比类的定义和类的实例的区别：</p>
+<p>清单 8. 类的定义和类的实例</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">import</span> types </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">isinstance</span>(fab, types.GeneratorType) </span><br><span class="line"><span class="literal">False</span> </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">isinstance</span>(fab(<span class="number">5</span>), types.GeneratorType) </span><br><span class="line"><span class="literal">True</span></span><br></pre></td></tr></table></figure>
+<p>fab 是无法迭代的，而 fab(5) 是可迭代的：</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> collections <span class="keyword">import</span> Iterable </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">isinstance</span>(fab, Iterable) </span><br><span class="line"><span class="literal">False</span> </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">isinstance</span>(fab(<span class="number">5</span>), Iterable) </span><br><span class="line"><span class="literal">True</span></span><br></pre></td></tr></table></figure>
+<p>每次调用 fab 函数都会生成一个新的 generator 实例，各实例互不影响：</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>f1 = fab(<span class="number">3</span>) </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>f2 = fab(<span class="number">5</span>) </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span> <span class="string">&#x27;f1:&#x27;</span>, f1.<span class="built_in">next</span>() </span><br><span class="line">f1: <span class="number">1</span> </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span> <span class="string">&#x27;f2:&#x27;</span>, f2.<span class="built_in">next</span>() </span><br><span class="line">f2: <span class="number">1</span> </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span> <span class="string">&#x27;f1:&#x27;</span>, f1.<span class="built_in">next</span>() </span><br><span class="line">f1: <span class="number">1</span> </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span> <span class="string">&#x27;f2:&#x27;</span>, f2.<span class="built_in">next</span>() </span><br><span class="line">f2: <span class="number">1</span> </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span> <span class="string">&#x27;f1:&#x27;</span>, f1.<span class="built_in">next</span>() </span><br><span class="line">f1: <span class="number">2</span> </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span> <span class="string">&#x27;f2:&#x27;</span>, f2.<span class="built_in">next</span>() </span><br><span class="line">f2: <span class="number">2</span> </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span> <span class="string">&#x27;f2:&#x27;</span>, f2.<span class="built_in">next</span>() </span><br><span class="line">f2: <span class="number">3</span> </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span> <span class="string">&#x27;f2:&#x27;</span>, f2.<span class="built_in">next</span>() </span><br><span class="line">f2: <span class="number">5</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="return-的作用"><a href="#return-的作用" class="headerlink" title="return 的作用"></a>return 的作用</h3><p>在一个 generator function 中，如果没有 return，则默认执行至函数完毕，如果在执行过程中 return，则直接抛出 StopIteration 终止迭代。</p>
+<h3 id="另一个例子"><a href="#另一个例子" class="headerlink" title="另一个例子"></a>另一个例子</h3><p>另一个 yield 的例子来源于文件读取。如果直接对文件对象调用 read() 方法，会导致不可预测的内存占用。好的方法是利用固定长度的缓冲区来不断读取文件内容。通过 yield，我们不再需要编写读文件的迭代类，就可以轻松实现文件读取：</p>
+<p>清单 9. 另一个 yield 的例子</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">read_file</span>(<span class="params">fpath</span>): </span><br><span class="line">   BLOCK_SIZE = <span class="number">1024</span> </span><br><span class="line">   <span class="keyword">with</span> <span class="built_in">open</span>(fpath, <span class="string">&#x27;rb&#x27;</span>) <span class="keyword">as</span> f: </span><br><span class="line">       <span class="keyword">while</span> <span class="literal">True</span>: </span><br><span class="line">           block = f.read(BLOCK_SIZE) </span><br><span class="line">           <span class="keyword">if</span> block: </span><br><span class="line">               <span class="keyword">yield</span> block </span><br><span class="line">           <span class="keyword">else</span>: </span><br><span class="line">               <span class="keyword">return</span></span><br></pre></td></tr></table></figure>
+<p>以上仅仅简单介绍了 yield 的基本概念和用法，yield 在 Python 3 中还有更强大的用法，我们会在后续文章中讨论。</p>
+<p>注：本文的代码均在 Python 2.7 中调试通过</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2018/07/25/Python-yield-%E4%BD%BF%E7%94%A8%E6%B5%85%E6%9E%90/" data-id="cl9pgenvy00uoycv1g4iv2dyo" data-title="Python yield 使用浅析" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/07/28/scrapy%E9%9B%86%E6%88%90selenium%E7%88%AC%E5%8F%96%E5%8A%A8%E6%80%81%E7%BD%91%E9%A1%B5/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          scrapy集成selenium爬取动态网页
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/07/24/windows%E4%B8%8BPHP-Nginx-curl%E8%AE%BF%E9%97%AE%E6%9C%AC%E5%9C%B0%E5%9C%B0%E5%9D%80%E8%B6%85%E6%97%B6%E5%8D%A1%E6%AD%BB%E9%97%AE%E9%A2%98%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">windows下PHP + Nginx curl访问本地地址超时卡死问题的解决方案</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

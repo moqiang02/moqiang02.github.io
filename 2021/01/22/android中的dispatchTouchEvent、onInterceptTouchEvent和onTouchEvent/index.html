@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>android中的dispatchTouchEvent、onInterceptTouchEvent和onTouchEvent | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="android中，触摸事件的传递过程主要涉及三个方法：dispatchTouchEvent、onInterceptTouchEvent和onTouchEvent。详细了解这三个方法的作用首先要了解以下几个知识点：  android中的Touch事件都是从ACTION_DOWN开始的：  单指：ACTION_DOWN-&gt;ACTION_MOVE-&gt;ACTION_UP；  多指：ACTION">
+<meta property="og:type" content="article">
+<meta property="og:title" content="android中的dispatchTouchEvent、onInterceptTouchEvent和onTouchEvent">
+<meta property="og:url" content="http://moqiang02.github.io/2021/01/22/android%E4%B8%AD%E7%9A%84dispatchTouchEvent%E3%80%81onInterceptTouchEvent%E5%92%8ConTouchEvent/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="android中，触摸事件的传递过程主要涉及三个方法：dispatchTouchEvent、onInterceptTouchEvent和onTouchEvent。详细了解这三个方法的作用首先要了解以下几个知识点：  android中的Touch事件都是从ACTION_DOWN开始的：  单指：ACTION_DOWN-&gt;ACTION_MOVE-&gt;ACTION_UP；  多指：ACTION">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/android%E4%B8%AD%E7%9A%84dispatchTouchEvent/1.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/android%E4%B8%AD%E7%9A%84dispatchTouchEvent/2.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/android%E4%B8%AD%E7%9A%84dispatchTouchEvent/3.jpg">
+<meta property="article:published_time" content="2021-01-21T16:09:48.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.930Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="Android事件拦截">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/android%E4%B8%AD%E7%9A%84dispatchTouchEvent/1.jpg">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-android中的dispatchTouchEvent、onInterceptTouchEvent和onTouchEvent" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2021/01/22/android%E4%B8%AD%E7%9A%84dispatchTouchEvent%E3%80%81onInterceptTouchEvent%E5%92%8ConTouchEvent/" class="article-date">
+  <time class="dt-published" datetime="2021-01-21T16:09:48.000Z" itemprop="datePublished">2021-01-22</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/android/">android</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      android中的dispatchTouchEvent、onInterceptTouchEvent和onTouchEvent
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#Activity%E3%80%81ViewGroup%E3%80%81View%E9%87%8C%E7%9A%84%E5%9B%9E%E8%B0%83%E6%96%B9%E6%B3%95"><span class="toc-number">1.</span> <span class="toc-text">Activity、ViewGroup、View里的回调方法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#dispatchTouchEvent%E3%80%81onInterceptTouchEvent%E5%92%8ConTouchEvent%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="toc-number">2.</span> <span class="toc-text">dispatchTouchEvent、onInterceptTouchEvent和onTouchEvent的区别</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AF%A6%E7%BB%86%E5%88%86%E6%9E%90"><span class="toc-number">3.</span> <span class="toc-text">详细分析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#onInterceptTouchEvent-%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA"><span class="toc-number">3.1.</span> <span class="toc-text">onInterceptTouchEvent-事件拦截</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#onTouchEvent-%E4%BA%8B%E4%BB%B6%E5%A4%84%E7%90%86"><span class="toc-number">3.2.</span> <span class="toc-text">onTouchEvent-事件处理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#dispatchTouchEvent-%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91"><span class="toc-number">3.3.</span> <span class="toc-text">dispatchTouchEvent-事件分发</span></a></li></ol></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <p>android中，触摸事件的传递过程主要涉及三个方法：dispatchTouchEvent、onInterceptTouchEvent和onTouchEvent。<br>详细了解这三个方法的作用首先要了解以下几个知识点：</p>
+<ul>
+<li>android中的Touch事件都是从ACTION_DOWN开始的：<br>  单指：ACTION_DOWN-&gt;ACTION_MOVE-&gt;ACTION_UP；<br>  多指：ACTION_DOWN-&gt;ACTION_POINTER_DOWN-&gt;ACTION_MOVE-&gt;ACTION_POINTER_UP-&gt;ACTION_UP</li>
+<li>  一次完整的触摸事件中，Down和Up都只有一个，Move有若干个，可以为0个。当触摸事件被拦截时，Up可能是0个。</li>
+<li>  View在ViewGroup内，ViewGroup也可以在其他ViewGroup内，这时候把内部的ViewGroup当成View来分析。</li>
+</ul>
+<p>知道了以上基本知识点以后，就可以开始了~<span id="more"></span></p>
+<h3 id="Activity、ViewGroup、View里的回调方法"><a href="#Activity、ViewGroup、View里的回调方法" class="headerlink" title="Activity、ViewGroup、View里的回调方法"></a>Activity、ViewGroup、View里的回调方法</h3><p>在Activity里，有两个回调方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">dispatchTouchEvent</span><span class="params">(MotionEvent ev)</span>；</span><br><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">onTouchEvent</span><span class="params">(MotionEvent ev)</span>;</span><br></pre></td></tr></table></figure>
+
+<p>在ViewGroup里，有三个回调方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">dispatchTouchEvent</span><span class="params">(MotionEvent ev)</span>；</span><br><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">onInterceptTouchEvent</span><span class="params">(MotionEvent ev)</span>;</span><br><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">onTouchEvent</span><span class="params">(MotionEvent ev)</span>;</span><br></pre></td></tr></table></figure>
+
+<p>在View里，和Activity相同，同样有两个回调方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">dispatchTouchEvent</span><span class="params">(MotionEvent ev)</span>；</span><br><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">onTouchEvent</span><span class="params">(MotionEvent ev)</span>;</span><br></pre></td></tr></table></figure>
+
+<p>总结起来就是：</p>
+<ul>
+<li>  和事件分发相关的方法共有三个：dispatchTouchEvent、onInterceptTouchEvent和onTouchEvent</li>
+<li>  dispatchTouchEvent和onTouchEvent在Activity、ViewGroup和View中均存在</li>
+<li>  只有ViewGroup中有onInterceptTouchEvent方法</li>
+</ul>
+<h3 id="dispatchTouchEvent、onInterceptTouchEvent和onTouchEvent的区别"><a href="#dispatchTouchEvent、onInterceptTouchEvent和onTouchEvent的区别" class="headerlink" title="dispatchTouchEvent、onInterceptTouchEvent和onTouchEvent的区别"></a>dispatchTouchEvent、onInterceptTouchEvent和onTouchEvent的区别</h3><ul>
+<li>  dispatchTouchEvent：这个方法用来分发TouchEvent。</li>
+<li>  onInterceptTouchEvent：这个方法用来拦截TouchEvent。</li>
+<li>  onTouchEvent：这个方法用来处理TouchEvent。</li>
+</ul>
+<p>一个简单的图可以表示这三个方法的执行过程：</p>
+<p><img src="/images/android%E4%B8%AD%E7%9A%84dispatchTouchEvent/1.jpg"></p>
+<p>举个例子：使用下面这段代码的xml布局</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">com.chiaro.view.ChiaroLinearLayout</span></span></span><br><span class="line"><span class="tag">      <span class="attr">android:id</span>=<span class="string">&quot;@+id/chiaroLinearLayout&quot;</span></span></span><br><span class="line"><span class="tag">      <span class="attr">xmlns:android</span>=<span class="string">&quot;http://schemas.android.com/apk/res/android&quot;</span></span></span><br><span class="line"><span class="tag">      <span class="attr">android:layout_width</span>=<span class="string">&quot;match_parent&quot;</span></span></span><br><span class="line"><span class="tag">      <span class="attr">android:background</span>=<span class="string">&quot;#999999&quot;</span></span></span><br><span class="line"><span class="tag">      <span class="attr">android:padding</span>=<span class="string">&quot;80dp&quot;</span></span></span><br><span class="line"><span class="tag">      <span class="attr">android:layout_height</span>=<span class="string">&quot;match_parent&quot;</span>&gt;</span></span><br><span class="line"></span><br><span class="line">      <span class="tag">&lt;<span class="name">com.chiaro.view.ChiaroTextView</span></span></span><br><span class="line"><span class="tag">            <span class="attr">android:id</span>=<span class="string">&quot;@+id/chiaroTextView&quot;</span></span></span><br><span class="line"><span class="tag">            <span class="attr">android:layout_width</span>=<span class="string">&quot;match_parent&quot;</span></span></span><br><span class="line"><span class="tag">            <span class="attr">android:layout_height</span>=<span class="string">&quot;match_parent&quot;</span></span></span><br><span class="line"><span class="tag">            <span class="attr">android:gravity</span>=<span class="string">&quot;center&quot;</span></span></span><br><span class="line"><span class="tag">            <span class="attr">android:text</span>=<span class="string">&quot;TextView&quot;</span></span></span><br><span class="line"><span class="tag">            <span class="attr">android:background</span>=<span class="string">&quot;#00dddd&quot;</span></span></span><br><span class="line"><span class="tag">            <span class="attr">android:textSize</span>=<span class="string">&quot;32sp&quot;</span>/&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">com.chiaro.view.ChiaroLinearLayout</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>这个布局长这样：节点层次很简单，一个LinearLayout中添加了一个TextView。</p>
+<p><img src="/images/android%E4%B8%AD%E7%9A%84dispatchTouchEvent/2.jpg"></p>
+<p>MainActivity.java的代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// import的包不贴了……</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MainActivity</span> <span class="keyword">extends</span> <span class="title class_">Activity</span> &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">onCreate</span><span class="params">(Bundle savedInstanceState)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>.onCreate(savedInstanceState);</span><br><span class="line">        setContentView(R.layout.activity_main);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">onTouchEvent</span><span class="params">(MotionEvent event)</span> &#123;</span><br><span class="line">        Log.e(<span class="string">&quot;demo&quot;</span>,<span class="string">&quot;MainActivity-----------onTouchEvent--------------&quot;</span> + event.toString());</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">super</span>.onTouchEvent(event);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">dispatchTouchEvent</span><span class="params">(MotionEvent event)</span> &#123;</span><br><span class="line">        Log.e(<span class="string">&quot;demo&quot;</span>,<span class="string">&quot;MainActivity-----------dispatchTouchEvent--------&quot;</span> + event.toString());</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">super</span>.dispatchTouchEvent(event);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>ChiaroLinearLayout.java的代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// import的包不贴了……</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ChiaroLinearLayout</span> <span class="keyword">extends</span> <span class="title class_">LinearLayout</span> &#123;</span><br><span class="line">    <span class="comment">// 构造方法省略不贴了……</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">onInterceptTouchEvent</span><span class="params">(MotionEvent event)</span> &#123;</span><br><span class="line">        Log.e(<span class="string">&quot;demo&quot;</span>, <span class="string">&quot;ChiaroLinearLayout-----onInterceptTouchEvent-----&quot;</span> + event.toString());</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">super</span>.onInterceptTouchEvent(event);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">dispatchTouchEvent</span><span class="params">(MotionEvent event)</span> &#123;</span><br><span class="line">        Log.e(<span class="string">&quot;demo&quot;</span>,<span class="string">&quot;ChiaroLinearLayout-----dispatchTouchEvent--------&quot;</span> + event.toString());</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">super</span>.dispatchTouchEvent(event);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">onTouchEvent</span><span class="params">(MotionEvent event)</span> &#123;</span><br><span class="line">        Log.e(<span class="string">&quot;demo&quot;</span>,<span class="string">&quot;ChiaroLinearLayout-----onTouchEvent--------------&quot;</span> + event.toString());</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">super</span>.onTouchEvent(event);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>ChiaroTextView.java的代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// import的包不贴了……</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ChiaroTextView</span> <span class="keyword">extends</span> <span class="title class_">TextView</span> &#123;</span><br><span class="line">    <span class="comment">// 构造方法省略不贴了……</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">onTouchEvent</span><span class="params">(MotionEvent event)</span> &#123;</span><br><span class="line">        Log.e(<span class="string">&quot;demo&quot;</span>, <span class="string">&quot;ChiaroTextView---------onTouchEvent--------------&quot;</span> + event.toString());</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">super</span>.onTouchEvent(event);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">dispatchTouchEvent</span><span class="params">(MotionEvent event)</span> &#123;</span><br><span class="line">        Log.e(<span class="string">&quot;demo&quot;</span>,<span class="string">&quot;ChiaroTextView---------dispatchTouchEvent--------&quot;</span> + event.toString());</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">super</span>.dispatchTouchEvent(event);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看出，这段代码只是简单的打出所有的log。直接运行并点击一下TextView可以看到log如下。可以看到，这个ACTION_DOWN事件一直传递到了ChiaroTextView，但是最终是被MainActivity的onTouchEvent处理的，但是ACTION_UP只传递到了MainActivity，最终也是由MainActivity处理的。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">…… E/demo: MainActivity-----------dispatchTouchEvent--------MotionEvent &#123; action=ACTION_DOWN ……</span><br><span class="line">…… E/demo: ChiaroLinearLayout-----dispatchTouchEvent--------MotionEvent &#123; action=ACTION_DOWN ……</span><br><span class="line">…… E/demo: ChiaroLinearLayout-----onInterceptTouchEvent-----MotionEvent &#123; action=ACTION_DOWN ……</span><br><span class="line">…… E/demo: ChiaroTextView---------dispatchTouchEvent--------MotionEvent &#123; action=ACTION_DOWN ……</span><br><span class="line">…… E/demo: ChiaroTextView---------onTouchEvent--------------MotionEvent &#123; action=ACTION_DOWN ……</span><br><span class="line">…… E/demo: ChiaroLinearLayout-----onTouchEvent--------------MotionEvent &#123; action=ACTION_DOWN ……</span><br><span class="line">…… E/demo: MainActivity-----------onTouchEvent--------------MotionEvent &#123; action=ACTION_DOWN ……</span><br><span class="line">…… E/demo: MainActivity-----------dispatchTouchEvent--------MotionEvent &#123; action=ACTION_UP ……</span><br><span class="line">…… E/demo: MainActivity-----------onTouchEvent--------------MotionEvent &#123; action=ACTION_UP ……</span><br></pre></td></tr></table></figure>
+
+<h3 id="详细分析"><a href="#详细分析" class="headerlink" title="详细分析"></a>详细分析</h3><h4 id="onInterceptTouchEvent-事件拦截"><a href="#onInterceptTouchEvent-事件拦截" class="headerlink" title="onInterceptTouchEvent-事件拦截"></a>onInterceptTouchEvent-事件拦截</h4><p>onInterceptTouchEvent这个方法的返回值是最简单的，及是否拦截事件，放在最前面讲。</p>
+<ul>
+<li>  如果返回值是true，代表事件在当前的viewGroup中会被处理，向下传递之路被截断（所有子控件将没有机会参与Touch事件），同时把事件传递给当前的控件的onTouchEvent()继续进行传递或处理。</li>
+<li>  如果返回值是false，即不拦截当前传递来的事件，会继续向下传递，把事件交给子控件的onInterceptTouchEvent()。</li>
+</ul>
+<p>如果将ChiaroLinearLayout中的onInterceptTouchEvent方法的返回值改为true，则log为：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"> …… E/demo: MainActivity-----------dispatchTouchEvent--------MotionEvent &#123; action=ACTION_DOWN ……</span><br><span class="line"> …… E/demo: ChiaroLinearLayout-----dispatchTouchEvent--------MotionEvent &#123; action=ACTION_DOWN ……</span><br><span class="line"> …… E/demo: ChiaroLinearLayout-----onInterceptTouchEvent-----MotionEvent &#123; action=ACTION_DOWN ……</span><br><span class="line"><span class="comment">// 这里的ChiaroTextView没了  因为被父控件ChairoLinearLayout拦截了</span></span><br><span class="line"> …… E/demo: ChiaroLinearLayout-----onTouchEvent--------------MotionEvent &#123; action=ACTION_DOWN ……</span><br><span class="line"> …… E/demo: MainActivity-----------onTouchEvent--------------MotionEvent &#123; action=ACTION_DOWN ……</span><br><span class="line"> …… E/demo: MainActivity-----------dispatchTouchEvent--------MotionEvent &#123; action=ACTION_UP ……</span><br><span class="line"> …… E/demo: MainActivity-----------onTouchEvent--------------MotionEvent &#123; action=ACTION_UP ……</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，这个事件在ChiaroLinearLayout就被打断了，没有继续传递给ChiaroTextView，而是由ChiaroLinearLayout的onTouchEvent继续传递给MainActivity的OnTouchEvent，最终由MainActivity的OnTouchEvent处理了。</p>
+<h4 id="onTouchEvent-事件处理"><a href="#onTouchEvent-事件处理" class="headerlink" title="onTouchEvent-事件处理"></a>onTouchEvent-事件处理</h4><ul>
+<li>  如果返回值是true，表示消费(consume)了这个事件。以ACTION_DOWN为例，如果某个控件的onTouchEvent返回值为true，则后续的n个ACTION_MOVE与1个ACTION_UP都会逐层传递到这个控件的onTouchEvent进行处理。</li>
+<li>  由于触摸事件都是连续的，所以这个地方感谢网友【@再不侃】的提问，要特别说明一下。如果ACTION_MOVE传递到子控件，而子控件的onTouchEvent返回值是false，即没有处理该ACTION_MOVE事件，则后续的ACTION_UP就不会传到该子控件来了。这个原因就造成了最开始没有对代码进行任何变更时，<strong>ACTION_DOWN事件一直传递到了ChiaroTextView，但是最终是被MainActivity的onTouchEvent处理的，而且ACTION_UP只传递到了MainActivity，最终也是由MainActivity处理的。</strong>的情况。</li>
+<li>  这里要注意是逐层，也就是说每层的拦截器还是可以拦截到后续的ACTION_MOVE与ACTION_UP。如果后续的ACTION_MOVE与ACTION_UP被某层的拦截器拦截，则后续的事件将不会再传递给之前处理onTouchEvent的子控件，而是逐层传递给由拦截消息的这个控件的onTouchEvent函数进行处理，并且会向其之前接收事件的子控件发送一个ACTION_CANCEL，表示后续事件被取消了。</li>
+<li>  如果返回值是false，则会将ACTION_DOWN传递给其父ViewGroup的onTouchEvent进行处理，直到由哪一层ViewGroup消费了ACTION_DOWN事件为止。</li>
+</ul>
+<p>如果讲上面的代码还原，并且将ChiaroTextView的onTouchEvent方法的返回值改为true，则log：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">…… E/demo: MainActivity-----------dispatchTouchEvent--------MotionEvent &#123; action=ACTION_DOWN ……</span><br><span class="line">…… E/demo: ChiaroLinearLayout-----dispatchTouchEvent--------MotionEvent &#123; action=ACTION_DOWN ……</span><br><span class="line">…… E/demo: ChiaroLinearLayout-----onInterceptTouchEvent-----MotionEvent &#123; action=ACTION_DOWN ……</span><br><span class="line">…… E/demo: ChiaroTextView---------dispatchTouchEvent--------MotionEvent &#123; action=ACTION_DOWN ……</span><br><span class="line">…… E/demo: ChiaroTextView---------onTouchEvent--------------MotionEvent &#123; action=ACTION_DOWN ……</span><br><span class="line">…… E/demo: MainActivity-----------dispatchTouchEvent--------MotionEvent &#123; action=ACTION_UP ……</span><br><span class="line">…… E/demo: ChiaroLinearLayout-----dispatchTouchEvent--------MotionEvent &#123; action=ACTION_UP ……</span><br><span class="line">…… E/demo: ChiaroLinearLayout-----onInterceptTouchEvent-----MotionEvent &#123; action=ACTION_UP ……</span><br><span class="line">…… E/demo: ChiaroTextView---------dispatchTouchEvent--------MotionEvent &#123; action=ACTION_UP ……</span><br><span class="line">…… E/demo: ChiaroTextView---------onTouchEvent--------------MotionEvent &#123; action=ACTION_UP ……</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，所有的事件都传递给ChiaroTextView处理了。包括ACTION_DOWN和ACTION_UP。</p>
+<h4 id="dispatchTouchEvent-事件分发"><a href="#dispatchTouchEvent-事件分发" class="headerlink" title="dispatchTouchEvent-事件分发"></a>dispatchTouchEvent-事件分发</h4><p>dispatchTouchEvent比较复杂，可以按照下面这张图分析：ViewGroup和View组成了一棵树形结构，最顶层为Activity的ViewGroup，下面有若干的ViewGroup节点，每个节点之下又有若干的ViewGroup节点或者View节点，依次类推。</p>
+<p><img src="/images/android%E4%B8%AD%E7%9A%84dispatchTouchEvent/3.jpg"></p>
+<p>当一个Touch事件依次下发，下发的过程是调用子View(ViewGroup)的dispatchTouchEvent方法实现的。简单来说，就是ViewGroup遍历它包含着的子View，调用每个View的dispatchTouchEvent方法，而当子View为ViewGroup时，又会通过调用ViewGroup的dispatchTouchEvent方法继续调用其内部的View的dispatchTouchEvent方法。上述例子中的消息下发顺序是这样的：①-②-⑤-⑥-⑦-③-④。</p>
+<p>dispatchTouchEvent方法只负责事件的分发，它拥有boolean类型的返回值，当返回为true时，顺序下发会中断。在上述例子中如果⑤的dispatchTouchEvent返回结果为true，那么⑥-⑦-③-④将都接收不到本次Touch事件。</p>
+<p>ViewGroup的dispatchTouchEvent是真正在执行“分发”工作，而View的dispatchTouchEvent方法，并不执行分发工作，或者说它分发的对象就是自己，决定是否把touch事件交给自己处理，而处理的方法，便是onTouchEvent事件，事实上子View的dispatchTouchEvent方法真正执行的代码是这样的：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">dispatchTouchEvent</span><span class="params">(MotionEvent ev)</span>&#123;</span><br><span class="line">     ....<span class="comment">//其他处理，在此不管</span></span><br><span class="line">     <span class="keyword">return</span> onTouchEvent(event);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>一般情况下，我们不该在普通View内重写dispatchTouchEvent方法，因为它并不执行分发逻辑。当Touch事件到达View时，我们该做的就是是否在onTouchEvent事件中处理它。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2021/01/22/android%E4%B8%AD%E7%9A%84dispatchTouchEvent%E3%80%81onInterceptTouchEvent%E5%92%8ConTouchEvent/" data-id="cl9pgenzc015bycv16y35cr25" data-title="android中的dispatchTouchEvent、onInterceptTouchEvent和onTouchEvent" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" rel="tag">Android事件拦截</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2021/01/22/%E6%BB%91%E5%8A%A8%E5%86%B2%E7%AA%81%E4%B9%8B%E5%86%85%E9%83%A8%E6%8B%A6%E6%88%AA%E6%B3%95/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          滑动冲突之内部拦截法
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2021/01/18/%E7%94%A8Android-Studio%E7%9A%84Profiler%E6%9F%A5%E7%9C%8B%E7%BD%91%E7%BB%9C%E8%AF%B7%E6%B1%82/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">用Android Studio的Profiler查看网络请求</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

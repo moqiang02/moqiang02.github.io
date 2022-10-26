@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Mysql行级锁/页级锁/表级锁详解 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="页级：引擎 BDB表级：引擎 MyISAM，理解为锁住整个表，可以同时读，但不可同时写行级：引擎 INNODB，单独的一行记录加锁 表级：直接锁定整张表，在你锁定期间，其它进程无法对该表进行写操作。如果你是写锁，则其它进程则读也不允许。行级：仅对指定的记录进行加锁，这样其它进程还是可以对同一个表中的其它记录进行操作。页级：表级锁速度快，但冲突多，行级冲突少，但速度慢。所以取了折衷的页级，一次锁定相">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Mysql行级锁&#x2F;页级锁&#x2F;表级锁详解">
+<meta property="og:url" content="http://moqiang02.github.io/2014/06/20/Mysql%E8%A1%8C%E7%BA%A7%E9%94%81-%E9%A1%B5%E7%BA%A7%E9%94%81-%E8%A1%A8%E7%BA%A7%E9%94%81%E8%AF%A6%E8%A7%A3/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="页级：引擎 BDB表级：引擎 MyISAM，理解为锁住整个表，可以同时读，但不可同时写行级：引擎 INNODB，单独的一行记录加锁 表级：直接锁定整张表，在你锁定期间，其它进程无法对该表进行写操作。如果你是写锁，则其它进程则读也不允许。行级：仅对指定的记录进行加锁，这样其它进程还是可以对同一个表中的其它记录进行操作。页级：表级锁速度快，但冲突多，行级冲突少，但速度慢。所以取了折衷的页级，一次锁定相">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2014-06-20T12:52:18.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.827Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Mysql行级锁-页级锁-表级锁详解" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2014/06/20/Mysql%E8%A1%8C%E7%BA%A7%E9%94%81-%E9%A1%B5%E7%BA%A7%E9%94%81-%E8%A1%A8%E7%BA%A7%E9%94%81%E8%AF%A6%E8%A7%A3/" class="article-date">
+  <time class="dt-published" datetime="2014-06-20T12:52:18.000Z" itemprop="datePublished">2014-06-20</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/mysql/">mysql</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Mysql行级锁/页级锁/表级锁详解
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <p>页级：引擎 BDB<br>表级：引擎 MyISAM，理解为锁住整个表，可以同时读，但不可同时写<br>行级：引擎 INNODB，单独的一行记录加锁</p>
+<p>表级：直接锁定整张表，在你锁定期间，其它进程无法对该表进行写操作。如果你是写锁，则其它进程则读也不允许。<br>行级：仅对指定的记录进行加锁，这样其它进程还是可以对同一个表中的其它记录进行操作。<br>页级：表级锁速度快，但冲突多，行级冲突少，但速度慢。所以取了折衷的页级，一次锁定相邻的一组记录。</p>
+<span id="more"></span>
+<p>MySQL 5.1支持对MyISAM和MEMORY表进行表级锁定，对BDB表进行页级锁定，对InnoDB表进行行级锁定。<br>对WRITE，MySQL使用的表锁定方法原理如下：<br>如果在表上没有锁，在它上面放一个写锁。<br>否则，把锁定请求放在写锁定队列中。</p>
+<p>对READ，MySQL使用的锁定方法原理如下：<br>如果在表上没有写锁定，把一个读锁定放在它上面<br>否则，把锁请求放在读锁定队列中。</p>
+<p>InnoDB使用行锁定，BDB使用页锁定。对于这两种存储引擎，都可能存在死锁。这是因为，在SQL语句处理期间，InnoDB自动获得行锁定和BDB获得页锁定，而不是在事务启动时获得。    </p>
+<p>行级锁定的优点：</p>
+<ul>
+<li>当在许多线程中访问不同的行时只存在少量锁定冲突。</li>
+<li>回滚时只有少量的更改。</li>
+<li>可以长时间锁定单一的行。</li>
+</ul>
+<p>行级锁定的缺点：</p>
+<ul>
+<li>比页级或表级锁定占用更多的内存。</li>
+<li>当在表的大部分中使用时，比页级或表级锁定速度慢，因为你必须获取更多的锁。</li>
+<li>如果你在大部分数据上经常进行GROUP BY操作或者必须经常扫描整个表，比其它锁定明显慢很多。</li>
+<li>用高级别锁定，通过支持不同的类型锁定，你也可以很容易地调节应用程序，因为其锁成本小于行级锁定。</li>
+</ul>
+<p>在以下情况下，表锁定优先于页级或行级锁定：</p>
+<ul>
+<li>表的大部分语句用于读取。</li>
+<li>对严格的关键字进行读取和更新，你可以更新或删除可以用单一的读取的关键字来提取的一行：</li>
+<li><code>UPDATE tbl_name SET column=value WHERE unique_key_col=key_value;</code></li>
+<li><code>DELETE FROM tbl_name WHERE unique_key_col=key_value;</code></li>
+<li>SELECT 结合并行的INSERT语句，并且只有很少的UPDATE或DELETE语句。</li>
+<li>在整个表上有许多扫描或GROUP BY操作，没有任何写操作。</li>
+</ul>
+<p> ========================= mysql 锁表类型和解锁语句 ========================= </p>
+<p>如果想要在一个表上做大量的 INSERT 和 SELECT 操作，但是并行的插入却不可能时，可以将记录插入到临时表中，然后定期将临时表中的数据更新到实际的表里。可以用以下命令实现：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> LOCK TABLES real_table WRITE, insert_table WRITE;</span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">INSERT</span> <span class="keyword">INTO</span> real_table <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> insert_table;</span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">TRUNCATE</span> <span class="keyword">TABLE</span> insert_table;</span><br><span class="line">mysql<span class="operator">&gt;</span> UNLOCK TABLES;</span><br></pre></td></tr></table></figure>
+
+<p>行级锁的优点有：</p>
+<ul>
+<li>在很多线程请求不同记录时减少冲突锁。</li>
+<li>事务回滚时减少改变数据。</li>
+<li>使长时间对单独的一行记录加锁成为可能。</li>
+</ul>
+<p>行级锁的缺点有：</p>
+<ul>
+<li>比页级锁和表级锁消耗更多的内存。</li>
+<li>锁是计算机协调多个进程或线程并发访问某一资源的机制，不同的数据库的锁机制大同小异。由于数据库资源是一种供许多用户共享的资源，所以如何保证数据并发访问的一致性、有效性是所有数据库必须解决的一个问题，锁冲突也是影响数据库并发访问性能的一个重要因素。了解锁机制不仅可以使我们更有效的开发利用数据库资源，也使我们能够更好地维护数据库，从而提高数据库的性能。</li>
+</ul>
+<p>MySQL的锁机制比较简单，其最显著的特点是不同的存储引擎支持不同的锁机制。</p>
+<p>例如，MyISAM和MEMORY存储引擎采用的是表级锁（table-level-locking）；BDB存储引擎采用的是页面锁（page-level-locking），同时也支持表级锁；InnoDB存储引擎既支持行级锁，也支持表级锁，默认情况下是采用行级锁。</p>
+<p>上述三种锁的特性可大致归纳如下：<br>1） 表级锁：开销小，加锁快；不会出现死锁；锁定粒度大，发生锁冲突的概率最高，并发度最低。<br>2） 行级锁：开销大，加锁慢；会出现死锁；锁定粒度最小，发生锁冲突的概率最低，并发度也最高。<br>3） 页面锁：开销和加锁时间界于表锁和行锁之间；会出现死锁；锁定粒度界于表锁和行锁之间，并发度一般。</p>
+<p>三种锁各有各的特点，若仅从锁的角度来说，表级锁更适合于以查询为主，只有少量按索引条件更新数据的应用，如WEB应用；行级锁更适合于有大量按索引条件并发更新少量不同数据，同时又有并发查询的应用，如一些在线事务处理（OLTP）系统。</p>
+<p>MySQL表级锁有两种模式：表共享读锁（Table Read Lock）和表独占写锁（Table Write Lock）。什么意思呢，就是说对MyISAM表进行读操作时，它不会阻塞其他用户对同一表的读请求，但会阻塞 对同一表的写操作；而对MyISAM表的写操作，则会阻塞其他用户对同一表的读和写操作。</p>
+<p>MyISAM表的读和写是串行的，即在进行读操作时不能进行写操作，反之也是一样。但在一定条件下MyISAM表也支持查询和插入的操作的并发进行，其机制是通过控制一个系统变量（concurrent_insert）来进行的，当其值设置为0时，不允许并发插入；当其值设置为1 时，如果MyISAM表中没有空洞（即表中没有被删除的行），MyISAM允许在一个进程读表的同时，另一个进程从表尾插入记录；当其值设置为2时，无论MyISAM表中有没有空洞，都允许在表尾并发插入记录。</p>
+<p>MyISAM锁调度是如何实现的呢，这也是一个很关键的问题。例如，当一个进程请求某个MyISAM表的读锁，同时另一个进程也请求同一表的写锁，此时MySQL将会如优先处理进程呢？通过研究表明，写进程将先获得锁（即使读请求先到锁等待队列）。但这也造成一个很大的缺陷，即大量的写操作会造成查询操作很难获得读锁，从而可能造成永远阻塞。所幸我们可以通过一些设置来调节MyISAM的调度行为。我们可通过指定参数low-priority-updates，使MyISAM默认引擎给予读请求以优先的权利，设置其值为1（set low_priority_updates=1),使优先级降低。</p>
+<p>InnoDB锁与MyISAM锁的最大不同在于：一是支持事务（TRANCSACTION），二是采用了行级锁。我们知道事务是由一组SQL语句组成的逻辑处理单元，其有四个属性（简称ACID属性），分别为：</p>
+<ul>
+<li>原子性（Atomicity）：事务是一个原子操作单元，其对数据的修改，要么全部执行，要么全都不执行；</li>
+<li>一致性（Consistent）：在事务开始和完成时，数据都必须保持一致状态；</li>
+<li>隔离性（Isolation）：数据库系统提供一定的隔离机制，保证事务在不受外部并发操作影响的“独立”环境执行；</li>
+<li>持久性（Durable）：事务完成之后，它对于数据的修改是永久性的，即使出现系统故障也能够保持。</li>
+</ul>
+<p>InnoDB有两种模式的行锁：</p>
+<p>1）共享锁：允许一个事务去读一行，阻止其他事务获得相同数据集的排他锁。<br>(<code>Select * from table_name where ......lock in share mode</code>)</p>
+<p>2）排他锁：允许获得排他锁的事务更新数据，阻止其他事务取得相同数据集的共享读锁和  排他写锁。(select * from table_name where…..for update)<br>为了允许行锁和表锁共存，实现多粒度锁机制；同时还有两种内部使用的意向锁（都是表锁），分别为意向共享锁和意向排他锁。<br>InnoDB行锁是通过给索引项加锁来实现的，即只有通过索引条件检索数据，InnoDB才使用行级锁，否则将使用表锁！</p>
+<p>另外：插入，更新性能优化的几个重要参数</p>
+<p>bulk_insert_buffer_size<br>批量插入缓存大小, 这个参数是针对MyISAM存储引擎来说的.适用于在一次性插入100-1000+条记录时, 提高效率.默认值是8M.可以针对数据量的大小,翻倍增加.</p>
+<p>concurrent_insert<br>并发插入, 当表没有空洞(删除过记录), 在某进程获取读锁的情况下,其他进程可以在表尾部进行插入.</p>
+<p>值可以设0不允许并发插入, 1当表没有空洞时, 执行并发插入, 2不管是否有空洞都执行并发插入.<br>默认是1 针对表的删除频率来设置.</p>
+<p>delay_key_write<br>针对MyISAM存储引擎,延迟更新索引.意思是说,update记录时,先将数据up到磁盘,但不up索引,将索引存在内存里,当表关闭时,将内存索引,写到磁盘. 值为 0不开启, 1开启. 默认开启.</p>
+<p>delayed_insert_limit, delayed_insert_timeout, delayed_queue_size<br>延迟插入, 将数据先交给内存队列, 然后慢慢地插入.但是这些配置,不是所有的存储引擎都支持, 目前来看, 常用的InnoDB不支持, MyISAM支持. 根据实际情况调大, 一般默认够用了</p>
+<p> ==================== MySQL InnoDB 锁表与锁行 ======================== </p>
+<p>由于InnoDB预设是Row-Level Lock，所以只有「明确」的指定主键，MySQL才会执行Row lock (只锁住被选取的资料例) ，否则MySQL将会执行Table Lock (将整个资料表单给锁住)。</p>
+<p>举个例子: 假设有个表单products ，里面有id跟name二个栏位，id是主键。</p>
+<p>例1: (明确指定主键，并且有此笔资料，row lock)<br><code>SELECT * FROM products WHERE id=&#39;3&#39; FOR UPDATE;</code><br><code>SELECT * FROM products WHERE id=&#39;3&#39; and type=1 FOR UPDATE;</code></p>
+<p>例2: (明确指定主键，若查无此笔资料，无lock)<br><code>SELECT * FROM products WHERE id=&#39;-1&#39; FOR UPDATE;</code></p>
+<p>例3: (无主键，table lock)<br><code>SELECT * FROM products WHERE name=&#39;Mouse&#39; FOR UPDATE;</code></p>
+<p>例4: (主键不明确，table lock)<br><code>SELECT * FROM products WHERE id&lt;&gt;&#39;3&#39; FOR UPDATE;</code></p>
+<p>例5: (主键不明确，table lock)<br><code>SELECT * FROM products WHERE id LIKE &#39;3&#39; FOR UPDATE;</code></p>
+<p>注1: FOR UPDATE仅适用于InnoDB，且必须在交易区块(BEGIN/COMMIT)中才能生效。<br>注2: 要测试锁定的状况，可以利用MySQL的Command Mode ，开二个视窗来做测试。</p>
+<p>在MySql 5.0中测试确实是这样的<br>另外：MyAsim 只支持表级锁，InnerDB支持行级锁<br>添加了(行级锁/表级锁)锁的数据不能被其它事务再锁定，也不被其它事务修改（修改、删除）<br>是表级锁时，不管是否查询到记录，都会锁定表<br>此外，如果A与B都对表id进行查询但查询不到记录，则A与B在查询上不会进行row锁，但A与B都会获取排它锁，此时A再插入一条记录的话则会因为B已经有锁而处于等待中，此时B再插入一条同样的数据则会抛出<code>Deadlock found when trying to get lock; try restarting transaction</code>然后释放锁，此时A就获得了锁而插入成功！</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/06/20/Mysql%E8%A1%8C%E7%BA%A7%E9%94%81-%E9%A1%B5%E7%BA%A7%E9%94%81-%E8%A1%A8%E7%BA%A7%E9%94%81%E8%AF%A6%E8%A7%A3/" data-id="cl9pgenuc00plycv1ciu1f2vt" data-title="Mysql行级锁/页级锁/表级锁详解" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/06/21/ecshop%E6%96%87%E7%AB%A0%E5%88%86%E7%B1%BB%E9%A1%B5%E9%9D%A2%E8%B0%83%E7%94%A8%E6%96%87%E7%AB%A0%E7%9A%84%E5%86%85%E5%AE%B9/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          ecshop文章分类页面调用文章的内容
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/06/20/MySQL%E4%BA%8B%E5%8A%A1%E5%A4%84%E7%90%86/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">MySQL事务处理</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

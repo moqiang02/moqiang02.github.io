@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>使用Item类转换传输数据以及ItemLoader机制解析 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="本篇主要讲解 Item 类封装数据以及 ItemLoader 加载数据机制。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用Item类转换传输数据以及ItemLoader机制解析">
+<meta property="og:url" content="http://moqiang02.github.io/2018/11/14/%E4%BD%BF%E7%94%A8Item%E7%B1%BB%E8%BD%AC%E6%8D%A2%E4%BC%A0%E8%BE%93%E6%95%B0%E6%8D%AE%E4%BB%A5%E5%8F%8AItemLoader%E6%9C%BA%E5%88%B6%E8%A7%A3%E6%9E%90/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="本篇主要讲解 Item 类封装数据以及 ItemLoader 加载数据机制。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E4%BD%BF%E7%94%A8Item%E7%B1%BB%E8%BD%AC%E6%8D%A2%E4%BC%A0%E8%BE%93%E6%95%B0%E6%8D%AE%E4%BB%A5%E5%8F%8AItemLoader%E6%9C%BA%E5%88%B6%E8%A7%A3%E6%9E%90/1.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E4%BD%BF%E7%94%A8Item%E7%B1%BB%E8%BD%AC%E6%8D%A2%E4%BC%A0%E8%BE%93%E6%95%B0%E6%8D%AE%E4%BB%A5%E5%8F%8AItemLoader%E6%9C%BA%E5%88%B6%E8%A7%A3%E6%9E%90/2.png">
+<meta property="article:published_time" content="2018-11-14T08:46:22.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:54.068Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="scrapy">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/%E4%BD%BF%E7%94%A8Item%E7%B1%BB%E8%BD%AC%E6%8D%A2%E4%BC%A0%E8%BE%93%E6%95%B0%E6%8D%AE%E4%BB%A5%E5%8F%8AItemLoader%E6%9C%BA%E5%88%B6%E8%A7%A3%E6%9E%90/1.png">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-使用Item类转换传输数据以及ItemLoader机制解析" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2018/11/14/%E4%BD%BF%E7%94%A8Item%E7%B1%BB%E8%BD%AC%E6%8D%A2%E4%BC%A0%E8%BE%93%E6%95%B0%E6%8D%AE%E4%BB%A5%E5%8F%8AItemLoader%E6%9C%BA%E5%88%B6%E8%A7%A3%E6%9E%90/" class="article-date">
+  <time class="dt-published" datetime="2018-11-14T08:46:22.000Z" itemprop="datePublished">2018-11-14</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/python/">python</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      使用Item类转换传输数据以及ItemLoader机制解析
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <p>本篇主要讲解 Item 类封装数据以及 ItemLoader 加载数据机制。<span id="more"></span></p>
+<h3 id="一-创建-Item-类"><a href="#一-创建-Item-类" class="headerlink" title="一. 创建 Item 类"></a>一. 创建 Item 类</h3><p>为了将网页解析后获取的数据进行格式化，便于数据的传递与进一步的操作，Scrapy 提供了 Item 类来对数据进行封装。<br>要使用 Item 类非常简单，直接继承 scrapy 的 Item 类即可，然后可以定义相应的属性字段来对数据进行存储，其字段类型为 <code>scrapy.Field()</code>。 Scrapy 只提供了 <code>Field()</code> 一种字段类型，可以用来存储任意类型的数据。<br>现在我们根据上一节解析到的 StackoverFlow 的问题来创建我们的 Item 类，代码如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">StackQuestionItem</span>(scrapy.Item):</span><br><span class="line"></span><br><span class="line">    queston_title = scrapy.Field()</span><br><span class="line">    question_votes = scrapy.Field()</span><br><span class="line">    question_answers = scrapy.Field()</span><br><span class="line">    question_views = scrapy.Field()</span><br><span class="line">    tags = scrapy.Field()</span><br></pre></td></tr></table></figure>
+<p>创建完成后就可以在 parse 方法中将解析到的数据进行封装了, 结合上一篇文章中的解析代码如下:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">parse_by_css</span>(<span class="params">self, response</span>):</span><br><span class="line"></span><br><span class="line">       questions = response.css(<span class="string">&#x27;div.question-summary&#x27;</span>)</span><br><span class="line">       <span class="keyword">for</span> question <span class="keyword">in</span> questions:</span><br><span class="line"></span><br><span class="line">           question_votes = question.css(<span class="string">&#x27;.votes strong::text&#x27;</span>).extract_first()</span><br><span class="line">           question_title = question.css(<span class="string">&quot;a.question-hyperlink::text&quot;</span>).extract_first()</span><br><span class="line">           question_answers = question.css(<span class="string">&#x27;.answered strong::text&#x27;</span>).extract_first()</span><br><span class="line">           question_views = question.css(<span class="string">&#x27;.views::attr(title)&#x27;</span>).extract_first()</span><br><span class="line">           tags = question.css(<span class="string">&#x27;.tags a::text&#x27;</span>).extract()</span><br><span class="line"></span><br><span class="line">           question_item = StackQuestionItem()</span><br><span class="line">           question_item[<span class="string">&quot;question_title&quot;</span>] = question_title</span><br><span class="line">           question_item[<span class="string">&quot;question_votes&quot;</span>] = question_votes</span><br><span class="line">           question_item[<span class="string">&#x27;question_answers&#x27;</span>] = question_answers</span><br><span class="line">           question_item[<span class="string">&#x27;question_views&#x27;</span>] = question_views</span><br><span class="line">           question_item[<span class="string">&#x27;tags&#x27;</span>] = tags</span><br><span class="line"></span><br><span class="line">           <span class="keyword">yield</span> question_item</span><br></pre></td></tr></table></figure>
+<p>生成的 Item 类通过 yield 返回时，Scrapy 会根据 settings 文件中的配置来传输到对应的 pipeline 类中，其默认已经给我们创建好了一个 pipeline 类，配置文件如下:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">StackoverflowspiderPipeline</span>:</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">process_item</span>(<span class="params">self, item, spider</span>):</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 获取到 Item 中的所有值</span></span><br><span class="line">        title = item.get(<span class="string">&#x27;question_title&#x27;</span>)</span><br><span class="line">        votes = item.get(<span class="string">&#x27;question_votes&#x27;</span>)</span><br><span class="line">        answers = item.get(<span class="string">&#x27;question_answers&#x27;</span>)</span><br><span class="line">        views = item.get(<span class="string">&#x27;question_views&#x27;</span>)</span><br><span class="line">        tags = item.get(<span class="string">&#x27;tags&#x27;</span>)</span><br><span class="line">        <span class="keyword">return</span> item</span><br></pre></td></tr></table></figure>
+<p>上面就是默认生成的 pipeline 类，可以看到自动生成了一个 <code>process_item()</code> 方法来处理传递过来的 Item，关于 pipeline 的内容后面会专门介绍，Item 类的基本使用就像上面这样，非常简单，下面我们看下其 ItemLoader 机制。</p>
+<h3 id="二-使用-ItemLoader-解析数据"><a href="#二-使用-ItemLoader-解析数据" class="headerlink" title="二. 使用 ItemLoader 解析数据"></a>二. 使用 ItemLoader 解析数据</h3><p>通过之前的学习，已经知道网页的基本解析流程就是先通过 css/xpath 方法进行解析，然后再把值封装到 Item 中，如果有特殊需要的话还要对解析到的数据进行转换处理，这样当解析代码或者数据转换要求过多的时候，会导致代码量变得极为庞大，从而降低了可维护性。同时在 sipider 中编写过多的数据处理代码某种程度上也违背了单一职责的代码设计原则。我们需要使用一种更加简洁的方式来获取与处理网页数据，ItemLoader 就是用来完成这件事情的。</p>
+<p>ItemLoader 类位于 scrapy.loader ，它可以接收一个 Item 实例来指定要加载的 Item, 然后指定 response 或者 selector 来确定要解析的内容，最后提供了 <code>add_css()</code>、 <code>add_xpath()</code> 方法来对通过 css 、 xpath 解析赋值，还有 <code>add_value()</code> 方法来单独进行赋值。<br>示例代码如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> scrapy.loader <span class="keyword">import</span> ItemLoader</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">parse</span>(<span class="params">self, response</span>):</span><br><span class="line">    questions = response.css(<span class="string">&#x27;div.question-summary&#x27;</span>)</span><br><span class="line">    <span class="keyword">for</span> question <span class="keyword">in</span> questions:</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 指定了 StackQuestionItem 实例，另外因为我们已经解析了 response 获取到了所有问题的 selector，因此这里指定的是 selector 而不是 response。</span></span><br><span class="line">        item_loader = DefaultItemLoader(item=StackQuestionItem(),  selector=question)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 下面是使用 add_css 方法，传递 Item 类的字段名称和对应的 css 解析语法</span></span><br><span class="line">        <span class="comment"># 如果使用 add_xpath 方法的话只需要传递对应的 xpath 解析语法几个</span></span><br><span class="line">        item_loader.add_css(<span class="string">&#x27;question_title&#x27;</span>, <span class="string">&#x27;a.question-hyperlink::text&#x27;</span>)</span><br><span class="line">        item_loader.add_css(<span class="string">&#x27;question_votes&#x27;</span>, <span class="string">&#x27;.votes strong::text&#x27;</span>)</span><br><span class="line">        item_loader.add_css(<span class="string">&#x27;question_answers&#x27;</span>, <span class="string">&#x27;.answered strong::text&#x27;</span>)</span><br><span class="line">        item_loader.add_css(<span class="string">&#x27;question_views&#x27;</span>, <span class="string">&#x27;.views::attr(title)&#x27;</span>)</span><br><span class="line">        item_loader.add_css(<span class="string">&#x27;tags&#x27;</span>, <span class="string">&#x27;.tags a::text&#x27;</span>))</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 添加值示例.可以直接设置值</span></span><br><span class="line">        item_loader.add_value(<span class="string">&#x27;url&#x27;</span>, response.url)</span><br></pre></td></tr></table></figure>
+<p>上面就是简要的示例代码，可以看到相比之前的解析，赋值和解析代码合并在了一起，爬虫文件中的代码量减少了一半。当解析的数据很多而且还需要进行特殊转换比如通过正则进行匹配替换的时候其效果更佳的明显。</p>
+<p>上面代码解析完成后生成的都是一个 list，其值如下:<br><img src="/images/%E4%BD%BF%E7%94%A8Item%E7%B1%BB%E8%BD%AC%E6%8D%A2%E4%BC%A0%E8%BE%93%E6%95%B0%E6%8D%AE%E4%BB%A5%E5%8F%8AItemLoader%E6%9C%BA%E5%88%B6%E8%A7%A3%E6%9E%90/1.png"></p>
+<p>可以看到无论解析出来的值的数量是多少，ItemLoader 默认都会返回一个 list。在之前的方式中我们都是通过 <code>extract_first()</code> 获取第一个值或者通过 <code>extract()</code> 解析到值后进行遍历的。在 ItemLoader 中，为我们提供了 processor 来对数据进行处理。</p>
+<p>在 ItemLoader 类中，提供了 default_output_processor 和 default_input_processor 来对数据的输入与输出进行解析，如果我们需要只获取解析后的第一个值，可以指定 default_output_processor 为 <code>TakeFirst()</code> 即可，这是 Scrapy 提供的一个解析处理类，用来获取第一个元素，代码如下:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">DefaultItemLoader</span>(<span class="title class_ inherited__">ItemLoader</span>):</span><br><span class="line">    default_output_processor = TakeFirst()</span><br></pre></td></tr></table></figure>
+<p>完成自定义的 ItemLoader 类之后就可以在 parse 中使用了</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">item_loader = DefaultItemLoader(item=StackQuestionItem(),  selector=question)</span><br><span class="line"></span><br><span class="line">item_loader.add_css(<span class="string">&#x27;question_title&#x27;</span>, <span class="string">&#x27;a.question-hyperlink::text&#x27;</span>)</span><br><span class="line">item_loader.add_css(<span class="string">&#x27;question_votes&#x27;</span>, <span class="string">&#x27;.votes strong::text&#x27;</span>)</span><br><span class="line">item_loader.add_css(<span class="string">&#x27;question_answers&#x27;</span>, <span class="string">&#x27;.answered strong::text&#x27;</span>)</span><br><span class="line">item_loader.add_css(<span class="string">&#x27;question_views&#x27;</span>, <span class="string">&#x27;.views::attr(title)&#x27;</span>)</span><br><span class="line">item_loader.add_css(<span class="string">&#x27;tags&#x27;</span>, <span class="string">&#x27;.tags a::text&#x27;</span>)</span><br><span class="line"></span><br><span class="line">question_item = item_loader.load_item()</span><br></pre></td></tr></table></figure>
+<p>上面的代码使用了自定义的 DefaultItemLoader，因为会获取到 list 中的第一个值，但是对于 tags 而言我们要的是 list 而不是通用的获取的第一个值，对于这种特殊的处理情况，就需要在 Item 类中进行设置了。</p>
+<p>Scrapy 允许我们在声明 Item 类定义其字段时，为每一个字段设置单独的数据处理方法，代码如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> scrapy.loader.processors <span class="keyword">import</span> MapCompose, TakeFirst, Join</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">add_prefix</span>(<span class="params">value</span>):</span><br><span class="line">  <span class="keyword">return</span>  <span class="string">&#x27;Question:&#x27;</span> + value</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">StackQuestionItem</span>(scrapy.Item):</span><br><span class="line">  question_title = scrapy.Field(</span><br><span class="line">        <span class="comment"># 指定任意函数对值进行处理</span></span><br><span class="line">        <span class="comment"># 指定 lambda</span></span><br><span class="line">        <span class="comment"># input_processor=MapCompose(lambda x: &#x27;Question:&#x27; + x ),</span></span><br><span class="line">        <span class="comment"># 指定处理函数</span></span><br><span class="line">        input_processor=MapCompose(add_prefix),</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 使用 TakeFirst 来取到第一个值进行返回</span></span><br><span class="line">        <span class="comment"># output_processor=TakeFirst(),</span></span><br><span class="line">    )</span><br><span class="line">    question_votes = scrapy.Field()</span><br><span class="line">    question_answers = scrapy.Field()</span><br><span class="line">    question_views = scrapy.Field()</span><br><span class="line">    tags = scrapy.Field(</span><br><span class="line">        output_processor=Join(<span class="string">&#x27;,&#x27;</span>),</span><br><span class="line">    )</span><br></pre></td></tr></table></figure>
+<p>可以看到，我们可以在字段定义时想 <code>scrapy.Field()</code> 中指定 input_processor 和 output_processor 两个参数来指定对数据的处理。</p>
+<p>scrapy 提供 的 MapCompose 方法允许我们指定一系列的处理方法，Scrapy 会将 解析到的 list 中的值依次传递到每个方法中对值进行处理，这里我们在 title 前面加了 <code>Question:</code> 前缀。然后在 tags 中通过 <code>Join()</code> 设置了分隔符来连接每一个 tag。解析后获取到的结果如下：<br><img src="/images/%E4%BD%BF%E7%94%A8Item%E7%B1%BB%E8%BD%AC%E6%8D%A2%E4%BC%A0%E8%BE%93%E6%95%B0%E6%8D%AE%E4%BB%A5%E5%8F%8AItemLoader%E6%9C%BA%E5%88%B6%E8%A7%A3%E6%9E%90/2.png"><br>可以看到 tag 已经使用逗号分隔符连接起来了，title 前面也加上了 <code>Question:</code> 前缀。 </p>
+<p>关于更多的处理方法可以参阅官方文档，<a target="_blank" rel="noopener" href="https://scrapy-cookbook.readthedocs.io/zh_CN/latest/scrapy-05.html#field">在Field定义中声明输入/输出处理器</a></p>
+<p>最后在总结一下操作过程，首先定义一个 ItemLoader 类同时指定通用的 input/output 处理方法，然后在 parse 方法中声明 ItemLoader ，传递 Item 实例 和 response/selector。 通过 ItemLoader 的 add_css/add_xpath/add_value 来进行赋值。<br>如果对数据有特殊的处理，就在 Item 类的 Field 中传递 input_processor 和 output_processor 来指定处理函数，来完成整个数据的解析和处理。</p>
+<p>关于 ItemLoader 的说明就到这里了，更加详细的操作可以参阅官方文档。接下来就是讲 Item 实例传递到 pipeline 进行处理了。下一篇将简要介绍 Pipeline 的使用，包括 Scrapy 提供的常用 Pipeline 类以及自定义 Pipeline 类。</p>
+<blockquote>
+<p>转自：<a target="_blank" rel="noopener" href="https://blog.csdn.net/Ahri_J/article/details/72466231">https://blog.csdn.net/Ahri_J/article/details/72466231</a> </p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2018/11/14/%E4%BD%BF%E7%94%A8Item%E7%B1%BB%E8%BD%AC%E6%8D%A2%E4%BC%A0%E8%BE%93%E6%95%B0%E6%8D%AE%E4%BB%A5%E5%8F%8AItemLoader%E6%9C%BA%E5%88%B6%E8%A7%A3%E6%9E%90/" data-id="cl9pgeo7601osycv15v34eijn" data-title="使用Item类转换传输数据以及ItemLoader机制解析" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/scrapy/" rel="tag">scrapy</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/11/14/scrapy%E5%A4%9A%E4%B8%AAitems%E7%B1%BBpiplines%E5%A6%82%E4%BD%95%E5%88%86%E5%88%AB%E5%AD%98%E5%82%A8/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          scrapy多个items类piplines如何分别存储
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/11/03/Android-%E5%8F%8D%E7%BC%96%E8%AF%91%E5%88%A9%E5%99%A8%EF%BC%8Cjadx-%E7%9A%84%E9%AB%98%E7%BA%A7%E6%8A%80%E5%B7%A7/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">Android 反编译利器，jadx 的高级技巧</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

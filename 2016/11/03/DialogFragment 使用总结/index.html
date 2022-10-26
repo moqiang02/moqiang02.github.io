@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>DialogFragment 使用总结 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="背景Android 官方推荐使用 DialogFragment 来代替 Dialog ，可以让它具有更高的可复用性（降低耦合）和更好的便利性（很好的处理屏幕翻转的情况）。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DialogFragment 使用总结">
+<meta property="og:url" content="http://moqiang02.github.io/2016/11/03/DialogFragment%20%E4%BD%BF%E7%94%A8%E6%80%BB%E7%BB%93/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="背景Android 官方推荐使用 DialogFragment 来代替 Dialog ，可以让它具有更高的可复用性（降低耦合）和更好的便利性（很好的处理屏幕翻转的情况）。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2016-11-03T12:30:07.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.732Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="AndroidUI">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-DialogFragment 使用总结" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2016/11/03/DialogFragment%20%E4%BD%BF%E7%94%A8%E6%80%BB%E7%BB%93/" class="article-date">
+  <time class="dt-published" datetime="2016-11-03T12:30:07.000Z" itemprop="datePublished">2016-11-03</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/android/">android</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      DialogFragment 使用总结
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>Android 官方推荐使用 DialogFragment 来代替 Dialog ，可以让它具有更高的可复用性（降低耦合）和更好的便利性（很好的处理屏幕翻转的情况）。<span id="more"></span></p>
+<p>而创建 DialogFragment 有两种方式：</p>
+<ol>
+<li>覆写其 onCreateDialog 方法 — ①</li>
+<li>覆写其 onCreateView 方法 — ②</li>
+</ol>
+<p>虽然这两种方式都能实现相同的效果，但是它们各有自己适合的应用场景：</p>
+<ul>
+<li>方法 ①，一般用于创建替代传统的 Dialog 对话框的场景，UI 简单，功能单一。</li>
+<li>方法 ②，一般用于创建复杂内容弹窗或全屏展示效果的场景，UI 复杂，功能复杂，一般有网络请求等异步操作。</li>
+</ul>
+<h3 id="应用"><a href="#应用" class="headerlink" title="应用"></a>应用</h3><h4 id="基本用法"><a href="#基本用法" class="headerlink" title="基本用法"></a>基本用法</h4><p>对于方法 ①，创建一个 Dialog 并返回它即可：</p>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">public Dialog on<span class="constructor">CreateDialog(Bundle <span class="params">savedInstanceState</span>)</span> &#123;</span><br><span class="line">    <span class="comment">//为了样式统一和兼容性，可以使用 V7 包下的 AlertDialog.Builder</span></span><br><span class="line">    AlertDialog.Builder builder = <span class="keyword">new</span> AlertDialog.<span class="constructor">Builder(<span class="params">getActivity</span>()</span>);</span><br><span class="line">    <span class="comment">// 设置主题的构造方法</span></span><br><span class="line">    <span class="comment">// AlertDialog.Builder builder = new AlertDialog.Builder(getActivity(), R.style.CustomDialog);</span></span><br><span class="line">    builder.set<span class="constructor">Title(<span class="string">&quot;注意：&quot;</span>)</span></span><br><span class="line">           .set<span class="constructor">Message(<span class="string">&quot;是否退出应用？&quot;</span>)</span></span><br><span class="line">           .set<span class="constructor">PositiveButton(<span class="string">&quot;确定&quot;</span>, <span class="params">null</span>)</span></span><br><span class="line">           .set<span class="constructor">NegativeButton(<span class="string">&quot;取消&quot;</span>, <span class="params">null</span>)</span></span><br><span class="line">           .set<span class="constructor">Cancelable(<span class="params">false</span>)</span>;</span><br><span class="line">           <span class="comment">//builder.show(); // 不能在这里使用 show() 方法</span></span><br><span class="line">    return builder.create<span class="literal">()</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>当然，你也可以使用自定义 View 来创建：</p>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">public Dialog on<span class="constructor">CreateDialog(Bundle <span class="params">savedInstanceState</span>)</span> &#123;</span><br><span class="line">    AlertDialog.Builder builder = <span class="keyword">new</span> AlertDialog.<span class="constructor">Builder(<span class="params">getActivity</span>()</span>);</span><br><span class="line">    <span class="comment">// 设置主题的构造方法</span></span><br><span class="line">    <span class="comment">// AlertDialog.Builder builder = new AlertDialog.Builder(getActivity(), R.style.CustomDialog);</span></span><br><span class="line">    LayoutInflater inflater = get<span class="constructor">Activity()</span>.get<span class="constructor">LayoutInflater()</span>;  </span><br><span class="line">    View view = inflater.inflate(<span class="module-access"><span class="module"><span class="identifier">R</span>.</span></span>layout.fragment_dialog, null);  </span><br><span class="line">    builder.set<span class="constructor">View(<span class="params">view</span>)</span> </span><br><span class="line">    <span class="comment">// Do Someting,eg: TextView tv = view.findViewById(R.id.tv);</span></span><br><span class="line">    return builder.create<span class="literal">()</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>PS：创建 Dialog 的方式有多种，比如下面这种，使用时略有差异，需要自己注意：</p>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">public Dialog on<span class="constructor">CreateDialog(Bundle <span class="params">savedInstanceState</span>)</span> &#123;</span><br><span class="line">    LayoutInflater inflater = get<span class="constructor">Activity()</span>.get<span class="constructor">LayoutInflater()</span>;</span><br><span class="line">    View view = inflater.inflate(<span class="module-access"><span class="module"><span class="identifier">R</span>.</span></span>layout.fragment_dialog, null);</span><br><span class="line">    Dialog dialog = <span class="keyword">new</span> <span class="constructor">Dialog(<span class="params">getActivity</span>()</span>);</span><br><span class="line">    <span class="comment">// 设置主题的构造方法</span></span><br><span class="line">    <span class="comment">// Dialog dialog = new Dialog(getActivity(), R.style.CustomDialog);</span></span><br><span class="line">    dialog.set<span class="constructor">ContentView(<span class="params">view</span>)</span>;</span><br><span class="line">    <span class="comment">// Do Someting</span></span><br><span class="line">    return dialog;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>对于方法 ②，和普通的 Fragment 用法基本一致：</p>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">public View on<span class="constructor">CreateView(LayoutInflater <span class="params">inflater</span>, ViewGroup <span class="params">container</span>, Bundle <span class="params">savedInstanceState</span>)</span> &#123;</span><br><span class="line">    View rootView = inflater.inflate(<span class="module-access"><span class="module"><span class="identifier">R</span>.</span></span>layout.fragment_dialog, container, <span class="literal">false</span>);</span><br><span class="line">    <span class="comment">// Do Someting</span></span><br><span class="line">    return rootView;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 设置主题需要在 onCreate() 方法中调用 setStyle() 方法</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line">@Override</span><br><span class="line">public void on<span class="constructor">Create(@Nullable Bundle <span class="params">savedInstanceState</span>)</span> &#123;</span><br><span class="line">    super.on<span class="constructor">Create(<span class="params">savedInstanceState</span>)</span>;</span><br><span class="line">    set<span class="constructor">Style(DialogFragment.STYLE_NO_TITLE, R.<span class="params">style</span>.CustomDialog)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="处理屏幕翻转"><a href="#处理屏幕翻转" class="headerlink" title="处理屏幕翻转"></a>处理屏幕翻转</h4><p>如果使用传统的 Dialog ，需要我们手动处理屏幕翻转的情况，但使用 DialogFragment 的话，则不需要我们进行任何处理，FragmentManager 会自动管理 DialogFragment 的生命周期。</p>
+<h4 id="无标题栏-全屏"><a href="#无标题栏-全屏" class="headerlink" title="无标题栏/全屏"></a>无标题栏/全屏</h4><p>在基本用法里代码注释有设置主题的地方，下面详细说下两种方法下设置无标题栏和实现全屏的方式：</p>
+<p>1.无标题栏</p>
+<p>对于方法 ① ：</p>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">public Dialog on<span class="constructor">CreateDialog(Bundle <span class="params">savedInstanceState</span>)</span> &#123;</span><br><span class="line">    LayoutInflater inflater = get<span class="constructor">Activity()</span>.get<span class="constructor">LayoutInflater()</span>;</span><br><span class="line">    View view = inflater.inflate(<span class="module-access"><span class="module"><span class="identifier">R</span>.</span></span>layout.fragment_dialog, null);</span><br><span class="line">    Dialog dialog = <span class="keyword">new</span> <span class="constructor">Dialog(<span class="params">getActivity</span>()</span>, <span class="module-access"><span class="module"><span class="identifier">R</span>.</span></span>style.CustomDialog);</span><br><span class="line">    <span class="comment">// 关闭标题栏，setContentView() 之前调用</span></span><br><span class="line">    dialog.request<span class="constructor">WindowFeature(Window.FEATURE_NO_TITLE)</span>;</span><br><span class="line">    dialog.set<span class="constructor">ContentView(<span class="params">view</span>)</span>;</span><br><span class="line">    dialog.set<span class="constructor">CanceledOnTouchOutside(<span class="params">true</span>)</span>;</span><br><span class="line">    return dialog;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>对于方法 ②：</p>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">@Override</span></span><br><span class="line">public void <span class="built_in">onCreate</span>(<span class="variable">@Nullable</span> Bundle savedInstanceState) &#123;</span><br><span class="line">    <span class="selector-tag">super</span><span class="selector-class">.onCreate</span>(savedInstanceState);</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * setStyle() 的第一个参数有四个可选值：</span></span><br><span class="line"><span class="comment">     * STYLE_NORMAL|STYLE_NO_TITLE|STYLE_NO_FRAME|STYLE_NO_INPUT</span></span><br><span class="line"><span class="comment">     * 其中 STYLE_NO_TITLE 和 STYLE_NO_FRAME 可以关闭标题栏</span></span><br><span class="line"><span class="comment">     * 每一个参数的详细用途可以直接看 Android 源码的说明</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="selector-tag">setStyle</span>(DialogFragment.STYLE_NO_TITLE, R.style.CustomDialog);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>2.实现全屏（宽/高度全屏）</p>
+<p>常用的形式大多是宽度上和屏幕一样宽，高度自适应，下面直接看代码：</p>
+<p>方法 ① ：</p>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">public Dialog on<span class="constructor">CreateDialog(Bundle <span class="params">savedInstanceState</span>)</span> &#123;</span><br><span class="line">    LayoutInflater inflater = get<span class="constructor">Activity()</span>.get<span class="constructor">LayoutInflater()</span>;</span><br><span class="line">    View view = inflater.inflate(<span class="module-access"><span class="module"><span class="identifier">R</span>.</span></span>layout.fragment_dialog, null);</span><br><span class="line">    Dialog dialog = <span class="keyword">new</span> <span class="constructor">Dialog(<span class="params">getActivity</span>()</span>, <span class="module-access"><span class="module"><span class="identifier">R</span>.</span></span>style.CustomDialog);</span><br><span class="line">    dialog.request<span class="constructor">WindowFeature(Window.FEATURE_NO_TITLE)</span>;</span><br><span class="line">    dialog.set<span class="constructor">ContentView(<span class="params">view</span>)</span>;</span><br><span class="line">    dialog.set<span class="constructor">CanceledOnTouchOutside(<span class="params">true</span>)</span>;</span><br><span class="line">    <span class="comment">//Do something</span></span><br><span class="line">    <span class="comment">// 设置宽度为屏宽、位置靠近屏幕底部</span></span><br><span class="line">    Window window = dialog.get<span class="constructor">Window()</span>;</span><br><span class="line">    window.set<span class="constructor">BackgroundDrawableResource(R.<span class="params">color</span>.<span class="params">transparent</span>)</span>;</span><br><span class="line">    WindowManager.LayoutParams wlp = window.get<span class="constructor">Attributes()</span>;</span><br><span class="line">    wlp.gravity = Gravity.BOTTOM;</span><br><span class="line">    wlp.width = WindowManager.LayoutParams.MATCH_PARENT;</span><br><span class="line">    wlp.height = WindowManager.LayoutParams.WRAP_CONTENT;</span><br><span class="line">    window.set<span class="constructor">Attributes(<span class="params">wlp</span>)</span>;</span><br><span class="line">    return dialog;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>代码 12 行设置了窗口的背景色为透明，这一步是必须的；</p>
+<p>代码 15 行设置窗口的宽度为 MATCH_PARENT,效果是和屏幕宽度一样大，同样你也可以设置高度的值。设置宽度和高度除了 MATCH_PARENT 和 WRAP_CONTENT ，也可以直接设置成具体的数值。</p>
+<p>方法 ②：</p>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">public void on<span class="constructor">Create(@Nullable Bundle <span class="params">savedInstanceState</span>)</span> &#123;</span><br><span class="line">    super.on<span class="constructor">Create(<span class="params">savedInstanceState</span>)</span>;</span><br><span class="line">    set<span class="constructor">Style(DialogFragment.STYLE_NO_TITLE, R.<span class="params">style</span>.CustomDialog)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">@Override</span><br><span class="line">public View on<span class="constructor">CreateView(LayoutInflater <span class="params">inflater</span>, ViewGroup <span class="params">container</span>, Bundle <span class="params">savedInstanceState</span>)</span> &#123;</span><br><span class="line">        get<span class="constructor">Dialog()</span>.set<span class="constructor">CanceledOnTouchOutside(<span class="params">true</span>)</span>;</span><br><span class="line">        View rootView = inflater.inflate(<span class="module-access"><span class="module"><span class="identifier">R</span>.</span></span>layout.fragment_dialog, container, <span class="literal">false</span>);</span><br><span class="line">        <span class="comment">//Do something</span></span><br><span class="line">        <span class="comment">// 设置宽度为屏宽、靠近屏幕底部。</span></span><br><span class="line">        final Window window = get<span class="constructor">Dialog()</span>.get<span class="constructor">Window()</span>;</span><br><span class="line">        window.set<span class="constructor">BackgroundDrawableResource(R.<span class="params">color</span>.<span class="params">transparent</span>)</span>;</span><br><span class="line">        window.get<span class="constructor">DecorView()</span>.set<span class="constructor">Padding(0, 0, 0, 0)</span>;</span><br><span class="line">        WindowManager.LayoutParams wlp = window.get<span class="constructor">Attributes()</span>;</span><br><span class="line">        wlp.gravity = Gravity.BOTTOM;</span><br><span class="line">        wlp.width = WindowManager.LayoutParams.MATCH_PARENT;</span><br><span class="line">        wlp.height = WindowManager.LayoutParams.WRAP_CONTENT;</span><br><span class="line">        window.set<span class="constructor">Attributes(<span class="params">wlp</span>)</span>;</span><br><span class="line">        return rootView;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>代码 14 行设置了窗口的背景色为透明，这一步是必须的；</p>
+<p>代码 15 行设置了窗口的 Pading 值全部为0，这一步也是必须的，内容不能填充全部宽度和高度。</p>
+<p>其他的和 ① 中的类似。</p>
+<h3 id="应用场景区别"><a href="#应用场景区别" class="headerlink" title="应用场景区别"></a>应用场景区别</h3><p>文章一开始简单总结了方法 ① 和方法 ② 的应用场景，这里说明下：</p>
+<ul>
+<li>从基本的用法中可以看到方法 ① 为简单的替代 Dialog 提供了非常方便的创建方式，比方法 ② 有优势</li>
+<li>方法 ① 在使用了多线程（例如网络请求）的情况下，不能正确的获取当前 Fragment 的状态，会产生空指针异常。方法 ② 则没有此问题，而且，其创建方式默认使用了自定义 View，更便于应对复杂 UI 的场景。</li>
+</ul>
+<p>这里举例说明：方法 ① 和方法 ② 的<code>//Do something</code> 代码处，我们进行一些异步操作：</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">TextView</span> title = rootView.findViewById(<span class="type">R</span>.id.dialoag_tv);</span><br><span class="line">title.setText(<span class="string">&quot;Value A&quot;</span>);</span><br><span class="line"><span class="keyword">new</span> <span class="type">SomeTask</span>().execute(url);</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="class"><span class="keyword">class</span> <span class="title">SomeTask</span> <span class="keyword">extends</span> <span class="title">AsyncTask&lt;String</span>, <span class="title">Void</span>, <span class="title">Boolean&gt;</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">protected</span> <span class="type">Boolean</span> doInBackground(<span class="type">String</span>... params) &#123;</span><br><span class="line">            <span class="comment">// 一些网络请求</span></span><br><span class="line">            <span class="comment">// 成功时 return true;</span></span><br><span class="line">            <span class="comment">// 异常时 return false;</span></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">protected</span> void onPostExecute(<span class="type">Boolean</span> aBoolean) &#123;</span><br><span class="line">            <span class="keyword">super</span>.onPostExecute(aBoolean);</span><br><span class="line">            <span class="comment">// if (!isVisible()) return;</span></span><br><span class="line">            <span class="keyword">if</span> (aBoolean) &#123;</span><br><span class="line">                title.setText(<span class="string">&quot;Value B&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果在网络请求未结束或者刚结束时关闭了当前 DialogFragment ，代码 19 行就会报空指针异常了，代码 17 的作用就是判断 DialogFragment 当前的状态是否为可用态，但是 isVisible() 以及 isHide() 对于方法 ① 无法正确返回其状态，方法 ② 则正常。方法 ① 和方法 ② 创建 DialogFragment 的一些状态并不是完全一致。</p>
+<p>PS：你也可以使用静态 Handler 结合弱引用等来处理异步操作，那样对 DialogFragment 状态的获取就不重要了。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2016/11/03/DialogFragment%20%E4%BD%BF%E7%94%A8%E6%80%BB%E7%BB%93/" data-id="cl9pgenqd00bzycv1avmx9xsu" data-title="DialogFragment 使用总结" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/AndroidUI/" rel="tag">AndroidUI</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/11/08/%E4%BD%BF%E7%94%A8Gson%E8%A7%A3%E6%9E%90%E5%A4%8D%E6%9D%82%E7%9A%84json%E6%95%B0%E6%8D%AE/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          使用Gson解析复杂的json数据
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/10/31/%E5%B1%8F%E5%B9%95%E8%87%AA%E9%80%82%E5%BA%94/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">屏幕自适应</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

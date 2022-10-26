@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Mysql优化配置 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="一、环境介绍Mysql版本:5.5.27 二、优化内容   字段 介绍 推荐值    skip-locking 避免MySQL的外部锁定，减少出错几率增强稳定性    back_log MySQL可能的连接数量(linux下推荐小于512) 384   key_buffer_size key_buffer_size指定用于索引的缓冲区大小，增加它可得到更好的索引处理性能。对于内存在4GB左右的服务">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Mysql优化配置">
+<meta property="og:url" content="http://moqiang02.github.io/2013/05/30/Mysql%E4%BC%98%E5%8C%96%E9%85%8D%E7%BD%AE/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="一、环境介绍Mysql版本:5.5.27 二、优化内容   字段 介绍 推荐值    skip-locking 避免MySQL的外部锁定，减少出错几率增强稳定性    back_log MySQL可能的连接数量(linux下推荐小于512) 384   key_buffer_size key_buffer_size指定用于索引的缓冲区大小，增加它可得到更好的索引处理性能。对于内存在4GB左右的服务">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2013-05-30T05:43:12.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.824Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Mysql优化配置" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2013/05/30/Mysql%E4%BC%98%E5%8C%96%E9%85%8D%E7%BD%AE/" class="article-date">
+  <time class="dt-published" datetime="2013-05-30T05:43:12.000Z" itemprop="datePublished">2013-05-30</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/mysql/">mysql</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Mysql优化配置
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <h4 id="一、环境介绍"><a href="#一、环境介绍" class="headerlink" title="一、环境介绍"></a>一、环境介绍</h4><p>Mysql版本:5.5.27</p>
+<h4 id="二、优化内容"><a href="#二、优化内容" class="headerlink" title="二、优化内容"></a>二、优化内容</h4><table>
+<thead>
+<tr>
+<th>字段</th>
+<th>介绍</th>
+<th>推荐值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>skip-locking</td>
+<td>避免MySQL的外部锁定，减少出错几率增强稳定性</td>
+<td></td>
+</tr>
+<tr>
+<td>back_log</td>
+<td>MySQL可能的连接数量(linux下推荐小于512)</td>
+<td>384</td>
+</tr>
+<tr>
+<td>key_buffer_size</td>
+<td>key_buffer_size指定用于索引的缓冲区大小，增加它可得到更好的索引处理性能。对于内存在4GB左右的服务器该参数可设置为256M或384M。注意：该参数值设置的过大反而会是服务器整体效率降低!</td>
+<td>4G服务器 256M</td>
+</tr>
+<tr>
+<td>max_allowed_packet</td>
+<td>当MySQL客户端或mysqld服务器收到大于max_allowed_packet字节的信息包时，将发出“信息包过大”错误，并关闭连接</td>
+<td>4M</td>
+</tr>
+<tr>
+<td>thread_stack</td>
+<td>主要用来存放每一个线程自身的标识信息，如线程id，线程运行时基本信息等等，我们可以通过 thread_stack 参数来设置为每一个线程栈分配多大的内存</td>
+<td>192kb</td>
+</tr>
+<tr>
+<td>table_cache</td>
+<td>表高速缓存的数目</td>
+<td>512</td>
+</tr>
+<tr>
+<td>sort_buffer_size</td>
+<td>n第一次需要使用这个buffer的时候，一次性分配设置的内存</td>
+<td>512K</td>
+</tr>
+<tr>
+<td>read_buffer_size</td>
+<td>读查询操作所能使用的缓冲区大小</td>
+<td>4M</td>
+</tr>
+<tr>
+<td>join_buffer_size</td>
+<td>联合查询操作所能使用的缓冲区大小</td>
+<td>8M</td>
+</tr>
+<tr>
+<td>myisam_sort_buffer_size</td>
+<td>当在REPAIR TABLE或用CREATE INDEX创建索引或ALTER TABLE过程中排序 MyISAM索引分配的缓冲区。</td>
+<td>64M</td>
+</tr>
+<tr>
+<td>thread_cache_size</td>
+<td>表示可以重新利用保存在缓存中线程的数量,当断开连接时如果缓存中还有空间,那么客户端的线程将被放到缓存中,如果线程重新被请求，那么请求将从缓存中读取,(3G以上内存推荐为64)</td>
+<td>64</td>
+</tr>
+<tr>
+<td>query_cache_size</td>
+<td>查询缓存区的最大长度</td>
+<td>64M</td>
+</tr>
+<tr>
+<td>tmp_table_size</td>
+<td>如果一张临时表超出该大小，MySQL产生一个 The table tbl_name is full 形式的错误</td>
+<td>256M</td>
+</tr>
+<tr>
+<td>max_connections</td>
+<td>最大用户连接数 最大连接数占上限连接数的85％左右</td>
+<td>3000</td>
+</tr>
+<tr>
+<td>max_connect_errors</td>
+<td>它负责阻止过多尝试失败的客户端以防止暴力破解密码的情况。max_connect_errors的值与性能并无太大关系</td>
+<td>10000000</td>
+</tr>
+<tr>
+<td>wait_timeout</td>
+<td>指定一个请求的最大连接时间，对于4GB左右内存的服务器可以设置为5-10。</td>
+<td>10</td>
+</tr>
+<tr>
+<td>thread_concurrency</td>
+<td>该参数取值为服务器逻辑CPU数量×2</td>
+<td>4</td>
+</tr>
+<tr>
+<td>innodb_log_file_size</td>
+<td>如果对 Innodb 数据表有大量的写入操作，那么选择合适的 innodb_log_file_size 值对提升MySQL性能很重要</td>
+<td>256M</td>
+</tr>
+<tr>
+<td>innodb_log_buffer_size</td>
+<td>事务日志文件写操作缓存区的最大长度</td>
+<td>8M</td>
+</tr>
+<tr>
+<td>innodb_flush_logs_at_trx_commit</td>
+<td>1) =1时，在每个事务提交时，日志缓冲被写到日志文件，对日志文件做到磁盘操作的刷新。Truly ACID。速度慢。2) =2时，在每个事务提交时，日志缓冲被写到文件，但不对日志文件做到磁盘操作的刷新。只有操作系统崩溃或掉电才会删除最后一秒的事务，不然不会丢失事务。3) =0时， 日志缓冲每秒一次地被写到日志文件，并且对日志文件做到磁盘操作的刷新。任何mysqld进程的崩溃会删除崩溃前最后一秒的事务</td>
+<td>2</td>
+</tr>
+<tr>
+<td>innodb_buffer_pool_size</td>
+<td>innodb_buffer_pool_size 定义了 InnoDB 存储引擎的表数据和索引数据的最大内存缓冲区大小 在专用数据库服务器上,可以考虑该值为物理内存大小的 60%-80%</td>
+<td>1G</td>
+</tr>
+<tr>
+<td>innodb_additional_mem_pool_size</td>
+<td>除了缓存表数据和索引外,可以为操作所需的其他内部项分配缓存来提升InnoDB的性能。这些内存就可以通过此参数来分配。推荐此参数至少设置为2MB</td>
+<td>2M</td>
+</tr>
+</tbody></table>
+<span id="more"></span>
+
+<h4 id="三、优化重点"><a href="#三、优化重点" class="headerlink" title="三、优化重点"></a>三、优化重点</h4><p>1:max_connections</p>
+<p>经常会遇见”MySQL: ERROR 1040: Too many connections”的情况，一种是访问量确实很高，MySQL服务器抗不住，这个时候就要考虑增加从服务器分散读压力，另外一种情况是MySQL配置文件中max_connections值过小：</p>
+<p>比较理想的设置是<br><code>Max_used_connections / max_connections * 100% ≈ 85%</code><br>最大连接数占上限连接数的85％左右，如果发现比例在10%以下，MySQL服务器连接数上限设置的过高了。</p>
+<p>2:Key_buffer_size</p>
+<p>key_buffer_size是对MyISAM表性能影响最大的一个参数：</p>
+<p><code>key_cache_miss_rate ＝ Key_reads / Key_read_requests * 100%</code></p>
+<p>key_cache_miss_rate在0.1%以下都很好（每1000个请求有一个直接读硬盘），如果key_cache_miss_rate在0.01%以下的话，key_buffer_size分配的过多，可以适当减少</p>
+<p>3:临时表</p>
+<p>比较理想的配置是：<br><code>Created_tmp_disk_tables / Created_tmp_tables * 100% &lt;= 25%</code></p>
+<p>4:open table</p>
+<p><code>Open_tables / Opened_tables * 100% &gt;= 85%</code><br><code>Open_tables / table_cache * 100% &lt;= 95%</code></p>
+<p>5:进程使用情况</p>
+<p>如果发现Threads_created值比较大,那么就可以考虑把thread_cache_size的值设大一些</p>
+<p>6:查询缓存</p>
+<p><code>查询缓存利用率 = (query_cache_size - Qcache_free_memory) / query_cache_size * 100%</code></p>
+<p>查询缓存利用率在25%以下的话说明query_cache_size设置的过大，可适当减小；查询缓存利用率在80％以上而且Qcache_lowmem_prunes &gt; 50的话说明query_cache_size可能有点小，要不就是碎片太多。<br><code>查询缓存命中率 = (Qcache_hits - Qcache_inserts) / Qcache_hits * 100%</code><br>查询缓存碎片率 ＝ 20.46％，查询缓存利用率 ＝ 62.26％，查询缓存命中率 ＝ 1.94％，命中率很差，可能写操作比较频繁吧，而且可能有些碎片。</p>
+<p>7:文件打开数</p>
+<p>比较合适的设置：<code>Open_files / open_files_limit * 100% &lt;= 75％</code></p>
+<p>8:表锁情况</p>
+<p>Table_locks_immediate表示立即释放表锁数，Table_locks_waited表示需要等待的表锁数，如果<code>Table_locks_immediate / Table_locks_waited &gt; 5000</code>，最好采用InnoDB引擎，因为InnoDB是行锁而MyISAM是表锁，对于高并发写入的应用InnoDB效果会好些。</p>
+<p>9:表扫描情况</p>
+<p>计算表扫描率：<br><code>表扫描率 ＝ Handler_read_rnd_next / Com_select</code><br>如果表扫描率超过4000，说明进行了太多表扫描，很有可能索引没有建好，增加read_buffer_size值会有一些好处，但最好不要超过8MB。</p>
+<h4 id="四、Mysql指定ip用户访问"><a href="#四、Mysql指定ip用户访问" class="headerlink" title="四、Mysql指定ip用户访问"></a>四、Mysql指定ip用户访问</h4><p>主机部分就是代表允许的主机访问,%符号代表允许所有的主机<br>添加用户授权IP命令例子:</p>
+<p>使用myuser/mypassword从ip为61.129.51.8的主机连接到mysql服务器:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GRANT</span> <span class="keyword">ALL</span> PRIVILEGES <span class="keyword">ON</span> <span class="operator">*</span>.<span class="operator">*</span> <span class="keyword">TO</span> <span class="string">&#x27;myuser&#x27;</span>@<span class="string">&#x27;61.129.0.0&#x27;</span> IDENTIFIED <span class="keyword">BY</span> <span class="string">&#x27;mypassword&#x27;</span> <span class="keyword">WITH</span> <span class="keyword">GRANT</span> OPTION;</span><br><span class="line">FLUSH PRIVILEGES;</span><br></pre></td></tr></table></figure>
+
+<h4 id="五、总结"><a href="#五、总结" class="headerlink" title="五、总结"></a>五、总结</h4><p>在实际配置中,每一台服务器性能是不一样,因此Mysql优化配置主要参照第三部分为主,先测试运行一段时间游戏,然后在进入Mysql去查看各个变量的值,然后根据公式去计算各个变量的值,是否在标准范围内,不在标准范围内的,都相应的上下调动一下.</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2013/05/30/Mysql%E4%BC%98%E5%8C%96%E9%85%8D%E7%BD%AE/" data-id="cl9pgenu900pfycv1bfmf8edd" data-title="Mysql优化配置" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2013/06/12/linux%E9%AB%98%E8%B4%9F%E8%BD%BD%E4%B8%8Bmysql%E6%95%B0%E6%8D%AE%E5%BA%93%E5%BD%BB%E5%BA%95%E4%BC%98%E5%8C%96/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          linux高负载下mysql数据库彻底优化
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2013/05/22/DiscuzX2-5%E5%AF%86%E7%A0%81%E9%94%99%E8%AF%AF%E6%AC%A1%E6%95%B0%E8%BF%87%E5%A4%9A%EF%BC%8C%E8%AF%B7-15-%E5%88%86%E9%92%9F%E5%90%8E%E9%87%8D%E6%96%B0%E7%99%BB%E5%BD%95%E7%9A%84%E4%BF%AE%E6%94%B9%E5%8A%9E%E6%B3%95/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">DiscuzX2.5密码错误次数过多，请 15 分钟后重新登录的修改办法</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

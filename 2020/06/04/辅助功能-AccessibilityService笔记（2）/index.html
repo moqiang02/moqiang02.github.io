@@ -1,0 +1,1879 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>辅助功能 AccessibilityService笔记（2） | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="Android AccessibilityService 辅助功能1、前言 Android的辅助功能是个比较老的API（since API 4），但是该API真正的开始发展还是在API 16~19（很多常用的方法参数都是在这几个版本逐渐加入以及完善的）版本中。辅助功能我们最常见的是在类似深度休眠，抢红包中使用，模拟点击屏幕view。此次写关于辅助功能的分享是因为在API 24、 API 26中，又">
+<meta property="og:type" content="article">
+<meta property="og:title" content="辅助功能 AccessibilityService笔记（2）">
+<meta property="og:url" content="http://moqiang02.github.io/2020/06/04/%E8%BE%85%E5%8A%A9%E5%8A%9F%E8%83%BD-AccessibilityService%E7%AC%94%E8%AE%B0%EF%BC%882%EF%BC%89/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="Android AccessibilityService 辅助功能1、前言 Android的辅助功能是个比较老的API（since API 4），但是该API真正的开始发展还是在API 16~19（很多常用的方法参数都是在这几个版本逐渐加入以及完善的）版本中。辅助功能我们最常见的是在类似深度休眠，抢红包中使用，模拟点击屏幕view。此次写关于辅助功能的分享是因为在API 24、 API 26中，又">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E8%BE%85%E5%8A%A9%E5%8A%9F%E8%83%BD_AccessibilityService%E7%AC%94%E8%AE%B02/1.jpg">
+<meta property="article:published_time" content="2020-06-04T04:16:07.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:54.187Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/%E8%BE%85%E5%8A%A9%E5%8A%9F%E8%83%BD_AccessibilityService%E7%AC%94%E8%AE%B02/1.jpg">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-辅助功能-AccessibilityService笔记（2）" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2020/06/04/%E8%BE%85%E5%8A%A9%E5%8A%9F%E8%83%BD-AccessibilityService%E7%AC%94%E8%AE%B0%EF%BC%882%EF%BC%89/" class="article-date">
+  <time class="dt-published" datetime="2020-06-04T04:16:07.000Z" itemprop="datePublished">2020-06-04</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/android/">android</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      辅助功能 AccessibilityService笔记（2）
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Android-AccessibilityService-%E8%BE%85%E5%8A%A9%E5%8A%9F%E8%83%BD"><span class="toc-number">1.</span> <span class="toc-text">Android AccessibilityService 辅助功能</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1%E3%80%81%E5%89%8D%E8%A8%80"><span class="toc-number">1.1.</span> <span class="toc-text">1、前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2%E3%80%81%E8%BE%85%E5%8A%A9%E5%8A%9F%E8%83%BD%E7%9A%84%E4%BD%BF%E7%94%A8"><span class="toc-number">1.2.</span> <span class="toc-text">2、辅助功能的使用</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-%E8%BE%85%E5%8A%A9%E5%8A%9F%E8%83%BD%E5%B8%B8%E8%A7%84%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95%EF%BC%9A"><span class="toc-number">1.2.1.</span> <span class="toc-text">2.1 辅助功能常规使用方法：###</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-1-1-%E4%BD%BF%E7%94%A8%E6%B5%81%E7%A8%8B%EF%BC%9A"><span class="toc-number">1.2.1.1.</span> <span class="toc-text">2.1.1 使用流程：####</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-1-2-Service%E9%85%8D%E7%BD%AE%EF%BC%9A"><span class="toc-number">1.2.1.2.</span> <span class="toc-text">2.1.2 Service配置：####</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-1-3-AccessibilityServiceInfo-%E9%85%8D%E7%BD%AE%E5%8F%82%E6%95%B0%EF%BC%9A"><span class="toc-number">1.2.1.3.</span> <span class="toc-text">2.1.3 AccessibilityServiceInfo 配置参数：####</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-1-4-%E5%AE%9E%E7%8E%B0%E8%87%AA%E5%B7%B1%E7%9A%84%E8%BE%85%E5%8A%A9%E5%8A%9F%E8%83%BD%E7%B1%BB%EF%BC%9A"><span class="toc-number">1.2.1.4.</span> <span class="toc-text">2.1.4 实现自己的辅助功能类：####</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#AccessibilityEvent"><span class="toc-number">1.2.1.5.</span> <span class="toc-text">AccessibilityEvent</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#AccessibilityNodeInfo"><span class="toc-number">1.2.1.6.</span> <span class="toc-text">AccessibilityNodeInfo####</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#performGlobalAction"><span class="toc-number">1.2.1.7.</span> <span class="toc-text">performGlobalAction####</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-1-5-%E8%87%AA%E5%AE%9A%E4%B9%89AccessibilityService%E7%B1%BB%E7%9A%84%E5%B8%B8%E8%A7%84%E4%BD%BF%E7%94%A8"><span class="toc-number">1.2.1.8.</span> <span class="toc-text">2.1.5 自定义AccessibilityService类的常规使用</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-API-gt-20-%E6%96%B0%E5%A2%9E%E6%96%B9%E6%B3%95%EF%BC%8C%E6%8E%A5%E5%8F%A3%EF%BC%88%E9%A2%84%E8%A7%88%E7%89%88%EF%BC%89%E4%BD%BF%E7%94%A8%E6%8E%A2%E7%A9%B6%EF%BC%9A"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.2 API &gt; 20 新增方法，接口（预览版）使用探究：###</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-2-1-AccessibilityService%E6%96%B0%E5%A2%9E%E6%96%B9%E6%B3%95%E4%B8%80%E8%A7%88%EF%BC%9A"><span class="toc-number">1.2.2.1.</span> <span class="toc-text">2.2.1 AccessibilityService新增方法一览：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-2-1-AccessibilityNodeInfo%E6%96%B0%E5%A2%9E%E6%96%B9%E6%B3%95%E4%B8%80%E8%A7%88%EF%BC%9A"><span class="toc-number">1.2.2.2.</span> <span class="toc-text">2.2.1 AccessibilityNodeInfo新增方法一览：</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-API-gt-20-%E6%96%B0%E5%A2%9E%E6%96%B9%E6%B3%95%EF%BC%8C%E6%8E%A5%E5%8F%A3%EF%BC%88%E9%A2%84%E8%A7%88%E7%89%88%EF%BC%89%E6%8E%A5%E5%8F%A3%E7%B1%BB%E6%96%87%E6%A1%A3%E6%B1%87%E6%80%BB%EF%BC%9A"><span class="toc-number">1.2.3.</span> <span class="toc-text">2.3 API &gt; 20 新增方法，接口（预览版）接口类文档汇总：###</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3%E3%80%81%E5%85%B6%E4%BB%96%E4%B8%80%E4%BA%9B%E5%8F%82%E8%80%83%E6%96%87%E6%A1%A3"><span class="toc-number">1.3.</span> <span class="toc-text">3、其他一些参考文档##</span></a></li></ol></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <h1 id="Android-AccessibilityService-辅助功能"><a href="#Android-AccessibilityService-辅助功能" class="headerlink" title="Android AccessibilityService 辅助功能"></a>Android AccessibilityService 辅助功能</h1><h2 id="1、前言"><a href="#1、前言" class="headerlink" title="1、前言"></a>1、前言</h2><blockquote>
+<p>Android的辅助功能是个比较老的API<code>（since API 4）</code>，但是该API真正的开始发展还是在<code>API 16~19（很多常用的方法参数都是在这几个版本逐渐加入以及完善的）</code>版本中。辅助功能我们最常见的是在类似深度休眠，抢红包中使用，模拟点击屏幕view。此次写关于辅助功能的分享是因为在<strong>API 24、 API 26</strong>中，又增添了几个类以及几个接口。<span id="more"></span></p>
+</blockquote>
+<p>本文首先介绍关于辅助功能的常见使用方法，然后开始介绍辅助功能新增接口以及类的使用。</p>
+<h2 id="2、辅助功能的使用"><a href="#2、辅助功能的使用" class="headerlink" title="2、辅助功能的使用"></a>2、辅助功能的使用</h2><h3 id="2-1-辅助功能常规使用方法："><a href="#2-1-辅助功能常规使用方法：" class="headerlink" title="2.1 辅助功能常规使用方法：###"></a>2.1 辅助功能常规使用方法：###</h3><p>本小结介绍一般情况下辅助功能的使用（基础用法和方法释义较多，如果需要阅览API &gt; 20 新增方法使用请从2.2开始阅读），API level在20及以下的使用方式。不涉及新增的方法以及类的使用介绍。</p>
+<h4 id="2-1-1-使用流程："><a href="#2-1-1-使用流程：" class="headerlink" title="2.1.1 使用流程：####"></a>2.1.1 使用流程：####</h4><blockquote>
+<p>1、<strong>Service:</strong> 配置自己的辅助功服务（注册、配置）</p>
+<p>2、<strong>Class:</strong> 自己的辅助功能类（对事件的拦截、处理）</p>
+</blockquote>
+<h4 id="2-1-2-Service配置："><a href="#2-1-2-Service配置：" class="headerlink" title="2.1.2 Service配置：####"></a>2.1.2 Service配置：####</h4><p>1、在实例化的辅助功能类中：<code>onServiceConnected()</code>中初始化，如下所示。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">onServiceConnected</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="built_in">super</span>.onServiceConnected();</span><br><span class="line">    <span class="type">AccessibilityServiceInfo</span> <span class="variable">info</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">AccessibilityServiceInfo</span>();</span><br><span class="line">    info.eventTypes = AccessibilityEvent.TYPES_ALL_MASK;</span><br><span class="line">    info.feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC;</span><br><span class="line">    info.notificationTimeout = <span class="number">100</span>;</span><br><span class="line">    info.packageNames = <span class="keyword">new</span> <span class="title class_">String</span>[]&#123;<span class="string">&quot;...&quot;</span>, <span class="string">&quot;...&quot;</span>&#125;;</span><br><span class="line">    info.flags = AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS;</span><br><span class="line">    setServiceInfo(info);</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>2、使用manifest中添加meta-data的方式（该方式从API 14开始使用）</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=<span class="string">&quot;1.0&quot;</span> encoding=<span class="string">&quot;utf-8&quot;</span>?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">accessibility-service</span> <span class="attr">xmlns:android</span>=<span class="string">&quot;http://schemas.android.com/apk/res/android&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:accessibilityEventTypes</span>=<span class="string">&quot;&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:accessibilityFeedbackType</span>=<span class="string">&quot;&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:accessibilityFlags</span>=<span class="string">&quot;&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:canRequestEnhancedWebAccessibility</span>=<span class="string">&quot;&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:canRequestFilterKeyEvents</span>=<span class="string">&quot;&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:canRequestTouchExplorationMode</span>=<span class="string">&quot;&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:canRetrieveWindowContent</span>=<span class="string">&quot;&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:description</span>=<span class="string">&quot;&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:notificationTimeout</span>=<span class="string">&quot;&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:packageNames</span>=<span class="string">&quot;&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:settingsActivity</span>=<span class="string">&quot;&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:summary</span>=<span class="string">&quot;&quot;</span> /&gt;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>由上边两组代码可以看到，前一个配置中单个代码块中，配置属性有限，但灵活的在服务里边初始化，使我们可以随时的改变需要的flag和type及一些其他参数。而后一个（Android 4.0+ / API 14+）的meta-data配置方式，可配置的属性更多。在系统条件符合时（同时不需要更改我们辅助功能的一些参数时），还是推荐使用后一个配置方式进行辅助功能的配置。</p>
+<h4 id="2-1-3-AccessibilityServiceInfo-配置参数："><a href="#2-1-3-AccessibilityServiceInfo-配置参数：" class="headerlink" title="2.1.3 AccessibilityServiceInfo 配置参数：####"></a>2.1.3 <a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/accessibilityservice/AccessibilityServiceInfo.html">AccessibilityServiceInfo</a> 配置参数：####</h4><p>这里只是对所有的XML attributes进行说明。</p>
+<p><strong>XML attributes：</strong></p>
+<ul>
+<li>  <a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/accessibilityservice/AccessibilityServiceInfo.html#attr_android:accessibilityEventTypes"><code>AccessibilityEventTypes</code></a> <em>此服务希望接收的事件类型</em></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>constant</th>
+<th>value</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>typeAllMask</td>
+<td>ffffffff</td>
+<td>所有类型的事件</td>
+</tr>
+<tr>
+<td>typeAnnouncement</td>
+<td>4000</td>
+<td>一个应用产生一个通知事件</td>
+</tr>
+<tr>
+<td>typeAssistReadingContext</td>
+<td>1000000</td>
+<td>辅助用户读取当前屏幕事件</td>
+</tr>
+<tr>
+<td>typeContextClicked</td>
+<td>800000</td>
+<td>view中上下文点击事件</td>
+</tr>
+<tr>
+<td>typeGestureDetectionEnd</td>
+<td>80000</td>
+<td>监测到的手势事件完成</td>
+</tr>
+<tr>
+<td>typeGestureDetectionStart</td>
+<td>40000</td>
+<td>开始手势监测事件</td>
+</tr>
+<tr>
+<td>typeNotificationStateChanged</td>
+<td>40</td>
+<td>收到notification弹出消息事件</td>
+</tr>
+<tr>
+<td>typeTouchExplorationGestureEnd</td>
+<td>400</td>
+<td>触摸浏览事件完成</td>
+</tr>
+<tr>
+<td>typeTouchExplorationGestureStart</td>
+<td>200</td>
+<td>触摸浏览事件开始</td>
+</tr>
+<tr>
+<td>typeTouchInteractionEnd</td>
+<td>200000</td>
+<td>用户触屏事件结束</td>
+</tr>
+<tr>
+<td>typeTouchInteractionStart</td>
+<td>100000</td>
+<td>触摸屏幕事件开始</td>
+</tr>
+<tr>
+<td>typeViewAccessibilityFocusCleared</td>
+<td>10000</td>
+<td>无障碍焦点事件清除</td>
+</tr>
+<tr>
+<td>typeViewAccessibilityFocused</td>
+<td>8000</td>
+<td>获得无障碍的焦点事件</td>
+</tr>
+<tr>
+<td>typeViewClicked</td>
+<td>1</td>
+<td>点击事件</td>
+</tr>
+<tr>
+<td>typeViewFocused</td>
+<td>8</td>
+<td>view获取到焦点事件</td>
+</tr>
+<tr>
+<td>typeViewHoverEnter</td>
+<td>80</td>
+<td>一个view的悬停事件</td>
+</tr>
+<tr>
+<td>typeViewHoverExit</td>
+<td>100</td>
+<td>一个view的悬停事件结束，悬停离开该view</td>
+</tr>
+<tr>
+<td>typeViewLongClicked</td>
+<td>2</td>
+<td>view的长按事件</td>
+</tr>
+<tr>
+<td>typeViewScrolled</td>
+<td>1000</td>
+<td>view的滚动事件，adapterview、scrollview</td>
+</tr>
+<tr>
+<td>typeViewSelected</td>
+<td>4</td>
+<td>view选中，一般是具有选中属性的view，例如adapter</td>
+</tr>
+<tr>
+<td>typeViewTextChanged</td>
+<td>10</td>
+<td>edittext中文字发生改变的事件</td>
+</tr>
+<tr>
+<td>typeViewTextSelectionChanged</td>
+<td>2000</td>
+<td>edittext文字选中发生改变事件</td>
+</tr>
+<tr>
+<td>typeViewTextTraversedAtMovementGranularity</td>
+<td>20000</td>
+<td>UIanimator中在一个视图文本中进行遍历会产生这个事件，多个粒度遍历文本。一般用于语音阅读context</td>
+</tr>
+<tr>
+<td>typeWindowContentChanged</td>
+<td>800</td>
+<td>窗口的内容发生变化，或者更具体的子树根布局变化事件</td>
+</tr>
+<tr>
+<td>typeWindowStateChanged</td>
+<td>20</td>
+<td>新的弹出层导致的窗口变化（dialog、menu、popupwindow）</td>
+</tr>
+<tr>
+<td>typeWindowsChanged</td>
+<td>400000</td>
+<td>屏幕上的窗口变化事件，需要API 21+</td>
+</tr>
+</tbody></table>
+<ul>
+<li>  <a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/accessibilityservice/AccessibilityServiceInfo.html#attr_android:accessibilityFeedbackType"><code>accessibilityFeedbackType</code></a> <em>此服务提供的反馈类型</em></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>constant</th>
+<th>value</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>feedbackAllMask</td>
+<td>ffffffff</td>
+<td>取消所有的可用反馈方式</td>
+</tr>
+<tr>
+<td>feedbackAudible</td>
+<td>4</td>
+<td>可听见的（非语音反馈）</td>
+</tr>
+<tr>
+<td>feedbackGeneric</td>
+<td>10</td>
+<td>通用反馈</td>
+</tr>
+<tr>
+<td>feedbackHaptic</td>
+<td>2</td>
+<td>触觉反馈（震动）</td>
+</tr>
+<tr>
+<td>feedbackSpoken</td>
+<td>1</td>
+<td>语音反馈</td>
+</tr>
+<tr>
+<td>feedbackVisual</td>
+<td>8</td>
+<td>视觉反馈</td>
+</tr>
+</tbody></table>
+<ul>
+<li>  <code>accessibilityFlags</code> <em>辅助功能附加的标志，多个使用 ‘ | ‘分隔</em></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>constant</th>
+<th>value</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>flagDefault</td>
+<td>1</td>
+<td>默认的配置</td>
+</tr>
+<tr>
+<td>flagEnableAccessibilityVolume</td>
+<td>80</td>
+<td>这个标志要求系统内所有的音频通道，使用由STREAM_ACCESSIBILTY音量控制USAGE_ASSISTANCE_ACCESSIBILITY</td>
+</tr>
+<tr>
+<td>flagIncludeNotImportantViews</td>
+<td>2</td>
+<td>表示可获取到一些被表示为辅助功能无权获取到的view</td>
+</tr>
+<tr>
+<td>flagReportViewIds</td>
+<td>10</td>
+<td>使用该flag表示可获取到view的ID</td>
+</tr>
+<tr>
+<td>flagRequestAccessibilityButton</td>
+<td>100</td>
+<td>如果辅助功能可用，提供一个辅助功能按钮在系统的导航栏 API 26+</td>
+</tr>
+<tr>
+<td>flagRequestEnhancedWebAccessibility</td>
+<td>8</td>
+<td>此类扩展的目的是为WebView中呈现的内容提供更好的辅助功能支持。这种扩展的一个例子是从一个安全的来源注入JavaScript。如果至少有一个具有此标志的辅助功能服务, 则系统将使能增强的web辅助功能。因此, 清除此标志并不保证该设备不会使能增强的web辅助功能, 因为可能有另一个使能的服务在使用它。</td>
+</tr>
+<tr>
+<td>flagRequestFilterKeyEvents</td>
+<td>20</td>
+<td>能够监听到系统的物理按键</td>
+</tr>
+<tr>
+<td>flagRequestFingerprintGestures</td>
+<td>200</td>
+<td>监听系统的指纹手势 API 26+</td>
+</tr>
+<tr>
+<td>flagRequestTouchExplorationMode</td>
+<td>4</td>
+<td>系统进入触控探索模式。出现一个鼠标在用户的界面</td>
+</tr>
+<tr>
+<td>flagRetrieveInteractiveWindows</td>
+<td>40</td>
+<td>该标志知识的辅助服务要访问所有交互式窗口内容的系统，这个标志没有被设置时，服务不会收到TYPE_WINDOWS_CHANGE事件。</td>
+</tr>
+</tbody></table>
+<ul>
+<li><p><code>canRequestEnhancedWebAccessibility (boolean)</code><br>  <em>辅助功能服务是否能够请求WEB辅助增强的属性。例如: 安装脚本以使应用程序内容更易于访问。</em></p>
+</li>
+<li><p><code>canRequestFilterKeyEvents (boolean)</code><br>  <em>辅助功能服务是否能够请求过滤KeyEvent的属性，是否可以请求KeyEvent事件流。，<code>flagRequestFilterKeyEvents</code>搭配使用</em></p>
+</li>
+<li><p><code>canRequestTouchExplorationMode (boolean)</code><br>  <em>此属性用于，能够让辅助功能服务通过手势，来请求触摸浏览模式，其被触摸的项，将被朗读出来，<code>flagRequestTouchExplorationMode</code>搭配使用</em></p>
+</li>
+<li><p><code>canRetrieveWindowContent (boolean)</code><br>  <em>辅助功能服务是否能够取回活动窗口内容的属性。 与上边的<code>flagRetrieveInteractiveWindows</code>搭配使用，无法在运行时更改此设置。</em></p>
+</li>
+<li><p><code>description</code><br>  <em>辅助功能服务目的或行为的简短描述。</em></p>
+</li>
+<li><p><code>notificationTimeout</code><br>  <em>同一类型的两个辅助功能事件发送到服务的最短间隔（毫秒，两个辅助功能事件之间的最小周期）</em></p>
+</li>
+<li><p><code>packageNames</code><br>  <em>从此服务能接收到事件的软件包名称 (不适合所有软件包)（多个软件包用逗号分隔）。</em></p>
+</li>
+<li><p><code>settingsActivity</code><br>  <em>允许用户修改辅助功能的activity组件名称</em></p>
+</li>
+<li><p><code>summary</code><br>  <em>同description</em></p>
+</li>
+</ul>
+<hr>
+<h4 id="2-1-4-实现自己的辅助功能类："><a href="#2-1-4-实现自己的辅助功能类：" class="headerlink" title="2.1.4 实现自己的辅助功能类：####"></a>2.1.4 实现自己的辅助功能类：####</h4><p>首先需要了解的是<a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/accessibilityservice/AccessibilityService.html">AccessibilityService</a>这个类。</p>
+<p>Public方法有：</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>API 20</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><strong><code>getRootInActiveWindow()</code></strong></td>
+<td><em>获取窗体中的节点信息。 返回 <code>AccessibilityNodeInfo</code></em></td>
+</tr>
+<tr>
+<td><strong><code>getServiceInfo()</code></strong></td>
+<td><em>获取本服务的配置信息。 返回 <code>AccessibilityServiceInfo</code></em></td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/accessibilityservice/AccessibilityService.html#getSystemService(java.lang.String)"><strong><code>getSystemService(String name)</code></strong></a></td>
+<td><em>通过服务名获取对应的系统服务。 返回 <code>Object</code></em></td>
+</tr>
+<tr>
+<td><strong><code>onAccessibilityEvent(AccessibilityEvent event)</code></strong></td>
+<td><em>辅助功能事件(s)回调方法</em></td>
+</tr>
+<tr>
+<td><strong><code>onBind(Intent intent)</code></strong></td>
+<td><em>service的bind接口</em></td>
+</tr>
+<tr>
+<td><strong><code>onInterrupt()</code></strong></td>
+<td><em>辅助功能中断的回调</em></td>
+</tr>
+<tr>
+<td><strong><code>performGlobalAction(int action)</code></strong></td>
+<td><em>全局的点击方法</em></td>
+</tr>
+<tr>
+<td><strong><code>setServiceInfo(AccessibilityServiceInfo info)</code></strong></td>
+<td><em>设置该辅助功能服务的描述，修改辅助功能的配置。可通过搭配使用<code>getServiceInfo()</code>动态修改我们辅助功能的配置</em></td>
+</tr>
+<tr>
+<td><strong>API 21</strong>新增：</td>
+<td></td>
+</tr>
+<tr>
+<td><strong><code>getWindows()</code></strong></td>
+<td><em>返回窗口最上层的一个用户可交互的窗口信息节点 <code>List&lt;AccessibilityWindowInfo&gt;</code></em></td>
+</tr>
+<tr>
+<td><strong>API 24</strong>新增：</td>
+<td></td>
+</tr>
+<tr>
+<td><strong><code>disableSelf()</code></strong></td>
+<td><em>关闭自己service的方法，在设置界面可以看到辅助功能状态被关闭</em></td>
+</tr>
+<tr>
+<td><strong><code>getSoftKeyboardController()</code></strong></td>
+<td><em>返回软键盘控制器，可用于查询和修改软键盘显示模式。</em></td>
+</tr>
+<tr>
+<td><strong><code>findFocus(int focus)</code></strong></td>
+<td><em>找到具有指定焦点类型的视图。搜索在所有窗口中执行。注意：为了访问Windows，您的服务必须通过在其元数据中设置AccessibilityService_canRetrieveWindowContent属性来声明检索窗口内容的功能。有关详细信息，请参阅SERVICE_META_DATA。此外，服务必须选择通过设置FLAG_RETRIEVE_INTERACTIVE_WINDOWS标志来检索交互式窗口。否则，搜索将仅在活动窗口中执行。</em></td>
+</tr>
+<tr>
+<td><strong><code>getMagnificationController()</code></strong></td>
+<td><em>返回放大控制器，可用于查询和修改显示放大的状态。注意：为了控制放大倍数，您的服务必须通过在其元数据中设置AccessibilityService_canControlMagnification属性来声明该功能</em></td>
+</tr>
+<tr>
+<td><strong><code>dispatchGesture(GestureDescription ge, GestureResultCallback cb, Handler handler)</code></strong></td>
+<td><em>将手势发送到触摸屏。目前正在进行的任何手势（无论是从用户，本服务还是其他服务）将被取消。 手势将被调度，就像在用户直接在屏幕上执行的一样，因此事件可能会受到诸如放大和触摸探索之类的功能的影响。</em></td>
+</tr>
+<tr>
+<td><strong>API 26</strong>新增：</td>
+<td></td>
+</tr>
+<tr>
+<td><strong><code>getAccessibilityButtonController()</code></strong></td>
+<td><em>返回系统导航区域中可访问性按钮的控制器。当设置FLAG_REQUEST_ACCESSIBILITY_BUTTON时，此实例可用于查询辅助功能按钮的状态并注册监听器以进行交互和辅助功能按钮的状态更改。返回 <a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/accessibilityservice/AccessibilityButtonController.html"><code>AccessibilityButtonController</code></a></em></td>
+</tr>
+<tr>
+<td><strong><code>getFingerprintGestureController()</code></strong></td>
+<td><em>获取控制器的指纹手势。此功能需要 AccessibilityServiceInfo＃CAPABILITY_CAN_CAPTURE_FINGERPRINT_GESTURES。注意：在调用此方法之前，必须先启动该服务。</em>返回 <a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/accessibilityservice/FingerprintGestureController.html"><code>FingerprintGestureController</code></a></td>
+</tr>
+</tbody></table>
+<p>这部分我们只针对API &lt;= 20部分的代码，其中我们常用的方法有：</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong><code>getRootInActiveWindow()</code></strong></td>
+<td><em>获取窗体中的节点信息 <code>AccessibilityNodeInfo</code>，如果需要使用该方法，我们需要在配置中申明 <code>canRetrieveWindowContent</code>，否则可能获取不到窗体的节点信息。<code>AccessibilityNodeInfo</code></em></td>
+</tr>
+<tr>
+<td><strong><code>onAccessibilityEvent(AccessibilityEvent event)</code></strong></td>
+<td><em>辅助功能事件(s)回调方法，处理辅助功能内所有事件的回调方法</em></td>
+</tr>
+<tr>
+<td><strong><code>performGlobalAction(int action)</code></strong></td>
+<td><em>全局的点击方法</em></td>
+</tr>
+</tbody></table>
+<p>在使用这些方法时，有三个需要我们了解的地方：</p>
+<blockquote>
+<ul>
+<li>  <strong>AccessibilityEvent</strong> 在辅助功能event回调方法中，返回的参数。<a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/view/accessibility/AccessibilityEvent.html">（官方API En）</a></li>
+</ul>
+</blockquote>
+<blockquote>
+<ul>
+<li>  <strong>AccessibilityNodeInfo</strong> 辅助功能中的节点对象(nodeInfo)。<a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/view/accessibility/AccessibilityNodeInfo.html">（官方API En）</a></li>
+</ul>
+</blockquote>
+<blockquote>
+<ul>
+<li>  performGlobalAction(<strong>action</strong>) 全局事件发送方法（物理按键的点击）</li>
+</ul>
+</blockquote>
+<h4 id="AccessibilityEvent"><a href="#AccessibilityEvent" class="headerlink" title="AccessibilityEvent"></a>AccessibilityEvent</h4><blockquote>
+<p>当用户界面发生某些明显的事件时，AccessibilityEvent代表的无障碍事件会被系统发送，每一种事件类型是由该类暴露出的属性子集表示其特征的。在此类中为每一种事件类型定义了相应的常量。详细的事件类型请参照<a target="_blank" rel="noopener" href="http://www.siaa.org.cn/home/content/sharedetail/aid/1142">AccessibilityEvent文档 Zh</a>。</p>
+</blockquote>
+<p><strong>Public Methods 公有方法:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>appendRecord(</code><a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/view/accessibility/AccessibilityRecord.html"><code>AccessibilityRecord</code></a> <code>record)</code></td>
+<td><em>将<code>AccessibilityRecord</code><a target="_blank" rel="noopener" href="http://www.siaa.org.cn/home/content/sharedetail/aid/1187">(AccessibilityRecord使用pdf文档 Zh)</a>追加到事件记录的结尾。</em></td>
+</tr>
+<tr>
+<td><code>getRecord(int index)</code></td>
+<td><em>获取给定索引下的记录。</em></td>
+</tr>
+<tr>
+<td><code>getRecordCount()</code></td>
+<td><em>获取被包含在事件中的记录数。</em></td>
+</tr>
+<tr>
+<td><code>describeContents()</code></td>
+<td><em>描述被包含在 Parcelable 实例的编组表示中的特殊对象种类。例如，如果对象在 writeToParcel(Parcel, int)的输出里包括一个文件描述符，该方法的返回值必须包括 CONTENTS_FILE_DESCRIPTOR 位。</em></td>
+</tr>
+<tr>
+<td><code>getEventType()</code></td>
+<td><em>获取事件类型。</em></td>
+</tr>
+<tr>
+<td><code>setEventType(int eventType)</code></td>
+<td><em>设置事件类型。</em></td>
+</tr>
+<tr>
+<td><code>eventTypeToString(int eventType)</code></td>
+<td><em>返回一个事件类型的字符串表示。例如，TYPE_VIEW_CLICKED 的字符串表示为“TYPE_VIEW_CLICKED”。</em></td>
+</tr>
+<tr>
+<td><code>getAction()</code></td>
+<td><em>获取触发该事件的执行操作。</em></td>
+</tr>
+<tr>
+<td><code>getContentChangeTypes()</code></td>
+<td><em>获取由 TYPE_WINDOW_CONTENT_CHANGED 事件标识的改变类型的位掩码。一个单一事件可能代表多种变化类型。</em></td>
+</tr>
+<tr>
+<td><code>getEventTime()</code></td>
+<td><em>获取该事件的发送时间。</em></td>
+</tr>
+<tr>
+<td><code>setEventTime(long eventTime)</code></td>
+<td><em>设置事件被发送的时间。</em></td>
+</tr>
+<tr>
+<td><code>getMovementGranularity()</code></td>
+<td><em>获取遍历的移动粒度。</em></td>
+</tr>
+<tr>
+<td><code>setMovementGranularity(int granularity)</code></td>
+<td><em>设置遍历的移动粒度。</em></td>
+</tr>
+<tr>
+<td><code>getPackageName()</code></td>
+<td><em>获取源的包名。</em></td>
+</tr>
+<tr>
+<td><code>setPackageName(CharSequence packageName)</code></td>
+<td><em>设置源的包名。</em></td>
+</tr>
+<tr>
+<td><code>initFromParcel(Parcel parcel)</code></td>
+<td><em>从 Parcel 创建一个新实例。</em></td>
+</tr>
+<tr>
+<td><code>obtain(AccessibilityEvent event)</code></td>
+<td><em>如果可获得，返回一个缓存实例或创建一个新实例。返回实例从给定事件初始化。</em></td>
+</tr>
+<tr>
+<td><code>obtain()</code></td>
+<td><em>如果可获得，返回一个缓存实例或实例化一个新的。</em></td>
+</tr>
+<tr>
+<td><code>obtain(int eventType)</code></td>
+<td><em>如果可获得，返回一个缓存实例或实例化一个新的并设置它的类型属性。</em></td>
+</tr>
+<tr>
+<td><code>recycle()</code></td>
+<td><em>回收一个实例重复使用。</em></td>
+</tr>
+<tr>
+<td><code>setAction(int action)</code></td>
+<td><em>设置触发此事件的执行操作。</em></td>
+</tr>
+<tr>
+<td><code>setContentChangeTypes(int changeTypes)</code></td>
+<td><em>设置由一个 TYPE_WINDOW_CONTENT_CHANGED 事件标识的节点树改变的位掩码。</em></td>
+</tr>
+<tr>
+<td><code>toString()</code></td>
+<td><em>返回对象的字符串表示。一般情况下，toString 方法返回一个“文本表示”该对象的字符串。结果应该是一个简洁但容易阅读的信息表示。建议所有子类重写该方法。</em></td>
+</tr>
+<tr>
+<td><code>writeToParcel(Parcel parcel, int flags)</code></td>
+<td><em>整组该对象到一个 Parcel。</em></td>
+</tr>
+</tbody></table>
+<h4 id="AccessibilityNodeInfo"><a href="#AccessibilityNodeInfo" class="headerlink" title="AccessibilityNodeInfo####"></a>AccessibilityNodeInfo####</h4><blockquote>
+<p>该类代表一个窗口内容节点和可以从源请求的操作。从 AccessibilityService的角度看，一个窗口内容被呈现为一个无障碍节点信息树，该树可能与视图层次一一映射，也可能不与视图层次一一映射。换句话说，一个自定义视图可灵活地将自己报告为一个无障碍节点信息树。一旦无障碍节点信息被发送给无障碍服务，该信息将会是不可改变的，且调用状态改变方法将会产生错误。<a target="_blank" rel="noopener" href="http://www.siaa.org.cn/home/content/sharedetail/aid/1144">AccessibilityNodeInfo文档 Zh</a></p>
+</blockquote>
+<p><strong>嵌套类：</strong></p>
+<ul>
+<li><p><a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/view/accessibility/AccessibilityNodeInfo.AccessibilityAction.html"><code>AccessibilityNodeInfo.AccessibilityAction</code></a> <strong>API 21+</strong><br>  定义了一个可以在 AccessibilityNodeInfo 上执行的操作的类。</p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/view/accessibility/AccessibilityNodeInfo.CollectionInfo.html"><code>AccessibilityNodeInfo.CollectionInfo</code></a><br>  具有一个节点是否是个集合的信息的类。</p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/view/accessibility/AccessibilityNodeInfo.CollectionItemInfo.html"><code>AccessibilityNodeInfo.CollectionItemInfo</code></a><br>  具有一个节点是否是个集合项目的信息的类。</p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/view/accessibility/AccessibilityNodeInfo.RangeInfo.html"><code>AccessibilityNodeInfo.RangeInfo</code></a><br>  具有一个节点是否是个范围的信息的类。</p>
+</li>
+</ul>
+<p><strong>常量：</strong><br>使用 <code>nodeInfo.performAction(Int Action)</code>、<code>performAction(Int Action, Bundle bundle)</code>方法</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>释义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>ACTION_ACCESSIBILITY_FOCUS</code></td>
+<td>给节点添加无障碍焦点的操作。</td>
+</tr>
+<tr>
+<td><code>ACTION_ARGUMENT_COLUMN_INT</code></td>
+<td>让指定集合列在屏幕上可见的参数。</td>
+</tr>
+<tr>
+<td><code>ACTION_ARGUMENT_EXTEND_SELECTION_BOOLEAN</code></td>
+<td>当以一定粒度移动时，是否扩大选择范围或反之移除的参数。</td>
+</tr>
+<tr>
+<td><code>ACTION_ARGUMENT_HTML_ELEMENT_STRING</code></td>
+<td>要移动到的下一个/上一个 HTML 元素的参数。</td>
+</tr>
+<tr>
+<td><code>ACTION_ARGUMENT_MOVEMENT_GRANULARITY_INT</code></td>
+<td>当遍历节点文本的时，使用哪种移动粒度的参数。。</td>
+</tr>
+<tr>
+<td><code>ACTION_ARGUMENT_PROGRESS_VALUE</code></td>
+<td>指定要设置的进度值的参数。</td>
+</tr>
+<tr>
+<td><code>ACTION_ARGUMENT_ROW_INT</code></td>
+<td>让指定集合行在屏幕上可见的参数。</td>
+</tr>
+<tr>
+<td><code>ACTION_ARGUMENT_SELECTION_END_INT</code></td>
+<td>指定选择结束的参数。</td>
+</tr>
+<tr>
+<td><code>ACTION_ARGUMENT_SELECTION_START_INT</code></td>
+<td>指定选择起始的参数。</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/view/accessibility/AccessibilityNodeInfo.AccessibilityAction.html#ACTION_SET_TEXT"><code>ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE</code></a></td>
+<td>指定要设置的文本内容的参数。</td>
+</tr>
+<tr>
+<td><code>ACTION_CLEAR_ACCESSIBILITY_FOCUS</code></td>
+<td>清除节点无障碍焦点的操作。</td>
+</tr>
+<tr>
+<td><code>ACTION_CLEAR_FOCUS</code></td>
+<td>清除节点输入焦点的操作。</td>
+</tr>
+<tr>
+<td><code>ACTION_CLEAR_SELECTION</code></td>
+<td>取消选择节点的操作。</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/view/accessibility/AccessibilityNodeInfo.AccessibilityAction.html#ACTION_NEXT_AT_MOVEMENT_GRANULARITY"><code>ACTION_NEXT_AT_MOVEMENT_GRANULARITY</code></a></td>
+<td>以给定移动粒度，请求去到该节点文本的下一个文本实体的操作。</td>
+</tr>
+<tr>
+<td><code>ACTION_CLICK</code></td>
+<td>在节点信息上点击的操作.</td>
+</tr>
+<tr>
+<td><code>ACTION_COLLAPSE</code></td>
+<td>折叠一个可展开节点的操作。</td>
+</tr>
+<tr>
+<td><code>ACTION_COPY</code></td>
+<td>将当前选择拷贝到剪贴板的操作。</td>
+</tr>
+<tr>
+<td><code>ACTION_CUT</code></td>
+<td>剪贴当前选项并放置到剪贴板的操作。</td>
+</tr>
+<tr>
+<td><code>ACTION_DISMISS</code></td>
+<td>关闭一个可关闭节点的操作。</td>
+</tr>
+<tr>
+<td><code>ACTION_EXPAND</code></td>
+<td>展开一个可展开节点的操作。</td>
+</tr>
+<tr>
+<td><code>ACTION_FOCUS</code></td>
+<td>给节点添加输入焦点的操作。</td>
+</tr>
+<tr>
+<td><code>ACTION_LONG_CLICK</code></td>
+<td>在节点上点击长按的操作。</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/view/accessibility/AccessibilityNodeInfo.AccessibilityAction.html#ACTION_NEXT_HTML_ELEMENT"><code>ACTION_NEXT_HTML_ELEMENT</code></a></td>
+<td>移动到给定类型的下一个 HTML 元素的操作。例如，移动到 BUTTON、INPUT、TABLE 等。</td>
+</tr>
+<tr>
+<td><code>ACTION_PASTE</code></td>
+<td>粘贴当前剪贴板内容的操作。</td>
+</tr>
+<tr>
+<td><code>ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY</code></td>
+<td>以给定移动粒度，请求去到该节点文本的上一个文本实体的操作。例如，移动到下一个字、词等。</td>
+</tr>
+<tr>
+<td><code>ACTION_PREVIOUS_HTML_ELEMENT</code></td>
+<td>移动到给定类型的上一个 HTML 元素的操作。例如，移动到BUTTON、INPUT、TABLE 等。</td>
+</tr>
+<tr>
+<td><code>ACTION_SCROLL_BACKWARD</code></td>
+<td>向后滚动节点内容的操作。</td>
+</tr>
+<tr>
+<td><code>ACTION_SCROLL_FORWARD</code></td>
+<td>向前滚动节点内容的操作</td>
+</tr>
+<tr>
+<td><code>ACTION_SELECT</code></td>
+<td>选择节点的操作。</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/view/accessibility/AccessibilityNodeInfo.AccessibilityAction.html#ACTION_SET_SELECTION"><code>ACTION_SET_SELECTION</code></a></td>
+<td>设置选择项的操作。执行该操作，并且无参数清除选项</td>
+</tr>
+<tr>
+<td><code>ACTION_SET_TEXT</code></td>
+<td>设置节点文本的操作。在没有参数的情况下执行该操作，使用 null 或者空CharSequence 将会清除文本。该操作也将会把光标放置到文本末尾</td>
+</tr>
+<tr>
+<td><code>FOCUS_ACCESSIBILITY</code></td>
+<td>无障碍焦点。</td>
+</tr>
+<tr>
+<td><code>FOCUS_INPUT</code></td>
+<td>输入焦点。</td>
+</tr>
+<tr>
+<td><code>MOVEMENT_GRANULARITY_CHARACTER</code></td>
+<td>以字符为移动粒度位，遍历节点文本</td>
+</tr>
+<tr>
+<td><code>MOVEMENT_GRANULARITY_LINE</code></td>
+<td>以行为移动粒度位，遍历节点文本。</td>
+</tr>
+<tr>
+<td><code>MOVEMENT_GRANULARITY_PAGE</code></td>
+<td>以页为移动粒度位，遍历节点文本。</td>
+</tr>
+<tr>
+<td><code>MOVEMENT_GRANULARITY_PARAGRAPH</code></td>
+<td>以段为移动粒度位，遍历节点文本。</td>
+</tr>
+<tr>
+<td><code>MOVEMENT_GRANULARITY_WORD</code></td>
+<td>以字词为移动粒度位，遍历节点文本。</td>
+</tr>
+</tbody></table>
+<p><strong>方法：</strong></p>
+<table>
+<thead>
+<tr>
+<th>Public Method</th>
+<th>释义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>addAction(int action)</code></td>
+<td>为一个nodeInfo添加一个操作，在API 21时被弃用</td>
+</tr>
+<tr>
+<td><code>addAction(AccessibilityNodeInfo.AccessibilityAction action)</code></td>
+<td>为一个nodeInfo添加一个操作，API 21</td>
+</tr>
+<tr>
+<td><code>addChild(View root, int virtualDescendantId)</code></td>
+<td>添加一个虚拟子元素，作为给定根节点的子view</td>
+</tr>
+<tr>
+<td><code>addChild(View child)</code></td>
+<td>添加一个子view节点。</td>
+</tr>
+<tr>
+<td><code>canOpenPopup()</code></td>
+<td>获取该节点是否可以打开一个弹窗或对话框。</td>
+</tr>
+<tr>
+<td><code>describeContents()</code></td>
+<td>描述被包含在可打包实例的封装代表中的特殊对象的种类。</td>
+</tr>
+<tr>
+<td><code>equals(Object object)</code></td>
+<td>标识是否有某些其他对象“等同于”该对象。</td>
+</tr>
+<tr>
+<td><code>findAccessibilityNodeInfosByText(String text)</code></td>
+<td>使用文本找到 AccessibilityNodeInfo。</td>
+</tr>
+<tr>
+<td><code>findAccessibilityNodeInfosByViewId(String viewId)</code></td>
+<td>使用完全合格视图id的源名称找到AccessibilityNodeInfo，完全合格 id 的样式 如下“package:id/id_resource_name”。</td>
+</tr>
+<tr>
+<td><code>findFocus(int focus)</code></td>
+<td>找到具有指定焦点类型的视图。</td>
+</tr>
+<tr>
+<td><code>focusSearch(int direction)</code></td>
+<td>在指定方向搜索具有输入焦点的最近的视图。</td>
+</tr>
+<tr>
+<td><code>getActionList()</code></td>
+<td>获取可以在该节点上执行的操作。</td>
+</tr>
+<tr>
+<td><code>getActions()</code></td>
+<td>该方法在 API 级别 21 被弃用。使用getActionList()代替。</td>
+</tr>
+<tr>
+<td><code>getBoundsInParent(Rect outBounds)</code></td>
+<td>获取父级坐标中的节点边界。</td>
+</tr>
+<tr>
+<td><code>getBoundsInScreen(Rect outBounds)</code></td>
+<td>获取屏幕坐标中的节点边界。</td>
+</tr>
+<tr>
+<td><code>getChild(int index)</code></td>
+<td>获取给定索引下的子元素。</td>
+</tr>
+<tr>
+<td><code>getChildCount()</code></td>
+<td>获取子元素的数目。</td>
+</tr>
+<tr>
+<td><code>getClassName()</code></td>
+<td>获取该节点来自的类。</td>
+</tr>
+<tr>
+<td><code>getCollectionInfo()</code></td>
+<td>如果节点是个集合，获取集合信息。一个集合子集总是一个集合项目。</td>
+</tr>
+<tr>
+<td><code>getCollectionItemInfo()</code></td>
+<td>如果节点是个集合项目，获取集合项目信息。一个集合项目总是一个集合的子集。</td>
+</tr>
+<tr>
+<td><code>getContentDescription()</code></td>
+<td>获取该节点的内容描述。</td>
+</tr>
+<tr>
+<td><code>getExtras()</code></td>
+<td>获取具有附加数据的可选 bundle。该包是闲时创建的且永不为 null。注意：为了避免冲突，推荐使用应用的包名作为关键字字首，如果从不同应用发出的相同关键词有不同的含义，可能会导致无障碍服务困扰。</td>
+</tr>
+<tr>
+<td><code>getInputType()</code></td>
+<td>获取定义为 InputType 的源中的输入类型。</td>
+</tr>
+<tr>
+<td><code>getLabelFor()</code></td>
+<td>为无障碍目的，获取作为标签代表该视图的节点信息。 返回AccessibilityNodeInfo</td>
+</tr>
+<tr>
+<td><code>getLabeledBy()</code></td>
+<td>为无障碍目的，获取作为标签代表该视图的节点信息。返回AccessibilityNodeInfo</td>
+</tr>
+<tr>
+<td><code>getLiveRegion()</code></td>
+<td>获取该节点的实时区域模式。一个实时区域是一个包含对用户来说重要信息的节点，且当其改变时应该告知用户。例如，在一个登录界面，有一个呈现“密码错误”通知的 TextView，该视图应该使用ACCESSIBILITY_LIVE_REGION_POLITE模式被标记为一个实时区域。这是无障碍服务的责任，控制TYPE_WINDOW_CONTENT_CHANGED 事件标识实时区域节点和其子元素的变化。实时区域模式，或如果视图不是个实时区域，返回ACCESSIBILITY_LIVE_REGION_NONE。</td>
+</tr>
+<tr>
+<td><code>getMaxTextLength()</code></td>
+<td>返回该节点的最大文本长度。</td>
+</tr>
+<tr>
+<td><code>getMovementGranularities()</code></td>
+<td>获取遍历该节点文本的移动粒度。</td>
+</tr>
+<tr>
+<td><code>getPackageName()</code></td>
+<td>获取该节点来自的包名。</td>
+</tr>
+<tr>
+<td><code>getParent()</code></td>
+<td>获取父级NodeInfo。</td>
+</tr>
+<tr>
+<td><code>getRangeInfo()</code></td>
+<td>如果节点是个范围，获取范围信息<code>AccessibilityNodeInfo.RangeInfo</code></td>
+</tr>
+<tr>
+<td><code>getText()</code></td>
+<td>获取该节点的文本。</td>
+</tr>
+<tr>
+<td><code>getTextSelectionEnd()</code></td>
+<td>选择文本的末尾，如果没有选择文本，返回光标位置，或如果不存在选择文本和光标，返回-1。</td>
+</tr>
+<tr>
+<td><code>getTextSelectionStart()</code></td>
+<td>选择文本的起始，如果没有选择文本，返回光标位置，或如果不存在选择文本和光标，返回-1。</td>
+</tr>
+<tr>
+<td><code>getViewIdResourceName()</code></td>
+<td>获取源视图 id 的完全合格源名称。</td>
+</tr>
+<tr>
+<td><code>getWindowId()</code></td>
+<td>获取该信息来自的窗口的id。</td>
+</tr>
+<tr>
+<td><code>hashCode()</code></td>
+<td>返回该对象的哈希编码值。多用于判断node是否相同</td>
+</tr>
+<tr>
+<td><code>isAccessibilityFocused()</code></td>
+<td>获取该节点是否可被无障碍聚焦。</td>
+</tr>
+<tr>
+<td><code>isCheckable()</code></td>
+<td>获取该节点是否可选中。</td>
+</tr>
+<tr>
+<td><code>isChecked()</code></td>
+<td>获取该节点是否已选中。</td>
+</tr>
+<tr>
+<td><code>isClickable()</code></td>
+<td>获取该节点是否可点击。</td>
+</tr>
+<tr>
+<td><code>isContentInvalid()</code></td>
+<td>获取该节点的内容是否已失效。例如，一个日期数据格式不正确。</td>
+</tr>
+<tr>
+<td><code>isDismissable()</code></td>
+<td>获取该节点是否可被关闭。</td>
+</tr>
+<tr>
+<td><code>isEditable()</code></td>
+<td>获取该节点是否可编辑。</td>
+</tr>
+<tr>
+<td><code>isEnabled()</code></td>
+<td>获取该节点是否可用。</td>
+</tr>
+<tr>
+<td><code>isFocusable()</code></td>
+<td>获取该节点是否可获取焦点。</td>
+</tr>
+<tr>
+<td><code>isFocused()</code></td>
+<td>获取该节点是否已被聚焦。</td>
+</tr>
+<tr>
+<td><code>isLongClickable()</code></td>
+<td>获取该节点是否可长按点击。</td>
+</tr>
+<tr>
+<td><code>isMultiLine()</code></td>
+<td>获取该节点是否是个多行可编辑文本。</td>
+</tr>
+<tr>
+<td><code>isPassword()</code></td>
+<td>获取该节点是否是个密码。</td>
+</tr>
+<tr>
+<td><code>isScrollable()</code></td>
+<td>获取该节点是否可滚动。</td>
+</tr>
+<tr>
+<td><code>isSelected()</code></td>
+<td>获取该节点是否已被选择。</td>
+</tr>
+<tr>
+<td><code>isVisibleToUser()</code></td>
+<td>该节点是否对用户可见。</td>
+</tr>
+<tr>
+<td><code>obtain(View root, int virtualDescendantId)</code></td>
+<td>如果可获得，返回一个缓存实例，否则创建一个新的并设置源。 <code>View:</code>虚拟子树的根。 <code>int:</code>虚拟后代的id。返回一个实例化的<code>AccessibilityNodeInfo</code></td>
+</tr>
+<tr>
+<td><code>obtain(AccessibilityNodeInfo info)</code></td>
+<td>如果可获得，返回一个缓存实例，或创建一个新的。返回的实例初始化自一个给定 root。</td>
+</tr>
+<tr>
+<td><code>obtain()</code></td>
+<td>如果可获得，返回一个缓存实例，否则，返回一个新的。</td>
+</tr>
+<tr>
+<td><code>obtain(View source)</code></td>
+<td>如果可获得，返回一个缓存实例，否则，返回一个新的并设置源。View：源视图。</td>
+</tr>
+<tr>
+<td><code>performAction(int action, Bundle arguments)</code></td>
+<td>在该节点上执行一个操作。<code>int:</code> 要执行的操作。<code>Bundle：</code>具有额外参数的包。返回一个布尔值，表示是否成功执行操作。</td>
+</tr>
+<tr>
+<td><code>performAction(int action)</code></td>
+<td>在该节点上执行一个操作。</td>
+</tr>
+<tr>
+<td><code>recycle()</code></td>
+<td>返回一个实例重复使用，回收掉当前的实例。</td>
+</tr>
+<tr>
+<td><code>refresh()</code></td>
+<td>刷新视图呈现的最新状态信息。返回一个布尔值，表示是否刷新成功。</td>
+</tr>
+<tr>
+<td><code>removeAction(int action)</code></td>
+<td>该方法在 API 级别 21 被弃用。</td>
+</tr>
+<tr>
+<td><code>setAccessibilityFocused(boolean focused)</code></td>
+<td>设置该节点可无障碍聚焦。</td>
+</tr>
+<tr>
+<td><code>setBoundsInParent(Rect bounds)</code></td>
+<td>在父级坐标中设置节点边界。</td>
+</tr>
+<tr>
+<td><code>setBoundsInScreen(Rect bounds)</code></td>
+<td>在屏幕坐标中设置节点边界。</td>
+</tr>
+<tr>
+<td><code>setCanOpenPopup(boolean opensPopup)</code></td>
+<td>设置该节点可打开一个弹窗或对话框。</td>
+</tr>
+<tr>
+<td><code>setCheckable(boolean checkable)</code></td>
+<td>设置该节点可选中。</td>
+</tr>
+<tr>
+<td><code>setChecked(boolean checked)</code></td>
+<td>设置该节点已选中。</td>
+</tr>
+<tr>
+<td><code>setClassName(CharSequence className)</code></td>
+<td>设置该节点来自的类。</td>
+</tr>
+<tr>
+<td><code>setClickable(boolean clickable)</code></td>
+<td>设置该节点可点击。</td>
+</tr>
+<tr>
+<td><code>setCollectionInfo(AccessibilityNodeInfo.CollectionInfo collectionInfo)</code></td>
+<td>如果该节点是个集合，设置集合信息。一个集合子集通常也是个集合项目。</td>
+</tr>
+<tr>
+<td><code>setContentDescription(CharSequence contentDescription)</code></td>
+<td>设置该节点的内容描述。</td>
+</tr>
+<tr>
+<td><code>setContentInvalid(boolean contentInvalid)</code></td>
+<td>设置节点内容无效。例如，一个日期数据格式不正确。</td>
+</tr>
+<tr>
+<td><code>setContextClickable(boolean contextClickable)</code></td>
+<td>设置该节点文本可点击。</td>
+</tr>
+<tr>
+<td><code>setDismissable(boolean dismissable)</code></td>
+<td>设置该节点可以被关闭。</td>
+</tr>
+<tr>
+<td><code>setEditable(boolean editable)</code></td>
+<td>设置该节点可编辑。</td>
+</tr>
+<tr>
+<td><code>setEnabled(boolean enabled)</code></td>
+<td>设置该节点可用。</td>
+</tr>
+<tr>
+<td><code>setFocusable(boolean focusable)</code></td>
+<td>设置该节点可聚焦。</td>
+</tr>
+<tr>
+<td><code>setFocused(boolean focused)</code></td>
+<td>设置该节点已聚焦。</td>
+</tr>
+<tr>
+<td><code>setInputType(int inputType)</code></td>
+<td>设置源中的输入类型为inputType</td>
+</tr>
+<tr>
+<td><code>setLabelFor(View root, int virtualDescendantId)</code></td>
+<td>为无障碍目的，设置可作为标签代表视图的信息。如果 virtualDescendantId 为NO_ID，根被设置为标签。一个虚拟后代是一个虚构视图，为无障碍目的，将自己报告为视图层次的一部分。该操作可以使绘制复杂内容的自定义视图，将自己报告为虚拟视图树，然后传递其逻辑结构。</td>
+</tr>
+<tr>
+<td><code>setLabelFor(View labeled)</code></td>
+<td>为无障碍目的，设置可作为标签代表视图的信息。</td>
+</tr>
+<tr>
+<td><code>setLabeledBy(View label)</code></td>
+<td>为无障碍目的，设置可作为标签代表视图的信息。</td>
+</tr>
+<tr>
+<td><code>setLabeledBy(View root, int virtualDescendantId)</code></td>
+<td>为无障碍目的，设置可作为标签代表视图的信息。如果 virtualDescendantId 为NO_ID，根被设置为标签。一个虚拟后代是一个虚构视图，为无障碍目的，将自己报告为视图层次的一部分。该操作可以使绘制复杂内容的自定义视图，将自己报告为虚拟视图树，然后传递其逻辑结构。</td>
+</tr>
+<tr>
+<td><code>setLiveRegion(int mode)</code></td>
+<td>设置该节点的实时区域模式。int：实时区域模式，或如果视图不是个实时区域时，为ACCESSIBILITY_LIVE_REGION_NONE。</td>
+</tr>
+<tr>
+<td><code>setLongClickable(boolean longClickable)</code></td>
+<td>设置该节点可长按点击。</td>
+</tr>
+<tr>
+<td><code>setMaxTextLength(int max)</code></td>
+<td>设置最大文本长度，或无限制时为-1。一般情况下，用来标识一个可编辑文本框有输入字符数目限制。</td>
+</tr>
+<tr>
+<td><code>getMovementGranularities()</code></td>
+<td>设置遍历节点文本的移动粒度。</td>
+</tr>
+<tr>
+<td><code>setMultiLine(boolean multiLine)</code></td>
+<td>设置该节点为一个多行可编辑文本。</td>
+</tr>
+<tr>
+<td><code>setPackageName(CharSequence packageName)</code></td>
+<td>设置该节点来自的包。</td>
+</tr>
+<tr>
+<td><code>setParent(View root, int virtualDescendantId)</code></td>
+<td>设置给定 root 虚拟后代的父元素。如果 virtualDescendantId 等于 NO_ID，该root 被设置为父级。一个虚拟后代是一个虚构视图，为无障碍目的，将自己报告为视图层次的一部分。该操作可以使绘制复杂内容的自定义视图，将自己报告为虚拟视图树，然后传递其逻辑结构。</td>
+</tr>
+<tr>
+<td><code>setParent(View parent)</code></td>
+<td>设置父元素。</td>
+</tr>
+<tr>
+<td><code>setPassword(boolean password)</code></td>
+<td>设置该节点为密码。</td>
+</tr>
+<tr>
+<td><code>setRangeInfo(AccessibilityNodeInfo.RangeInfo rangeInfo)</code></td>
+<td>如果该节点是个范围，设置范围信息。</td>
+</tr>
+<tr>
+<td><code>setScrollable(boolean scrollable)</code></td>
+<td>设置该节点可滚动。</td>
+</tr>
+<tr>
+<td><code>setSelected(boolean selected)</code></td>
+<td>设置该节点是否已选择。</td>
+</tr>
+<tr>
+<td><code>setSource(View source)</code></td>
+<td>设置信息源。</td>
+</tr>
+<tr>
+<td><code>setSource(View root, int virtualDescendantId)</code></td>
+<td>为给定 root 虚拟后代设置源。如果 virtualDescendantId 等于 NO_ID，该 root被设置为源。一个虚拟后代是一个虚构视图，为无障碍目的，将自己报告为视图层次的一部分。该操作可以使绘制复杂内容的自定义视图，将自己报告为虚拟视图树，然后传递其逻辑结构。</td>
+</tr>
+<tr>
+<td><code>setText(CharSequence text)</code></td>
+<td>设置该节点的文本。</td>
+</tr>
+<tr>
+<td><code>setTextSelection(int start, int end)</code></td>
+<td>设置文本选择的起始和结尾。</td>
+</tr>
+<tr>
+<td><code>setViewIdResourceName(String viewIdResName)</code></td>
+<td>设置源视图id的资源名称</td>
+</tr>
+<tr>
+<td><code>setVisibleToUser(boolean visibleToUser)</code></td>
+<td>设置该节点对用户可见。</td>
+</tr>
+<tr>
+<td><code>toString()</code></td>
+<td>返回一个代表对象的字符串。 <code>getClass().getName() + &#39;@&#39; + Integer.toHexString(hashCode())</code></td>
+</tr>
+<tr>
+<td><code>writeToParcel(Parcel parcel, int flags)</code></td>
+<td>封装该对象到一个包中。</td>
+</tr>
+<tr>
+<td><strong>API 21</strong></td>
+<td><strong>ADD</strong></td>
+</tr>
+<tr>
+<td><code>getError()</code></td>
+<td>API Level 21 获取该节点的错误文本。</td>
+</tr>
+<tr>
+<td><code>setError(CharSequence error)</code></td>
+<td>API Level 21 设置该节点的错误文本。</td>
+</tr>
+<tr>
+<td><code>getWindow()</code></td>
+<td>API Level 21 获取该节点所属的窗口。<code>AccessibilityWindowInfo</code></td>
+</tr>
+<tr>
+<td><code>removeAction(AccessibilityNodeInfo.AccessibilityAction action)</code></td>
+<td>API Level 21 移除一个可以在该节点上执行的操作。如果该操作未被添加到该节点，调用该方法没有任何效果。返回一个布尔值表示是否成功移除操作。</td>
+</tr>
+<tr>
+<td><code>removeChild(View root, int virtualDescendantId)</code></td>
+<td>API Level 21 移除给定根节点的一个虚拟子元素。如果子元素不是之前被添加到该节点的，调用该方法无效果。 返回一个布尔值表示是否存在子元素。</td>
+</tr>
+<tr>
+<td><code>removeChild(View child)</code></td>
+<td>API Level 21 移除一个子元素。如果子元素先前未被添加到该节点，调用该方法无效果。</td>
+</tr>
+<tr>
+<td><strong>API 22</strong></td>
+<td><strong>ADD</strong></td>
+</tr>
+<tr>
+<td><code>getTraversalAfter()</code></td>
+<td>API Level 22 当前节点被访问后，获取无障碍遍历中的下一个节点。一个屏幕阅读器必须在访问该节点内容之前，访问其他节点的内容。如果存在，返回后续节点，否则，返回 null。</td>
+</tr>
+<tr>
+<td><code>getTraversalBefore()</code></td>
+<td>API Level 22 当前节点被访问后，获取无障碍遍历中的上一个节点。屏幕阅读器必须访问该节点的信息，在访问先前节点内容之前。</td>
+</tr>
+<tr>
+<td><code>setTraversalAfter(View view)</code></td>
+<td>API Level 22 设置无障碍遍历中下一个被访问的视图。一个屏幕阅读器在访问该节点内容之前，必须访问另一个节点的内容。</td>
+</tr>
+<tr>
+<td><code>setTraversalAfter(View root, int virtualDescendantId)</code></td>
+<td>API Level 22设置无障碍遍历中下一个被访问的视图。一个屏幕阅读器在访问该节点内容之前，必须访问另一个节点的内容。如果 virtualDescendantId 等于 NO_ID，root被设置为前任。一个虚拟后代是一个虚构视图，为无障碍目的，将自己报告为视图层次的一部分。该操作可以使绘制复杂内容的自定义视图，将自己报告为虚拟视图树，然后传递其逻辑结构。</td>
+</tr>
+<tr>
+<td><code>setTraversalBefore(View view)</code></td>
+<td>API Level 22 设置无障碍遍历中当前访问节点的上一个视图。一个屏幕阅读器在访问上一个节点之前，必须访问该节点的内容。</td>
+</tr>
+<tr>
+<td><code>setTraversalBefore(View root, int virtualDescendantId)</code></td>
+<td>API Level 22 设置无障碍遍历中当前访问节点的上一个视图。一个屏幕阅读器在访问上一个节点之前，必须访问该节点的内容。如果virtualDescendantId 等于 NO_ID，root被设置为后任。一个虚拟后代是一个虚构视图，为无障碍目的，将自己报告为视图层次的一部分。该操作可以使绘制复杂内容的自定义视图，将自己报告为虚拟视图树，然后传递其逻辑结构。</td>
+</tr>
+<tr>
+<td><strong>API 23</strong></td>
+<td><strong>ADD</strong></td>
+</tr>
+<tr>
+<td><code>isContextClickable()</code></td>
+<td>API Level 23 获取该节点是否上下文可点击。</td>
+</tr>
+<tr>
+<td><strong>API 24</strong></td>
+<td><strong>ADD</strong></td>
+</tr>
+<tr>
+<td><code>setImportantForAccessibility(boolean important)</code></td>
+<td>API Level 24 设置该节点对无障碍很重要。</td>
+</tr>
+<tr>
+<td><code>setDrawingOrder(int drawingOrderInParent)</code></td>
+<td>API Level 24 设置该节点相关视图的绘制顺序。</td>
+</tr>
+<tr>
+<td><code>getDrawingOrder()</code></td>
+<td>API Level 24。获取该节点中视图的相对绘制顺序。绘制顺序只决定于节点的父级，所以该索引只与其兄弟姐妹相关。在一些情景下，绘制顺序是基本同步的，所以两个兄弟姐妹的返回值相同是可能的。返回值会被跳过也是可能的。</td>
+</tr>
+<tr>
+<td><code>isImportantForAccessibility()</code></td>
+<td>API Level 24 返回该节点是否来源于一个对无障碍相当重要的视图。</td>
+</tr>
+</tbody></table>
+<h4 id="performGlobalAction"><a href="#performGlobalAction" class="headerlink" title="performGlobalAction####"></a>performGlobalAction####</h4><table>
+<thead>
+<tr>
+<th>Action</th>
+<th>释义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>GLOBAL_ACTION_BACK</code></td>
+<td>相当于点击物理按键返回</td>
+</tr>
+<tr>
+<td><code>GLOBAL_ACTION_HOME</code></td>
+<td>相当于点击物理按键Home键</td>
+</tr>
+<tr>
+<td><code>GLOBAL_ACTION_NOTIFICATIONS</code></td>
+<td>相当于下滑打开通知</td>
+</tr>
+<tr>
+<td><code>GLOBAL_ACTION_RECENTS</code></td>
+<td>相当于点击物理按键最近任务键</td>
+</tr>
+<tr>
+<td><code>GLOBAL_ACTION_QUICK_SETTINGS</code></td>
+<td>打开快速设置</td>
+</tr>
+<tr>
+<td><code>GLOBAL_ACTION_POWER_DIALOG</code></td>
+<td>打开长按电源键的弹框</td>
+</tr>
+</tbody></table>
+<h4 id="2-1-5-自定义AccessibilityService类的常规使用"><a href="#2-1-5-自定义AccessibilityService类的常规使用" class="headerlink" title="2.1.5 自定义AccessibilityService类的常规使用"></a>2.1.5 自定义AccessibilityService类的常规使用</h4><figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">MyAccessibilityService</span> <span class="title">extends</span> <span class="title">AccessibilityService</span> &#123;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">onServiceConnected</span>()</span> &#123;</span><br><span class="line">        super.onServiceConnected();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onAccessibilityEvent</span>(<span class="params">AccessibilityEvent <span class="keyword">event</span></span>)</span> &#123;</span><br><span class="line">        <span class="comment">// 1.AccessibilityEvent中一些常用的使用方法</span></span><br><span class="line">        <span class="comment">// 这里我们获取到该辅助功能的事件类型</span></span><br><span class="line">        <span class="comment">// 事件类型请参照 2.1.3中AccessibilityEventTypes表</span></span><br><span class="line">        <span class="built_in">int</span> eventType = <span class="keyword">event</span>.getEventType();</span><br><span class="line">        <span class="comment">// 输出事件的字符串type</span></span><br><span class="line">        String typeStr = <span class="keyword">event</span>.eventTypeToString(eventType);</span><br><span class="line">        <span class="comment">// 根据事件类型来分发我们的需要的操作,这里以窗口变化为例</span></span><br><span class="line">        <span class="keyword">if</span>(AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED == eventType)&#123;</span><br><span class="line">            <span class="comment">// 判断我们的辅助功能是否在约定好的应用界面执行，以设置界面为例</span></span><br><span class="line">            <span class="keyword">if</span>(<span class="string">&quot;com.android.settings&quot;</span>.<span class="keyword">equals</span>(<span class="keyword">event</span>.getPackageName())&#123;</span><br><span class="line">                <span class="comment">// doSomeThing</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span>(AccessibilityEvent.TYPE_GESTURE_DETECTION_START == eventType) &#123;</span><br><span class="line">            <span class="comment">// 在监测到手势的时候</span></span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">// 在完成操作时，可以关闭自己的服务，下次使用再次开启。</span></span><br><span class="line">            <span class="comment">// API &gt; = 24</span></span><br><span class="line">            disableSelf();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 2.通过event来遍历我们的nodeInfo</span></span><br><span class="line">        <span class="keyword">if</span> (VERSION.SDK_INT &gt;= Build.VERSION_CODES.JELLY_BEAN_MR2)</span><br><span class="line">            <span class="comment">// 这里使用getResource()方法其实是从AccessibilityEvent继承的</span></span><br><span class="line">            <span class="comment">// AccessibilityRecord中抽取AccessibilityNodeInfo</span></span><br><span class="line">            <span class="comment">// 实际调用的是AccessibilityRecord中的方法，返回的是AccessibilityNodeInfo mSourceNode</span></span><br><span class="line">            AccessibilityNodeInfo info = <span class="keyword">event</span>.getSource();</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            info = getRootInActiveWindow();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 3.遍历info中的子节点</span></span><br><span class="line">        <span class="keyword">if</span> (info.getChildCount() ！= <span class="number">0</span>)&#123;</span><br><span class="line">            <span class="comment">// 通过一个循环将info的子节点遍历</span></span><br><span class="line">            <span class="keyword">for</span> (<span class="built_in">int</span> i = <span class="number">0</span>; i &lt; info.getChildCount(); i++) &#123;</span><br><span class="line">                <span class="comment">// 获取子节点中某个特定的node，这里通过以下方法通过ID查找</span></span><br><span class="line">                List&lt;AccessibilityNodeInfo&gt; list = info.findAccessibilityNodeInfosByViewId(<span class="string">&quot;com.android&quot;</span> +<span class="string">&quot;.settings:id/xxxx&quot;</span>);</span><br><span class="line">                <span class="comment">// 通过text查找</span></span><br><span class="line">                List&lt;AccessibilityNodeInfo&gt; list = info.findAccessibilityNodeInfosByText(<span class="string">&quot;xxxx&quot;</span>);</span><br><span class="line">                <span class="comment">// 打印nodeinfo的信息</span></span><br><span class="line">                Log.e(<span class="string">&quot;InfoType: &quot;</span> + info.getClassName());</span><br><span class="line">                Log.e(<span class="string">&quot;InfoText: &quot;</span> + info.getText());</span><br><span class="line">                Log.e(<span class="string">&quot;InfoPkgName: &quot;</span> + info.getPackageName());</span><br><span class="line">                Log.e(<span class="string">&quot;InfoViewId: &quot;</span> + info.getViewIdResourceName());</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 4.为节点添加操作</span></span><br><span class="line">        <span class="comment">// 1) 首先获取到我们的节点</span></span><br><span class="line">        AccessibilityNodeInfo info = <span class="keyword">event</span>.getSource();</span><br><span class="line">        <span class="comment">// 2) 通过查找指定的ID、text来查找一个系列的节点，返回一个list，需要判断list.size()是否为空</span></span><br><span class="line">        List&lt;AccessibilityNodeInfo&gt; list = info.findAccessibilityNodeInfosByViewId(<span class="string">&quot;pkgName.&quot;</span> + <span class="string">&quot;id&quot;</span>);</span><br><span class="line">        AccessibilityNodeInfo info = list.<span class="keyword">get</span>(<span class="number">0</span>);</span><br><span class="line">        <span class="comment">// 3) 为节点添加操作，点击事件（事件可参照AccessibilityNodeInfo表）</span></span><br><span class="line">        info.performAction(AccessibilityNodeInfo.ACTION_CLICK);</span><br><span class="line">        <span class="comment">// 4) 添加node可用的action，给node添加一个可清除焦点的操作</span></span><br><span class="line">        <span class="comment">// 通过addAction(AccessibilityNodeInfo.AccessibilityAction action)</span></span><br><span class="line">        info.addAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_CLEAR_FOCUS);</span><br><span class="line">        <span class="comment">// 获取该node上可用的action属性list，可以用来查看该node的属性</span></span><br><span class="line">        List&lt;AccessibilityNodeInfo.AccessibilityAction&gt; listAction = info.getActionList();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 5.获取该节点上子节点个数</span></span><br><span class="line">        <span class="built_in">int</span> childCount = info.getChildCount();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 6.操作完成后，回收实例，返回一个下次可用的实例</span></span><br><span class="line">        info.recycle();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 需要注意的是，在node.performAction之后，调用本地广播的话，之后的globeAction不会起作用，例：</span></span><br><span class="line">        sureStopNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);</span><br><span class="line">        sureStopNode.recycle();</span><br><span class="line">        SystemMessage.getInstance().send(SystemMessage.ACTION_POWER_BOOSTER_NEXT);</span><br><span class="line">        performGlobalAction();<span class="comment">// 这句话是不起作用的</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 7.辅助功能的一些适用场景：</span></span><br><span class="line">        <span class="comment">// 1)部分应用中获取短信验证码（通过开启辅助功能的方式获取）</span></span><br><span class="line">        <span class="comment">//  - 监听通知栏的消息(typeNotificationStateChanged)</span></span><br><span class="line">        <span class="comment">//  - 弹出通知栏的时候获取该通知的节点信息(event.getSource())</span></span><br><span class="line">        <span class="comment">//  - 遍历root节点，取得显示信息的文本Node(info.findAccessibilityNodeInfosByViewId(&quot;pkgName.&quot; + &quot;id&quot;))</span></span><br><span class="line">        <span class="comment">//  - 通过NodeInfo.getText()方法获取到相应的文本信息，并取出验证码</span></span><br><span class="line">        <span class="comment">//  - 取消掉通知栏弹出框</span></span><br><span class="line">        <span class="comment">//  - 获取到要输入的EditText获取直接在本应用给需要填写验证码的区域设置文本。</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 2)部分应用中恢复APP的初始设置（清除APP的数据）</span></span><br><span class="line">        <span class="comment">//  - 跳转到应用详情，通过findAccessibilityNodeInfosByViewId查找节点</span></span><br><span class="line">        <span class="comment">//  - 通过节点info.performAction(AccessibilityNodeInfo.ACTION_CLICK)点击清除</span></span><br><span class="line">        <span class="comment">//  - 弹出确定对话框，同上方式找到确定节点，点击后返回</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 3)监测应用是否在前台，APP的启动（通过windowstatechange事件获取到当前的event的pkgName）</span></span><br><span class="line">        <span class="comment">//  - 通过接收typeWindowStateChanged事件，获取event的pkgName确定哪个应用启动或者在最上层显示（悬浮窗不适用）</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 4)自动安装与卸载软件</span></span><br><span class="line">        <span class="comment">//  - 同3，寻找相应的节点，点击事件</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 5)自动化UI测试</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 6)最常见的抢红包</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 7)通过辅助功能开启一些权限(不需要用户手动点击开启了)</span></span><br><span class="line">        <span class="comment">//  - 在用户确定需要开启权限时，自动跳转，寻找相应的开关按钮</span></span><br><span class="line">        <span class="comment">//  - 需要注意的是，部分开关（switch button， checkbox）可能没有ID，需要通过info.getClassName()来判断，属于那种类型的view。</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onInterrupt</span>()</span> &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>需要重写的一些方法：</p>
+<ul>
+<li>  <code>onServiceConnected()</code> <em>该方法在初始化辅助功能服务时调用，可以在这时做相应的初始化工作。</em></li>
+<li>  <code>onAccessibilityEvent()</code> <em>在获取到指定的监听事件时，通过回调这个方法来进行对应的操作</em></li>
+<li>  <code>onInterrupt()</code> <em>系统想要中断辅助功能时会调用该方法</em></li>
+</ul>
+<p>当然service中的onUnbind()方法也同样适用，在onUnbind()中释放一些资源也是可以的。</p>
+<blockquote>
+<p><strong>Note:</strong> 这里需要了解的是辅助功能最重要的就是手机机型的适配。由于各个厂商的系统不一样，导致了我们在获取一些节点时，需要的节点ID不同（通过ID获取节点时一种比较高效的方式）。而我们一般通过Device Monitor中的Hierarchy View获取节点信息。同时在此方式下，很多手机没法获取到节点信息，我们就需要使用添加flagReportViewIds进行手动遍历界面节点的方式获取nodeInfo。</p>
+</blockquote>
+<p>以上是辅助功能常规使用以及使用场景的介绍。下面为辅助功能的注册。</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">service</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:name</span>=<span class="string">&quot;.我们自己继承自AccessibilityService的类&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:label</span>=<span class="string">&quot;@string/app_name&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:permission</span>=<span class="string">&quot;android.permission.BIND_ACCESSIBILITY_SERVICE&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">intent-filter</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">action</span> <span class="attr">android:name</span>=<span class="string">&quot;android.accessibilityservice.AccessibilityService&quot;</span>/&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">intent-filter</span>&gt;</span></span><br><span class="line"></span><br><span class="line">        <span class="tag">&lt;<span class="name">meta-data</span></span></span><br><span class="line"><span class="tag">            <span class="attr">android:name</span>=<span class="string">&quot;android.accessibilityservice&quot;</span></span></span><br><span class="line"><span class="tag">            <span class="attr">android:resource</span>=<span class="string">&quot;@xml/第二个辅助功能配置方式的文件，存放在xml下&quot;</span>/&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">service</span>&gt;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="2-2-API-gt-20-新增方法，接口（预览版）使用探究："><a href="#2-2-API-gt-20-新增方法，接口（预览版）使用探究：" class="headerlink" title="2.2 API &gt; 20 新增方法，接口（预览版）使用探究：###"></a>2.2 API &gt; 20 新增方法，接口（预览版）使用探究：###</h3><h4 id="2-2-1-AccessibilityService新增方法一览："><a href="#2-2-1-AccessibilityService新增方法一览：" class="headerlink" title="2.2.1 AccessibilityService新增方法一览："></a>2.2.1 AccessibilityService新增方法一览：</h4><p><strong>API 21：</strong></p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong><code>getWindows()</code></strong></td>
+<td><em>返回窗口最上层的一个用户可交互的窗口信息节点 List<AccessibilityWindowInfo></em></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>获取屏幕上的窗口。<br>返回一个有目标的用户可以与之进行交互的窗口，而不是所有的窗口。</p>
+<p>为了访问Windows，服务必须通过在其元数据中设置AccessibilityService_canRetrieveWindowContent属性来声明检索窗口内容的功能。此外，服务必须选择通过设置FLAG_RETRIEVE_INTERACTIVE_WINDOWS标志来检索交互式窗口。</p>
+</blockquote>
+<p>使用此方法来获取我们屏幕上最上层的一个窗口根节点。</p>
+<p><strong>API 24：</strong></p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong><code>getSoftKeyboardController()</code></strong></td>
+<td><em>返回软键盘控制器，可用于查询和修改软键盘显示模式。</em></td>
+</tr>
+</tbody></table>
+<p>返回<a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/accessibilityservice/AccessibilityService.SoftKeyboardController.html"><code>AccessibilityService.SoftKeyboardController</code></a>其中可以使用添加<code>addOnShowModeChangedListener()</code>的方式来进行对键盘的显示隐藏状态监听，通过<code>getShowMode()</code>获取到软键盘的显示隐藏状态，<code>setShowMode(int showMode)</code>设置软键盘的显示隐藏状态。</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong><code>disableSelf()</code></strong></td>
+<td><em>关闭自己service的方法，在设置界面可以看到辅助功能状态被关闭</em></td>
+</tr>
+</tbody></table>
+<p>通过在服务中调用该方法可以将自己的服务停止，同时在辅助功能开启界面上的开关也会随之关闭。</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong><code>dispatchGesture(GestureDescription gesture, AccessibilityService.GestureResultCallback callback, Handler handler)</code></strong></td>
+<td><em>将手势发送到触摸屏。</em></td>
+</tr>
+</tbody></table>
+<p>可以通过设定<code>GestureDescription</code>将手势的轨迹显示在触摸屏上，同时可以通过<code>GestureResultCallback</code>回调获得事件的完成情况。</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong><code>findFocus(int focus)</code></strong></td>
+<td><em>找到具有指定焦点类型的视图。</em></td>
+</tr>
+</tbody></table>
+<p>这里的焦点类型有<code>FOCUS_INPUT</code>和<code>FOCUS_ACCESSIBILITY</code>分别代表了输入焦点和无障碍重点。<br><code>FOCUS_ACCESSIBILITY</code>这个焦点，是需要使用<code>setAccessibilityFocused(boolean isFocus)</code>方法进行设置过得焦点。</p>
+<p>需要注意的是：如果要使用该方法的话，需要先设置<code>AccessibilityService_canRetrieveWindowContent</code>同时添加一个flag：<code>FLAG_RETRIEVE_INTERACTIVE_WINDOWS</code>。</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong><code>getMagnificationController()</code></strong></td>
+<td><em>返回放大控制器，可用于查询和修改显示放大的状态。</em></td>
+</tr>
+</tbody></table>
+<p>返回：<a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/accessibilityservice/AccessibilityService.MagnificationController.html"><code>AccessibilityService.MagnificationController</code></a>。为了控制放大倍数，辅助功能服务必须通过在其元数据中设置AccessibilityService_canControlMagnification属性来声明该功能。</p>
+<p><strong>API 26：</strong></p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong><code>getAccessibilityButtonController()</code></strong></td>
+<td><em>系统导航区域内的辅助功能按钮控制器</em></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>返回：<a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/accessibilityservice/AccessibilityButtonController.html"><code>AccessibilityButtonController</code>：</a></p>
+</blockquote>
+<blockquote>
+<p>当设置FLAG_REQUEST_ACCESSIBILITY_BUTTON时，此类可用于查询辅助功能按钮的状态并注册回调以进行交互，并对可访问性按钮进行状态更改。</p>
+</blockquote>
+<blockquote>
+<p>注意：此类和FLAG_REQUEST_ACCESSIBILITY_BUTTON不应该被用作通过AccessibilityService为用户提供功能的唯一手段。 一些设备实现可以选择不提供软件呈现的系统导航区域，使得该功能永久不可用。</p>
+</blockquote>
+<blockquote>
+<p>注意：在支持辅助功能按钮的设备实现中，它可能始终不可用，例如前台应用程序使用SYSTEM_UI_FLAG_HIDE_NAVIGATION时。 用户还可以选择将该按钮分配给另一个可访问性服务或功能。 在每种情况下，将调用注册的AccessibilityButtonController.AccessibilityButtonCallback的onAvailabilityChanged（AccessibilityButtonController，boolean）方法来提供对可访问性按钮对注册服务的可用性的更改的通知。</p>
+</blockquote>
+<p>注意底部导航栏的小人：</p>
+<p><img src="/images/%E8%BE%85%E5%8A%A9%E5%8A%9F%E8%83%BD_AccessibilityService%E7%AC%94%E8%AE%B02/1.jpg"></p>
+<p>下面是一个简单的用例：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MyAccessibilityService</span> <span class="keyword">extends</span> <span class="title class_">AccessibilityService</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">onServiceConnected</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>.onServiceConnected();</span><br><span class="line">        <span class="type">AccessibilityServiceInfo</span> <span class="variable">info</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">AccessibilityServiceInfo</span>();</span><br><span class="line">        <span class="keyword">if</span> (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.O) &#123;</span><br><span class="line">            info.flags = AccessibilityServiceInfo.FLAG_REQUEST_ACCESSIBILITY_BUTTON;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            info.flags = AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS;</span><br><span class="line">        &#125;</span><br><span class="line">        info.eventTypes = AccessibilityEvent.TYPES_ALL_MASK;</span><br><span class="line">        info.feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC;</span><br><span class="line">        info.notificationTimeout = <span class="number">100</span>;</span><br><span class="line">        setServiceInfo(info);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onAccessibilityEvent</span><span class="params">(AccessibilityEvent event)</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.O) &#123;</span><br><span class="line">            <span class="type">AccessibilityButtonController</span> <span class="variable">mAccessibilityButtonController</span> <span class="operator">=</span> getAccessibilityButtonController();</span><br><span class="line">            mAccessibilityButtonController.registerAccessibilityButtonCallback(<span class="keyword">new</span> <span class="title class_">AccessibilityButtonController</span>.AccessibilityButtonCallback() &#123;</span><br><span class="line">                <span class="meta">@Override</span></span><br><span class="line">                <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onClicked</span><span class="params">(AccessibilityButtonController controller)</span> &#123;</span><br><span class="line">                    <span class="built_in">super</span>.onClicked(controller);</span><br><span class="line">                    <span class="comment">// 底部导航栏中辅助功能按钮点击事件回调</span></span><br><span class="line">                    Toast.makeText(MyAccessibilityService.<span class="built_in">this</span>, <span class="string">&quot;on Click&quot;</span>, Toast.LENGTH_SHORT).show();</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="meta">@Override</span></span><br><span class="line">                <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onAvailabilityChanged</span><span class="params">(AccessibilityButtonController controller, <span class="type">boolean</span> available)</span> &#123;</span><br><span class="line">                    <span class="built_in">super</span>.onAvailabilityChanged(controller, available);</span><br><span class="line">                    <span class="comment">// 辅助功能可用性改变的回调。返回了辅助功能底部按钮是否可用的布尔值，和按钮控制器</span></span><br><span class="line">                    <span class="comment">// available = true 表示该按钮对本服务可用</span></span><br><span class="line">                    <span class="comment">// available = false 是由于设备显示了按钮，或按钮被分配到另一个服务或其他原因。</span></span><br><span class="line">                &#125;</span><br><span class="line">            &#125;);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onInterrupt</span><span class="params">()</span> &#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>在开启辅助功能之后，如果是O系统的话，在底部导航栏会出现一个辅助功能的小人。同时这个小人可以接收到点击事件，和辅助功能可用状态变化。</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong><code>getFingerprintGestureController()</code></strong></td>
+<td><em>返回指纹手势控制器</em></td>
+</tr>
+</tbody></table>
+<p>指纹手势控制器：<a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/accessibilityservice/FingerprintGestureController.html"><code>FingerprintGestureController</code></a></p>
+<blockquote>
+<p>只要设备具有能够检测手势的传感器，AccessibilityService可以捕获在设备的指纹传感器上执行的手势。<br>使用时需要声明 <code>CAPABILITY_CAN_CAPTURE_FINGERPRINT_GESTURES</code>同时需要权限<code>USE_FINGERPRINT</code>,由于没有真机调试该方法，待Google发布正式版API后继续研究</p>
+</blockquote>
+<p><strong>支持的四个事件:</strong></p>
+<table>
+<thead>
+<tr>
+<th>常量</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>FINGERPRINT_GESTURE_SWIPE_DOWN</code></td>
+<td>指纹手势下滑。</td>
+</tr>
+<tr>
+<td><code>FINGERPRINT_GESTURE_SWIPE_LEFT</code></td>
+<td>指纹手势左滑。</td>
+</tr>
+<tr>
+<td><code>FINGERPRINT_GESTURE_SWIPE_RIGHT</code></td>
+<td>指纹手势右滑。</td>
+</tr>
+<tr>
+<td><code>FINGERPRINT_GESTURE_SWIPE_DOWN</code></td>
+<td>指纹手势上滑。</td>
+</tr>
+</tbody></table>
+<p><strong>公有方法</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>isGestureDetectionAvailable()</code></td>
+<td>判断手势监测是否可用。</td>
+</tr>
+<tr>
+<td><code>registerFingerprintGestureCallback(FingerprintGestureController.FingerprintGestureCallback callback, Handler handler)</code></td>
+<td>通过该方法注册一个指纹手势的回调。</td>
+</tr>
+<tr>
+<td><code>unregisterFingerprintGestureCallback(FingerprintGestureController.FingerprintGestureCallback callback)</code></td>
+<td>取消注册。</td>
+</tr>
+<tr>
+<td><code>registerFingerprintGestureCallback(FingerprintGestureController.FingerprintGestureCallback, Handler)</code></td>
+<td>取消注册。</td>
+</tr>
+</tbody></table>
+<p>其中的<a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/accessibilityservice/FingerprintGestureController.FingerprintGestureCallback.html"><code>FingerprintGestureController.FingerprintGestureCallback</code></a>与之前的辅助功能按钮回调基本相同，都只有两个方法。</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>onGestureDetected(int gesture)</code></td>
+<td>这里获取到相应的手势。</td>
+</tr>
+<tr>
+<td><code>onGestureDetectionAvailabilityChanged(boolean available)</code></td>
+<td>这里返回了手势监测是否可用。</td>
+</tr>
+</tbody></table>
+<h4 id="2-2-1-AccessibilityNodeInfo新增方法一览："><a href="#2-2-1-AccessibilityNodeInfo新增方法一览：" class="headerlink" title="2.2.1 AccessibilityNodeInfo新增方法一览："></a>2.2.1 AccessibilityNodeInfo新增方法一览：</h4><p><strong>API 21</strong></p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>getError()</code></td>
+<td>获取该节点的错误文本。</td>
+</tr>
+<tr>
+<td><code>setError(CharSequence error)</code></td>
+<td>设置该节点的错误文本。</td>
+</tr>
+</tbody></table>
+<p>以上两个方法需要搭配使用。</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>getWindow()</code></td>
+<td>获取该节点所属的窗口（根节点）</td>
+</tr>
+</tbody></table>
+<p>通过该方法，我们可以使用一个子节点来重新获取到我们的根节点。在需要多次操作界面元素的情况下（同时没有产生windowstatechange事件），我们可以不通过监听事件来进行下一个节点的操作。</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>addAction(AccessibilityNodeInfo.AccessibilityAction action)</code></td>
+<td>为一个nodeInfo添加一个操作，API 21</td>
+</tr>
+<tr>
+<td><code>removeAction(AccessibilityNodeInfo.AccessibilityAction action)</code></td>
+<td>移除一个可以在该节点上执行的操作。</td>
+</tr>
+<tr>
+<td><code>removeChild(View root, int virtualDescendantId)</code></td>
+<td>移除给定根节点的一个虚拟子元素。</td>
+</tr>
+<tr>
+<td><code>removeChild(View child)</code></td>
+<td>移除一个子元素。</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>第一个<code>addAction(AccessibilityNodeInfo.AccessibilityAction action)</code>方法是API 21时替代API 20中的<code>addAction(int action)</code>方法。<br>提供了一个在辅助功能外操作节点的方法， <strong>该方法不能在辅助功能服务中调用，不然会报错</strong><code>java.lang.IllegalStateException: Cannot perform this action on a sealed instance.</code></p>
+</blockquote>
+<blockquote>
+<p>后三个方法使用的前提都是需要事先在节点中添加了操作，或者视图，不然都不会起作用。<strong>要说明的是removeAction方法也需要在服务外调用，不然也要报错</strong></p>
+</blockquote>
+<p><strong>API 22</strong></p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>getTraversalAfter()</code></td>
+<td>当前节点被访问后，获取无障碍遍历中的下一个节点。</td>
+</tr>
+<tr>
+<td><code>getTraversalBefore()</code></td>
+<td>当前节点被访问后，获取无障碍遍历中的上一个节点。</td>
+</tr>
+<tr>
+<td><code>setTraversalAfter(View view)</code></td>
+<td>设置无障碍遍历中下一个被访问的视图。一个屏幕阅读器在访问该节点内容之前，必须访问另一个节点的内容。如果 virtualDescendantId 等于 NO_ID，root被设置为前任。</td>
+</tr>
+<tr>
+<td><code>setTraversalAfter(View root, int virtualDescendantId)</code></td>
+<td>设置无障碍遍历中下一个被访问的视图。</td>
+</tr>
+<tr>
+<td><code>setTraversalBefore(View view)</code></td>
+<td>设置无障碍遍历中当前访问节点的上一个视图。</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>通过在view的xml属性中添加<code>android:accessibilityTraversalAfter=&quot;+id&quot;</code>方式来进行辅助功能遍历时的顺序后，通过本方法获取下一个节点。</p>
+</blockquote>
+<blockquote>
+<p>通过在view的xml属性中添加<code>android:accessibilityTraversalBefore=&quot;+id&quot;</code>方式来进行辅助功能遍历时的顺序，同上。</p>
+</blockquote>
+<blockquote>
+<p>通过<code>View.setAccessibilityTraversalBefore(+id)</code>方式设置顺序。</p>
+</blockquote>
+<p><strong>API 23</strong></p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>isContextClickable()</code></td>
+<td>获取该节点是否上下文可点击。</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>通过View的<code>setContextClickable(Boolean isClickable)</code>方法设置一个View是否可以点击。然后通过该方法，我们可以获取到节点上下文的可否点击状态。</p>
+</blockquote>
+<p><strong>API 24</strong></p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>setImportantForAccessibility(boolean important)</code></td>
+<td>设置该节点对无障碍很重要。</td>
+</tr>
+<tr>
+<td><code>isImportantForAccessibility()</code></td>
+<td>返回该节点是否来源于一个对无障碍相当重要的视图。</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>通过View的XML属性设置<code>android:importantForAccessibility=&quot;&quot;</code>状态后，我们可以通过本方法获取到该状态的boolean值。</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>setDrawingOrder(int drawingOrderInParent)</code></td>
+<td>设置与此节点对应的视图的绘图顺序。</td>
+</tr>
+<tr>
+<td><code>getDrawingOrder()</code></td>
+<td>获取该节点中视图的相对绘制顺序。</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>同样的不能在辅助功能服务中调用该方法。<br>参考 <a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/view/ViewGroup.html#setChildrenDrawingOrderEnabled(boolean)"><code>ViewGroup.setChildrenDrawingOrderEnabled()</code></a>中children的绘制顺序理解。</p>
+</blockquote>
+<blockquote>
+<p>返回与该节点对应的视图相对于其兄弟姐妹的绘图位置。<br>返回的数值从1开始，表示相对于父节点中，并列view的绘制顺序。</p>
+</blockquote>
+<h3 id="2-3-API-gt-20-新增方法，接口（预览版）接口类文档汇总："><a href="#2-3-API-gt-20-新增方法，接口（预览版）接口类文档汇总：" class="headerlink" title="2.3 API &gt; 20 新增方法，接口（预览版）接口类文档汇总：###"></a>2.3 API &gt; 20 新增方法，接口（预览版）接口类文档汇总：###</h3><p>1、<a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/accessibilityservice/GestureDescription.html"><em><strong>GestureDescription</strong></em></a>使用<code>dispatchGesture(GestureDescription ge, GestureResultCallback cb, Handler handler)</code>方法时需要学习的类，它提供了获取手势的Builder中设置的一些属性。</p>
+<p>2、<a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/accessibilityservice/AccessibilityService.GestureResultCallback.html"><em><strong>AccessibilityService.GestureResultCallback</strong></em></a>使用<code>dispatchGesture(GestureDescription ge, GestureResultCallback cb, Handler handler)</code>方法时需要了解的类，提供了手势的回调。</p>
+<p>3、<a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/accessibilityservice/AccessibilityService.MagnificationController.html"><em><strong>AccessibilityService.MagnificationController</strong></em></a> 使用<code>getMagnificationController()</code>返回的放大控制器。</p>
+<p>4、<a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/accessibilityservice/AccessibilityService.SoftKeyboardController.html"><em><strong>AccessibilityService.SoftKeyboardController</strong></em></a>使用<code>getSoftKeyboardController()</code>返回的键盘控制器。</p>
+<p>5、<a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/accessibilityservice/AccessibilityButtonController.html"><em><strong>AccessibilityButtonController</strong></em></a>Android O以上的系统返回的导航栏按钮控制器，其中还有导航栏按钮回调需要了解。</p>
+<p>6、<a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/accessibilityservice/AccessibilityButtonController.AccessibilityButtonCallback.html"><em><strong>AccessibilityButtonController.AccessibilityButtonCallback</strong></em></a>用于与系统导航区域内的辅助功能按钮的状态进行交互和更改的回调。</p>
+<p>7、<a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/accessibilityservice/FingerprintGestureController.html"><em><strong>FingerprintGestureController</strong></em></a>Android O新增的指纹控制器。</p>
+<p>8、<a target="_blank" rel="noopener" href="https://developer.android.com/reference/android/accessibilityservice/FingerprintGestureController.FingerprintGestureCallback.html"><em><strong>FingerprintGestureCallback</strong></em></a>为手势控制器添加的回调方法。</p>
+<h2 id="3、其他一些参考文档"><a href="#3、其他一些参考文档" class="headerlink" title="3、其他一些参考文档##"></a>3、其他一些参考文档##</h2><p><strong>中文文档：</strong></p>
+<p><a target="_blank" rel="noopener" href="http://www.siaa.org.cn/home/content/sharedetail/aid/1187">Android无障碍类：AccessibilityRecord</a></p>
+<p><a target="_blank" rel="noopener" href="http://www.siaa.org.cn/home/content/sharedetail/aid/1186">Android无障碍类：AccessibilityNodeProvider</a></p>
+<p><a target="_blank" rel="noopener" href="http://www.siaa.org.cn/home/content/sharedetail/aid/1184">Android无障碍类：AccessibilityNodeInfo.RangeInfo</a></p>
+<p><a target="_blank" rel="noopener" href="http://www.siaa.org.cn/home/content/sharedetail/aid/1182">Android无障碍类：AccessibilityNodeInfo.CollectionItemInfo</a></p>
+<p><a target="_blank" rel="noopener" href="http://www.siaa.org.cn/home/content/sharedetail/aid/1181">Android无障碍类：AccessibilityNodeInfo.CollectionInfo</a></p>
+<p><a target="_blank" rel="noopener" href="http://www.siaa.org.cn/home/content/sharedetail/aid/1178">Android无障碍类：AccessibilityNodeInfo.AccessibilityAction</a></p>
+<p><a target="_blank" rel="noopener" href="http://www.siaa.org.cn/home/content/sharedetail/aid/1144">Android无障碍类：AccessibilityNodeInfo</a></p>
+<p><a target="_blank" rel="noopener" href="http://www.siaa.org.cn/home/content/sharedetail/aid/1143">Android无障碍类：AccessibilityManager</a></p>
+<p><a target="_blank" rel="noopener" href="http://www.siaa.org.cn/home/content/sharedetail/aid/1142">Android无障碍类：AccessibilityEvent</a></p>
+<p><a target="_blank" rel="noopener" href="http://www.siaa.org.cn/home/content/sharedetail/aid/1141">Android无障碍接口</a></p>
+<p><a target="_blank" rel="noopener" href="http://www.siaa.org.cn/home/content/sharedetail/aid/1140">Android视图无障碍包概览</a></p>
+<blockquote>
+<p>转自：<a target="_blank" rel="noopener" href="https://www.jianshu.com/p/ef01ce654302">https://www.jianshu.com/p/ef01ce654302</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2020/06/04/%E8%BE%85%E5%8A%A9%E5%8A%9F%E8%83%BD-AccessibilityService%E7%AC%94%E8%AE%B0%EF%BC%882%EF%BC%89/" data-id="cl9pgeoek025jycv1a7yh3god" data-title="辅助功能 AccessibilityService笔记（2）" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2020/06/04/Ubuntu-18-04%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E5%AE%89%E8%A3%85-Chrome-Headless-Selenium/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          Ubuntu 18.04服务器上安装 Chrome Headless+Selenium
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2020/06/04/AccessibilityService-Android-%E8%BE%85%E5%8A%A9%E5%8A%9F%E8%83%BD%E7%AC%94%E8%AE%B0/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">(AccessibilityService) Android 辅助功能笔记</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

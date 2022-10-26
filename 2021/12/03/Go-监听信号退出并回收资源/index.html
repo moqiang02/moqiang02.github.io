@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Go 监听信号退出并回收资源 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="为什么取这个名字，而不是直接写优雅退出呢？ 实际上我一直觉得优雅退出这个名字并不直观，而优雅退出的本质，其实就是监听一些操作系统信号。在监听到退出信号的时候，可以做一些资源回收的操作，而不至于什么都不管直接退出，等到操作系统自己去处理回收这些资源。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Go 监听信号退出并回收资源">
+<meta property="og:url" content="http://moqiang02.github.io/2021/12/03/Go-%E7%9B%91%E5%90%AC%E4%BF%A1%E5%8F%B7%E9%80%80%E5%87%BA%E5%B9%B6%E5%9B%9E%E6%94%B6%E8%B5%84%E6%BA%90/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="为什么取这个名字，而不是直接写优雅退出呢？ 实际上我一直觉得优雅退出这个名字并不直观，而优雅退出的本质，其实就是监听一些操作系统信号。在监听到退出信号的时候，可以做一些资源回收的操作，而不至于什么都不管直接退出，等到操作系统自己去处理回收这些资源。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-12-03T15:32:39.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.752Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Go-监听信号退出并回收资源" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2021/12/03/Go-%E7%9B%91%E5%90%AC%E4%BF%A1%E5%8F%B7%E9%80%80%E5%87%BA%E5%B9%B6%E5%9B%9E%E6%94%B6%E8%B5%84%E6%BA%90/" class="article-date">
+  <time class="dt-published" datetime="2021-12-03T15:32:39.000Z" itemprop="datePublished">2021-12-03</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/go/">go</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Go 监听信号退出并回收资源
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E4%B8%AD%E7%9A%84%E4%BF%A1%E5%8F%B7"><span class="toc-number">1.</span> <span class="toc-text">操作系统中的信号</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#kill-%E5%92%8C-kill-9-%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="toc-number">1.1.</span> <span class="toc-text">kill 和 kill -9 的区别</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#USR1-%E5%92%8C-USR2"><span class="toc-number">1.2.</span> <span class="toc-text">USR1 和 USR2</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Go-%E4%BC%98%E9%9B%85%E9%80%80%E5%87%BA"><span class="toc-number">2.</span> <span class="toc-text">Go 优雅退出</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Notify"><span class="toc-number">2.1.</span> <span class="toc-text">Notify</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9F%BA%E6%9C%AC%E7%94%A8%E6%B3%95"><span class="toc-number">2.2.</span> <span class="toc-text">基本用法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="toc-number">2.3.</span> <span class="toc-text">源码阅读</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%A1%B9%E7%9B%AE%E4%B8%AD%E7%9A%84%E5%AE%9E%E8%B7%B5"><span class="toc-number">2.4.</span> <span class="toc-text">项目中的实践</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Reference"><span class="toc-number">2.5.</span> <span class="toc-text">Reference</span></a></li></ol></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <p>为什么取这个名字，而不是直接写优雅退出呢？</p>
+<p>实际上我一直觉得优雅退出这个名字并不直观，而优雅退出的本质，其实就是监听一些操作系统信号。在监听到退出信号的时候，可以做一些资源回收的操作，而不至于什么都不管直接退出，等到操作系统自己去处理回收这些资源。<span id="more"></span></p>
+<h1 id="操作系统中的信号"><a href="#操作系统中的信号" class="headerlink" title="操作系统中的信号"></a>操作系统中的信号</h1><p>关于信号的介绍，可以用<code>man signal</code>命令进行查看，这里不多做介绍了。</p>
+<p>在POSIX.1-1990标准中定义的信号列表</p>
+<table>
+<thead>
+<tr>
+<th>信号</th>
+<th>值</th>
+<th>动作</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>SIGHUP</td>
+<td>1</td>
+<td>Term</td>
+<td>终端控制进程结束(终端连接断开)</td>
+</tr>
+<tr>
+<td>SIGINT</td>
+<td>2</td>
+<td>Term</td>
+<td>用户发送INTR字符(Ctrl+C)触发</td>
+</tr>
+<tr>
+<td>SIGQUIT</td>
+<td>3</td>
+<td>Core</td>
+<td>用户发送QUIT字符(Ctrl+/)触发</td>
+</tr>
+<tr>
+<td>SIGILL</td>
+<td>4</td>
+<td>Core</td>
+<td>非法指令(程序错误、试图执行数据段、栈溢出等)</td>
+</tr>
+<tr>
+<td>SIGABRT</td>
+<td>6</td>
+<td>Core</td>
+<td>调用abort函数触发</td>
+</tr>
+<tr>
+<td>SIGFPE</td>
+<td>8</td>
+<td>Core</td>
+<td>算术运行错误(浮点运算错误、除数为零等)</td>
+</tr>
+<tr>
+<td>SIGKILL</td>
+<td>9</td>
+<td>Term</td>
+<td>无条件结束程序(不能被捕获、阻塞或忽略)</td>
+</tr>
+<tr>
+<td>SIGSEGV</td>
+<td>11</td>
+<td>Core</td>
+<td>无效内存引用(试图访问不属于自己的内存空间、对只读内存空间进行写操作)</td>
+</tr>
+<tr>
+<td>SIGPIPE</td>
+<td>13</td>
+<td>Term</td>
+<td>消息管道损坏(FIFO/Socket通信时，管道未打开而进行写操作)</td>
+</tr>
+<tr>
+<td>SIGALRM</td>
+<td>14</td>
+<td>Term</td>
+<td>时钟定时信号</td>
+</tr>
+<tr>
+<td>SIGTERM</td>
+<td>15</td>
+<td>Term</td>
+<td>结束程序(可以被捕获、阻塞或忽略)</td>
+</tr>
+<tr>
+<td>SIGUSR1</td>
+<td>30,10,16</td>
+<td>Term</td>
+<td>用户保留</td>
+</tr>
+<tr>
+<td>SIGUSR2</td>
+<td>31,12,17</td>
+<td>Term</td>
+<td>用户保留</td>
+</tr>
+<tr>
+<td>SIGCHLD</td>
+<td>20,17,18</td>
+<td>Ign</td>
+<td>子进程结束(由父进程接收)</td>
+</tr>
+<tr>
+<td>SIGCONT</td>
+<td>19,18,25</td>
+<td>Cont</td>
+<td>继续执行已经停止的进程(不能被阻塞)</td>
+</tr>
+<tr>
+<td>SIGSTOP</td>
+<td>17,19,23</td>
+<td>Stop</td>
+<td>停止进程(不能被捕获、阻塞或忽略)</td>
+</tr>
+<tr>
+<td>SIGTSTP</td>
+<td>18,20,24</td>
+<td>Stop</td>
+<td>停止进程(可以被捕获、阻塞或忽略)</td>
+</tr>
+<tr>
+<td>SIGTTIN</td>
+<td>21,21,26</td>
+<td>Stop</td>
+<td>后台程序从终端中读取数据时触发</td>
+</tr>
+<tr>
+<td>SIGTTOU</td>
+<td>22,22,27</td>
+<td>Stop</td>
+<td>后台程序向终端中写数据时触发</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>第1列为信号名；<br>第2列为对应的信号值，需要注意的是，有些信号名对应着3个信号值，这是因为这些信号值与平台相关，将man手册中对3个信号值的说明摘出如下，the first one is usually valid for alpha and sparc, the middle one for i386, ppc and sh, and the last one for mips.<br>第3列为操作系统收到信号后的动作<br>- Term表明默认动作为终止进程<br>- Ign表明默认动作为忽略该信号<br>- Core表明默认动作为终止进程同时输出core dump<br>- Stop表明默认动作为停止进程。<br>第4列为对信号作用的注释性说明<br>需要特别说明的是，SIGKILL和SIGSTOP这两个信号既不能被应用程序捕获，也不能被操作系统阻塞或忽略。</p>
+</blockquote>
+<p>实际上我们用的比较多的也是上面的其中几个信号，如 SIGHUP、SIGINT、SIGQUIT、SIGKILL、SIGTERM 这几个</p>
+<h2 id="kill-和-kill-9-的区别"><a href="#kill-和-kill-9-的区别" class="headerlink" title="kill 和 kill -9 的区别"></a>kill 和 kill -9 的区别</h2><p>既然是监听退出信号，我们就不得不提一下 kill 这个命令。通过上面的表格，我们可以知道，SIGKILL 和 SIGTERM  这两个信号对应的就是 kill 命令</p>
+<ul>
+<li><p>  kill pid 就是向这个 pid 的进程发送 SIGTERM 信号，这个信号可以被捕获接收、</p>
+</li>
+<li><p>  kill -9 pid 就是向这个 pid 的进程发送 SIGKILL 信号，这个信号既不能被应用程序捕获，也不能被阻塞或忽略，相当于我们平时说的强制退出，在这种情况下应用想反应都来不及（SIGKILL 信号是直接发给 init 进程的，由 init 进程负责终止 pid 指定的进程）</p>
+</li>
+</ul>
+<h2 id="USR1-和-USR2"><a href="#USR1-和-USR2" class="headerlink" title="USR1 和 USR2"></a>USR1 和 USR2</h2><p>我们继续看上面的表格，USR1 和 USR2 也是我们平常可能用到的，是为用户保留使用的两个信号，我们可以用来做一些额外的自定义功能</p>
+<h1 id="Go-优雅退出"><a href="#Go-优雅退出" class="headerlink" title="Go 优雅退出"></a>Go 优雅退出</h1><p>要做到优雅退出，其实就是两件事：</p>
+<ol>
+<li><p> 在程序运行中监听信号</p>
+</li>
+<li><p> 当收到了信号后，做资源关闭回收、打印日志、保留服务状态等操作</p>
+</li>
+</ol>
+<h2 id="Notify"><a href="#Notify" class="headerlink" title="Notify"></a>Notify</h2><p>在 go 语言中，监听信号主要是用到了 <code>os/signal</code> 包中的<code>notify</code>方法，也有<code>Stop</code>停止监听信号的方法以及<code>Reset</code>取消信号调用<code>notify</code>的效果的方法等，感兴趣的可以去看一下源码实现，这里主要是提到<code>notify</code>方法</p>
+<h2 id="基本用法"><a href="#基本用法" class="headerlink" title="基本用法"></a>基本用法</h2><ol>
+<li> 监听所有信号的操作</li>
+</ol>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">c := <span class="built_in">make</span>(<span class="keyword">chan</span> os.Signal)</span><br><span class="line"><span class="comment">// 监听所有信号</span></span><br><span class="line">signal.Notify(c)</span><br><span class="line">fmt.Println(<span class="string">&quot;启动了程序&quot;</span>)</span><br><span class="line">s := &lt;-c</span><br><span class="line">fmt.Println(<span class="string">&quot;收到信号:&quot;</span>, s)</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li> 监听指定信号的操作</li>
+</ol>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">c := <span class="built_in">make</span>(<span class="keyword">chan</span> os.Signal)</span><br><span class="line"><span class="comment">// 监听指定信号</span></span><br><span class="line">signal.Notify(c, os.Interrupt, os.Kill, syscall.SIGUSR1, syscall.SIGUSR2)</span><br><span class="line">fmt.Println(<span class="string">&quot;启动了程序&quot;</span>)</span><br><span class="line">s := &lt;-c</span><br><span class="line">fmt.Println(<span class="string">&quot;收到信号:&quot;</span>, s)</span><br></pre></td></tr></table></figure>
+
+<p>需要注意的是，代码里的<code>os.Interrupt</code>等于<code>syscall.SIGINT</code>，<code>os.Kill</code>等于<code>syscall.SIGKILL</code></p>
+<p>我们可以进一步实践一下触发信号的效果：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">c := <span class="built_in">make</span>(<span class="keyword">chan</span> os.Signal)</span><br><span class="line">signal.Notify(c)</span><br><span class="line"><span class="keyword">for</span> s := <span class="keyword">range</span> c &#123;</span><br><span class="line">  <span class="keyword">switch</span> s &#123;</span><br><span class="line">    <span class="keyword">case</span> os.Kill: <span class="comment">// kill -9 pid，下面的fmt无效</span></span><br><span class="line">    fmt.Println(<span class="string">&quot;强制退出&quot;</span>, s)</span><br><span class="line">    <span class="keyword">case</span> syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT: <span class="comment">// ctrl + c</span></span><br><span class="line">    fmt.Println(<span class="string">&quot;退出&quot;</span>, s)</span><br><span class="line">    <span class="keyword">case</span> syscall.SIGUSR1: <span class="comment">// kill -USR1 pid</span></span><br><span class="line">    fmt.Println(<span class="string">&quot;usr1&quot;</span>, s)</span><br><span class="line">    <span class="keyword">case</span> syscall.SIGUSR2: <span class="comment">// kill -USR2 pid</span></span><br><span class="line">    fmt.Println(<span class="string">&quot;usr2&quot;</span>, s)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><p>我们主要还是看<code>notify</code>方法：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> handlers <span class="keyword">struct</span> &#123;</span><br><span class="line">  <span class="comment">// 同步锁</span></span><br><span class="line"> sync.Mutex</span><br><span class="line"> <span class="comment">// 用于将 ch 和信号接收处理 handler 关联映射</span></span><br><span class="line"> m <span class="keyword">map</span>[<span class="keyword">chan</span>&lt;- os.Signal]*handler</span><br><span class="line"> <span class="comment">// 映射每一类 signal 有几个 channel 需要接收</span></span><br><span class="line"> ref [numSig]<span class="type">int64</span></span><br><span class="line"> <span class="comment">// 用于暂存需要停止监听的 signal，具体可以看 Stop 方法</span></span><br><span class="line"> stopping []stopping</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> handler <span class="keyword">struct</span> &#123;</span><br><span class="line"> mask [(numSig + <span class="number">31</span>) / <span class="number">32</span>]<span class="type">uint32</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// ...还有 handler 的方法</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// signal.go</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Notify</span><span class="params">(c <span class="keyword">chan</span>&lt;- os.Signal, sig ...os.Signal)</span></span> &#123;</span><br><span class="line">  <span class="comment">// 判空</span></span><br><span class="line"> <span class="keyword">if</span> c == <span class="literal">nil</span> &#123;</span><br><span class="line">  <span class="built_in">panic</span>(<span class="string">&quot;os/signal: Notify using nil channel&quot;</span>)</span><br><span class="line"> &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// handlers 是一个全局的变量</span></span><br><span class="line"> handlers.Lock()</span><br><span class="line"> <span class="keyword">defer</span> handlers.Unlock()</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 将 ch 和 handler 进行映射</span></span><br><span class="line"> h := handlers.m[c]</span><br><span class="line"> <span class="keyword">if</span> h == <span class="literal">nil</span> &#123;</span><br><span class="line">  <span class="keyword">if</span> handlers.m == <span class="literal">nil</span> &#123;</span><br><span class="line">   handlers.m = <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="keyword">chan</span>&lt;- os.Signal]*handler)</span><br><span class="line">  &#125;</span><br><span class="line">  h = <span class="built_in">new</span>(handler)</span><br><span class="line">  handlers.m[c] = h</span><br><span class="line"> &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 添加需要监听的信号的函数封装</span></span><br><span class="line"> add := <span class="function"><span class="keyword">func</span><span class="params">(n <span class="type">int</span>)</span></span> &#123;</span><br><span class="line">  <span class="keyword">if</span> n &lt; <span class="number">0</span> &#123;</span><br><span class="line">   <span class="keyword">return</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> !h.want(n) &#123;</span><br><span class="line">   h.set(n)</span><br><span class="line">   <span class="keyword">if</span> handlers.ref[n] == <span class="number">0</span> &#123;</span><br><span class="line">    enableSignal(n)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// The runtime requires that we enable a</span></span><br><span class="line">    <span class="comment">// signal before starting the watcher.</span></span><br><span class="line">    watchSignalLoopOnce.Do(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">     <span class="keyword">if</span> watchSignalLoop != <span class="literal">nil</span> &#123;</span><br><span class="line">      <span class="keyword">go</span> watchSignalLoop()</span><br><span class="line">     &#125;</span><br><span class="line">    &#125;)</span><br><span class="line">   &#125;</span><br><span class="line">   handlers.ref[n]++</span><br><span class="line">  &#125;</span><br><span class="line"> &#125;</span><br><span class="line"></span><br><span class="line"> <span class="keyword">if</span> <span class="built_in">len</span>(sig) == <span class="number">0</span> &#123;</span><br><span class="line">    <span class="comment">// 如果没有传入任何 sig，则将全部信号都加入 ch 监听映射中</span></span><br><span class="line">  <span class="keyword">for</span> n := <span class="number">0</span>; n &lt; numSig; n++ &#123;</span><br><span class="line">   add(n)</span><br><span class="line">  &#125;</span><br><span class="line"> &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">  <span class="keyword">for</span> _, s := <span class="keyword">range</span> sig &#123;</span><br><span class="line">   add(signum(s))</span><br><span class="line">  &#125;</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// ...省略其他代码</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">process</span><span class="params">(sig os.Signal)</span></span> &#123;</span><br><span class="line"> n := signum(sig)</span><br><span class="line"> <span class="keyword">if</span> n &lt; <span class="number">0</span> &#123;</span><br><span class="line">  <span class="keyword">return</span></span><br><span class="line"> &#125;</span><br><span class="line"></span><br><span class="line"> handlers.Lock()</span><br><span class="line"> <span class="keyword">defer</span> handlers.Unlock()</span><br><span class="line"></span><br><span class="line"> <span class="keyword">for</span> c, h := <span class="keyword">range</span> handlers.m &#123;</span><br><span class="line">  <span class="keyword">if</span> h.want(n) &#123;</span><br><span class="line">   <span class="comment">// send but do not block for it</span></span><br><span class="line">   <span class="keyword">select</span> &#123;</span><br><span class="line">   <span class="keyword">case</span> c &lt;- sig:</span><br><span class="line">   <span class="keyword">default</span>:</span><br><span class="line">   &#125;</span><br><span class="line">  &#125;</span><br><span class="line"> &#125;</span><br><span class="line"></span><br><span class="line"> <span class="comment">// Avoid the race mentioned in Stop.</span></span><br><span class="line"> <span class="keyword">for</span> _, d := <span class="keyword">range</span> handlers.stopping &#123;</span><br><span class="line">  <span class="keyword">if</span> d.h.want(n) &#123;</span><br><span class="line">   <span class="keyword">select</span> &#123;</span><br><span class="line">   <span class="keyword">case</span> d.c &lt;- sig:</span><br><span class="line">   <span class="keyword">default</span>:</span><br><span class="line">   &#125;</span><br><span class="line">  &#125;</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在官方注释说明中提到，需要传入一个带有缓冲区的 <code>channel</code>，因为监听的信号是不阻塞地发到 <code>ch</code> 中的，如果 <code>sig</code> 当前没有被 <code>recv</code>，则直接丢弃，造成了 <code>sig</code> 可能丢失的情况产生</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// signal_unix.go</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">loop</span><span class="params">()</span></span> &#123;</span><br><span class="line"> <span class="keyword">for</span> &#123;</span><br><span class="line">    <span class="comment">// process 方法实现在 signal.go 中，看上一代码块的后面</span></span><br><span class="line">  process(syscall.Signal(signal_recv()))</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">init</span><span class="params">()</span></span> &#123;</span><br><span class="line"> watchSignalLoop = loop</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="项目中的实践"><a href="#项目中的实践" class="headerlink" title="项目中的实践"></a>项目中的实践</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 优雅退出go守护进程</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line"> pid := syscall.Getpid()</span><br><span class="line"> fmt.Println(<span class="string">&quot;pid : &quot;</span>, pid)</span><br><span class="line"> <span class="comment">//创建监听退出chan</span></span><br><span class="line"> c := <span class="built_in">make</span>(<span class="keyword">chan</span> os.Signal, <span class="number">1</span>)</span><br><span class="line"> <span class="keyword">defer</span> <span class="built_in">close</span>(c)</span><br><span class="line"> <span class="comment">//监听指定信号 ctrl+c kill</span></span><br><span class="line"> signal.Notify(c, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)</span><br><span class="line"> <span class="keyword">go</span> NotifyAndExit(c)</span><br><span class="line">  <span class="comment">// 初始化</span></span><br><span class="line"> db.Init()</span><br><span class="line"> redis.Init()</span><br><span class="line"> server.Init()</span><br><span class="line"> fmt.Println(<span class="string">&quot;进程启动...&quot;</span>)</span><br><span class="line">  server.Serve(<span class="string">&quot;:8080&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NotifyAndExit</span><span class="params">(c &lt;-<span class="keyword">chan</span> os.Signal)</span></span> &#123;</span><br><span class="line"> <span class="keyword">for</span> s := <span class="keyword">range</span> c &#123;</span><br><span class="line">  <span class="keyword">switch</span> s &#123;</span><br><span class="line">  <span class="keyword">case</span> syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT: <span class="comment">// ctrl + c</span></span><br><span class="line">   fmt.Println(<span class="string">&quot;退出&quot;</span>, s)</span><br><span class="line">   db.Close()</span><br><span class="line">   redis.Close()</span><br><span class="line">   server.Close()</span><br><span class="line">      os.Exit(<span class="number">0</span>)</span><br><span class="line">     <span class="keyword">default</span>:</span><br><span class="line">  &#125;</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里面有几个关键点：</p>
+<ol>
+<li><p> <code>syscall.Getpid()</code>：可以直接获取进程启动的 pid，一般我们之间会持久化到一个文件中，可以方便直接查看，而不需要再去 <code>ps -ef</code></p>
+</li>
+<li><p> 我们可以起一个 goroutine 去监听信号，当收到 <code>kill</code> 信号后对资源连接进行关闭，并打印关键日志，用于后续日志检索等</p>
+</li>
+<li><p> 在做完这些事情后，记得主动调用<code>os.Exit(0)</code>进行退出，因为我们已经捕获到 <code>kill</code>信号，进入了自定义的处理逻辑，如果调用<code>exit</code>方法，则程序就不会进入结束环节了（<code>kill -9</code> 还是可以直接 <code>kill</code> 掉的）</p>
+</li>
+</ol>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/skh2015java/article/details/99468586">https://blog.csdn.net/skh2015java/article/details/99468586</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2021/12/03/Go-%E7%9B%91%E5%90%AC%E4%BF%A1%E5%8F%B7%E9%80%80%E5%87%BA%E5%B9%B6%E5%9B%9E%E6%94%B6%E8%B5%84%E6%BA%90/" data-id="cl9pgenra00f8ycv12v5s61oc" data-title="Go 监听信号退出并回收资源" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2021/12/04/sync%E8%BE%85%E5%8A%A9%E5%B9%B6%E5%8F%91%E5%AE%89%E5%85%A8/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          sync辅助并发安全
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2021/12/01/%E7%BB%93%E6%9E%84%E4%BD%93%E4%B8%8Ejson%E7%9B%B8%E4%BA%92%E8%BD%AC%E6%8D%A2%EF%BC%8Cmap%E4%B8%8Ejson%E7%9B%B8%E4%BA%92%E8%BD%AC%E6%8D%A2/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">结构体与json相互转换，map与json相互转换</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

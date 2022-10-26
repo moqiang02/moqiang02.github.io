@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>写了websocket个聊天室，然后终于弄懂了php的socket | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="经朋友推荐去一家手游公司面试，原谅我不厚道的只是好奇手游公司到底是啥样的才去的。工作虽然没找到，但是跟他们的技术总监套近乎聊了几乎一晚上，受益良多，知道了运营多个手游大体需要的技术，当然还是厚道的不爆料了。面试中被问及socket和多线程编程，对这两个知识点完全是空白，回来果断开始研究。还是那句话，不懂裁缝的厨师不是好司机。何况这两个知识也在前端开发的范畴之内。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="写了websocket个聊天室，然后终于弄懂了php的socket">
+<meta property="og:url" content="http://moqiang02.github.io/2016/07/19/%E5%86%99%E4%BA%86websocket%E4%B8%AA%E8%81%8A%E5%A4%A9%E5%AE%A4%EF%BC%8C%E7%84%B6%E5%90%8E%E7%BB%88%E4%BA%8E%E5%BC%84%E6%87%82%E4%BA%86php%E7%9A%84socket/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="经朋友推荐去一家手游公司面试，原谅我不厚道的只是好奇手游公司到底是啥样的才去的。工作虽然没找到，但是跟他们的技术总监套近乎聊了几乎一晚上，受益良多，知道了运营多个手游大体需要的技术，当然还是厚道的不爆料了。面试中被问及socket和多线程编程，对这两个知识点完全是空白，回来果断开始研究。还是那句话，不懂裁缝的厨师不是好司机。何况这两个知识也在前端开发的范畴之内。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2016-07-18T23:58:25.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:54.086Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="WebSocket">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-写了websocket个聊天室，然后终于弄懂了php的socket" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2016/07/19/%E5%86%99%E4%BA%86websocket%E4%B8%AA%E8%81%8A%E5%A4%A9%E5%AE%A4%EF%BC%8C%E7%84%B6%E5%90%8E%E7%BB%88%E4%BA%8E%E5%BC%84%E6%87%82%E4%BA%86php%E7%9A%84socket/" class="article-date">
+  <time class="dt-published" datetime="2016-07-18T23:58:25.000Z" itemprop="datePublished">2016-07-19</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/php/">php</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      写了websocket个聊天室，然后终于弄懂了php的socket
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <p>经朋友推荐去一家手游公司面试，原谅我不厚道的只是好奇手游公司到底是啥样的才去的。工作虽然没找到，但是跟他们的技术总监套近乎聊了几乎一晚上，受益良多，知道了运营多个手游大体需要的技术，当然还是厚道的不爆料了。面试中被问及socket和多线程编程，对这两个知识点完全是空白，回来果断开始研究。还是那句话，不懂裁缝的厨师不是好司机。何况这两个知识也在前端开发的范畴之内。<span id="more"></span></p>
+<p>对我来说最快的学习途径是实践，所以找两个东西来练手。一个是websocket一个是webwoker，今天先说第一个。</p>
+<p>要理解socket就要先理解http和tcp的区别，简单说就是一个是短链，一个是长链，一个是去服务器拉数据，一个是服务器可以主动推数据。</p>
+<p>而socket就是应用层与TCP/IP协议族通信的中间软件抽象层，它是一组接口。在设计模式中，Socket其实就是一个门面模式，它把复杂的TCP/IP协议族隐藏在Socket接口后面，对用户来说，一组简单的接口就是全部，让Socket去组织数据，以符合指定的协议。-来自网络。</p>
+<p>那么如何用php+js做到服务器推呢？</p>
+<h4 id="客户端"><a href="#客户端" class="headerlink" title="客户端"></a>客户端</h4><p>客户端非常简单，利用现代浏览器的WebSocket API，这里介绍的很详细:<a target="_blank" rel="noopener" href="http://msdn.microsoft.com/zh-cn/library/ie/hh673567">http://msdn.microsoft.com/zh-cn/library/ie/hh673567</a></p>
+<p>核心代码：</p>
+<figure class="highlight actionscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> wsServer = <span class="string">&#x27;ws://127.0.0.1:8080&#x27;</span>; </span><br><span class="line"><span class="keyword">var</span> ws = <span class="keyword">new</span> WebSocket(wsServer);</span><br><span class="line">ws.onmessage = <span class="keyword">function</span> <span class="params">(evt)</span> &#123; </span><br><span class="line">    <span class="keyword">do</span> sth</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>前两行会向指定服务器发送一个握手请求，如果服务器返回合法的http头，则握手成功，之后可通过监听onmessage事件来处理服务器发来的消息。还有很多其他事件可监听，见前面的url。</p>
+<h4 id="服务器"><a href="#服务器" class="headerlink" title="服务器"></a>服务器</h4><p><strong>思路</strong></p>
+<p>难点是服务器，没有了apache和nginx这些http服务器在前面顶着，只用php该怎么写？</p>
+<p>这里有个教程讲的很深入 <a target="_blank" rel="noopener" href="http://blog.csdn.net/shagoo/article/details/6396089">http://blog.csdn.net/shagoo/article/details/6396089</a></p>
+<p>写之前捋一捋思路：</p>
+<p>1.监听：首先要挂起一个进程来监听来自客户端的请求<br>2.握手：对于第一次合法的请求，发送合法的header回去<br>3.保持连接：有新消息到了就广播出去。直到客户端断开<br>4.接受另一个请求，重复2和3</p>
+<p>代码如下：</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br></pre></td><td class="code"><pre><span class="line">public <span class="keyword">function</span> start_server() &#123;</span><br><span class="line">    <span class="variable">$this</span>-&gt;socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);</span><br><span class="line">    <span class="regexp">//</span>允许使用本地地址</span><br><span class="line">    socket_set_option(<span class="variable">$this</span>-&gt;socket, SOL_SOCKET, SO_REUSEADDR, TRUE); </span><br><span class="line">    socket_bind(<span class="variable">$this</span>-&gt;socket, <span class="variable">$this</span>-&gt;host, <span class="variable">$this</span>-&gt;port);</span><br><span class="line">    <span class="regexp">//</span>最多<span class="number">10</span>个人连接，超过的客户端连接会返回WSAECONNREFUSED错误</span><br><span class="line">    socket_listen(<span class="variable">$this</span>-&gt;socket, <span class="variable">$this</span>-&gt;maxuser); </span><br><span class="line">    <span class="keyword">while</span>(TRUE) &#123;</span><br><span class="line">        <span class="variable">$this</span>-&gt;cycle = <span class="variable">$this</span>-&gt;accept;</span><br><span class="line">        <span class="variable">$this</span>-&gt;cycle[] = <span class="variable">$this</span>-&gt;socket;</span><br><span class="line">        <span class="regexp">//</span>阻塞用，有新连接时才会结束</span><br><span class="line">        socket_select(<span class="variable">$this</span>-&gt;cycle, <span class="variable">$write</span>, <span class="variable">$except</span>, null);</span><br><span class="line">        foreach (<span class="variable">$this</span>-&gt;cycle as <span class="variable">$k</span> =&gt; <span class="variable">$v</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span>(<span class="variable">$v</span> === <span class="variable">$this</span>-&gt;socket) &#123;</span><br><span class="line">                <span class="keyword">if</span> ((<span class="variable">$accept</span> = socket_accept(<span class="variable">$v</span>)) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">                    <span class="keyword">continue</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="regexp">//</span>如果请求来自监听端口那个套接字，则创建一个新的套接字用于通信</span><br><span class="line">                <span class="variable">$this</span>-&gt;add_accept(<span class="variable">$accept</span>);</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="variable">$index</span> = array_search(<span class="variable">$v</span>, <span class="variable">$this</span>-&gt;accept);</span><br><span class="line">            <span class="keyword">if</span> (<span class="variable">$index</span> === NULL) &#123;</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (!@socket_recv(<span class="variable">$v</span>, <span class="variable">$data</span>, <span class="number">1024</span>, <span class="number">0</span>) || !<span class="variable">$data</span>) &#123;<span class="regexp">//</span>没消息的socket就跳过</span><br><span class="line">                <span class="variable">$this</span>-&gt;close(<span class="variable">$v</span>);</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (!<span class="variable">$this</span>-&gt;isHand[<span class="variable">$index</span>]) &#123;</span><br><span class="line">                <span class="variable">$this</span>-&gt;upgrade(<span class="variable">$v</span>, <span class="variable">$data</span>, <span class="variable">$index</span>);</span><br><span class="line">                <span class="keyword">if</span>(!empty(<span class="variable">$this</span>-&gt;<span class="keyword">function</span>[<span class="string">&#x27;add&#x27;</span>])) &#123;</span><br><span class="line">                    call_user_func_array(<span class="variable">$this</span>-&gt;<span class="keyword">function</span>[<span class="string">&#x27;add&#x27;</span>], array(<span class="variable">$this</span>));</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="variable">$data</span> = <span class="variable">$this</span>-&gt;decode(<span class="variable">$data</span>);</span><br><span class="line">            <span class="keyword">if</span>(!empty(<span class="variable">$this</span>-&gt;<span class="keyword">function</span>[<span class="string">&#x27;send&#x27;</span>])) &#123;</span><br><span class="line">                call_user_func_array(<span class="variable">$this</span>-&gt;<span class="keyword">function</span>[<span class="string">&#x27;send&#x27;</span>], array(<span class="variable">$data</span>, <span class="variable">$index</span>, <span class="variable">$this</span>));</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        sleep(<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="regexp">//</span>增加一个初次连接的用户</span><br><span class="line">private <span class="keyword">function</span> add_accept(<span class="variable">$accept</span>) &#123;</span><br><span class="line">    <span class="variable">$this</span>-&gt;accept[] = <span class="variable">$accept</span>;</span><br><span class="line">    <span class="variable">$index</span> = array_keys(<span class="variable">$this</span>-&gt;accept);</span><br><span class="line">    <span class="variable">$index</span> = end(<span class="variable">$index</span>);</span><br><span class="line">    <span class="variable">$this</span>-&gt;isHand[<span class="variable">$index</span>] = FALSE;</span><br><span class="line">&#125;</span><br><span class="line"><span class="regexp">//</span>关闭一个连接</span><br><span class="line">private <span class="keyword">function</span> close(<span class="variable">$accept</span>) &#123;</span><br><span class="line">    <span class="variable">$index</span> = array_search(<span class="variable">$accept</span>, <span class="variable">$this</span>-&gt;accept);</span><br><span class="line">    socket_close(<span class="variable">$accept</span>);</span><br><span class="line">    unset(<span class="variable">$this</span>-&gt;accept[<span class="variable">$index</span>]);</span><br><span class="line">    unset(<span class="variable">$this</span>-&gt;isHand[<span class="variable">$index</span>]);</span><br><span class="line">    <span class="keyword">if</span>(!empty(<span class="variable">$this</span>-&gt;<span class="keyword">function</span>[<span class="string">&#x27;close&#x27;</span>])) &#123;</span><br><span class="line">        call_user_func_array(<span class="variable">$this</span>-&gt;<span class="keyword">function</span>[<span class="string">&#x27;close&#x27;</span>], array(<span class="variable">$this</span>));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="regexp">//</span>响应升级协议</span><br><span class="line">private <span class="keyword">function</span> upgrade(<span class="variable">$accept</span>, <span class="variable">$data</span>, <span class="variable">$index</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (preg_match(<span class="string">&quot;/Sec-WebSocket-Key: (.*)\r\n/&quot;</span>,<span class="variable">$data</span>,<span class="variable">$match</span>)) &#123;</span><br><span class="line">        <span class="variable">$key</span> = base64_encode(sha1(<span class="variable">$match</span>[<span class="number">1</span>] . <span class="string">&#x27;258EAFA5-E914-47DA-95CA-C5AB0DC85B11&#x27;</span>, true));</span><br><span class="line">        <span class="variable">$upgrade</span>  = <span class="string">&quot;HTTP/1.1 101 Switching Protocol\r\n&quot;</span> .</span><br><span class="line">                <span class="string">&quot;Upgrade: websocket\r\n&quot;</span> .</span><br><span class="line">                <span class="string">&quot;Connection: Upgrade\r\n&quot;</span> .</span><br><span class="line">                <span class="string">&quot;Sec-WebSocket-Accept: &quot;</span> . <span class="variable">$key</span> . <span class="string">&quot;\r\n\r\n&quot;</span>;  <span class="regexp">//</span>必须以两个回车结尾</span><br><span class="line">        socket_write(<span class="variable">$accept</span>, <span class="variable">$upgrade</span>, strlen(<span class="variable">$upgrade</span>));</span><br><span class="line">        <span class="variable">$this</span>-&gt;isHand[<span class="variable">$index</span>] = TRUE;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>关键地方有那么几个，一是while(true)挂起进程，不然执行一次后进程就退出了。二是socket_select和socket_accept函数的使用。三是客户端第一次请求时握手。</p>
+<p><strong>socket_select</strong></p>
+<p>这个函数是同时接受多个连接的关键，我的理解它是为了阻塞程序继续往下执行。</p>
+<p><code>socket_select ($sockets, $write = NULL, $except = NULL, NULL);</code></p>
+<p>$sockets可以理解为一个数组，这个数组中存放的是文件描述符。当它有变化（就是有新消息到或者有客户端连接/断开）时，socket_select函数才会返回，继续往下执行。<br>$write是监听是否有客户端写数据，传入NULL是不关心是否有写变化。<br>$except是$sockets里面要被排除的元素，传入NULL是”监听”全部。<br>最后一个参数是超时时间<br>如果为0：则立即结束<br>如果为n&gt;1: 则最多在n秒后结束，如遇某一个连接有新动态，则提前返回<br>如果为null：如遇某一个连接有新动态，则返回</p>
+<p><strong>socket_accept</strong></p>
+<p>此函数接受唯一参数，即前面socket_create创建的socket文件(句柄)。返回一个新的资源，或者FALSE。本函数将会通知socket_listen()，将会传入一个连接的socket资源。一旦成功建立socket连接，将会返回一个新的socket资源，用于通信。如果有多个socket在队列中，那么将会先处理第一个。关键就是这里：如果没有socket连接，那么本函数将会等待，直到有新socket进来。</p>
+<p>如果前面不用socket_select在没有socket的时候阻塞住程序，那么就卡在这里永远无法结束了。</p>
+<p>后面的流程就很清晰了，当有一个新的客户端请求到达，用socket_accept创建一个资源，并加入到<code>$this-&gt;accept</code>连接池里面。并将它的标示isHand设为false，那么下次循环(因为<code>$this-&gt;cycle[] = $this-&gt;socket;$this-&gt;cycle</code>有变化，所以socket_select会返回)的时候就会执行upgrade握手。然后等待它的新消息即可。</p>
+<p>程序经调试可以成功运行，php5.3+websocket13。有兴趣的同学可以下载：<a target="_blank" rel="noopener" href="https://github.com/leon776/php_websocket_demo">php_websocket_demo
+</a><br><a target="_blank" rel="noopener" href="http://bbs.lampbrother.net/job.php?action=download&aid=23418">其他实例-phpwebsocket.rar</a></p>
+<blockquote>
+<p>扩展阅读：<a target="_blank" rel="noopener" href="http://bbs.lampbrother.net/read-htm-tid-151475.html">HTML5 中websocket 长连接的具体实现方法</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2016/07/19/%E5%86%99%E4%BA%86websocket%E4%B8%AA%E8%81%8A%E5%A4%A9%E5%AE%A4%EF%BC%8C%E7%84%B6%E5%90%8E%E7%BB%88%E4%BA%8E%E5%BC%84%E6%87%82%E4%BA%86php%E7%9A%84socket/" data-id="cl9pgeo8b01rgycv14buj176w" data-title="写了websocket个聊天室，然后终于弄懂了php的socket" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/WebSocket/" rel="tag">WebSocket</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/07/20/Node-js-%E5%AD%A6%E4%B9%A0%E8%B5%84%E6%96%99/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          Node.js 学习资料
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/07/19/HTML5-Server-Sent-Event-php%E5%AE%9E%E7%8E%B0%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%8E%A8%E9%80%81/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">HTML5 Server-Sent Event+php实现服务器推送</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

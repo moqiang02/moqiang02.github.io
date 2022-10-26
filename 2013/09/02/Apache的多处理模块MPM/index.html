@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Apache的多处理模块MPM | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="本博文主要参数 Apache 2.2文档以及Apache模块开发指南 Apache的整个运行可以分为两个阶段：启动阶段和运行阶段。   在启动阶段时，它以ROOT特权来启动，进行解析配置文件(一般就是httpd.conf)、加载模块和初始化一些日志文件及内存共享段等操作，在启动阶段准备结束时，apache的控制转向多处理模块MPM，此时使得MPM能够在系统特权级运行，从而管理接下来的运行阶段。因为">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Apache的多处理模块MPM">
+<meta property="og:url" content="http://moqiang02.github.io/2013/09/02/Apache%E7%9A%84%E5%A4%9A%E5%A4%84%E7%90%86%E6%A8%A1%E5%9D%97MPM/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="本博文主要参数 Apache 2.2文档以及Apache模块开发指南 Apache的整个运行可以分为两个阶段：启动阶段和运行阶段。   在启动阶段时，它以ROOT特权来启动，进行解析配置文件(一般就是httpd.conf)、加载模块和初始化一些日志文件及内存共享段等操作，在启动阶段准备结束时，apache的控制转向多处理模块MPM，此时使得MPM能够在系统特权级运行，从而管理接下来的运行阶段。因为">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/Apache%E7%9A%84%E5%A4%9A%E5%A4%84%E7%90%86%E6%A8%A1%E5%9D%97MPM/SouthEast.jpg">
+<meta property="article:published_time" content="2013-09-02T11:15:47.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.700Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/Apache%E7%9A%84%E5%A4%9A%E5%A4%84%E7%90%86%E6%A8%A1%E5%9D%97MPM/SouthEast.jpg">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Apache的多处理模块MPM" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2013/09/02/Apache%E7%9A%84%E5%A4%9A%E5%A4%84%E7%90%86%E6%A8%A1%E5%9D%97MPM/" class="article-date">
+  <time class="dt-published" datetime="2013-09-02T11:15:47.000Z" itemprop="datePublished">2013-09-02</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/apache/">apache</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Apache的多处理模块MPM
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%EF%BC%8C%E4%BB%80%E4%B9%88%E6%98%AFMPM"><span class="toc-number">1.</span> <span class="toc-text">一，什么是MPM</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8C%EF%BC%8C%E6%9C%89%E5%93%AA%E4%BA%9BMPM%E5%8F%AF%E4%BB%A5%E8%A2%AB%E4%BD%BF%E7%94%A8"><span class="toc-number">2.</span> <span class="toc-text">二，有哪些MPM可以被使用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%89%EF%BC%8Cprefork"><span class="toc-number">3.</span> <span class="toc-text">三，prefork</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9B%9B%EF%BC%8Cworker"><span class="toc-number">4.</span> <span class="toc-text">四，worker</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%94%EF%BC%8C%E5%B0%8F%E7%BB%93"><span class="toc-number">5.</span> <span class="toc-text">五，小结</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <p>本博文主要参数 Apache 2.2文档以及Apache模块开发指南</p>
+<p>Apache的整个运行可以分为两个阶段：启动阶段和运行阶段。<br>   在启动阶段时，它以ROOT特权来启动，进行解析配置文件(一般就是httpd.conf)、加载模块和初始化一些日志文件及内存共享段等操作，在启动阶段准备结束时，apache的控制转向多处理模块MPM，此时使得MPM能够在系统特权级运行，从而管理接下来的运行阶段。因为当处于运行阶段时，程序会放弃ROOT特权，以接收并处理网络中用户的服务请求，所以MPM也是在启动阶段初始化。</p>
+<span id="more"></span>
+<h3 id="一，什么是MPM"><a href="#一，什么是MPM" class="headerlink" title="一，什么是MPM"></a>一，什么是MPM</h3><p>   MPM，是Multi -Processing Modules的缩写，就是多处理模块的意思，它是在Apache 2.0中引入的一个概念，共引入目标是将Apache的结构能够模块化，把核心的任务处理作为一个可插拔的模块来运行，这样就很容易根据不同的环境和应用来更有效的优化Apache的运行，它是Apache2.X中最影响其性能的，最核心的特性，因为直接决定了Apache的工作方式。这里有一个问题是：它究竟怎么样影响了Apache。</p>
+<p>  可以这么说：它决定了Apache以什么样的方式接入外部请求，如何Apache内部怎么样处理这个请求过程，这当然是最核心的了吧，比如它可以决定在处理外部请求的时候，需不需要启动多线程，如果是用多线程，最多可以多少个线程，一个进程可以产生最多多少个线程，类似于这种配置，都来自于MPM。MPM有一些指令可以专门用于调节父进程如何产生子进程，主要是StartServers，MinSpareServers，MaxSpareServers，MaxClients等，下面会介绍这些指令是什么意思。</p>
+<p>它提供Apache服务程序和其所在的操作系统之间的接口，这个模块的主要职责是：</p>
+<ul>
+<li>根据Apache运行的操作系统平台来优化Apache。</li>
+<li>提高Apache的效率。</li>
+<li>保证Apache的安全。</li>
+</ul>
+<p>其实MPM本身也是一个模块，它是Apache中唯一一个系统层的模块，Apache在编译的时候选定一个所要使用的MPM模块，我们先来了解一下MPM模块在系统结构中的位置<br><img src="/images/Apache%E7%9A%84%E5%A4%9A%E5%A4%84%E7%90%86%E6%A8%A1%E5%9D%97MPM/SouthEast.jpg"></p>
+<p>在任何时候，一个正常的Apache都只有一个MPM模块在运行。</p>
+<h3 id="二，有哪些MPM可以被使用"><a href="#二，有哪些MPM可以被使用" class="headerlink" title="二，有哪些MPM可以被使用"></a>二，有哪些MPM可以被使用</h3><p>在安装apache时，我们可以查看哪些MPM模块可以被使用。</p>
+<figure class="highlight coq"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost httpd<span class="number">-2.2</span><span class="number">.11</span>]# ./configure --help | <span class="type">grep</span> mpm  </span><br><span class="line">  --<span class="built_in">with</span>-mpm=MPM          Choose the process model <span class="keyword">for</span> Apache to use.  </span><br><span class="line">                          MPM=&#123;beos|<span class="type">event</span>|<span class="type">worker</span>|<span class="type">prefork</span>|<span class="type">mpmt_os2</span>&#125;  </span><br></pre></td></tr></table></figure>
+
+<p>beos是BEOS上的缺省MPM模块。<br>mpmt_os2，这是专门针对OS/2优化过的混合多进程多线程多路处理模块(MPM)。<br>event，一个标准workerMPM的实验性变种。<br>worker，线程型的MPM，实现了一个混合的多线程多处理MPM，允许一个子进程中包含多个线程。<br>prefork，一个非线程型的、预派生的MPM。</p>
+<p>下面分针对这些模块进行讨论，我们怎么知道当前apache是编译了哪个MPM使用呢？</p>
+<figure class="highlight llvm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[root<span class="title">@localhost</span> httpd<span class="number">-2.2</span>.<span class="number">11</span>]# /install/apache<span class="number">2</span>/bin/httpd -l  </span><br><span class="line">Compiled in modules:  </span><br><span class="line">  core.<span class="keyword">c</span>  </span><br><span class="line">  prefork.<span class="keyword">c</span>  </span><br><span class="line">  http_core.<span class="keyword">c</span>  </span><br><span class="line">  mod_so.<span class="keyword">c</span>  </span><br><span class="line">[root<span class="title">@localhost</span> httpd<span class="number">-2.2</span>.<span class="number">11</span>]#   </span><br></pre></td></tr></table></figure>
+<p>这表示Apache当前的正在工作的MPM是prefork工作方式的MPM，这也是一种缺省的模块，如果需要其它的MPM模块，在编译的时候用–with-mpm指定。</p>
+<h3 id="三，prefork"><a href="#三，prefork" class="headerlink" title="三，prefork"></a>三，prefork</h3><p>   Apache MPM prefork实现了一个非线程型的、预派生的web服务器。适合于没有线程安全库，需要避免线程兼容性问题的系统。它是要求将每个请求相互独立的情况下最好的MPM，这样若一个请求出现问题就不会影响到其他请求。这个MPM具有很强的自我调节能力，只需要很少的配置指令调整。最重要的是将MaxClients设置为一个足够大的数值以处理潜在的请求高峰，同时又不能太大，以致需要使用的内存超出物理内存的大小。<br>   这种MPM的工作方式是：由一个单独的控制进程(父进程)产生子进程，然后将这些子进程用于监听请求并作出应答，这些子进程在处理时并不产生线程。另外，Apache总是试图保持一些备用的(spare)或者是空闲的子进程用于迎接即将到来的请求。这样客户端就不需要在得到服务前等候子进程的产生。</p>
+<p>可以用于配置该MPM如何工作的主要参数有：</p>
+<p>StartServers。<br>StartServers指令设置了服务器启动时建立的子进程数量。因为子进程数量动态的取决于负载的轻重，所有一般没有必要调整这个参数。不同的MPM默认值也不一样。对于worker默认值是”3”。对于prefork默认值是”5”。<br>MinSpareServers。<br>MinSpareServers指令设置空闲子进程的最小数量。所谓空闲子进程是指没有正在处理请求的子进程。如果当前空闲子进程数少于MinSpareServers ，那么Apache将以最大每秒一个的速度产生新的子进程。只有在非常繁忙机器上才需要调整这个参数。将此参数设的太大通常是一个坏主意。。<br>MaxSpareServers。MaxSpareServers指令设置空闲子进程的最大数量。所谓空闲子进程是指没有正在处理请求的子进程。如果当前有超过MaxSpareServers数量的空闲子进程，那么父进程将杀死多余的子进程。只有在非常繁忙机器上才需要调整这个参数。将此参数设的太大通常是一个坏主意。如果你将该指令的值设置为比MinSpareServers小，Apache将会自动将其修改成”MinSpareServers+1”。<br>MaxClients。MaxClients指令设置了允许同时伺服的最大接入请求数量。任何超过MaxClients限制的请求都将进入等候队列，直到达到ListenBacklog指令限制的最大值为止。一旦一个链接被释放，队列中的请求将得到服务。对于非线程型的MPM(也就是prefork)，MaxClients表示可以用于伺服客户端请求的最大子进程数量，默认值是256。要增大这个值，你必须同时增大ServerLimit 。对于线程型或者混合型的MPM(也就是beos或worker)，MaxClients表示可以用于伺服客户端请求的最大线程数量。线程型的beos的默认值是50。对于混合型的MPM默认值是16(ServerLimit)乘以25(ThreadsPerChild)的结果。因此要将MaxClients增加到超过16个进程才能提供的时候，你必须同时增加ServerLimit的值。。<br>MaxRequestsPerChild。每个子进程在其生存期内允许伺服的最大请求数量，默认为10000.到达MaxRequestsPerChild的限制后，子进程将会结束。如果 MaxRequestsPerChild为”0″，子进程将永远不会结束。将MaxRequestsPerChild设置成非零值有两个好处：<br>1.可以防止(偶然的)内存泄漏无限进行，从而耗尽内存。<br>2.给进程一个有限寿命，从而有助于当服务器负载减轻的时候减少活动进程的数量。<br>ServerLimit。对于prefork MPM，这个指令设置了MaxClients最大允许配置的数值。对于workerMPM，这个指令和ThreadLimit结合使用设置了MaxClients最大允许配置的数值。任何在重启期间对这个指令的改变都将被忽略，但对MaxClients的修改却会生效。</p>
+<p>配置举例：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">&lt;IfModule prefork.c&gt;</span>  </span><br><span class="line"> <span class="attribute">StartServers</span>       <span class="number">4</span> Apache启动时开启的子进程个数  </span><br><span class="line"> <span class="attribute">MinSpareServers</span>    <span class="number">4</span> 最小的空闲子进程  </span><br><span class="line"> <span class="attribute">MaxSpareServers</span>    <span class="number">6</span> 最大的空闲子进程  </span><br><span class="line"> <span class="attribute">ServerLimit</span>      <span class="number">15</span>   </span><br><span class="line"> <span class="attribute">MaxClients</span>        <span class="number">12</span> 以免产生大量的进程占用内存，影响系统性能  </span><br><span class="line"> <span class="attribute">MaxRequestsPerChild</span>  <span class="number">1200</span> 子进程在处理了<span class="number">1200</span>个请求之后，就会被销毁，然后创建新进程。  </span><br><span class="line"><span class="section">&lt;/IfModule&gt;</span>  </span><br></pre></td></tr></table></figure>
+
+<h3 id="四，worker"><a href="#四，worker" class="headerlink" title="四，worker"></a>四，worker</h3><p>   此多路处理模块(MPM)使网络服务器支持混合的多线程多进程。由于使用线程来处理请求，所以可以处理海量请求，而系统资源的开销小于基于进程的MPM。但是，它也使用了多进程，每个进程又有多个线程，以获得基于进程的MPM的稳定性。控制这个MPM的最重要的指令是，控制每个子进程允许建立的线程数的ThreadsPerChild指令，和控制允许建立的总线程数的MaxClients指令。</p>
+<p>   每个进程可以拥有的线程数量是固定的。服务器会根据负载情况增加或减少进程数量。一个单独的控制进程(父进程)负责子进程的建立。每个子进程可以建立ThreadsPerChild数量的服务线程和一个监听线程，该监听线程监听接入请求并将其传递给服务线程处理和应答。</p>
+<p>   Apache总是试图维持一个备用(spare)或是空闲的服务线程池。这样，客户端无须等待新线程或新进程的建立即可得到处理。初始化时建立的进程数量由StartServers指令决定。随后父进程检测所有子进程中空闲线程的总数，并新建或结束子进程使空闲线程的总数维持在MinSpareThreads和MaxSpareThreads所指定的范围内。由于这个过程是自动调整的，几乎没有必要修改这些指令的缺省值。可以并行处理的客户端的最大数量取决于MaxClients指令。活动子进程的最大数量取决于MaxClients除以ThreadsPerChild的值。<br>   有两个指令设置了活动子进程数量和每个子进程中线程数量的硬限制。要想改变这个硬限制必须完全停止服务器然后再启动服务器(直接重启是不行的)，ServerLimit是活动子进程数量的硬限制，它必须大于或等于MaxClients除以ThreadsPerChild的值。ThreadLimit是所有服务线程总数的硬限制，它必须大于或等于ThreadsPerChild指令。这两个指令必须出现在其他workerMPM指令的前面。</p>
+<p>在设置的活动子进程数量之外，还可能有额外的子进程处于”正在中止”的状态但是其中至少有一个服务线程仍然在处理客户端请求，直到到达MaxClients以致结束进程，虽然实际数量会很小。这个行为能够通过以下禁止特别的子进程中止的方法来避免：</p>
+<ul>
+<li>将MaxRequestsPerChild设为”0”。</li>
+<li>将MaxSpareThreads和MaxClients设为相同的值。</li>
+</ul>
+<p>一个典型的该类型MPM配置如下：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">ServerLimit</span> <span class="number">16</span>  </span><br><span class="line"><span class="attribute">StartServers</span> <span class="number">2</span>  </span><br><span class="line"><span class="attribute">MaxClients</span> <span class="number">150</span>  </span><br><span class="line"><span class="attribute">MinSpareThreads</span> <span class="number">25</span>  </span><br><span class="line"><span class="attribute">MaxSpareThreads</span> <span class="number">75</span>  </span><br><span class="line"><span class="attribute">ThreadsPerChild</span> <span class="number">25</span>  </span><br></pre></td></tr></table></figure>
+<h3 id="五，小结"><a href="#五，小结" class="headerlink" title="五，小结"></a>五，小结</h3><p>   Prefork MPM基于非线程模型，由独立的进程创建多个子进程的方式来工作，它在所有情况下都很安全，对运行非线程安全（non-thread-safe）模式的软件如PHP，它是唯一的安全选择。另外，对于某些应用程序，包括在 Apache 1.3上非常流行的程序（如简单静态页面、CGI脚本等），Prefork MPM是最好的选择。另一方面，prefork用单独的子进程来处理不同的请求，进程之间是彼此独立的，这也使其成为最稳定的MPM之一。但是由于每一个请求都会产生一个新的进程，导致系统资源（尤其是内存）消耗的很快，一旦并发量较大的时候，大量的Apache进程会占用巨大的内存空间。 </p>
+<p>   Worker MPM基于线程模式，具有内存消耗低（对繁忙的服务很重要）、扩展性在某些特定应用情况下比Prefork更好等优点。在这个模式下，采用的进程和线程混合的形式处理请求。由于使用线程来处理，所以可以处理相对海量的请求，而系统资源的开销要小于基于进程的Prefork模式。</p>
+<p>以上两种稳定的MPM方式在非常繁忙的服务器应用下都有些不足。尽管HTTP的Keepalive方式能减少TCP连接数量和网络负载，但是 Keepalive需要和服务进程或者线程绑定，这就导致一个繁忙的服务器会耗光所有的线程。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2013/09/02/Apache%E7%9A%84%E5%A4%9A%E5%A4%84%E7%90%86%E6%A8%A1%E5%9D%97MPM/" data-id="cl9pgenp3006sycv151ax59l7" data-title="Apache的多处理模块MPM" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2013/09/06/apache-%E5%B7%A5%E4%BD%9C%E6%A8%A1%E5%BC%8F/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          apache 工作模式
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2013/09/01/js%E5%AE%9E%E7%8E%B0%E8%A1%A8%E5%8D%95%E9%A1%B9%E7%9A%84%E5%85%A8%E9%80%89%E3%80%81%E5%8F%8D%E9%80%89%E4%BB%A5%E5%8F%8A%E5%88%A0%E9%99%A4%E6%93%8D%E4%BD%9C/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">js实现表单项的全选、反选以及删除操作</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

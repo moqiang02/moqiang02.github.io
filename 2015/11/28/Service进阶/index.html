@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Service进阶 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="本节引言上节我们学习了Service的生命周期，以及两种启动Service的两种方法，本节继续来深入了解Service中的IntentService，Service的使用实例：前台服务与轮询的实现!">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Service进阶">
+<meta property="og:url" content="http://moqiang02.github.io/2015/11/28/Service%E8%BF%9B%E9%98%B6/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="本节引言上节我们学习了Service的生命周期，以及两种启动Service的两种方法，本节继续来深入了解Service中的IntentService，Service的使用实例：前台服务与轮询的实现!">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/Service%E8%BF%9B%E9%98%B6/1.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/Service%E8%BF%9B%E9%98%B6/2.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/Service%E8%BF%9B%E9%98%B6/3.png">
+<meta property="article:published_time" content="2015-11-28T12:27:45.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.886Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/Service%E8%BF%9B%E9%98%B6/1.jpg">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Service进阶" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2015/11/28/Service%E8%BF%9B%E9%98%B6/" class="article-date">
+  <time class="dt-published" datetime="2015-11-28T12:27:45.000Z" itemprop="datePublished">2015-11-28</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/android/">android</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Service进阶
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9C%AC%E8%8A%82%E5%BC%95%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">本节引言</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-IntentService%E7%9A%84%E4%BD%BF%E7%94%A8"><span class="toc-number">2.</span> <span class="toc-text">1.IntentService的使用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Activity%E4%B8%8EService%E9%80%9A%E4%BF%A1"><span class="toc-number">3.</span> <span class="toc-text">2.Activity与Service通信</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E5%89%8D%E5%8F%B0%E6%9C%8D%E5%8A%A1%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="toc-number">4.</span> <span class="toc-text">3.一个简单前台服务的实现</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E7%AE%80%E5%8D%95%E5%AE%9A%E6%97%B6%E5%90%8E%E5%8F%B0%E7%BA%BF%E7%A8%8B%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="toc-number">5.</span> <span class="toc-text">4.简单定时后台线程的实现</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9C%AC%E8%8A%82%E5%B0%8F%E7%BB%93%EF%BC%9A"><span class="toc-number">6.</span> <span class="toc-text">本节小结：</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <h3 id="本节引言"><a href="#本节引言" class="headerlink" title="本节引言"></a>本节引言</h3><p>上节我们学习了Service的生命周期，以及两种启动Service的两种方法，<br>本节继续来深入了解Service中的IntentService，Service的使用实例：<br>前台服务与轮询的实现!</p>
+<span id="more"></span>
+<h3 id="1-IntentService的使用"><a href="#1-IntentService的使用" class="headerlink" title="1.IntentService的使用"></a>1.IntentService的使用</h3><p>在上一节后我们已经知道了如何去定义和启动Service，但是如果我们直接把<br>耗时线程放到Service中的onStart()方法中，虽然可以这样做，但是很容易<br>会引起ANR异常(Application Not Responding)，而Android的官方在介绍<br>Service有下面这样一段话：<br><img src="/images/Service%E8%BF%9B%E9%98%B6/1.jpg"><br>直接翻译：</p>
+<p>1.Service不是一个单独的进程,它和它的应用程序在同一个进程中<br>2.Service不是一个线程,这样就意味着我们应该避免在Service中进行耗时操作</p>
+<p>于是乎，Android给我们提供了解决上述问题的替代品，就是下面要讲的IntentService；<br>IntentService是继承与Service并处理异步请求的一个类,在IntentService中有<br>一个工作线程来处理耗时操作,请求的Intent记录会加入队列</p>
+<p>工作流程：</p>
+<p>客户端通过startService(Intent)来启动IntentService;<br>我们并不需要手动地区控制IntentService,当任务执行完后,IntentService会自动停止;<br>可以启动IntentService多次,每个耗时操作会以工作队列的方式在IntentService的<br>onHandleIntent回调方法中执行,并且每次只会执行一个工作线程,执行完一，再到二这样!</p>
+<p>再接着是代码演示,网上大部分的代码都是比较Service与IntentService的,<br>定义足够长的休眠时间,演示Service的ANR异常,然后引出IntentService有多好!<br>这里就不演示Service了,网上的都是自定义Service,然后在onStart()方法<br>中Thread.sleep(20000)然后引发ANR异常,有兴趣的可以自己写代码试试,<br>这里的话只演示下IntentService的用法！</p>
+<p>TestService3.java</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TestService3</span> <span class="keyword">extends</span> <span class="title">IntentService</span> </span>&#123;  </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> String TAG = <span class="string">&quot;hehe&quot;</span>;  </span><br><span class="line">    <span class="comment">//必须实现父类的构造方法  </span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">TestService3</span><span class="params">()</span>  </span></span><br><span class="line"><span class="function">    </span>&#123;  </span><br><span class="line">        <span class="keyword">super</span>(<span class="string">&quot;TestService3&quot;</span>);  </span><br><span class="line">    &#125;  </span><br><span class="line"></span><br><span class="line">    <span class="comment">//必须重写的核心方法  </span></span><br><span class="line">    <span class="meta">@Override</span>  </span><br><span class="line">    <span class="keyword">protected</span> <span class="function"><span class="keyword">void</span> <span class="title">onHandleIntent</span><span class="params">(Intent intent)</span> </span>&#123;  </span><br><span class="line">        <span class="comment">//Intent是从Activity发过来的，携带识别参数，根据参数不同执行不同的任务  </span></span><br><span class="line">        String action = intent.getExtras().getString(<span class="string">&quot;param&quot;</span>);  </span><br><span class="line">        <span class="keyword">if</span>(action.equals(<span class="string">&quot;s1&quot;</span>))Log.i(TAG,<span class="string">&quot;启动service1&quot;</span>);  </span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span>(action.equals(<span class="string">&quot;s2&quot;</span>))Log.i(TAG,<span class="string">&quot;启动service2&quot;</span>);  </span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span>(action.equals(<span class="string">&quot;s3&quot;</span>))Log.i(TAG,<span class="string">&quot;启动service3&quot;</span>);  </span><br><span class="line"></span><br><span class="line">        <span class="comment">//让服务休眠2秒  </span></span><br><span class="line">        <span class="keyword">try</span>&#123;  </span><br><span class="line">            Thread.sleep(<span class="number">2000</span>);  </span><br><span class="line">        &#125;<span class="keyword">catch</span>(InterruptedException e)&#123;e.printStackTrace();&#125;          </span><br><span class="line">    &#125;  </span><br><span class="line"></span><br><span class="line">    <span class="comment">//重写其他方法,用于查看方法的调用顺序  </span></span><br><span class="line">    <span class="meta">@Override</span>  </span><br><span class="line">    <span class="keyword">public</span> <span class="function">IBinder <span class="title">onBind</span><span class="params">(Intent intent)</span> </span>&#123;  </span><br><span class="line">        Log.i(TAG,<span class="string">&quot;onBind&quot;</span>);  </span><br><span class="line">        <span class="function"><span class="keyword">return</span> <span class="keyword">super</span>.<span class="title">onBind</span><span class="params">(intent)</span></span>;  </span><br><span class="line">    &#125;  </span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span>  </span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">onCreate</span><span class="params">()</span> </span>&#123;  </span><br><span class="line">        Log.i(TAG,<span class="string">&quot;onCreate&quot;</span>);  </span><br><span class="line">        <span class="keyword">super</span>.onCreate();  </span><br><span class="line">    &#125;  </span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span>  </span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">int</span> <span class="title">onStartCommand</span><span class="params">(Intent intent, <span class="keyword">int</span> flags, <span class="keyword">int</span> startId)</span> </span>&#123;  </span><br><span class="line">        Log.i(TAG,<span class="string">&quot;onStartCommand&quot;</span>);  </span><br><span class="line">        <span class="function"><span class="keyword">return</span> <span class="keyword">super</span>.<span class="title">onStartCommand</span><span class="params">(intent, flags, startId)</span></span>;  </span><br><span class="line">    &#125;  </span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span>  </span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">setIntentRedelivery</span><span class="params">(<span class="keyword">boolean</span> enabled)</span> </span>&#123;  </span><br><span class="line">        <span class="keyword">super</span>.setIntentRedelivery(enabled);  </span><br><span class="line">        Log.i(TAG,<span class="string">&quot;setIntentRedelivery&quot;</span>);  </span><br><span class="line">    &#125;  </span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span>  </span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">onDestroy</span><span class="params">()</span> </span>&#123;  </span><br><span class="line">        Log.i(TAG,<span class="string">&quot;onDestroy&quot;</span>);  </span><br><span class="line">        <span class="keyword">super</span>.onDestroy();  </span><br><span class="line">    &#125;  </span><br><span class="line"></span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
+
+<p>AndroidManifest.xml注册下Service</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">service</span> <span class="attr">android:name</span>=<span class="string">&quot;.TestService3&quot;</span> <span class="attr">android:exported</span>=<span class="string">&quot;false&quot;</span>&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;<span class="name">intent-filter</span> &gt;</span>  </span><br><span class="line">        <span class="tag">&lt;<span class="name">action</span> <span class="attr">android:name</span>=<span class="string">&quot;com.test.intentservice&quot;</span>/&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;/<span class="name">intent-filter</span>&gt;</span>  </span><br><span class="line"><span class="tag">&lt;/<span class="name">service</span>&gt;</span>  </span><br></pre></td></tr></table></figure>
+
+<p>在MainActivity启动三次服务：</p>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">public <span class="keyword">class</span> MainActivity extends Activity &#123;  </span><br><span class="line"></span><br><span class="line">    @Override  </span><br><span class="line">    protected void on<span class="constructor">Create(Bundle <span class="params">savedInstanceState</span>)</span> &#123;  </span><br><span class="line">        super.on<span class="constructor">Create(<span class="params">savedInstanceState</span>)</span>;  </span><br><span class="line">        set<span class="constructor">ContentView(R.<span class="params">layout</span>.<span class="params">activity_main</span>)</span>;  </span><br><span class="line"></span><br><span class="line">        Intent it1 = <span class="keyword">new</span> <span class="constructor">Intent(<span class="string">&quot;com.test.intentservice&quot;</span>)</span>;  </span><br><span class="line">        Bundle b1 = <span class="keyword">new</span> <span class="constructor">Bundle()</span>;  </span><br><span class="line">        b1.put<span class="constructor">String(<span class="string">&quot;param&quot;</span>, <span class="string">&quot;s1&quot;</span>)</span>;  </span><br><span class="line">        it1.put<span class="constructor">Extras(<span class="params">b1</span>)</span>;  </span><br><span class="line"></span><br><span class="line">        Intent it2 = <span class="keyword">new</span> <span class="constructor">Intent(<span class="string">&quot;com.test.intentservice&quot;</span>)</span>;  </span><br><span class="line">        Bundle b2 = <span class="keyword">new</span> <span class="constructor">Bundle()</span>;  </span><br><span class="line">        b2.put<span class="constructor">String(<span class="string">&quot;param&quot;</span>, <span class="string">&quot;s2&quot;</span>)</span>;  </span><br><span class="line">        it2.put<span class="constructor">Extras(<span class="params">b2</span>)</span>;  </span><br><span class="line"></span><br><span class="line">        Intent it3 = <span class="keyword">new</span> <span class="constructor">Intent(<span class="string">&quot;com.test.intentservice&quot;</span>)</span>;  </span><br><span class="line">        Bundle b3 = <span class="keyword">new</span> <span class="constructor">Bundle()</span>;  </span><br><span class="line">        b3.put<span class="constructor">String(<span class="string">&quot;param&quot;</span>, <span class="string">&quot;s3&quot;</span>)</span>;  </span><br><span class="line">        it3.put<span class="constructor">Extras(<span class="params">b3</span>)</span>;  </span><br><span class="line"></span><br><span class="line">        <span class="comment">//接着启动多次IntentService,每次启动,都会新建一个工作线程  </span></span><br><span class="line">        <span class="comment">//但始终只有一个IntentService实例  </span></span><br><span class="line">        start<span class="constructor">Service(<span class="params">it1</span>)</span>;  </span><br><span class="line">        start<span class="constructor">Service(<span class="params">it2</span>)</span>;  </span><br><span class="line">        start<span class="constructor">Service(<span class="params">it3</span>)</span>;  </span><br><span class="line">    &#125;  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
+
+<p>运行截图：<br><img src="/images/Service%E8%BF%9B%E9%98%B6/2.jpg"><br>小结：</p>
+<p>当一个后台的任务,需要分成几个子任务,然后按先后顺序执行,子任务<br>(简单的说就是异步操作),此时如果我们还是定义一个普通Service然后<br>在onStart方法中开辟线程,然后又要去控制线程,这样显得非常的繁琐;<br>此时应该自定义一个IntentService然后再onHandleIntent()方法中完成相关任务！</p>
+<h3 id="2-Activity与Service通信"><a href="#2-Activity与Service通信" class="headerlink" title="2.Activity与Service通信"></a>2.Activity与Service通信</h3><p>我们前面的操作都是通过Activity启动和停止Service，假如我们启动的是一个下载<br>的后台Service，而我们想知道Service中下载任务的进度！那么这肯定是需要Service<br>与Activity进行通信的，而他们之间交流的媒介就是Service中的onBind()方法！<br>返回一个我们自定义的Binder对象！</p>
+<p>基本流程如下：<br>1.自定义Service中，自定义一个Binder类，然后将需要暴露的方法都写到该类中！<br>2.Service类中，实例化这个自定义Binder类，然后重写onBind()方法，将这个Binder对象返回！<br>3.Activity类中实例化一个ServiceConnection对象，重写onServiceConnected()方法，然后<br>获取Binder对象，然后调用相关方法即可！</p>
+<h3 id="3-一个简单前台服务的实现"><a href="#3-一个简单前台服务的实现" class="headerlink" title="3.一个简单前台服务的实现"></a>3.一个简单前台服务的实现</h3><p>学到现在，我们都知道Service一般都是运行在后来的，但是Service的系统优先级<br>还是比较低的，当系统内存不足的时候，就有可能回收正在后台运行的Service，<br>对于这种情况我们可以使用前台服务，从而让Service稍微没那么容易被系统杀死，<br>当然还是有可能被杀死的…所谓的前台服务就是状态栏显示的Notification！<br>实现起来也很简单，最近做的项目刚好用到这个前台服务，就把核心的代码抠出来<br>分享下：<br>在自定义的Service类中，重写onCreate()，然后根据自己的需求定制Notification；<br>定制完毕后，调用startForeground(1,notification对象)即可！<br>核心代码如下：</p>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">public void on<span class="constructor">Create()</span></span><br><span class="line">  &#123;</span><br><span class="line">    super.on<span class="constructor">Create()</span>;</span><br><span class="line">    Notification.Builder localBuilder = <span class="keyword">new</span> Notification.<span class="constructor">Builder(<span class="params">this</span>)</span>;</span><br><span class="line">    localBuilder.set<span class="constructor">ContentIntent(PendingIntent.<span class="params">getActivity</span>(<span class="params">this</span>, 0, <span class="params">new</span> Intent(<span class="params">this</span>, MainActivity.<span class="params">class</span>)</span>, <span class="number">0</span>));</span><br><span class="line">    localBuilder.set<span class="constructor">AutoCancel(<span class="params">false</span>)</span>;</span><br><span class="line">    localBuilder.set<span class="constructor">SmallIcon(R.<span class="params">mipmap</span>.<span class="params">ic_cow_icon</span>)</span>;</span><br><span class="line">    localBuilder.set<span class="constructor">Ticker(<span class="string">&quot;Foreground Service Start&quot;</span>)</span>;</span><br><span class="line">    localBuilder.set<span class="constructor">ContentTitle(<span class="string">&quot;Socket服务端&quot;</span>)</span>;</span><br><span class="line">    localBuilder.set<span class="constructor">ContentText(<span class="string">&quot;正在运行...&quot;</span>)</span>;</span><br><span class="line">    start<span class="constructor">Foreground(1, <span class="params">localBuilder</span>.<span class="params">getNotification</span>()</span>);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<p>运行效果截图：<br><img src="/images/Service%E8%BF%9B%E9%98%B6/3.png"></p>
+<h3 id="4-简单定时后台线程的实现"><a href="#4-简单定时后台线程的实现" class="headerlink" title="4.简单定时后台线程的实现"></a>4.简单定时后台线程的实现</h3><p>除了上述的前台服务外，实际开发中Service还有一种常见的用法，就是执行定时任务，<br>比如轮询，就是每间隔一段时间就请求一次服务器，确认客户端状态或者进行信息更新<br>等！而Android中给我们提供的定时方式有两种使用Timer类与Alarm机制！</p>
+<p>前者不适合于需要长期在后台运行的定时任务，CPU一旦休眠，Timer中的定时任务<br>就无法运行；Alarm则不存在这种情况，他具有唤醒CPU的功能，另外，也要区分CPU<br>唤醒与屏幕唤醒！</p>
+<p>使用流程：</p>
+<p><strong>Step 1：获得Service</strong><br><code>AlarmManager manager = (AlarmManager) getSystemService(ALARM_SERVICE);</code><br><strong>Step 2：通过set方法设置定时任务</strong></p>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">int</span> anHour = <span class="number">2</span> * <span class="number">1000</span>;</span><br><span class="line"><span class="built_in">long</span> triggerAtTime = SystemClock.elapsedRealtime() + anHour;</span><br><span class="line">manager.<span class="keyword">set</span>(AlarmManager.RTC_WAKEUP,triggerAtTime,pendingIntent);</span><br></pre></td></tr></table></figure>
+<p><strong>Step 3：定义一个Service</strong><br>在onStartCommand中开辟一条事务线程,用于处理一些定时逻辑<br><strong>Step 4：定义一个Broadcast(广播)，用于启动Service</strong><br>最后别忘了，在AndroidManifest.xml中对这Service与Boradcast进行注册！</p>
+<p>参数详解：<br><code>set(int type,long startTime,PendingIntent pi)</code></p>
+<p>①type:<br>有五个可选值:<br>AlarmManager.ELAPSED_REALTIME:<br>闹钟在手机睡眠状态下不可用，该状态下闹钟使用相对时间（相对于系统启动开始），状态值为3;<br>AlarmManager.ELAPSED_REALTIME_WAKEUP<br>闹钟在睡眠状态下会唤醒系统并执行提示功能，该状态下闹钟也使用相对时间，状态值为2；<br>AlarmManager.RTC<br>闹钟在睡眠状态下不可用，该状态下闹钟使用绝对时间，即当前系统时间，状态值为1；<br>AlarmManager.RTC_WAKEUP<br>表示闹钟在睡眠状态下会唤醒系统并执行提示功能，该状态下闹钟使用绝对时间，状态值为0;<br>AlarmManager.POWER_OFF_WAKEUP<br>表示闹钟在手机关机状态下也能正常进行提示功能，所以是5个状态中用的最多的状态之一，<br>该状态下闹钟也是用绝对时间，状态值为4；不过本状态好像受SDK版本影响，某些版本并不支持；</p>
+<p>PS:第一个参数决定第二个参数的类型,如果是REALTIME的话就用：<br>SystemClock.elapsedRealtime( )方法可以获得系统开机到现在经历的毫秒数<br>如果是RTC的就用:System.currentTimeMillis()可获得从1970.1.1 0点到<br>现在做经历的毫秒数</p>
+<p>②startTime：<br>闹钟的第一次执行时间，以毫秒为单位，可以自定义时间，不过一般使用当前时间。<br>需要注意的是,本属性与第一个属性（type）密切相关,如果第一个参数对应的闹钟<br>使用的是相对时间（ELAPSED_REALTIME和ELAPSED_REALTIME_WAKEUP），那么本属<br>性就得使用相对时间（相对于系统启动时间来说）,比如当前时间就表示为:<br>SystemClock.elapsedRealtime()；如果第一个参数对应的闹钟使用的是绝对时间 (RTC、RTC_WAKEUP、POWER_OFF_WAKEUP）,那么本属性就得使用绝对时间，<br>比如当前时间就表示为：System.currentTimeMillis()。</p>
+<p>③PendingIntent:<br>绑定了闹钟的执行动作，比如发送一个广播、给出提示等等。PendingIntent<br>是Intent的封装类。需要注意的是，如果是通过启动服务来实现闹钟提示的话，<br>PendingIntent对象的获取就应该采用Pending.getService<br>(Context c,int i,Intent intent,int j)方法；如果是通过广播来实现闹钟提示的话，<br>PendingIntent对象的获取就应该采用 PendingIntent.getBroadcast<br>(Context c,int i,Intent intent,int j)方法；<br>如果是采用Activity的方式来实现闹钟提示的话，PendingIntent对象的获取<br>就应该采用 PendingIntent.getActivity(Context c,int i,Intent intent,int j)<br>方法。如果这三种方法错用了的话，虽然不会报错，但是看不到闹钟提示效果。</p>
+<p>另外:</p>
+<p>从4.4版本后(API 19),Alarm任务的触发时间可能变得不准确,有可能会延时,是系统<br>对于耗电性的优化,如果需要准确无误可以调用setExtra()方法~</p>
+<p>核心代码：<br>LongRunningService.java</p>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">public <span class="keyword">class</span> LongRunningService extends Service &#123;</span><br><span class="line">    @Override</span><br><span class="line">    public IBinder on<span class="constructor">Bind(Intent <span class="params">intent</span>)</span> &#123;</span><br><span class="line">        return null;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public <span class="built_in">int</span> on<span class="constructor">StartCommand(Intent <span class="params">intent</span>, <span class="params">int</span> <span class="params">flags</span>, <span class="params">int</span> <span class="params">startId</span>)</span> &#123;</span><br><span class="line">        <span class="comment">//这里开辟一条线程,用来执行具体的逻辑操作:</span></span><br><span class="line">        <span class="keyword">new</span> <span class="constructor">Thread(<span class="params">new</span> Runnable()</span> &#123;</span><br><span class="line">            @Override</span><br><span class="line">            public void run<span class="literal">()</span> &#123;</span><br><span class="line">                <span class="module-access"><span class="module"><span class="identifier">Log</span>.</span></span>d(<span class="string">&quot;BackService&quot;</span>, <span class="keyword">new</span> <span class="constructor">Date()</span>.<span class="keyword">to</span><span class="constructor">String()</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;).start<span class="literal">()</span>;</span><br><span class="line">        AlarmManager manager = (AlarmManager) get<span class="constructor">SystemService(ALARM_SERVICE)</span>;</span><br><span class="line">        <span class="comment">//这里是定时的,这里设置的是每隔两秒打印一次时间=-=,自己改</span></span><br><span class="line">        <span class="built_in">int</span> anHour = <span class="number">2</span><span class="operator"> * </span><span class="number">1000</span>;</span><br><span class="line">        long triggerAtTime = <span class="module-access"><span class="module"><span class="identifier">SystemClock</span>.</span></span>elapsed<span class="constructor">Realtime()</span> + anHour;</span><br><span class="line">        Intent i = <span class="keyword">new</span> <span class="constructor">Intent(<span class="params">this</span>,AlarmReceiver.<span class="params">class</span>)</span>;</span><br><span class="line">        PendingIntent pi = <span class="module-access"><span class="module"><span class="identifier">PendingIntent</span>.</span></span>get<span class="constructor">Broadcast(<span class="params">this</span>, 0, <span class="params">i</span>, 0)</span>;</span><br><span class="line">        manager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtTime, pi);</span><br><span class="line">        return super.on<span class="constructor">StartCommand(<span class="params">intent</span>, <span class="params">flags</span>, <span class="params">startId</span>)</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>AlarmReceiver.java</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">public <span class="class"><span class="keyword">class</span> <span class="title">AlarmReceiver</span> <span class="keyword">extends</span> <span class="title">BroadcastReceiver</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    public void onReceive(<span class="type">Context</span> context, <span class="type">Intent</span> intent) &#123;</span><br><span class="line">        <span class="type">Intent</span> i = <span class="keyword">new</span> <span class="type">Intent</span>(context,<span class="type">LongRunningService</span>.<span class="keyword">class</span>);</span><br><span class="line">        context.startService(i);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="本节小结："><a href="#本节小结：" class="headerlink" title="本节小结："></a>本节小结：</h3><p>本节我们继续对Service进行更深入的学习，IntentService以及Service<br>在实际开发中的两个常用的案例：前台Service的实现，以及Service后台<br>Service的实现！下一节中我们会继续研究Service的AIDL，跨进程通信，<br>敬请期待~</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2015/11/28/Service%E8%BF%9B%E9%98%B6/" data-id="cl9pgenx200ykycv17t7w4wk3" data-title="Service进阶" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/12/02/%E8%87%AA%E5%AE%9A%E4%B9%89%E6%BB%91%E5%8A%A8%E6%8C%87%E7%A4%BA%E5%99%A8/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          自定义滑动指示器
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/11/28/Android-%E5%9C%A8%E5%85%B6%E4%BB%96%E7%BA%BF%E7%A8%8B%E4%B8%AD%E6%9B%B4%E6%96%B0UI%E7%BA%BF%E7%A8%8B%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">Android 在其他线程中更新UI线程的解决方法</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>APP接口设计-用户认证(JWT) | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="前言认证就是让服务器知道你是谁，授权就是服务器让你知道你什么能干，什么不能干，认证授权俩种方式：Session-Cookie与JWT，下面我们就针对这两种方案就行阐述。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="APP接口设计-用户认证(JWT)">
+<meta property="og:url" content="http://moqiang02.github.io/2018/04/03/APP%E6%8E%A5%E5%8F%A3%E8%AE%BE%E8%AE%A1-%E7%94%A8%E6%88%B7%E8%AE%A4%E8%AF%81-JWT/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="前言认证就是让服务器知道你是谁，授权就是服务器让你知道你什么能干，什么不能干，认证授权俩种方式：Session-Cookie与JWT，下面我们就针对这两种方案就行阐述。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/APP%E6%8E%A5%E5%8F%A3%E8%AE%BE%E8%AE%A1/1.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/APP%E6%8E%A5%E5%8F%A3%E8%AE%BE%E8%AE%A1/2.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/APP%E6%8E%A5%E5%8F%A3%E8%AE%BE%E8%AE%A1/3.png">
+<meta property="article:published_time" content="2018-04-03T14:45:42.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.653Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/APP%E6%8E%A5%E5%8F%A3%E8%AE%BE%E8%AE%A1/1.png">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-APP接口设计-用户认证-JWT" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2018/04/03/APP%E6%8E%A5%E5%8F%A3%E8%AE%BE%E8%AE%A1-%E7%94%A8%E6%88%B7%E8%AE%A4%E8%AF%81-JWT/" class="article-date">
+  <time class="dt-published" datetime="2018-04-03T14:45:42.000Z" itemprop="datePublished">2018-04-03</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/android/">android</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      APP接口设计-用户认证(JWT)
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Session"><span class="toc-number">2.</span> <span class="toc-text">Session</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86"><span class="toc-number">2.1.</span> <span class="toc-text">工作原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BC%98%E5%8A%BF"><span class="toc-number">2.2.</span> <span class="toc-text">优势</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%8A%E7%AB%AF"><span class="toc-number">2.3.</span> <span class="toc-text">弊端</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#session%E3%80%81cookie%E3%80%81sessionStorage%E3%80%81localstorage%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="toc-number">2.4.</span> <span class="toc-text">session、cookie、sessionStorage、localstorage的区别</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JWT"><span class="toc-number">3.</span> <span class="toc-text">JWT</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Header"><span class="toc-number">3.1.</span> <span class="toc-text">Header</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Payload"><span class="toc-number">3.2.</span> <span class="toc-text">Payload</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Signature"><span class="toc-number">3.3.</span> <span class="toc-text">Signature</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86-1"><span class="toc-number">3.4.</span> <span class="toc-text">工作原理</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JWTs-vs-Sessions"><span class="toc-number">4.</span> <span class="toc-text">JWTs vs. Sessions</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%AF%E6%89%A9%E5%B1%95%E6%80%A7"><span class="toc-number">4.1.</span> <span class="toc-text">可扩展性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%89%E5%85%A8%E6%80%A7"><span class="toc-number">4.2.</span> <span class="toc-text">安全性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#RESTful-API%E6%9C%8D%E5%8A%A1"><span class="toc-number">4.3.</span> <span class="toc-text">RESTful API服务</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%80%A7%E8%83%BD"><span class="toc-number">4.4.</span> <span class="toc-text">性能</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%8B%E6%B8%B8%E6%9C%8D%E5%8A%A1"><span class="toc-number">4.5.</span> <span class="toc-text">下游服务</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%9E%E6%95%88%E6%80%A7"><span class="toc-number">4.6.</span> <span class="toc-text">实效性</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#node%E4%B8%AD%E4%BD%BF%E7%94%A8JWT"><span class="toc-number">5.</span> <span class="toc-text">node中使用JWT</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>认证就是让服务器知道你是谁，授权就是服务器让你知道你什么能干，什么不能干，认证授权俩种方式：Session-Cookie与JWT，下面我们就针对这两种方案就行阐述。<span id="more"></span></p>
+<h2 id="Session"><a href="#Session" class="headerlink" title="Session"></a>Session</h2><h3 id="工作原理"><a href="#工作原理" class="headerlink" title="工作原理"></a>工作原理</h3><p>当 client通过用户名密码请求server并通过身份认证后，server就会生成身份认证相关的 session 数据，并且保存在内存或者内存数据库。并将对应的 sesssion_id返回给client，client会把保存session_id（可以加密签名下防止篡改）在cookie。此后client的所有请求都会附带该session_id（毕竟默认会把cookie传给server），以确定server是否存在对应的session数据以及检验登录状态以及拥有什么权限，如果通过校验就该干嘛干嘛，否则重新登录。<br>前端退出的话就清cookie。后端强制前端重新认证的话就清或者修改session。<br><img src="/images/APP%E6%8E%A5%E5%8F%A3%E8%AE%BE%E8%AE%A1/1.png"></p>
+<h3 id="优势"><a href="#优势" class="headerlink" title="优势"></a>优势</h3><ul>
+<li>相比JWT，最大的优势就在于可以主动清除session了</li>
+<li>session保存在服务器端，相对较为安全</li>
+<li>结合cookie使用，较为灵活，兼容性较好</li>
+</ul>
+<h3 id="弊端"><a href="#弊端" class="headerlink" title="弊端"></a>弊端</h3><ul>
+<li>cookie + session在跨域场景表现并不好</li>
+<li>如果是分布式部署，需要做多机共享session机制，实现方法可将session存储到数据库中或者redis中</li>
+<li>基于 cookie 的机制很容易被 CSRF</li>
+<li>查询session信息可能会有数据库查询操作</li>
+</ul>
+<h3 id="session、cookie、sessionStorage、localstorage的区别"><a href="#session、cookie、sessionStorage、localstorage的区别" class="headerlink" title="session、cookie、sessionStorage、localstorage的区别"></a>session、cookie、sessionStorage、localstorage的区别</h3><ul>
+<li>session: 主要存放在服务器端，相对安全</li>
+<li>cookie: 可设置有效时间，默认是关闭浏览器后失效，主要存放在客户端，并且不是很安全，可存储大小约为4kb</li>
+<li>sessionStorage: 仅在当前会话下有效，关闭页面或浏览器后被清除</li>
+<li>localstorage: 除非被清除，否则永久保存</li>
+</ul>
+<h2 id="JWT"><a href="#JWT" class="headerlink" title="JWT"></a>JWT</h2><p>JSON Web Token（JWT）是一种开放标准（RFC 7519），它定义了一种紧凑且独立的方式，可以将各方之间的信息作为JSON对象进行安全传输。该信息可以验证和信任，因为是经过数字签名的。<br>JWT基本上由.分隔的三部分组成，分别是头部，有效载荷和签名。<br>一个简单的JWT的例子，如下所示：<br><code>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiemhhbmdzYW4ifQ.ec7IVPU-ePtbdkb85IRnK4t4nUVvF2bBf8fGhJmEwSs</code><br>如果你细致得去看的话会发现其实这是一个分为 3 段的字符串，段与段之间用 点号 隔开，在 JWT 的概念中，每一段的名称分别为：<br><code>Header.Payload.Signature</code><br>在字符串中每一段都是被 base64url 编码后的 JSON，其中 Payload 段可能被加密。</p>
+<h3 id="Header"><a href="#Header" class="headerlink" title="Header"></a>Header</h3><p>JWT 的 Header 通常包含两个字段，分别是：typ(type) 和 alg(algorithm)。</p>
+<ul>
+<li>typ：token的类型，这里固定为 JWT</li>
+<li>alg：使用的 hash 算法，例如：HMAC SHA256 或者 RSA</li>
+</ul>
+<p>一个简单的例子：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;alg&quot;</span><span class="punctuation">:</span> <span class="string">&quot;HS256&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;typ&quot;</span><span class="punctuation">:</span> <span class="string">&quot;JWT&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+<p>我们对他进行编码后是：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>base64.b64encode(json.dumps(&#123;<span class="string">&quot;alg&quot;</span>:<span class="string">&quot;HS256&quot;</span>,<span class="string">&quot;typ&quot;</span>:<span class="string">&quot;JWT&quot;</span>&#125;))</span><br><span class="line"><span class="string">&#x27;eyJhbGciOiAiSFMyNTYiLCAidHlwIjogIkpXVCJ9&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Payload"><a href="#Payload" class="headerlink" title="Payload"></a>Payload</h3><p>JWT 中的 Payload 其实就是真实存储我们需要传递的信息的部分，例如正常我们会存储些用户 ID、用户名之类的。此外，还包含一些例如发布人、过期日期等的元数据。<br>但是，这部分和 Header 部分不一样的地方在于这个地方可以加密，而不是简单得直接进行 BASE64 编码。但是这里我为了解释方便就直接使用 BASE64 编码，需要注意的是，这里的 BASE64 编码稍微有点不一样，切确得说应该是 Base64UrlEncoder，和 Base64 编码的区别在于会忽略最后的 padding（=号），然后 ‘-‘ 会被替换成’_’。<br>举个例子，例如我们的 Payload 是：<br><code>&#123;&quot;user_id&quot;:&quot;zhangsan&quot;&#125;</code><br>那么直接 Base64 的话应该是：</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>base64.urlsafe_b64encode(<span class="string">&#x27;&#123;&quot;user_id&quot;:&quot;zhangsan&quot;&#125;&#x27;</span>)</span><br><span class="line"><span class="string">&#x27;eyJ1c2VyX2lkIjoiemhhbmdzYW4ifQ==&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>然后去掉 = 号，最后应该是：<code>eyJ1c2VyX2lkIjoiemhhbmdzYW4ifQ</code></p>
+<h3 id="Signature"><a href="#Signature" class="headerlink" title="Signature"></a>Signature</h3><p>Signature 部分其实就是对我们前面的 Header 和 Payload 部分进行签名，保证 Token 在传输的过程中没有被篡改或者损坏，签名的算法也很简单，但是，为了加密，所以除了 Header 和 Payload 之外，还多了一个密钥字段，完整算法为：</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Signature = HMACSHA256(</span><br><span class="line">    base64UrlEncode(header) + <span class="string">&quot;.&quot;</span> +</span><br><span class="line">    base64UrlEncode(payload),</span><br><span class="line">    secret)</span><br></pre></td></tr></table></figure>
+<p>还是以前面的例子为例</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">base64UrlEncode(header)  =》 eyJhbGciOiAiSFMyNTYiLCAidHlwIjogIkpXVCJ9</span><br><span class="line">base64UrlEncode(payload) =》 eyJ1c2VyX2lkIjoiemhhbmdzYW4ifQ</span><br></pre></td></tr></table></figure>
+<p>secret 就设为：”secret”, 那最后出来的签名应该是：</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">import</span> hmac</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">import</span> hashlib</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">import</span> base64</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dig = hmac.new(<span class="string">&#x27;secret&#x27;</span>,     &gt;&gt;&gt; msg=<span class="string">&quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiemhhbmdzYW4ifQ&quot;</span>, </span><br><span class="line">           digestmod=</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>base64.b64encode(dig.digest())</span><br><span class="line"><span class="string">&#x27;ec7IVPU-ePtbdkb85IRnK4t4nUVvF2bBf8fGhJmEwSs=&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>将上面三个部分组装起来就组成了我们的 JWT token了，所以我们的<br><code>&#123;&#39;user_id&#39;: &#39;zhangsan&#39;&#125;</code><br>的 token 就是：<br><code>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiemhhbmdzYW4ifQ.ec7IVPU-ePtbdkb85IRnK4t4nUVvF2bBf8fGhJmEwSs</code></p>
+<h3 id="工作原理-1"><a href="#工作原理-1" class="headerlink" title="工作原理"></a>工作原理</h3><p>1.首先，前端通过Web表单将自己的用户名和密码发送到后端的接口。这一过程一般是一个HTTP POST请求。建议的方式是通过SSL加密的传输（https协议），从而避免敏感信息被嗅探。<br>2.后端核对用户名和密码成功后，将用户的id等其他信息作为JWT Payload（负载），将其与头部分别进行Base64编码拼接后签名，形成一个JWT。形成的JWT就是一个形同<code>lll.zzz.xxx</code>的字符串。<br>3.后端将JWT字符串作为登录成功的返回结果返回给前端。前端可以将返回的结果保存在localStorage或sessionStorage上，退出登录时前端删除保存的JWT即可。<br>4.前端在每次请求时将JWT放入HTTP Header中的Authorization位。(解决XSS和XSRF问题)<br>5.后端检查是否存在，如存在验证JWT的有效性。例如，检查签名是否正确；检查Token是否过期；检查Token的接收方是否是自己（可选）。<br>6.验证通过后后端使用JWT中包含的用户信息进行其他逻辑操作，返回相应结果。</p>
+<p><img src="/images/APP%E6%8E%A5%E5%8F%A3%E8%AE%BE%E8%AE%A1/2.png"></p>
+<h2 id="JWTs-vs-Sessions"><a href="#JWTs-vs-Sessions" class="headerlink" title="JWTs vs. Sessions"></a>JWTs vs. Sessions</h2><h3 id="可扩展性"><a href="#可扩展性" class="headerlink" title="可扩展性"></a>可扩展性</h3><p>随着应用程序的扩大和用户数量的增加，你必将开始水平或垂直扩展。session数据通过文件或数据库存储在服务器的内存中。在水平扩展方案中，你必须开始复制服务器数据，你必须创建一个独立的中央session存储系统，以便所有应用程序服务器都可以访问。否则，由于session存储的缺陷，你将无法扩展应用程序。解决这个挑战的另一种方法是使用 sticky session。你还可以将session存储在磁盘上，使你的应用程序在云环境中轻松扩展。这类解决方法在现代大型应用中并没有真正发挥作用。建立和维护这种分布式系统涉及到深层次的技术知识，并随之产生更高的财务成本。在这种情况下，使用JWT是无缝的;由于基于token的身份验证是无状态的，所以不需要在session中存储用户信息。我们的应用程序可以轻松扩展，因为我们可以使用token从不同的服务器访问资源，而不用担心用户是否真的登录到某台服务器上。你也可以节省成本，因为你不需要专门的服务器来存储session。为什么？因为没有session！<br><strong>注意：如果你正在构建一个小型应用程序，这个程序完全不需要在多台服务器上扩展，并且不需要RESTful API的，那么session机制是很棒的。 如果你使用专用服务器运行像Redis那样的工具来存储session，那么session也可能会为你完美地运作！</strong></p>
+<h3 id="安全性"><a href="#安全性" class="headerlink" title="安全性"></a>安全性</h3><p>JWT签名旨在防止在客户端被篡改，但也可以对其进行加密，以确保token携带的claim 非常安全。JWT主要是直接存储在web存储（本地/session存储）或cookies中。 JavaScript可以访问同一个域上的Web存储。这意味着你的JWT可能容易受到XSS（跨站脚本）攻击。恶意JavaScript嵌入在页面上，以读取和破坏Web存储的内容。事实上，很多人主张，由于XSS攻击，一些非常敏感的数据不应该存放在Web存储中。一个非常典型的例子是确保你的JWT不将过于敏感/可信的数据进行编码，例如用户的社会安全号码。<br>最初，我提到JWT可以存储在cookie中。事实上，JWT在许多情况下被存储为cookie，并且cookies很容易受到CSRF（跨站请求伪造）攻击。预防CSRF攻击的许多方法之一是确保你的cookie只能由你的域访问。作为开发人员，不管是否使用JWT，确保必要的CSRF保护措施到位以避免这些攻击。<br>现在，JWT和session ID也会暴露于未经防范的重放攻击。建立适合系统的重放防范技术，完全取决于开发者。解决这个问题的一个方法是确保JWT具有短期过期时间。虽然这种技术并不能完全解决问题。然而，解决这个挑战的其他替代方案是将JWT发布到特定的IP地址并使用浏览器指纹。<br>注意：使用HTTPS / SSL确保你的Cookie和JWT在客户端和服务器传输期间默认加密。这有助于避免中间人攻击！</p>
+<h3 id="RESTful-API服务"><a href="#RESTful-API服务" class="headerlink" title="RESTful API服务"></a>RESTful API服务</h3><p>现代应用程序的常见模式是从RESTful API查询使用JSON数据。目前大多数应用程序都有RESTful API供其他开发人员或应用程序使用。由API提供的数据具有几个明显的优点，其中之一就是这些数据可以被多个应用程序使用。在这种情况下，传统的使用session和Cookie的方法在用户认证方面效果不佳，因为它们将状态引入到应用程序中。<br>RESTful API的原则之一是它应该是无状态的，这意味着当发出请求时，总会返回带有参数的响应，不会产生附加影响。用户的认证状态引入这种附加影响，这破坏了这一原则。保持API无状态，不产生附加影响，意味着维护和调试变得更加容易。<br>另一个挑战是，由一个服务器提供API，而实际应用程序从另一个服务器调用它的模式是很常见的。为了实现这一点，我们需要启用跨域资源共享（CORS）。Cookie只能用于其发起的域，相对于应用程序，对不同域的API来说，帮助不大。在这种情况下使用JWT进行身份验证可以确保RESTful API是无状态的，你也不用担心API或应用程序由谁提供服务。</p>
+<h3 id="性能"><a href="#性能" class="headerlink" title="性能"></a>性能</h3><p>对此的批判性分析是非常必要的。当从客户端向服务器发出请求时，如果大量数据在JWT内进行编码，则每个HTTP请求都会产生大量的开销。然而，在会话中，只有少量的开销，因为SESSION ID实际上非常小。看下面这个例子：<br>JWT有5个claim：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line"></span><br><span class="line">  <span class="attr">&quot;sub&quot;</span><span class="punctuation">:</span> <span class="string">&quot;1234567890&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Prosper Otemuyiwa&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;admin&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;role&quot;</span><span class="punctuation">:</span> <span class="string">&quot;manager&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;company&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Auth0&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+<p>编码时，JWT的大小将是SESSION ID（标识符）的几倍，从而在每个HTTP请求中，JWT比SESSION ID增加更多的开销。而对于session，每个请求在服务器上需要查找和反序列化session。<br>JWT通过将数据保留在客户端的方式以空间换时间。你应用程序的数据模型是一个重要的影响因素，因为通过防止对服务器数据库不间断的调用和查询来减少延迟。需要注意的是不要在JWT中存储太多的claim，以避免发生巨大的，过度膨胀的请求。<br>值得一提的是，token可能需要访问后端的数据库。特别是刷新token的情况。他们可能需要访问授权服务器上的数据库以进行黑名单处理。获取有关刷新token和何时使用它们的更多信息。另外，请查看本文，了解有关黑名单的<a target="_blank" rel="noopener" href="https://auth0.com/blog/blacklist-json-web-token-api-keys/">更多信息</a>。</p>
+<h3 id="下游服务"><a href="#下游服务" class="headerlink" title="下游服务"></a>下游服务</h3><p>现代web应用程序的另一种常见模式是，它们通常依赖于下游服务。例如，在原始请求被解析之前，对主应用服务器的调用可能会向下游服务器发出请求。这里的问题是，cookie不能很方便地流到下游服务器，也不能告诉这些服务器关于用户的身份验证状态。由于每个服务器都有自己的cookie方案，所以阻力很大，并且连接它们也是困难的。JSON Web Token再次轻而易举地做到了！</p>
+<h3 id="实效性"><a href="#实效性" class="headerlink" title="实效性"></a>实效性</h3><p>此外，无状态JWT的实效性相比session太差，只有等到过期才可销毁，而session则可手动销毁。<br>例如有个这种场景，如果JWT中存储有权限相关信息，比如当前角色为 admin，但是由于JWT所有者滥用自身权利，高级管理员将权利滥用者的角色降为 user。但是由于 JWT 无法实时刷新，必需要等到 JWT 过期，强制重新登录时，高级管理员的设置才能生效。<br>或者是用户发现账号被异地登录，然后修改密码，此时token还未过期，异地的账号一样可以进行操作包括修改密码。<br>但这种场景也不是没有办法解决，解决办法就是将JWT生成的token存入到redis或者数据库中，当用户登出或作出其他想要让token失效的举动，可通过删除token在数据库或者redis里面的对应关系来解决这个问题。</p>
+<h2 id="node中使用JWT"><a href="#node中使用JWT" class="headerlink" title="node中使用JWT"></a>node中使用JWT</h2><p>我这个项目中使用的是JWT，使用方法如下：<br>首先安装JWT库：<br><code>npm install jsonwebtoken</code><br>然后创建签名数据，生成token：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> jwt = <span class="built_in">require</span>(<span class="string">&#x27;jsonwebtoken&#x27;</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> token = jwt.<span class="title function_">sign</span>(&#123; <span class="attr">name</span>: <span class="string">&#x27;张三&#x27;</span> &#125;, <span class="string">&#x27;shhhhh&#x27;</span>);</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(token);</span><br></pre></td></tr></table></figure>
+<p>运行程序可以看到打印出来的内容类似这样：<br><code>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoi5byg5LiJIiwiaWF0IjoxNDYyODgxNDM3fQ.uVWC2h0_r1F4FZ3qDLkGN5KoFYbyZrFpRJMONZrJJog</code><br>之后，对token字符串，可以这样解码：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> decoded=jwt.<span class="title function_">decode</span>(token);</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(decoded);</span><br></pre></td></tr></table></figure>
+<p>将打印出：<br><code>&#123; name: &#39;张三&#39;, iat: 1462881437 &#125;</code><br>其中iat是时间戳，即签名时的时间（注意：单位是秒）。<br>不过，一般我们不会使用decode方法，因为它只是简单的对claims部分的做base64解码。<br>我们需要的是验证claims的内容是否被篡改。<br>此时我们需要使用verify方法：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> decoded = jwt.<span class="title function_">verify</span>(token, <span class="string">&#x27;shhhhh&#x27;</span>);</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(decoded);</span><br></pre></td></tr></table></figure>
+<p>虽然打印出的内容和decode方法是一样的。但是是经过校验的。<br>我们可以改变校验用的密钥，比如改为shzzzz，使之和加密时的密钥不一致。那么解码就会出现报错：<br><code>JsonWebTokenError: invalid signature</code><br>我们也可以偷偷修改token的claims或者header部分，会得到这样的报错：<br><code>JsonWebTokenError: invalid token</code><br>最后，根据自己的需求，决定是否需要将生成的token存入数据库或者redis，但建议不要存储用户密码等敏感信息。</p>
+<blockquote>
+<p>作者：chengkai<br>链接：<a target="_blank" rel="noopener" href="https://juejin.im/post/5a437441f265da43294e54c3">https://juejin.im/post/5a437441f265da43294e54c3</a><br>来源：掘金</p>
+</blockquote>
+<hr>
+<p>个人总结：JWT可以作为APP认证中的token来使用，后台从token中获取用户id、姓名等基本信息，省去了查询数据库的步骤。<br><img src="/images/APP%E6%8E%A5%E5%8F%A3%E8%AE%BE%E8%AE%A1/3.png"></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2018/04/03/APP%E6%8E%A5%E5%8F%A3%E8%AE%BE%E8%AE%A1-%E7%94%A8%E6%88%B7%E8%AE%A4%E8%AF%81-JWT/" data-id="cl9pgenn9000sycv13nac5z0l" data-title="APP接口设计-用户认证(JWT)" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/04/24/mysql%E5%A4%84%E7%90%86%E9%AB%98%E5%B9%B6%E5%8F%91%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%96%B9%E5%BC%8F%E2%80%94%E2%80%94%E6%82%B2%E8%A7%82%E9%94%81%E5%92%8C%E4%B9%90%E8%A7%82%E9%94%81/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          mysql处理高并发的两种方式——悲观锁和乐观锁
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/04/01/FastCgi%E4%B8%8EPHP-fpm%E4%B9%8B%E9%97%B4%E7%9A%84%E5%85%B3%E7%B3%BB/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">FastCgi与PHP-fpm之间的关系</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

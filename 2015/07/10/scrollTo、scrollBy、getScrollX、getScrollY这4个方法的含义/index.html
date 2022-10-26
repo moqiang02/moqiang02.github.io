@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>scrollTo、scrollBy、getScrollX、getScrollY这4个方法的含义 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="结合程序和图作出说明：（个人理解：视图的原点为第一次加载的界面的左上角，也就是说A点的坐标是(0,0) ）1、关于自定义视图继承ViewGroup中的onMeasure和onLayout是怎么实现我就不多说了，此博文主要是说明scrollTo、scrollBy、getScrollX、getScrollY这4个方法的含义。 2、整个坐标系是以手机屏幕左上角为原点，子视图的高度应该和手机屏幕高度一样高">
+<meta property="og:type" content="article">
+<meta property="og:title" content="scrollTo、scrollBy、getScrollX、getScrollY这4个方法的含义">
+<meta property="og:url" content="http://moqiang02.github.io/2015/07/10/scrollTo%E3%80%81scrollBy%E3%80%81getScrollX%E3%80%81getScrollY%E8%BF%994%E4%B8%AA%E6%96%B9%E6%B3%95%E7%9A%84%E5%90%AB%E4%B9%89/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="结合程序和图作出说明：（个人理解：视图的原点为第一次加载的界面的左上角，也就是说A点的坐标是(0,0) ）1、关于自定义视图继承ViewGroup中的onMeasure和onLayout是怎么实现我就不多说了，此博文主要是说明scrollTo、scrollBy、getScrollX、getScrollY这4个方法的含义。 2、整个坐标系是以手机屏幕左上角为原点，子视图的高度应该和手机屏幕高度一样高">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/scrollTo%E3%80%81scrollBy%E3%80%81getScrollX%E3%80%81getScrollY%E8%BF%994%E4%B8%AA%E6%96%B9%E6%B3%95%E7%9A%84%E5%90%AB%E4%B9%89/1.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/scrollTo%E3%80%81scrollBy%E3%80%81getScrollX%E3%80%81getScrollY%E8%BF%994%E4%B8%AA%E6%96%B9%E6%B3%95%E7%9A%84%E5%90%AB%E4%B9%89/2.png">
+<meta property="article:published_time" content="2015-07-09T23:17:03.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:54.030Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="AndroidUI">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/scrollTo%E3%80%81scrollBy%E3%80%81getScrollX%E3%80%81getScrollY%E8%BF%994%E4%B8%AA%E6%96%B9%E6%B3%95%E7%9A%84%E5%90%AB%E4%B9%89/1.jpg">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-scrollTo、scrollBy、getScrollX、getScrollY这4个方法的含义" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2015/07/10/scrollTo%E3%80%81scrollBy%E3%80%81getScrollX%E3%80%81getScrollY%E8%BF%994%E4%B8%AA%E6%96%B9%E6%B3%95%E7%9A%84%E5%90%AB%E4%B9%89/" class="article-date">
+  <time class="dt-published" datetime="2015-07-09T23:17:03.000Z" itemprop="datePublished">2015-07-10</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/android/">android</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      scrollTo、scrollBy、getScrollX、getScrollY这4个方法的含义
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <p>结合程序和图作出说明：<br><img src="/images/scrollTo%E3%80%81scrollBy%E3%80%81getScrollX%E3%80%81getScrollY%E8%BF%994%E4%B8%AA%E6%96%B9%E6%B3%95%E7%9A%84%E5%90%AB%E4%B9%89/1.jpg"><br>（个人理解：视图的原点为第一次加载的界面的左上角，也就是说A点的坐标是(0,0) ）<br>1、关于自定义视图继承ViewGroup中的onMeasure和onLayout是怎么实现我就不多说了，此博文主要是说明scrollTo、scrollBy、getScrollX、getScrollY这4个方法的含义。</p>
+<p>2、整个坐标系是以手机屏幕左上角为原点，子视图的高度应该和手机屏幕高度一样高，但是为了画图显示突出，所以手机屏幕稍微高了一些。<span id="more"></span></p>
+<p>3、MultiViewGroup继承ViewGroup，初始化时包含了3个子视图(子视图1、子视图2、子视图3)，并且每个子视图的宽、高都和手机屏幕一样大。MultiViewGroup容器经过onMeasure和onLayout设置后，它的视图坐标应该是3个颜色区域的总大小，这个区域远比我们得手机屏幕大，这点要注意。开始时应该显示的是子视图1(红色区域)。</p>
+<p>4、<code>public void scrollTo(int x, int y)</code>说明：</p>
+<p>它表示移动到视图的那个坐标点。哪个视图调用这个方法，那么这个视图的(x,y)点就与手机屏幕的左上角对齐(也可以理解为，手机屏幕的左上角就移动到(x,y)坐标)。</p>
+<p><code>public void scrollBy(int dx, int dy)</code> 说明：</p>
+<p>它表示在视图的X、Y方向上各移动dx、dy距离</p>
+<p>dx&gt;0表示视图(View或ViewGroup)的内容从右向左滑动;反之，从左向右滑动</p>
+<p>dy&gt;0表示视图(View或ViewGroup)的内容从下向上滑动;反之，从上向下滑动</p>
+<p>getScrollX()说明:</p>
+<p>=手机屏幕显示区域左上角x坐标减去MultiViewGroup视图左上角x坐标=320</p>
+<p>getScrollY()说明:</p>
+<p>=手机屏幕显示区域左上角y坐标减去MultiViewGroup视图左上角y坐标=0(因为子视图的高度和手机屏幕高度一样)</p>
+<p>5、当我们点击Next按钮时，执行：</p>
+<p><code>mulTiViewGroup.scrollTo(curscreen* screenWidth, 0);</code>那么程序就移动到了黄色区域</p>
+<p>6、点击Prev按钮，执行</p>
+<p><code>mulTiViewGroup.scrollBy(10,200);</code>出现如下图所示<br><img src="/images/scrollTo%E3%80%81scrollBy%E3%80%81getScrollX%E3%80%81getScrollY%E8%BF%994%E4%B8%AA%E6%96%B9%E6%B3%95%E7%9A%84%E5%90%AB%E4%B9%89/2.png"><br>x=10，表示视图从右向左移动了10个单位</p>
+<p>y=200，表示视图从下到上移动了200个单位</p>
+<p>同时可以调试看看getScrollX()和getScrollY()的值是多少</p>
+<p>5、最后，大家自己试试理解一下吧。</p>
+<p><a target="_blank" rel="noopener" href="http://download.csdn.net/detail/xiaoguochang/5125709">下载代码</a></p>
+<p><strong>贴出代码：</strong><br>multiview.xml</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=<span class="string">&quot;1.0&quot;</span> encoding=<span class="string">&quot;utf-8&quot;</span>?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">RelativeLayout</span> <span class="attr">xmlns:android</span>=<span class="string">&quot;http://schemas.android.com/apk/res/android&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:layout_width</span>=<span class="string">&quot;fill_parent&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:layout_height</span>=<span class="string">&quot;fill_parent&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:orientation</span>=<span class="string">&quot;vertical&quot;</span> &gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">com.qin.scrollerview.MultiViewGroup</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:id</span>=<span class="string">&quot;@+id/mymultiViewGroup&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:layout_width</span>=<span class="string">&quot;wrap_content&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:layout_height</span>=<span class="string">&quot;wrap_content&quot;</span> &gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">com.qin.scrollerview.MultiViewGroup</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">Button</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:id</span>=<span class="string">&quot;@+id/bt_scrollLeft&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:layout_width</span>=<span class="string">&quot;200dip&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:layout_height</span>=<span class="string">&quot;wrap_content&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:layout_alignParentBottom</span>=<span class="string">&quot;true&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:text</span>=<span class="string">&quot;Prev&quot;</span> /&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">Button</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:id</span>=<span class="string">&quot;@+id/bt_scrollRight&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:layout_width</span>=<span class="string">&quot;200dip&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:layout_height</span>=<span class="string">&quot;wrap_content&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:layout_alignParentBottom</span>=<span class="string">&quot;true&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:layout_toRightOf</span>=<span class="string">&quot;@id/bt_scrollLeft&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:text</span>=<span class="string">&quot;Next&quot;</span> /&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">RelativeLayout</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>MultiViewGroup.java</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.qin.scrollerview;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> android.app.Activity;</span><br><span class="line"><span class="keyword">import</span> android.content.Context;</span><br><span class="line"><span class="keyword">import</span> android.graphics.Color;</span><br><span class="line"><span class="keyword">import</span> android.os.Bundle;</span><br><span class="line"><span class="keyword">import</span> android.util.AttributeSet;</span><br><span class="line"><span class="keyword">import</span> android.util.Log;</span><br><span class="line"><span class="keyword">import</span> android.view.View;</span><br><span class="line"><span class="keyword">import</span> android.view.ViewGroup;</span><br><span class="line"><span class="keyword">import</span> android.view.View.OnClickListener;</span><br><span class="line"><span class="keyword">import</span> android.widget.Button;</span><br><span class="line"><span class="keyword">import</span> android.widget.LinearLayout;</span><br><span class="line"><span class="keyword">import</span> android.widget.TextView;</span><br><span class="line"></span><br><span class="line"><span class="comment">//自定义ViewGroup ， 包含了三个LinearLayout控件，存放在不同的布局位置，通过scrollBy或者scrollTo方法切换</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MultiViewGroup</span> <span class="keyword">extends</span> <span class="title class_">ViewGroup</span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">private</span> Context mContext;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">static</span> <span class="type">String</span> <span class="variable">TAG</span> <span class="operator">=</span> <span class="string">&quot;MultiViewGroup&quot;</span>;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="title function_">MultiViewGroup</span><span class="params">(Context context)</span> &#123;</span><br><span class="line">		<span class="built_in">super</span>(context);</span><br><span class="line">		mContext = context;</span><br><span class="line">		init();</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="title function_">MultiViewGroup</span><span class="params">(Context context, AttributeSet attrs)</span> &#123;</span><br><span class="line">		<span class="built_in">super</span>(context, attrs);</span><br><span class="line">		Log.i(TAG, <span class="string">&quot;MultiViewGroup ：getWidth()=&quot;</span> + getWidth()+<span class="string">&quot;,&quot;</span>+<span class="string">&quot;getHeight()=&quot;</span>+getHeight());</span><br><span class="line">		</span><br><span class="line">		mContext = context;</span><br><span class="line">		init();</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">init</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// 初始化3个 LinearLayout控件</span></span><br><span class="line">        <span class="type">LinearLayout</span> <span class="variable">oneLL</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">LinearLayout</span>(mContext);</span><br><span class="line">        oneLL.setBackgroundColor(Color.RED);</span><br><span class="line">        addView(oneLL);</span><br><span class="line"></span><br><span class="line">        <span class="type">LinearLayout</span> <span class="variable">twoLL</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">LinearLayout</span>(mContext);</span><br><span class="line">        twoLL.setBackgroundColor(Color.YELLOW);</span><br><span class="line">        addView(twoLL);</span><br><span class="line"></span><br><span class="line">        <span class="type">LinearLayout</span> <span class="variable">threeLL</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">LinearLayout</span>(mContext);</span><br><span class="line">        threeLL.setBackgroundColor(Color.BLUE);</span><br><span class="line">        addView(threeLL);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// measure过程</span></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">onMeasure</span><span class="params">(<span class="type">int</span> widthMeasureSpec, <span class="type">int</span> heightMeasureSpec)</span> &#123;</span><br><span class="line"></span><br><span class="line">		Log.i(TAG, <span class="string">&quot;--- start onMeasure --&quot;</span>);</span><br><span class="line"></span><br><span class="line">		<span class="comment">// 设置该ViewGroup的大小</span></span><br><span class="line">		<span class="type">int</span> <span class="variable">width</span> <span class="operator">=</span> MeasureSpec.getSize(widthMeasureSpec);</span><br><span class="line">		<span class="type">int</span> <span class="variable">height</span> <span class="operator">=</span> MeasureSpec.getSize(heightMeasureSpec);</span><br><span class="line">		setMeasuredDimension(width, height);</span><br><span class="line"></span><br><span class="line">		<span class="type">int</span> <span class="variable">childCount</span> <span class="operator">=</span> getChildCount();</span><br><span class="line">		Log.i(TAG, <span class="string">&quot;--- onMeasure childCount is --&gt;&quot;</span> + childCount);</span><br><span class="line">		Log.i(TAG, <span class="string">&quot;width=&quot;</span> + width+<span class="string">&quot;,&quot;</span>+<span class="string">&quot;height=&quot;</span>+height);</span><br><span class="line">		Log.i(TAG, <span class="string">&quot;onMeasure ：getWidth()=&quot;</span> + getWidth()+<span class="string">&quot;,&quot;</span>+<span class="string">&quot;getHeight()=&quot;</span>+getHeight());</span><br><span class="line">		<span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; childCount; i++) &#123;</span><br><span class="line">			<span class="type">View</span> <span class="variable">child</span> <span class="operator">=</span> getChildAt(i);</span><br><span class="line">			<span class="comment">// 设置每个子视图的大小 ， 即全屏</span></span><br><span class="line">			child.measure(MultiScreenActivity.screenWidth, MultiScreenActivity.scrrenHeight);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// layout过程</span></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">onLayout</span><span class="params">(<span class="type">boolean</span> changed, <span class="type">int</span> l, <span class="type">int</span> t, <span class="type">int</span> r, <span class="type">int</span> b)</span> &#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		Log.i(TAG, <span class="string">&quot;--- start onLayout --&quot;</span>);</span><br><span class="line">		<span class="type">int</span> <span class="variable">startLeft</span> <span class="operator">=</span> <span class="number">0</span>; <span class="comment">// 每个子视图的起始布局坐标</span></span><br><span class="line">		<span class="type">int</span> <span class="variable">startTop</span> <span class="operator">=</span> <span class="number">10</span>; <span class="comment">// 间距设置为10px 相当于 android：marginTop= &quot;10px&quot;</span></span><br><span class="line">		<span class="type">int</span> <span class="variable">childCount</span> <span class="operator">=</span> getChildCount();</span><br><span class="line">		Log.i(TAG, <span class="string">&quot;--- onLayout childCount is --&gt;&quot;</span> + childCount);</span><br><span class="line">		Log.i(TAG, <span class="string">&quot;onLayout ：getWidth()=&quot;</span> + getWidth()+<span class="string">&quot;,&quot;</span>+<span class="string">&quot;getHeight()=&quot;</span>+getHeight());</span><br><span class="line">		<span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; childCount; i++) &#123;</span><br><span class="line">			<span class="type">View</span> <span class="variable">child</span> <span class="operator">=</span> getChildAt(i);</span><br><span class="line">			child.layout(startLeft, startTop, </span><br><span class="line">					startLeft + MultiScreenActivity.screenWidth, </span><br><span class="line">					startTop + MultiScreenActivity.scrrenHeight);</span><br><span class="line">			startLeft = startLeft + MultiScreenActivity.screenWidth ; <span class="comment">//校准每个子View的起始布局位置</span></span><br><span class="line">			<span class="comment">//三个子视图的在屏幕中的分布如下 [0 , 320] / [320,640] / [640,960]</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>MultiScreenActivity.java</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.qin.scrollerview;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> android.app.Activity;</span><br><span class="line"><span class="keyword">import</span> android.os.Bundle;</span><br><span class="line"><span class="keyword">import</span> android.util.DisplayMetrics;</span><br><span class="line"><span class="keyword">import</span> android.view.View;</span><br><span class="line"><span class="keyword">import</span> android.view.View.OnClickListener;</span><br><span class="line"><span class="keyword">import</span> android.widget.Button;</span><br><span class="line"><span class="keyword">import</span> android.widget.TextView;</span><br><span class="line"><span class="keyword">import</span> android.widget.Toast;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">//带有可以切换屏的Activity</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MultiScreenActivity</span> <span class="keyword">extends</span> <span class="title class_">Activity</span> <span class="keyword">implements</span> <span class="title class_">OnClickListener</span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">private</span> Button bt_scrollLeft;</span><br><span class="line">	<span class="keyword">private</span> Button bt_scrollRight;</span><br><span class="line">	<span class="keyword">private</span> MultiViewGroup mulTiViewGroup  ;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> <span class="type">int</span> screenWidth  ;  <span class="comment">// 屏幕宽度</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> <span class="type">int</span> scrrenHeight ;  <span class="comment">//屏幕高度</span></span><br><span class="line">	</span><br><span class="line">	<span class="keyword">private</span> <span class="type">int</span> <span class="variable">curscreen</span> <span class="operator">=</span> <span class="number">0</span>;   <span class="comment">// 当前位于第几屏幕  ，共3个&quot;屏幕&quot;， 3个LinearLayout</span></span><br><span class="line">	</span><br><span class="line">	<span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">onCreate</span><span class="params">(Bundle savedInstanceState)</span> &#123;</span><br><span class="line">		<span class="built_in">super</span>.onCreate(savedInstanceState);</span><br><span class="line">        <span class="comment">//获得屏幕分辨率大小</span></span><br><span class="line">		<span class="type">DisplayMetrics</span> <span class="variable">metric</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">DisplayMetrics</span>();</span><br><span class="line">		getWindowManager().getDefaultDisplay().getMetrics(metric);</span><br><span class="line">		screenWidth = metric.widthPixels ;</span><br><span class="line">		scrrenHeight = metric.heightPixels;		</span><br><span class="line">		System.out.println(<span class="string">&quot;screenWidth * scrrenHeight ---&gt;&quot;</span> + screenWidth + <span class="string">&quot; * &quot;</span> +scrrenHeight);</span><br><span class="line">		</span><br><span class="line">		setContentView(R.layout.multiview);</span><br><span class="line"> </span><br><span class="line">        <span class="comment">//获取自定义视图的空间引用</span></span><br><span class="line">		mulTiViewGroup = (MultiViewGroup)findViewById(R.id.mymultiViewGroup);</span><br><span class="line">		</span><br><span class="line">		bt_scrollLeft = (Button) findViewById(R.id.bt_scrollLeft);</span><br><span class="line">		bt_scrollRight = (Button) findViewById(R.id.bt_scrollRight);</span><br><span class="line"></span><br><span class="line">		bt_scrollLeft.setOnClickListener(<span class="built_in">this</span>);</span><br><span class="line">		bt_scrollRight.setOnClickListener(<span class="built_in">this</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onClick</span><span class="params">(View v)</span> &#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line"></span><br><span class="line">		<span class="keyword">switch</span> (v.getId()) &#123;</span><br><span class="line">		<span class="keyword">case</span> R.id.bt_scrollLeft:</span><br><span class="line">			<span class="keyword">if</span>(curscreen &gt; <span class="number">0</span>) &#123;  <span class="comment">//防止屏幕越界</span></span><br><span class="line">			    curscreen -- ;</span><br><span class="line">			    Toast.makeText(MultiScreenActivity.<span class="built_in">this</span>, <span class="string">&quot;第&quot;</span> +(curscreen+<span class="number">1</span>) + <span class="string">&quot;屏&quot;</span>, <span class="number">300</span>).show();</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">else</span></span><br><span class="line">				Toast.makeText(MultiScreenActivity.<span class="built_in">this</span>, <span class="string">&quot;当前已是第一屏&quot;</span>,<span class="number">300</span>).show();</span><br><span class="line">			<span class="comment">//mulTiViewGroup.scrollTo(curscreen * screenWidth , 0);</span></span><br><span class="line">			<span class="type">int</span> <span class="variable">a</span> <span class="operator">=</span> mulTiViewGroup.getScrollX();</span><br><span class="line">			<span class="type">int</span> <span class="variable">b</span> <span class="operator">=</span> mulTiViewGroup.getScrollY();</span><br><span class="line">			<span class="comment">//x&gt;0表示视图(View或ViewGroup)的内容从右向左滑动;反之，从左向右滑动</span></span><br><span class="line">			<span class="comment">//y&gt;0表示视图(View或ViewGroup)的内容从下向上滑动;反之，从上向下滑动</span></span><br><span class="line">			mulTiViewGroup.scrollBy(<span class="number">10</span>, <span class="number">200</span>);</span><br><span class="line">			<span class="keyword">break</span>;</span><br><span class="line">		<span class="keyword">case</span> R.id.bt_scrollRight:</span><br><span class="line">			<span class="keyword">if</span> (curscreen &lt; <span class="number">2</span> )&#123; <span class="comment">//防止屏幕越界</span></span><br><span class="line">				curscreen ++ ;</span><br><span class="line">				Toast.makeText(MultiScreenActivity.<span class="built_in">this</span>, <span class="string">&quot;第&quot;</span> + (curscreen+<span class="number">1</span>) + <span class="string">&quot;屏&quot;</span>, <span class="number">300</span>).show();</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">else</span></span><br><span class="line">				Toast.makeText(MultiScreenActivity.<span class="built_in">this</span>, <span class="string">&quot;当前已是最后一屏&quot;</span>,<span class="number">300</span>).show();</span><br><span class="line">			mulTiViewGroup.scrollTo(curscreen * screenWidth, -<span class="number">30</span>);</span><br><span class="line">			</span><br><span class="line">			<span class="keyword">break</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2015/07/10/scrollTo%E3%80%81scrollBy%E3%80%81getScrollX%E3%80%81getScrollY%E8%BF%994%E4%B8%AA%E6%96%B9%E6%B3%95%E7%9A%84%E5%90%AB%E4%B9%89/" data-id="cl9pgeo4z01jaycv14mvycwqr" data-title="scrollTo、scrollBy、getScrollX、getScrollY这4个方法的含义" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/AndroidUI/" rel="tag">AndroidUI</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/07/11/Android%E8%87%AA%E5%AE%9A%E4%B9%89View%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%96%B9%E6%B3%95/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          Android自定义View的实现方法
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/07/09/Ajax%E8%B7%A8%E5%9F%9F%E9%97%AE%E9%A2%98%E8%A7%A3%E5%86%B3%E6%9C%80%E5%A5%BD%E6%96%B9%E6%A1%88/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">Ajax跨域问题解决最好方案</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

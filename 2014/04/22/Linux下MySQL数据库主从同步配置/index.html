@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Linux下MySQL数据库主从同步配置 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="说明： 操作系统：CentOS 5.x 64位 MySQL数据库版本：mysql-5.5.35 MySQL主服务器：192.168.21.128 MySQL从服务器：192.168.21.129 准备篇：说明：在两台MySQL服务器192.168.21.128和192.168.21.129上分别进行如下操作 备注： 作为主从服务器的MySQL版本建议使用同一版本！ 或者必须保证主服务器的MySQL">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linux下MySQL数据库主从同步配置">
+<meta property="og:url" content="http://moqiang02.github.io/2014/04/22/Linux%E4%B8%8BMySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5%E9%85%8D%E7%BD%AE/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="说明： 操作系统：CentOS 5.x 64位 MySQL数据库版本：mysql-5.5.35 MySQL主服务器：192.168.21.128 MySQL从服务器：192.168.21.129 准备篇：说明：在两台MySQL服务器192.168.21.128和192.168.21.129上分别进行如下操作 备注： 作为主从服务器的MySQL版本建议使用同一版本！ 或者必须保证主服务器的MySQL">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2014-04-22T12:05:57.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.796Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="集群">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Linux下MySQL数据库主从同步配置" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2014/04/22/Linux%E4%B8%8BMySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5%E9%85%8D%E7%BD%AE/" class="article-date">
+  <time class="dt-published" datetime="2014-04-22T12:05:57.000Z" itemprop="datePublished">2014-04-22</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/mysql/">mysql</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Linux下MySQL数据库主从同步配置
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%87%86%E5%A4%87%E7%AF%87%EF%BC%9A"><span class="toc-number">1.</span> <span class="toc-text">准备篇：</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E9%85%8D%E7%BD%AE%E5%A5%BDIP%E3%80%81DNS-%E3%80%81%E7%BD%91%E5%85%B3%EF%BC%8C%E7%A1%AE%E4%BF%9D%E4%BD%BF%E7%94%A8%E8%BF%9C%E7%A8%8B%E8%BF%9E%E6%8E%A5%E5%B7%A5%E5%85%B7%E8%83%BD%E5%A4%9F%E8%BF%9E%E6%8E%A5%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="toc-number">1.1.</span> <span class="toc-text">一、配置好IP、DNS 、网关，确保使用远程连接工具能够连接服务器</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E9%85%8D%E7%BD%AE%E9%98%B2%E7%81%AB%E5%A2%99%EF%BC%8C%E5%BC%80%E5%90%AF3306%E7%AB%AF%E5%8F%A3"><span class="toc-number">1.2.</span> <span class="toc-text">二、配置防火墙，开启3306端口</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E5%85%B3%E9%97%ADSELINUX"><span class="toc-number">1.3.</span> <span class="toc-text">三、关闭SELINUX</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%9B%9B-%E3%80%81%E7%B3%BB%E7%BB%9F%E7%BA%A6%E5%AE%9A"><span class="toc-number">1.4.</span> <span class="toc-text">四 、系统约定</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E4%B8%8B%E8%BD%BD%E8%BD%AF%E4%BB%B6%E5%8C%85"><span class="toc-number">1.5.</span> <span class="toc-text">五、下载软件包</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E5%AE%89%E8%A3%85%E7%BC%96%E8%AF%91%E5%B7%A5%E5%85%B7%E5%8F%8A%E5%BA%93%E6%96%87%E4%BB%B6%EF%BC%88%E4%BD%BF%E7%94%A8CentOS-yum%E5%91%BD%E4%BB%A4%E5%AE%89%E8%A3%85%EF%BC%89"><span class="toc-number">1.6.</span> <span class="toc-text">六、安装编译工具及库文件（使用CentOS yum命令安装）</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%89%E8%A3%85%E7%AF%87%EF%BC%88%E5%A6%82%E6%9E%9C%E5%B7%B2%E7%BB%8F%E5%AE%89%E8%A3%85%E4%BA%86mysql%E5%8F%AF%E7%95%A5%E8%BF%87%E6%AD%A4%E9%A1%B9%EF%BC%89"><span class="toc-number">2.</span> <span class="toc-text">安装篇（如果已经安装了mysql可略过此项）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%AE%89%E8%A3%85cmake"><span class="toc-number">2.1.</span> <span class="toc-text">一、安装cmake</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%AE%89%E8%A3%85mysql"><span class="toc-number">2.2.</span> <span class="toc-text">二、安装mysql</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%85%8D%E7%BD%AE%E7%AF%87"><span class="toc-number">3.</span> <span class="toc-text">配置篇</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E9%85%8D%E7%BD%AEMySQL%E4%B8%BB%E6%9C%8D%E5%8A%A1%E5%99%A8%EF%BC%88192-168-21-128%EF%BC%89"><span class="toc-number">3.1.</span> <span class="toc-text">一、配置MySQL主服务器（192.168.21.128）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E6%8A%8AMySQL%E4%B8%BB%E6%9C%8D%E5%8A%A1%E5%99%A8192-168-21-128%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93osyunweidb%E5%AF%BC%E5%85%A5%E5%88%B0MySQL%E4%BB%8E%E6%9C%8D%E5%8A%A1%E5%99%A8192-168-21-129%E4%B8%AD"><span class="toc-number">3.2.</span> <span class="toc-text">二、把MySQL主服务器192.168.21.128中的数据库osyunweidb导入到MySQL从服务器192.168.21.129中</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E9%85%8D%E7%BD%AEMySQL%E4%B8%BB%E6%9C%8D%E5%8A%A1%E5%99%A8%EF%BC%88192-168-21-128%EF%BC%89%E7%9A%84my-cnf%E6%96%87%E4%BB%B6"><span class="toc-number">3.3.</span> <span class="toc-text">三、配置MySQL主服务器（192.168.21.128）的my.cnf文件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E9%85%8D%E7%BD%AEMySQL%E4%BB%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%EF%BC%88192-168-21-129%EF%BC%89%E7%9A%84my-cnf%E6%96%87%E4%BB%B6"><span class="toc-number">3.4.</span> <span class="toc-text">四、配置MySQL从服务器（192.168.21.129）的my.cnf文件</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B5%8B%E8%AF%95%E7%AF%87"><span class="toc-number">4.</span> <span class="toc-text">测试篇</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <p>说明：</p>
+<p>操作系统：CentOS 5.x 64位</p>
+<p>MySQL数据库版本：mysql-5.5.35</p>
+<p>MySQL主服务器：192.168.21.128</p>
+<p>MySQL从服务器：192.168.21.129</p>
+<h3 id="准备篇："><a href="#准备篇：" class="headerlink" title="准备篇："></a>准备篇：</h3><p>说明：在两台MySQL服务器192.168.21.128和192.168.21.129上分别进行如下操作</p>
+<p>备注：</p>
+<p>作为主从服务器的MySQL版本建议使用同一版本！</p>
+<p>或者必须保证主服务器的MySQL版本要高于从服务器的MySQL版本！</p>
+<span id="more"></span>
+<h4 id="一、配置好IP、DNS-、网关，确保使用远程连接工具能够连接服务器"><a href="#一、配置好IP、DNS-、网关，确保使用远程连接工具能够连接服务器" class="headerlink" title="一、配置好IP、DNS 、网关，确保使用远程连接工具能够连接服务器"></a>一、配置好IP、DNS 、网关，确保使用远程连接工具能够连接服务器</h4><h4 id="二、配置防火墙，开启3306端口"><a href="#二、配置防火墙，开启3306端口" class="headerlink" title="二、配置防火墙，开启3306端口"></a>二、配置防火墙，开启3306端口</h4><p>vi /etc/sysconfig/iptables  #编辑</p>
+<p>-A RH-Firewall-1-INPUT -m state --state NEW -m tcp -p tcp --dport 3306 -j ACCEPT #允许3306端口</p>
+<p>特别提示：如果这两条规则添加到防火墙配置的最后一行，导致防火墙启动失败，正确的应该是添加到默认的22端口这条规则的下面，添加好之后防火墙规则如下所示：</p>
+<p>#########################################################</p>
+<p># Firewall configuration written by system-config-securitylevel</p>
+<p># Manual customization of this file is not recommended.</p>
+<p>*filter</p>
+<p>:INPUT ACCEPT [0:0]</p>
+<p>:FORWARD ACCEPT [0:0]</p>
+<p>:OUTPUT ACCEPT [0:0]</p>
+<p>:RH-Firewall-1-INPUT - [0:0]</p>
+<p>-A INPUT -j RH-Firewall-1-INPUT</p>
+<p>-A FORWARD -j RH-Firewall-1-INPUT</p>
+<p>-A RH-Firewall-1-INPUT -i lo -j ACCEPT</p>
+<p>-A RH-Firewall-1-INPUT -p icmp --icmp-type any -j ACCEPT</p>
+<p>-A RH-Firewall-1-INPUT -p 50 -j ACCEPT</p>
+<p>-A RH-Firewall-1-INPUT -p 51 -j ACCEPT</p>
+<p>-A RH-Firewall-1-INPUT -p udp --dport 5353 -d 224.0.0.251 -j ACCEPT</p>
+<p>-A RH-Firewall-1-INPUT -p udp -m udp --dport 631 -j ACCEPT</p>
+<p>-A RH-Firewall-1-INPUT -p tcp -m tcp --dport 631 -j ACCEPT</p>
+<p>-A RH-Firewall-1-INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT</p>
+<p>-A RH-Firewall-1-INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT</p>
+<p>-A RH-Firewall-1-INPUT -m state --state NEW -m tcp -p tcp --dport 3306 -j ACCEPT</p>
+<p>-A RH-Firewall-1-INPUT -j REJECT --reject-with icmp-host-prohibited</p>
+<p>COMMIT</p>
+<p>#########################################################</p>
+<p>/etc/init.d/iptables restart #最后重启防火墙使配置生效</p>
+<h4 id="三、关闭SELINUX"><a href="#三、关闭SELINUX" class="headerlink" title="三、关闭SELINUX"></a>三、关闭SELINUX</h4><p>vi /etc/selinux/config</p>
+<p>#SELINUX=enforcing #注释掉</p>
+<p>#SELINUXTYPE=targeted #注释掉</p>
+<p>SELINUX=disabled #增加</p>
+<p>:wq  #保存退出</p>
+<p>setenforce 0 #立即生效</p>
+<h4 id="四-、系统约定"><a href="#四-、系统约定" class="headerlink" title="四 、系统约定"></a>四 、系统约定</h4><p>软件源代码包存放位置：/usr/local/src</p>
+<p>源码包编译安装位置：/usr/local/软件名字</p>
+<h4 id="五、下载软件包"><a href="#五、下载软件包" class="headerlink" title="五、下载软件包"></a>五、下载软件包</h4><p>1、下载MySQL</p>
+<p><a target="_blank" rel="noopener" href="http://cdn.mysql.com/Downloads/MySQL-5.5/mysql-5.5.35.tar.gz">http://cdn.mysql.com/Downloads/MySQL-5.5/mysql-5.5.35.tar.gz</a></p>
+<p>2、下载cmake（MySQL编译工具）</p>
+<p><a target="_blank" rel="noopener" href="http://www.cmake.org/files/v2.8/cmake-2.8.12.1.tar.gz">http://www.cmake.org/files/v2.8/cmake-2.8.12.1.tar.gz</a></p>
+<p>以上软件包上传到/usr/local/src目录</p>
+<h4 id="六、安装编译工具及库文件（使用CentOS-yum命令安装）"><a href="#六、安装编译工具及库文件（使用CentOS-yum命令安装）" class="headerlink" title="六、安装编译工具及库文件（使用CentOS yum命令安装）"></a>六、安装编译工具及库文件（使用CentOS yum命令安装）</h4><p>yum install -y make apr* autoconf automake curl curl-devel gcc gcc-c++ gtk+-devel zlib-devel openssl openssl-devel pcre-devel gd kernel keyutils patch perl kernel-headers compat*  cpp glibc libgomp libstdc++-devel keyutils-libs-devel libsepol-devel libselinux-devel krb5-devel  libXpm* freetype freetype-devel freetype* fontconfig fontconfig-devel  libjpeg* libpng* php-common php-gd gettext gettext-devel ncurses* libtool* libxml2 libxml2-devel patch policycoreutils bison</p>
+<h3 id="安装篇（如果已经安装了mysql可略过此项）"><a href="#安装篇（如果已经安装了mysql可略过此项）" class="headerlink" title="安装篇（如果已经安装了mysql可略过此项）"></a>安装篇（如果已经安装了mysql可略过此项）</h3><p>说明：在两台MySQL服务器192.168.21.128和192.168.21.129上分别进行如下操作，安装mysql-5.5.35</p>
+<p>以下是远程登录到服务器，在命令行下面操作的</p>
+<h4 id="一、安装cmake"><a href="#一、安装cmake" class="headerlink" title="一、安装cmake"></a>一、安装cmake</h4><p>cd /usr/local/src</p>
+<p>tar zxvf cmake-2.8.12.1.tar.gz</p>
+<p>cd cmake-2.8.12.1</p>
+<p>./configure</p>
+<p>make #编译</p>
+<p>make install #安装</p>
+<h4 id="二、安装mysql"><a href="#二、安装mysql" class="headerlink" title="二、安装mysql"></a>二、安装mysql</h4><p>groupadd mysql  #添加mysql组</p>
+<p>useradd -g mysql mysql -s /bin/false  #创建用户mysql并加入到mysql组，不允许mysql用户直接登录系统</p>
+<p>mkdir -p /data/mysql  #创建MySQL数据库存放目录</p>
+<p>chown -R mysql:mysql /data/mysql   #设置MySQL数据库目录权限</p>
+<p>mkdir -p /usr/local/mysql-5.5.35 #创建MySQL安装目录</p>
+<p>ln -s /usr/local/mysql-5.5.35 /usr/local/mysql  #创建软连接到mysql目录，方便后面的配置</p>
+<p>cd /usr/local/src</p>
+<p>tar zxvf mysql-5.5.35.tar.gz  #解压</p>
+<p>cd mysql-5.5.35</p>
+<p>cmake . -DCMAKE_INSTALL_PREFIX=/usr/local/mysql  -DMYSQL_DATADIR=/data/mysql  -DSYSCONFDIR=/etc  #配置</p>
+<p>make #编译</p>
+<p>make install  #安装</p>
+<p>cd /usr/local/mysql</p>
+<p>cp ./support-files/my-huge.cnf  /etc/my.cnf   #拷贝配置文件（注意：如果/etc目录下面默认有一个my.cnf，直接覆盖即可）</p>
+<p>vi /etc/my.cnf   #编辑配置文件,在 [mysqld] 部分增加</p>
+<p>datadir = /data/mysql  #添加MySQL数据库路径</p>
+<p>./scripts/mysql_install_db --user=mysql  #生成mysql系统数据库</p>
+<p>cp ./support-files/mysql.server  /etc/rc.d/init.d/mysqld  #把Mysql加入系统启动</p>
+<p>chmod 755 /etc/init.d/mysqld   #增加执行权限</p>
+<p>chkconfig mysqld on  #加入开机启动</p>
+<p>vi /etc/rc.d/init.d/mysqld  #编辑</p>
+<p>basedir = /usr/local/mysql   #MySQL程序安装路径</p>
+<p>datadir = /data/mysql  #MySQl数据库存放目录</p>
+<p>service mysqld start  #启动</p>
+<p>vi /etc/profile   #把mysql服务加入系统环境变量：在最后添加下面这一行</p>
+<p>export PATH=$PATH:/usr/local/mysql/bin</p>
+<p>source  /etc/profile #使配置立即生效</p>
+<p>下面这两行把myslq的库文件链接到系统默认的位置，这样你在编译类似PHP等软件时可以不用指定mysql的库文件地址。</p>
+<p>ln -s /usr/local/mysql/lib/mysql /usr/lib/mysql</p>
+<p>ln -s /usr/local/mysql/include/mysql /usr/include/mysql</p>
+<p>mkdir /var/lib/mysql  #创建目录</p>
+<p>ln -s /tmp/mysql.sock  /var/lib/mysql/mysql.sock   #添加软链接</p>
+<p>mysql_secure_installation   #设置Mysql密码，根据提示按Y 回车输入2次密码</p>
+<p>/usr/local/mysql/bin/mysqladmin -u root -p password “123456”   #或者直接修改密码</p>
+<p>到此，mysql安装完成！</p>
+<h3 id="配置篇"><a href="#配置篇" class="headerlink" title="配置篇"></a>配置篇</h3><h4 id="一、配置MySQL主服务器（192-168-21-128）"><a href="#一、配置MySQL主服务器（192-168-21-128）" class="headerlink" title="一、配置MySQL主服务器（192.168.21.128）"></a>一、配置MySQL主服务器（192.168.21.128）</h4><p>mysql -u root -p  #进入MySQL控制台</p>
+<p>create database osyunweidb;   #建立数据库osyunweidb</p>
+<p>insert into mysql.user(Host,User,Password) values(‘localhost’,’osyunweiuser’,password(‘123456’));   #创建用户osyunweiuser，密码123456</p>
+<p>grant all on osyunweidb.* to ‘osyunweiuser‘@’192.168.21.130’ identified by ‘123456’ with grant option; #授权用户osyunweiuser从192.168.21.130完全访问数据库，注意：192.168.21.130是企图连接数据库的Web服务器IP  （grant all on 数据库名.表名）</p>
+<p>insert into mysql.user(Host,User,Password) values(‘localhost’,’osyunweidbbak’,password(‘123456’));  #建立MySQL主从数据库同步用户osyunweidbbak密码123456</p>
+<p>flush privileges;   #刷新系统授权表</p>
+<p>grant replication slave  on <em>.</em> to ‘osyunweidbbak‘@’192.168.21.129’ identified by ‘123456’ with grant option; #授权用户osyunweidbbak只能从192.168.21.129这个IP访问主服务器192.168.21.128上面的数据库，并且只具有数据库备份的权限</p>
+<h4 id="二、把MySQL主服务器192-168-21-128中的数据库osyunweidb导入到MySQL从服务器192-168-21-129中"><a href="#二、把MySQL主服务器192-168-21-128中的数据库osyunweidb导入到MySQL从服务器192-168-21-129中" class="headerlink" title="二、把MySQL主服务器192.168.21.128中的数据库osyunweidb导入到MySQL从服务器192.168.21.129中"></a>二、把MySQL主服务器192.168.21.128中的数据库osyunweidb导入到MySQL从服务器192.168.21.129中</h4><p>1、导出数据库osyunweidb</p>
+<p>mysqldump -u root -p --default-character-set=utf8 --opt -Q -R --skip-lock-tables osyunweidb &gt; /home/osyunweidbbak.sql   #在MySQL主服务器进行操作，导出数据库osyunweidb到/home/osyunweidbbak.sql（在终端执行，而不是在mysql内执行）</p>
+<p>备注：在导出之前可以先进入MySQL控制台执行下面命令</p>
+<p>flush tables with read lock;    #数据库只读锁定命令，防止导出数据库的时候有数据写入</p>
+<p>unlock tables;   #解除锁定</p>
+<p>scp /home/osyunweidbbak.sql <a href="mailto:&#x72;&#x6f;&#x6f;&#x74;&#64;&#x31;&#57;&#x32;&#x2e;&#49;&#x36;&#x38;&#46;&#50;&#49;&#46;&#49;&#50;&#57;">&#x72;&#x6f;&#x6f;&#x74;&#64;&#x31;&#57;&#x32;&#x2e;&#49;&#x36;&#x38;&#46;&#50;&#49;&#46;&#49;&#50;&#57;</a>:/home   #把home目录下的osyunweidbbak.sql 数据库文件上传到MySQL从服务器的home目录下面</p>
+<p>2、导入数据库到MySQL从服务器</p>
+<p>mysql  -u root -p  #进入从服务器MySQL控制台</p>
+<p>create database osyunweidb;   #创建数据库</p>
+<p>use osyunweidb    #进入数据库</p>
+<p>source  /home/osyunweidbbak.sql  #导入备份文件到数据库</p>
+<p>mysql -u osyunweidbbak -h 192.168.21.128 -p  #测试在从服务器上登录到主服务器</p>
+<h4 id="三、配置MySQL主服务器（192-168-21-128）的my-cnf文件"><a href="#三、配置MySQL主服务器（192-168-21-128）的my-cnf文件" class="headerlink" title="三、配置MySQL主服务器（192.168.21.128）的my.cnf文件"></a>三、配置MySQL主服务器（192.168.21.128）的my.cnf文件</h4><p>vi /etc/my.cnf   #编辑配置文件，在[mysqld]部分添加下面内容</p>
+<p>server-id=1   #设置服务器id，为1表示主服务器，注意：如果原来的配置文件中已经有这一行，就不用再添加了。</p>
+<p>log-bin=mysql-bin  #启动MySQ二进制日志系统，注意：如果原来的配置文件中已经有这一行，就不用再添加了。</p>
+<p>binlog-do-db=osyunweidb  #需要同步的数据库名，如果有多个数据库，可重复此参数，每个数据库一行</p>
+<p>binlog-ignore-db=mysql   #不同步mysql系统数据库</p>
+<p>:wq!   #保存退出</p>
+<p>service mysqld  restart  #重启MySQL</p>
+<p>mysql -u root -p   #进入mysql控制台</p>
+<p>show variables like ‘server_id’;  #查看server-id的值是否为1</p>
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show variables like <span class="emphasis">&#x27;server_id&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="code">+---------------+</span>-------+</span><br><span class="line"><span class="section">| Variable_name | Value |</span></span><br><span class="line"><span class="section">+---------------+-------+</span></span><br><span class="line"><span class="section">| server_id     | 1     |</span></span><br><span class="line"><span class="section">+---------------+-------+</span></span><br><span class="line"></span><br><span class="line">1 row in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+<p>show master status;  #查看主服务器，出现以下类似信息</p>
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show master status;</span><br><span class="line"></span><br><span class="line"><span class="code">+------------------+</span>----------<span class="code">+--------------+</span>------------------+</span><br><span class="line"><span class="section">| File             | Position | Binlog_Do_DB | Binlog_Ignore_DB |</span></span><br><span class="line"><span class="section">+------------------+----------+--------------+------------------+</span></span><br><span class="line"><span class="section">| mysql-bin.000011 |      107 | osyunweidb   | mysql            |</span></span><br><span class="line"><span class="section">+------------------+----------+--------------+------------------+</span></span><br><span class="line"></span><br><span class="line">1 row in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+<p>注意：这里记住File的值：mysql-bin.000011和Position的值：107，后面会用到。</p>
+<h4 id="四、配置MySQL从服务器（192-168-21-129）的my-cnf文件"><a href="#四、配置MySQL从服务器（192-168-21-129）的my-cnf文件" class="headerlink" title="四、配置MySQL从服务器（192.168.21.129）的my.cnf文件"></a>四、配置MySQL从服务器（192.168.21.129）的my.cnf文件</h4><p>vi /etc/my.cnf   #编辑配置文件，在[mysqld]部分添加下面内容</p>
+<p>server-id=2   #设置服务器id，修改其值为2，表示为从数据库</p>
+<p>log-bin=mysql-bin  #启动MySQ二进制日志系统，注意：如果原来的配置文件中已经有这一行，就不用再添加了。</p>
+<p>replicate-do-db=osyunweidb   #需要同步的数据库名，如果有多个数据库，可重复此参数，每个数据库一行</p>
+<p>replicate-ignore-db=mysql   #不同步mysql系统数据库</p>
+<p>read_only  #设置数据库只读</p>
+<p>:wq!    #保存退出</p>
+<p>service mysqld restart   #重启MySQL</p>
+<p>mysql  -u root -p  #进入MySQL控制台</p>
+<p>show variables like ‘server_id’;  #查看server-id的值，必须为上面设置的2，否则请返回修改配置文件</p>
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show variables like <span class="emphasis">&#x27;server_id&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="code">+---------------+</span>-------+</span><br><span class="line"><span class="section">| Variable_name | Value |</span></span><br><span class="line"><span class="section">+---------------+-------+</span></span><br><span class="line"><span class="section">| server_id     | 2     |</span></span><br><span class="line"><span class="section">+---------------+-------+</span></span><br><span class="line"></span><br><span class="line">1 row in set (0.01 sec)</span><br></pre></td></tr></table></figure>
+<p>slave stop;   #停止slave同步进程</p>
+<p>change master to master_host=’192.168.21.128’,master_user=’osyunweidbbak’,master_password=’123456’,master_log_file=’mysql-bin.000011’ ,master_log_pos=107;   #执行同步语句</p>
+<p>slave start;    #开启slave同步进程</p>
+<p>SHOW SLAVE STATUS\G   #查看slave同步信息，出现以下内容</p>
+<p>mysql&gt; SHOW SLAVE STATUS\G</p>
+<p>*************************** 1. row ***************************</p>
+<p>Slave_IO_State: Waiting for master to send event</p>
+<p>Master_Host: 192.168.21.128</p>
+<p>Master_User: osyunweidbbak</p>
+<p>Master_Port: 3306</p>
+<p>Connect_Retry: 60</p>
+<p>Master_Log_File: mysql-bin.000011</p>
+<p>Read_Master_Log_Pos: 107</p>
+<p>Relay_Log_File: mysqlslave-relay-bin.000004</p>
+<p>Relay_Log_Pos: 253</p>
+<p>Relay_Master_Log_File: mysql-bin.000011</p>
+<p>Slave_IO_Running: Yes</p>
+<p>Slave_SQL_Running: Yes</p>
+<p>Replicate_Do_DB: osyunweidb</p>
+<p>Replicate_Ignore_DB: mysql</p>
+<p>Replicate_Do_Table:</p>
+<p>Replicate_Ignore_Table:</p>
+<p>Replicate_Wild_Do_Table:</p>
+<p>Replicate_Wild_Ignore_Table:</p>
+<p>Last_Errno: 0</p>
+<p>Last_Error:</p>
+<p>Skip_Counter: 0</p>
+<p>Exec_Master_Log_Pos: 107</p>
+<p>Relay_Log_Space: 560</p>
+<p>Until_Condition: None</p>
+<p>Until_Log_File:</p>
+<p>Until_Log_Pos: 0</p>
+<p>Master_SSL_Allowed: No</p>
+<p>Master_SSL_CA_File:</p>
+<p>Master_SSL_CA_Path:</p>
+<p>Master_SSL_Cert:</p>
+<p>Master_SSL_Cipher:</p>
+<p>Master_SSL_Key:</p>
+<p>Seconds_Behind_Master: 0</p>
+<p>Master_SSL_Verify_Server_Cert: No</p>
+<p>Last_IO_Errno: 0</p>
+<p>Last_IO_Error:</p>
+<p>Last_SQL_Errno: 0</p>
+<p>Last_SQL_Error:</p>
+<p>Replicate_Ignore_Server_Ids:</p>
+<p>Master_Server_Id: 1</p>
+<p>1 row in set (0.00 sec)</p>
+<p>mysql&gt;</p>
+<p>注意查看：</p>
+<p>Slave_IO_Running: Yes</p>
+<p>Slave_SQL_Running: Yes</p>
+<p>以上这两个参数的值为Yes，即说明配置成功！</p>
+<h3 id="测试篇"><a href="#测试篇" class="headerlink" title="测试篇"></a>测试篇</h3><p>测试MySQL主从服务器是否正常运行</p>
+<p>1、进入MySQL主服务器（192.168.21.128）</p>
+<p>mysql -u root -p  #进入MySQL控制台</p>
+<p>use osyunweidb   #进入数据库</p>
+<p>CREATE TABLE test ( id int not null primary key,name char(20) );   #创建test表</p>
+<p>2、进入MySQL从服务器</p>
+<p>mysql -u root -p  #进入MySQL控制台</p>
+<p>use osyunweidb   #进入数据库</p>
+<p>show  tables;  #查看osyunweidb表结构，会看到有一个新建的表test，表示数据库同步成功</p>
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show  tables;</span><br><span class="line"></span><br><span class="line"><span class="code">+----------------------+</span></span><br><span class="line"><span class="section">| Tables_in_osyunweidb |</span></span><br><span class="line"><span class="section">+----------------------+</span></span><br><span class="line"><span class="section">| test                 |</span></span><br><span class="line"><span class="section">+----------------------+</span></span><br><span class="line"></span><br><span class="line">1 row in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+<p>至此，Linux下MySQL数据库主从同步配置完成！<br>» 本文链接：<a target="_blank" rel="noopener" href="http://www.osyunwei.com/archives/7269.html">http://www.osyunwei.com/archives/7269.html</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/04/22/Linux%E4%B8%8BMySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5%E9%85%8D%E7%BD%AE/" data-id="cl9pgensz00ldycv193mz1vtg" data-title="Linux下MySQL数据库主从同步配置" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E9%9B%86%E7%BE%A4/" rel="tag">集群</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/04/23/%E4%BD%BF%E7%94%A8Amoeba-for-mysql%E5%AE%9E%E7%8E%B0mysql%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          使用Amoeba for mysql实现mysql读写分离（测试可行）
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/04/22/centos%E7%B3%BB%E7%BB%9F%E4%B8%BAphp%E5%AE%89%E8%A3%85memcached%E6%89%A9%E5%B1%95/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">centos系统为php安装memcached扩展</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Supervisor安装与配置 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="Supervisor是一个用Python写的进程管理工具，可以很方便的用来启动、重启、关闭进程(不仅仅是Python进程)。除了对单个进程的控制，还可以同时启动、关闭多个进程，比如很不幸的服务器出问题导致所有应用程序都被杀死，此时可以用 supervisor 同时启动所有应用程序而不是一个一个地敲命令启动。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Supervisor安装与配置">
+<meta property="og:url" content="http://moqiang02.github.io/2017/05/22/Supervisor%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="Supervisor是一个用Python写的进程管理工具，可以很方便的用来启动、重启、关闭进程(不仅仅是Python进程)。除了对单个进程的控制，还可以同时启动、关闭多个进程，比如很不幸的服务器出问题导致所有应用程序都被杀死，此时可以用 supervisor 同时启动所有应用程序而不是一个一个地敲命令启动。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/Supervisor%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/1.jpg">
+<meta property="article:published_time" content="2017-05-22T12:20:58.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.897Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/Supervisor%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/1.jpg">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Supervisor安装与配置" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2017/05/22/Supervisor%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/" class="article-date">
+  <time class="dt-published" datetime="2017-05-22T12:20:58.000Z" itemprop="datePublished">2017-05-22</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/linux/">linux</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Supervisor安装与配置
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%89%E8%A3%85"><span class="toc-number">1.</span> <span class="toc-text">安装</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#supervisord-%E9%85%8D%E7%BD%AE"><span class="toc-number">2.</span> <span class="toc-text">supervisord 配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#program-%E9%85%8D%E7%BD%AE"><span class="toc-number">3.</span> <span class="toc-text">program 配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8-supervisorctl-%E5%AE%A2%E6%88%B7%E7%AB%AF%E5%91%BD%E4%BB%A4"><span class="toc-number">4.</span> <span class="toc-text">使用 supervisorctl 客户端命令</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%B6%E4%BB%96"><span class="toc-number">5.</span> <span class="toc-text">其他</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <p>Supervisor是一个用Python写的进程管理工具，可以很方便的用来启动、重启、关闭进程(不仅仅是Python进程)。除了对单个进程的控制，还可以同时启动、关闭多个进程，比如很不幸的服务器出问题导致所有应用程序都被杀死，此时可以用 supervisor 同时启动所有应用程序而不是一个一个地敲命令启动。<span id="more"></span></p>
+<h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><p>当前Supervisor的最高版本是3.0，之前尝试使用2.x版本管理实验集群中的若干mdrill进程，发现使用客户端无法有效启动和停止服务器端管理的各个子进程，从网上搜索错误发现2.x版本有一些bug，建议升级到3.0版本。因此我卸载了2.x版本，重新安装了3.0版本，发现3.0版本很好使。3.0版本相对2.x版本，配置文件不同部分的配置项都发生了变化，详见官方文档。</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo yum <span class="keyword">install</span> python-setuptools-devel</span><br><span class="line">easy_install supervisor 或 sudo pip <span class="keyword">install</span> supervisor</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>使用pip安装时提示：Supervisor is known to work with Python 2.4 or later but will not work under any version of Python 3.<br>解决方案：更改安装方式<br>1.获取supervisor包：【<a target="_blank" rel="noopener" href="https://pypi.python.org/pypi/supervisor%E3%80%91">https://pypi.python.org/pypi/supervisor】</a><br><code>wget https://pypi.python.org/packages/80/37/964c0d53cbd328796b1aeb7abea4c0f7b0e8c7197ea9b0b9967b7d004def/supervisor-3.3.1.tar.gz</code><br>2.解压supervisor-3.3.1.tar.gz 并安装<br><code>tar zxvf supervisor-3.3.1.tar.gz &amp;&amp; cd supervisor-3.3.1</code><br><code>python setup.py install</code></p>
+</blockquote>
+<p>如果是 Ubuntu 系统，还可以使用 apt-get 安装<br><code>apt-get install supervisor</code></p>
+<h3 id="supervisord-配置"><a href="#supervisord-配置" class="headerlink" title="supervisord 配置"></a>supervisord 配置</h3><p>Supervisor 相当强大，提供了很丰富的功能，不过我们可能只需要用到其中一小部分。安装完成之后，可以编写配置文件，来满足自己的需求。为了方便，我们把配置分成两部分：supervisord（supervisor 是一个 C/S 模型的程序，这是 server 端，对应的有 client 端：supervisorctl）和应用程序（即我们要管理的程序）。<br>首先来看 supervisord 的配置文件。安装完 supervisor 之后，可以运行echo_supervisord_conf<br>命令输出默认的配置项，也可以重定向到一个配置文件里：<br><code>echo_supervisord_conf &gt; /etc/supervisord.conf</code></p>
+<p>去除里面大部分注释和“不相关”的部分，注释符号为分号，我们可以先看这些配置：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[unix_http_server]</span></span><br><span class="line"><span class="attr">file</span>=/tmp/supervisor.sock   <span class="comment">; UNIX socket 文件，supervisorctl 会使用</span></span><br><span class="line"><span class="comment">;chmod=0700                 ; socket 文件的 mode，默认是 0700</span></span><br><span class="line"><span class="comment">;chown=nobody:nogroup       ; socket 文件的 owner，格式： uid:gid</span></span><br><span class="line"></span><br><span class="line"><span class="comment">;[inet_http_server]         ; HTTP 服务器，提供 web 管理界面</span></span><br><span class="line"><span class="comment">;port=127.0.0.1:9001        ; Web 管理后台运行的 IP 和端口，如果开放到公网，需要注意安全性</span></span><br><span class="line"><span class="comment">;username=user              ; 登录管理后台的用户名</span></span><br><span class="line"><span class="comment">;password=123               ; 登录管理后台的密码</span></span><br><span class="line"></span><br><span class="line"><span class="section">[supervisord]</span></span><br><span class="line"><span class="attr">logfile</span>=/tmp/supervisord.log <span class="comment">; 日志文件，默认是 $CWD/supervisord.log</span></span><br><span class="line"><span class="attr">logfile_maxbytes</span>=<span class="number">50</span>MB        <span class="comment">; 日志文件大小，超出会 rotate，默认 50MB</span></span><br><span class="line"><span class="attr">logfile_backups</span>=<span class="number">10</span>           <span class="comment">; 日志文件保留备份数量默认 10</span></span><br><span class="line"><span class="attr">loglevel</span>=info                <span class="comment">; 日志级别，默认 info，其它: debug,warn,trace</span></span><br><span class="line"><span class="attr">pidfile</span>=/tmp/supervisord.pid <span class="comment">; pid 文件</span></span><br><span class="line"><span class="attr">nodaemon</span>=<span class="literal">false</span>               <span class="comment">; 是否在前台启动，默认是 false，即以 daemon 的方式启动</span></span><br><span class="line"><span class="attr">minfds</span>=<span class="number">1024</span>                  <span class="comment">; 可以打开的文件描述符的最小值，默认 1024</span></span><br><span class="line"><span class="attr">minprocs</span>=<span class="number">200</span>                 <span class="comment">; 可以打开的进程数的最小值，默认 200</span></span><br><span class="line"></span><br><span class="line"><span class="comment">; the below section must remain in the config file for RPC</span></span><br><span class="line"><span class="comment">; (supervisorctl/web interface) to work, additional interfaces may be</span></span><br><span class="line"><span class="comment">; added by defining them in separate rpcinterface: sections</span></span><br><span class="line"><span class="section">[rpcinterface:supervisor]</span></span><br><span class="line"><span class="attr">supervisor.rpcinterface_factory</span> = supervisor.rpcinterface:make_main_rpcinterface</span><br><span class="line"></span><br><span class="line"><span class="section">[supervisorctl]</span></span><br><span class="line"><span class="attr">serverurl</span>=unix:///tmp/supervisor.sock <span class="comment">; 通过 UNIX socket 连接 supervisord，路径与 unix_http_server 部分的 file 一致</span></span><br><span class="line"><span class="comment">;serverurl=http://127.0.0.1:9001 ; 通过 HTTP 的方式连接 supervisord</span></span><br><span class="line"></span><br><span class="line"><span class="comment">; 包含其他的配置文件</span></span><br><span class="line"><span class="section">[include]</span></span><br><span class="line"><span class="attr">files</span> = relative/directory/*.ini    <span class="comment">; 可以是 *.conf 或 *.ini</span></span><br></pre></td></tr></table></figure>
+<p>我们把上面这部分配置保存到<code>/etc/supervisord.conf</code>（或其他任意有权限访问的文件），然后启动 supervisord（通过<code>-c</code>选项指定配置文件路径，如果不指定会按照这个顺序查找配置文件：<code>$CWD/supervisord.conf</code>, <code>$CWD/etc/supervisord.conf</code>, <code>/etc/supervisord.conf</code>）：</p>
+<p><code>supervisord -c /etc/supervisord.conf   或  supervisord</code></p>
+<h3 id="program-配置"><a href="#program-配置" class="headerlink" title="program 配置"></a>program 配置</h3><p>上面我们已经把 supervisrod 运行起来了，现在可以添加我们要管理的进程的配置文件。可以把所有配置项都写到 supervisord.conf 文件里，但并不推荐这样做，而是通过 include 的方式把不同的程序（组）写到不同的配置文件里。<br>为了举例，我们新建一个目录<code>/etc/supervisor/</code>用于存放这些配置文件，相应的，把 <code>/etc/supervisord.conf</code>里 include 部分的的配置修改一下，支持自定义路径：</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[<span class="keyword">include</span>]</span><br><span class="line">files = <span class="regexp">/etc/</span>supervisor<span class="comment">/*.conf</span></span><br></pre></td></tr></table></figure>
+<p>现在编写一份配置文件来管理这个进程，自定义栗子如下：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[program:flume]</span></span><br><span class="line"><span class="attr">directory</span> = /export/flume/apache-flume-<span class="number">1.6</span>.<span class="number">0</span>-bin/</span><br><span class="line"><span class="attr">command</span> = nohup bin/flume-ng agent -c conf -f conf/flume.conf -n agent -Dflume.root.logger=INFO,console &gt; /dev/null <span class="number">2</span>&gt;&amp;<span class="number">1</span> &amp;</span><br><span class="line"><span class="attr">autostart</span> = <span class="literal">true</span></span><br><span class="line"><span class="attr">startsecs</span> = <span class="number">5</span></span><br><span class="line"><span class="attr">autorestart</span> = <span class="literal">true</span></span><br><span class="line"><span class="attr">startretries</span> = <span class="number">3</span></span><br><span class="line"><span class="attr">user</span> = root</span><br><span class="line"><span class="attr">redirect_stderr</span> = <span class="literal">true</span></span><br><span class="line"><span class="attr">stdout_logfile_maxbytes</span> = <span class="number">20</span>MB</span><br><span class="line"><span class="attr">stdout_logfile_backups</span> = <span class="number">10</span></span><br><span class="line"><span class="attr">stdout_logfile</span> = /export/flume/logs/sup_flume_stdout.log</span><br><span class="line"><span class="comment">;IT will stop all processes including child process</span></span><br><span class="line"><span class="attr">stopasgroup</span>=<span class="literal">true</span></span><br></pre></td></tr></table></figure>
+<p>栗子如下：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[program:usercenter]</span></span><br><span class="line"><span class="attr">directory</span> = /home/leon/projects/usercenter       <span class="comment">; 程序的启动目录</span></span><br><span class="line"><span class="attr">command</span> = gunicorn -c gunicorn.py wsgi:app         <span class="comment">; 启动命令，可以看出与手动在命令行启动的命令是一样的</span></span><br><span class="line"><span class="attr">process_name</span>=%(program_name)s       <span class="comment">; process_name expr (default %(program_name)s)</span></span><br><span class="line"><span class="attr">numprocs</span>=<span class="number">1</span>           <span class="comment">; number of processes copies to start (def 1)</span></span><br><span class="line"><span class="attr">autostart</span> = <span class="literal">true</span>     <span class="comment">; 在 supervisord 启动的时候也自动启动</span></span><br><span class="line"><span class="attr">startsecs</span> = <span class="number">1</span>        <span class="comment">; 启动 1 秒后没有异常退出，就当作已经正常启动了</span></span><br><span class="line"><span class="attr">autorestart</span> = <span class="literal">true</span>   <span class="comment">; 程序异常退出后自动重启</span></span><br><span class="line"><span class="attr">startretries</span> = <span class="number">3</span>     <span class="comment">; 启动失败自动重试次数，默认是 3</span></span><br><span class="line"><span class="attr">user</span> = leon          <span class="comment">; 用哪个用户启动</span></span><br><span class="line"><span class="attr">redirect_stderr</span> = <span class="literal">true</span>          <span class="comment">; 把 stderr 重定向到 stdout，默认 false</span></span><br><span class="line"><span class="attr">stdout_logfile_maxbytes</span> = <span class="number">20</span>MB  <span class="comment">; stdout 日志文件大小，默认 50MB</span></span><br><span class="line"><span class="attr">stdout_logfile_backups</span> = <span class="number">10</span>     <span class="comment">; stdout 日志文件备份数</span></span><br><span class="line"><span class="comment">; stdout 日志文件，需要注意当指定目录不存在时无法正常启动，所以需要手动创建目录（supervisord 会自动创建日志文件）</span></span><br><span class="line"><span class="attr">stdout_logfile</span> = /data/logs/usercenter_stdout.log</span><br><span class="line"><span class="comment">;这一配置项的作用是：如果supervisord管理的进程px又产生了若干子进程，使用supervisorctl停止px进程，停止信号会传播给px产生的所有子进程，确保子进程也一起停止。这一配置项对希望停止所有进程的需求是非常有用的。</span></span><br><span class="line"><span class="attr">stopasgroup</span>=<span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="comment">; 可以通过 environment 来添加需要的环境变量，一种常见的用法是修改PYTHONPATH ;process environment additions      </span></span><br><span class="line"><span class="comment">; environment=PYTHONPATH=$PYTHONPATH:/path/to/somewhere</span></span><br></pre></td></tr></table></figure>
+<p>有几个配置项值得解释一下，可以根据需要自行设置。</p>
+<p>1.<code>stopasgroup=true</code>。这一配置项的作用是：如果supervisord管理的进程px又产生了若干子进程，使用supervisorctl停止px进程，停止信号会传播给px产生的所有子进程，确保子进程也一起停止。这一配置项对希望停止所有进程的需求是非常有用的。<br>2.<code>autostart=true</code>。这一配置项的作用是：当启动supervisord的时候会将该配置项设置为true的所有进程自动启动。<br>3.一份配置文件至少需要一个<code>[program:x]</code>部分的配置，来告诉 supervisord 需要管理那个进程。<code>[program:x]</code>语法中的 x 表示 program name，会在客户端（supervisorctl 或 web 界面）显示，在 supervisorctl 中通过这个值来对程序进行 start、restart、stop 等操作。</p>
+<p>启动supervisor进程后，可以配置通过web界面查看，效果如下:<br><img src="/images/Supervisor%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/1.jpg"><br>出于安全考虑，默认配置是没有开启web管理界面，需要修改supervisord.conf配置文件打开http访权限，将下面的配置：</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">;[inet_http_server]         ; <span class="type">inet</span> (TCP) <span class="keyword">server</span> disabled <span class="keyword">by</span> <span class="keyword">default</span></span><br><span class="line">;port=<span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span>:<span class="number">9001</span>        ; (ip_address:port specifier, *:port <span class="keyword">for</span> <span class="keyword">all</span> iface)</span><br><span class="line">;username=<span class="keyword">user</span>              ; (<span class="keyword">default</span> <span class="keyword">is</span> <span class="keyword">no</span> username (<span class="keyword">open</span> <span class="keyword">server</span>))</span><br><span class="line">;<span class="keyword">password</span>=<span class="number">123</span>               ; (<span class="keyword">default</span> <span class="keyword">is</span> <span class="keyword">no</span> <span class="keyword">password</span> (<span class="keyword">open</span> <span class="keyword">server</span>))</span><br></pre></td></tr></table></figure>
+<p>修改成：</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[inet_http_server]         ; <span class="type">inet</span> (TCP) <span class="keyword">server</span> disabled <span class="keyword">by</span> <span class="keyword">default</span></span><br><span class="line">port=<span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">9001</span>          ; (ip_address:port specifier, *:port <span class="keyword">for</span> <span class="keyword">all</span> iface)</span><br><span class="line">username=<span class="keyword">user</span>              ; (<span class="keyword">default</span> <span class="keyword">is</span> <span class="keyword">no</span> username (<span class="keyword">open</span> <span class="keyword">server</span>))</span><br><span class="line"><span class="keyword">password</span>=<span class="number">123</span>               ; (<span class="keyword">default</span> <span class="keyword">is</span> <span class="keyword">no</span> <span class="keyword">password</span> (<span class="keyword">open</span> <span class="keyword">server</span>))</span><br></pre></td></tr></table></figure>
+
+<p>确保配置无误后可以在每台主机上使用下面的命令启动supervisor的服务器端supervisord<br>【启动supervisord】　　<br><code>supervisord -c /etc/supervisord.conf   或  supervisord</code></p>
+<p>【停止supervisord】<br><code>supervisorctl shutdown</code></p>
+<p>【重新加载配置文件】<br><code>supervisorctl reload</code></p>
+<p>【进程管理】<br>1.启动supervisord管理的所有进程<br><code>supervisorctl start all</code></p>
+<p>2.停止supervisord管理的所有进程<br><code>supervisorctl stop all</code></p>
+<p>3.启动supervisord管理的某一个特定进程<br><code>supervisorctl start program-name // program-name为[program:xx]中的xx</code></p>
+<p>4.停止supervisord管理的某一个特定进程<br><code>supervisorctl stop program-name  // program-name为[program:xx]中的xx</code></p>
+<p>5.重启所有进程或所有进程<br><code>supervisorctl restart all // 重启所有supervisorctl reatart program-name // 重启某一进程，program-name为[program:xx]中的xx</code></p>
+<p>6.查看supervisord当前管理的所有进程的状态<br><code>supervisorctl status</code></p>
+<h3 id="使用-supervisorctl-客户端命令"><a href="#使用-supervisorctl-客户端命令" class="headerlink" title="使用 supervisorctl 客户端命令"></a>使用 supervisorctl 客户端命令</h3><p>Supervisorctl 是 supervisord 的一个命令行客户端工具，启动时需要指定与 supervisord 使用同一份配置文件，否则与 supervisord 一样按照顺序查找配置文件<br><code>supervisorctl -c /etc/supervisord.conf</code></p>
+<p>上面这个命令会进入 supervisorctl 的 shell 界面，然后可以执行不同的命令了：</p>
+<figure class="highlight node-repl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">&gt;</span> <span class="language-javascript">status    # 查看程序状态</span></span><br><span class="line"><span class="meta prompt_">&gt;</span> <span class="language-javascript">stop usercenter   # 关闭 usercenter 程序</span></span><br><span class="line"><span class="meta prompt_">&gt;</span> <span class="language-javascript">start usercenter  # 启动 usercenter 程序</span></span><br><span class="line"><span class="meta prompt_">&gt;</span> <span class="language-javascript">restart usercenter    # 重启 usercenter 程序</span></span><br><span class="line"><span class="meta prompt_">&gt;</span> <span class="language-javascript">reread    ＃ 读取有更新（增加）的配置文件，不会启动新添加的程序</span></span><br><span class="line"><span class="meta prompt_">&gt;</span> <span class="language-javascript">update    ＃ 重启配置文件修改过的程序</span></span><br></pre></td></tr></table></figure>
+<p>上面这些命令都有相应的输出，除了进入 supervisorctl 的 shell 界面，等同于直接在 bash 终端运行：</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$</span> supervisorctl status</span><br><span class="line"><span class="variable">$</span> supervisorctl stop usercenter</span><br><span class="line"><span class="variable">$</span> supervisorctl <span class="built_in">start</span> usercenter</span><br><span class="line"><span class="variable">$</span> supervisorctl restart usercenter</span><br><span class="line"><span class="variable">$</span> supervisorctl reread</span><br><span class="line"><span class="variable">$</span> supervisorctl update</span><br></pre></td></tr></table></figure>
+
+<h3 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h3><p>除了supervisorctl之外，还可以配置supervisrod启动web管理界面，这个web后台使用Basic Auth的方式进行身份认证。<br>除了单个进程的控制，还可以配置group，进行分组管理。<br>经常查看日志文件，包括supervisord的日志和各个pragram的日志文件，程序crash或抛出异常的信息一半会输出到stderr，可以查看相应的日志文件来查找问题。</p>
+<p>1.遇到问题及解决方案<br>在使用命令<code>supervisorctl start all</code>启动控制进程时，遇到如下错误<br><code>unix:///tmp/supervisor.sock no such file</code></p>
+<p>出现上述错误的原因是supervisord并未启动，只要在命令行中使用命令<code>sudo supervisord</code>启动supervisord即可。</p>
+<p>2.遗留问题<br>当集群规模扩大后，登录到每台主机使用supervior控制进程也是很麻烦的，能不能用一台主机作为客户端，同时连接集群中的所有主机，以一种中心化的方式统一管理集群中的所有进程？之前一直使用的方式是使用交互式工具expect。supervisor本身有没有提供一种机制实现集群中所有进程的中央化管理？</p>
+<p>目前测试成功的是使用一台主机作为客户端（supervisorctl），控制另一台服务器(supervisord)主机上的状态。方法是在服务器端配置<code>[inet_http_server]</code>部分，开启TCP端口监听。客户端配置<code>[supervisorctl]</code>部分，指定服务器端的serverurl，连接服务器端监听的端口。但是一个客户端只能连接一个服务器，无法指定多个服务器。</p>
+<p>3.管理Nginx<br>supervisord还要求管理的程序是非daemon程序，supervisord会帮你把它转成daemon程序，因此如果用supervisord来管理nginx的话，必须在nginx的配置文件里添加一行设置daemon off让nginx以非daemon方式启动。</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[program:up_nginx]</span></span><br><span class="line"><span class="attr">command</span>=/usr/sbin/nginx</span><br><span class="line"><span class="attr">process_name</span>=%(program_name)s</span><br><span class="line"><span class="attr">numprocs</span>=<span class="number">4</span>                    <span class="comment">; 启动几个进程</span></span><br><span class="line"><span class="attr">autostart</span>=<span class="literal">true</span>                <span class="comment">; 随着supervisord的启动而启动</span></span><br><span class="line"><span class="attr">autorestart</span>=<span class="literal">true</span>              <span class="comment">; 自动重启。。当然要选上了</span></span><br><span class="line"><span class="attr">startretries</span>=<span class="number">10</span>               <span class="comment">; 启动失败时的最多重试次数</span></span><br><span class="line"><span class="attr">exitcodes</span>=<span class="number">0</span>                 <span class="comment">; 正常退出代码（是说退出代码是这个时就不再重启了吗？待确定）</span></span><br><span class="line"><span class="attr">stopsignal</span>=KILL               <span class="comment">; 用来杀死进程的信号</span></span><br><span class="line"><span class="attr">stopwaitsecs</span>=<span class="number">10</span>               <span class="comment">; 发送SIGKILL前的等待时间</span></span><br><span class="line"><span class="attr">redirect_stderr</span>=<span class="literal">true</span>          <span class="comment">; 重定向stderr到stdout</span></span><br></pre></td></tr></table></figure>
+<p>当然除了此处配置完成后就可以启动了。但是这样的话会有一个问题，就是当你是使用<code>supervisorctl status</code>来查看你这个程序的状态时，你发现它不是running的状态，这是因为supervisor只是对于不能自动生成后台进程的程序有效，当启动nginx的命令执行完成后将会退出，所以我们需要再nginx的配置文件中加入：<code>daemon off;</code></p>
+<hr>
+<p>php脚本执行报<code>BACKOFF  Exited too quickly (process log may have details)</code>错误解决:<br>对于执行时间很短的php脚本，点击进程执行会报以上错误</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">require</span> <span class="string">&#x27;db.class.php&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="variable">$dbHost</span> = <span class="string">&#x27;localhost&#x27;</span>;</span><br><span class="line"><span class="variable">$dbUser</span> = <span class="string">&#x27;xxxxxx&#x27;</span>;</span><br><span class="line"><span class="variable">$dbPasswd</span> = <span class="string">&#x27;xxxxxx&#x27;</span>;</span><br><span class="line"><span class="variable">$dbName</span> = <span class="string">&#x27;test&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="variable">$pdo</span> = db::<span class="title function_ invoke__">getInstance</span>(<span class="variable">$dbHost</span>, <span class="variable">$dbUser</span>, <span class="variable">$dbPasswd</span>, <span class="variable">$dbName</span>);</span><br><span class="line"><span class="variable">$pdo</span>-&gt;<span class="title function_ invoke__">insert</span>(<span class="string">&#x27;test&#x27;</span>, [<span class="string">&#x27;name&#x27;</span> =&gt; <span class="string">&#x27;wml&#x27;</span>]);</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">sleep</span>(<span class="number">2</span>);   <span class="comment">#在php脚本最后一行加上一句，可解决该问题</span></span><br></pre></td></tr></table></figure>
+
+<p>Supervisor 有很丰富的功能，还有其他很多项配置，可以在官方文档获取更多信息：<a target="_blank" rel="noopener" href="http://supervisord.org/index.html">http://supervisord.org/index.html</a><br><a target="_blank" rel="noopener" href="http://www.ttlsa.com/linux/using-supervisor-control-program/">参考资料-使用supervisor管理进程</a></p>
+<blockquote>
+<p>扩展阅读：<br><a target="_blank" rel="noopener" href="http://blog.csdn.net/xyang81/article/details/51555473">Supervisor安装与配置（Linux/Unix进程管理工具） </a><br><a target="_blank" rel="noopener" href="http://blog.csdn.net/yeyingcai/article/details/49334917">supervisor 使用及管理nginx+gunicorn</a><br><a target="_blank" rel="noopener" href="http://blog.csdn.net/u013372487/article/details/72619254">Linux后台进程管理工具：Supervisor</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2017/05/22/Supervisor%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE/" data-id="cl9pgenxi0108ycv1hauya6gs" data-title="Supervisor安装与配置" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2017/05/31/SharedWorker%E7%9A%84%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF%E4%B8%8E%E5%89%8D%E6%99%AF/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          SharedWorker的使用场景与前景
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2017/05/11/Android-6-0-%E8%BF%90%E8%A1%8C%E6%97%B6%E6%9D%83%E9%99%90%E5%A4%84%E7%90%86/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">Android 6.0 运行时权限处理</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

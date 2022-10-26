@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>从上下文，到作用域（彩蛋：理解闭包） | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="前言近几天在编程群中的聊天，让我发现了很多人并不清楚什么是上下文（context）、什么是作用域（scope），而且纠结在其中。我当初对这两个概念也只有粗浅的理解，不过我从一开始就不怎么困惑，因为我清楚自己对这一问题的认识边界。现在，我对它们的认识也只加深了一点点。不过，群聊中小伙伴的热情鼓舞了我——很多最最初学的小伙伴，想到和思考的是很多我从没考虑过的问题，小伙伴们真是达到了“进一寸有一寸的欢喜">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从上下文，到作用域（彩蛋：理解闭包）">
+<meta property="og:url" content="http://moqiang02.github.io/2017/10/20/%E4%BB%8E%E4%B8%8A%E4%B8%8B%E6%96%87%EF%BC%8C%E5%88%B0%E4%BD%9C%E7%94%A8%E5%9F%9F%EF%BC%88%E5%BD%A9%E8%9B%8B%EF%BC%9A%E7%90%86%E8%A7%A3%E9%97%AD%E5%8C%85%EF%BC%89/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="前言近几天在编程群中的聊天，让我发现了很多人并不清楚什么是上下文（context）、什么是作用域（scope），而且纠结在其中。我当初对这两个概念也只有粗浅的理解，不过我从一开始就不怎么困惑，因为我清楚自己对这一问题的认识边界。现在，我对它们的认识也只加深了一点点。不过，群聊中小伙伴的热情鼓舞了我——很多最最初学的小伙伴，想到和思考的是很多我从没考虑过的问题，小伙伴们真是达到了“进一寸有一寸的欢喜">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-10-20T13:20:37.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:54.062Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-从上下文，到作用域（彩蛋：理解闭包）" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2017/10/20/%E4%BB%8E%E4%B8%8A%E4%B8%8B%E6%96%87%EF%BC%8C%E5%88%B0%E4%BD%9C%E7%94%A8%E5%9F%9F%EF%BC%88%E5%BD%A9%E8%9B%8B%EF%BC%9A%E7%90%86%E8%A7%A3%E9%97%AD%E5%8C%85%EF%BC%89/" class="article-date">
+  <time class="dt-published" datetime="2017-10-20T13:20:37.000Z" itemprop="datePublished">2017-10-20</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/javascript/">javascript</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      从上下文，到作用域（彩蛋：理解闭包）
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>近几天在编程群中的聊天，让我发现了很多人并不清楚什么是上下文（context）、什么是作用域（scope），而且纠结在其中。我当初对这两个概念也只有粗浅的理解，不过我从一开始就不怎么困惑，因为我清楚自己对这一问题的认识边界。现在，我对它们的认识也只加深了一点点。不过，群聊中小伙伴的热情鼓舞了我——很多最最初学的小伙伴，想到和思考的是很多我从没考虑过的问题，小伙伴们真是达到了“进一寸有一寸的欢喜”这一境界。见贤思齐，我决定把这一点点进步记录下来。<span id="more"></span></p>
+<h3 id="上下文与作用域的关系"><a href="#上下文与作用域的关系" class="headerlink" title="上下文与作用域的关系"></a>上下文与作用域的关系</h3><p>很多人弄不清除，原因当然是既不了解上下文，也不了解作用域——我是说，几乎没有人明白上下文是什么而不明白作用域是什么，反之亦然。上下文（context）和作用域（scope）都是编译原理的知识，具体编程语言有具体的实现规则，本文关注 JavaScript 语言的实现。首先需要关注的是，这两个概念的关系非常密切，所以先了解它们的关系，有助于理解它们到底是什么。</p>
+<p>上下文（context）和作用域（scope）的关系：<br><strong>上下文是一段程序运行所需要的最小数据集合；作用域是当前上下文中，按照具体规则能够访问到的标识符（变量）的范围。</strong></p>
+<p>后文是对上下文和作用域更详细的解释，知道了上面指出的关系，往下阅读时就可以加深对这一关系的理解了。</p>
+<h3 id="上下文"><a href="#上下文" class="headerlink" title="上下文"></a>上下文</h3><p>上下文（context）是一段程序运行所需要的最小数据集合。我们可以从上下文交换（context switch）来理解上下文，在多进程或多线程环境中，任务切换时首先要中断当前的任务，将计算资源交给下一个任务。因为稍后还要恢复之前的任务，所以中断的时候要保存现场，即当前任务的上下文，也可以叫做环境。即上下文就是恢复现场所需的最小数据集合。容易把人弄晕的一点是，我们这里说的上下文、环境有时候也称作作用域（scope），即这两个概念有时候是混用的。不过，它们有不同的侧重点，下一节将会说明。</p>
+<p>另外，JavaScript 中常见的情形是一个方法/函数的执行。从一段程序的角度看，这段程序运行所需的所有变量，就是它的上下文。</p>
+<h3 id="作用域"><a href="#作用域" class="headerlink" title="作用域"></a>作用域</h3><p>作用域（scope）是标识符（变量）在程序中的可见性范围。作用域规则是按照具体规则维护标识符的可见性，以确定当前执行的代码对这些标识符的访问权限。作用域（scope）是在具体的作用域规则之下确定的。</p>
+<p>前面说过，有时候上下文、环境、作用域是同义词；不过，上下文（context）指代的是整体环境，作用域关注的是标识符（变量）的可访问性（可见性）。上下文确定了，根据具体编程语言的作用域规则，作用域也就确定了。这就是上下文与作用域的关系。</p>
+<p>写 JavaScript 代码时，如果 Function 作为参数，可以指定它在具体对象上调用时，这个对象常常叫做 context：</p>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> call<span class="constructor">WithContext(<span class="params">fn</span>, <span class="params">context</span>)</span> &#123;</span><br><span class="line">  return fn.call(context);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">const apple = &#123;</span><br><span class="line">  name: <span class="string">&quot;Apple&quot;</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">const orange = &#123;</span><br><span class="line">  name: <span class="string">&quot;Orange&quot;</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> echo<span class="literal">()</span> &#123;</span><br><span class="line">  console.log(this.name);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">call<span class="constructor">WithContext(<span class="params">echo</span>, <span class="params">apple</span>)</span>;  <span class="comment">// Apple</span></span><br><span class="line">call<span class="constructor">WithContext(<span class="params">echo</span>, <span class="params">orange</span>)</span>; <span class="comment">// Orange</span></span><br></pre></td></tr></table></figure>
+<p>为什么将这个参数叫做 context？因为它关系到调用环境，指定了它，就指定了函数的调用上下文。再加上具体的作用域规则，作用域也确定了。</p>
+<p>在 JavaScript 中，这个具体的作用域规则就是词法作用域（lexical scope），也就是 JavaScript 中的作用域链的规则。词法作用域是的变量在编译时（词法阶段）就是确定的，所以词法作用域又叫静态作用域（static scope），与之相对的是动态作用域（dynamic scope）。</p>
+<p>You Don’t Know JS: Scope &amp; Closures 用简单例子解释过动态作用域，下面用一个类似的例子说明一下：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">foo</span>(<span class="params"></span>) &#123;</span><br><span class="line">  <span class="variable language_">console</span>.<span class="title function_">log</span>(a);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">bar</span>(<span class="params"></span>) &#123;</span><br><span class="line">  <span class="keyword">let</span> a = <span class="number">3</span>;</span><br><span class="line">  <span class="title function_">foo</span>();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> a = <span class="number">2</span>;</span><br><span class="line"></span><br><span class="line"><span class="title function_">bar</span>(); <span class="comment">// 2</span></span><br></pre></td></tr></table></figure>
+<p>有一定 JavaScript 编程经验的人都能看出，这段程序会输出 2，但如果在动态作用域的规则下，应该输出 3，即 a 的引用不再是编译时确定，而是调用时确定的。这有点像 JavaScript 中的 this，所以 MDN 中，function.bind 的方法签名中第一个形参名称用的是 thisArg 这一更科学的名字：<br><code>fun.bind(thisArg[, arg1[, arg2[, ...]]])</code></p>
+<p>同样情况的还可见于 Lodash 的文档：<br><code>_.bind(func, thisArg, [partials])</code></p>
+<h3 id="彩蛋：理解闭包"><a href="#彩蛋：理解闭包" class="headerlink" title="彩蛋：理解闭包"></a>彩蛋：理解闭包</h3><p>上一节中的代码中，之所以输出 2，是因为 foo 是一个闭包函数。如果从本文中理解了上下文和作用域的概念，对于闭包是什么这一问题是不是感到豁然开朗？</p>
+<p>前面说过，词法作用域也叫静态作用域，变量在词法阶段确定，也就是定义时确定。虽然在 bar 内调用，但由于 foo 是闭包函数，即使它在自己定义的词法作用域以外的地方执行，它也一直保持着自己的作用域。所谓闭包函数，即这个函数封闭了它自己的定义时的环境，形成了一个闭包，所以 foo 并不会从 bar 中寻找变量，这就是静态作用域的特点。</p>
+<p>一个更加典型的例子是：</p>
+<figure class="highlight perl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">function fn() &#123;</span><br><span class="line">  let a = <span class="number">0</span>;</span><br><span class="line">  function func() &#123;</span><br><span class="line">    console.log(a);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> func;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">let a = <span class="number">1</span>;</span><br><span class="line">let <span class="function"><span class="keyword">sub</span> = <span class="title">fn</span></span>();</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">sub</span></span>(); // <span class="number">0</span>;</span><br></pre></td></tr></table></figure>
+<p>sub 就是 func 这一返回值，func 定义在 fn 内部并且被传递出来了，所以 fn 执行之后垃圾回收器依然没有回收它的内部作用域，因为 func/sub 在使用。sub 依然持有 func 定义时的作用域的引用，而这个引用就叫作闭包。调用 sub 时，它可以访问 func 定义时的词法作用域，因此找到的 a 是 fn 内部的变量 a，它的值是 0。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2017/10/20/%E4%BB%8E%E4%B8%8A%E4%B8%8B%E6%96%87%EF%BC%8C%E5%88%B0%E4%BD%9C%E7%94%A8%E5%9F%9F%EF%BC%88%E5%BD%A9%E8%9B%8B%EF%BC%9A%E7%90%86%E8%A7%A3%E9%97%AD%E5%8C%85%EF%BC%89/" data-id="cl9pgeo6z01o9ycv11jxbbolm" data-title="从上下文，到作用域（彩蛋：理解闭包）" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2017/10/28/%E4%BD%BF%E7%94%A8superlance%E6%8F%92%E4%BB%B6%E5%A2%9E%E5%BC%BAsupervisor%E7%9A%84%E7%9B%91%E6%8E%A7%E8%83%BD%E5%8A%9B/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          使用superlance插件增强supervisor的监控能力
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2017/10/17/%E8%BD%AF%E9%93%BE%E6%8E%A5%E5%92%8C%E7%A1%AC%E9%93%BE%E6%8E%A5%E7%9A%84%E5%8C%BA%E5%88%AB/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">软链接和硬链接的区别</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

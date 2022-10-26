@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>浅析领域驱动模型VO、DTO、BO、PO 等的概念、区别及其用法 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="名词解释领域模型中的实体类分为四种模型：VO、DTO、DO和PO，各种实体类用于不同业务层次间的交互，并会在层次内实现实体类之间的转化。新项目使用了新的框架和开发规范，特意集体讨论了DTO，DO，VO，BO，POJO，PO和Entity以及DAO、Model和View的基本概念和使用场景，为了深入理解，这里整理为一篇笔记。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="浅析领域驱动模型VO、DTO、BO、PO 等的概念、区别及其用法">
+<meta property="og:url" content="http://moqiang02.github.io/2022/10/12/%E6%B5%85%E6%9E%90%E9%A2%86%E5%9F%9F%E9%A9%B1%E5%8A%A8%E6%A8%A1%E5%9E%8BVO%E3%80%81DTO%E3%80%81BO%E3%80%81PO-%E7%AD%89%E7%9A%84%E6%A6%82%E5%BF%B5%E3%80%81%E5%8C%BA%E5%88%AB%E5%8F%8A%E5%85%B6%E7%94%A8%E6%B3%95/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="名词解释领域模型中的实体类分为四种模型：VO、DTO、DO和PO，各种实体类用于不同业务层次间的交互，并会在层次内实现实体类之间的转化。新项目使用了新的框架和开发规范，特意集体讨论了DTO，DO，VO，BO，POJO，PO和Entity以及DAO、Model和View的基本概念和使用场景，为了深入理解，这里整理为一篇笔记。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E6%B5%85%E6%9E%90%E9%A2%86%E5%9F%9F%E9%A9%B1%E5%8A%A8%E6%A8%A1%E5%9E%8B/1.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E6%B5%85%E6%9E%90%E9%A2%86%E5%9F%9F%E9%A9%B1%E5%8A%A8%E6%A8%A1%E5%9E%8B/2.png">
+<meta property="article:published_time" content="2022-10-12T06:54:46.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:54.151Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/%E6%B5%85%E6%9E%90%E9%A2%86%E5%9F%9F%E9%A9%B1%E5%8A%A8%E6%A8%A1%E5%9E%8B/1.png">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-浅析领域驱动模型VO、DTO、BO、PO-等的概念、区别及其用法" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2022/10/12/%E6%B5%85%E6%9E%90%E9%A2%86%E5%9F%9F%E9%A9%B1%E5%8A%A8%E6%A8%A1%E5%9E%8BVO%E3%80%81DTO%E3%80%81BO%E3%80%81PO-%E7%AD%89%E7%9A%84%E6%A6%82%E5%BF%B5%E3%80%81%E5%8C%BA%E5%88%AB%E5%8F%8A%E5%85%B6%E7%94%A8%E6%B3%95/" class="article-date">
+  <time class="dt-published" datetime="2022-10-12T06:54:46.000Z" itemprop="datePublished">2022-10-12</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/java/">java</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      浅析领域驱动模型VO、DTO、BO、PO 等的概念、区别及其用法
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%90%8D%E8%AF%8D%E8%A7%A3%E9%87%8A"><span class="toc-number">1.</span> <span class="toc-text">名词解释</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#POJO"><span class="toc-number">2.</span> <span class="toc-text">POJO</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#VO"><span class="toc-number">3.</span> <span class="toc-text">VO</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#DTO"><span class="toc-number">4.</span> <span class="toc-text">DTO</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Entity-PO"><span class="toc-number">5.</span> <span class="toc-text">Entity&#x2F;PO</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#DO"><span class="toc-number">6.</span> <span class="toc-text">DO</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#BO"><span class="toc-number">7.</span> <span class="toc-text">BO</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Model"><span class="toc-number">8.</span> <span class="toc-text">Model</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#View"><span class="toc-number">9.</span> <span class="toc-text">View</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#DAO"><span class="toc-number">10.</span> <span class="toc-text">DAO</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%94%BE%E5%9C%A8%E5%93%AA%E4%B8%AA%E7%9B%AE%E5%BD%95"><span class="toc-number">11.</span> <span class="toc-text">放在哪个目录</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#POJO%E7%9A%84%E6%89%A9%E5%B1%95"><span class="toc-number">12.</span> <span class="toc-text">POJO的扩展</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <h3 id="名词解释"><a href="#名词解释" class="headerlink" title="名词解释"></a>名词解释</h3><p>领域模型中的实体类分为四种模型：VO、DTO、DO和PO，各种实体类用于不同业务层次间的交互，并会在层次内实现实体类之间的转化。新项目使用了新的框架和开发规范，特意集体讨论了DTO，DO，VO，BO，POJO，PO和Entity以及DAO、Model和View的基本概念和使用场景，为了深入理解，这里整理为一篇笔记。</p>
+<span id="more"></span>
+<p>下面通过一张图看一下它们的大致分类：</p>
+<p><img src="/images/%E6%B5%85%E6%9E%90%E9%A2%86%E5%9F%9F%E9%A9%B1%E5%8A%A8%E6%A8%A1%E5%9E%8B/1.png"></p>
+<p>用MVC模式的角度接着看图，看完图估计大部分人对这些专业术语就有一个直观的感受了：</p>
+<p><img src="/images/%E6%B5%85%E6%9E%90%E9%A2%86%E5%9F%9F%E9%A9%B1%E5%8A%A8%E6%A8%A1%E5%9E%8B/2.png"></p>
+<h3 id="POJO"><a href="#POJO" class="headerlink" title="POJO"></a>POJO</h3><p>总的来说，普通Java对象POJO（Pure Old Java Object 、 Plain Ordinary Java Object），按照Martin Fowler的解释是“Plain Old Java Object”，从字面上翻译为“纯洁老式的java对象”，但大家都使用“简单java对象”来称呼它。包含DO、DTO、BO、VO和PO等，它们本质上都是一个简单的java对象，实际就是普通的JavaBeans。没有业务逻辑，有时可以作为VO或DTO来使用。当然，这里特意说明纯普通Java对象，如果你有一个简单的运算属性也是可以的，但不允许有业务方法。</p>
+<p>POJO是指这样的java对象：</p>
+<ul>
+<li>  有一些private的参数作为对象的属性</li>
+<li>  针对每一个参数定义get和set方法</li>
+<li>  没有从任何类继承</li>
+<li>  没有实现任何接口</li>
+<li>  没有被其它框架侵入。</li>
+</ul>
+<p>许多开发者把JavaBean看作遵从特定命名约定的POJO。例如：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">User</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> Long id;</span><br><span class="line">    <span class="keyword">private</span> String userName;</span><br><span class="line">    <span class="keyword">private</span> String msg;</span><br><span class="line">    <span class="keyword">private</span> Integer age;</span><br><span class="line">    <span class="keyword">public</span> Long <span class="title function_">getId</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> id;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setId</span><span class="params">(Long id)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.id = id;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">getUserName</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> userName;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setUserName</span><span class="params">(String userName)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.userName = userName;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">getMsg</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> msg;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setMsg</span><span class="params">(String msg)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.msg = msg;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> Integer <span class="title function_">getAge</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> age;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setAge</span><span class="params">(Integer age)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.age = age;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>POJO其实是比javabean更纯净的简单类或接口。POJO严格地遵守简单对象的概念，而不具有业务逻辑处理的能力，而一些JavaBean中往往会封装一些简单逻辑。例如，改造User后，可以得到一个JavaBean：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.Serializable;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">User</span> <span class="keyword">implements</span> <span class="title class_">Serializable</span> &#123;</span><br><span class="line">    <span class="comment">//实现serializable接口</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">long</span> <span class="variable">serialVersionUID</span> <span class="operator">=</span> -<span class="number">2241142936329900646L</span>;</span><br><span class="line">    <span class="keyword">private</span> Long id;</span><br><span class="line">    <span class="keyword">private</span> String userName;</span><br><span class="line">    <span class="keyword">private</span> String msg;</span><br><span class="line">    <span class="keyword">private</span> Integer age;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 无参构造器</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">User</span><span class="params">()</span> &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> Long <span class="title function_">getId</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> id;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setId</span><span class="params">(Long id)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.id = id;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">getUserName</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> userName;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setUserName</span><span class="params">(String userName)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.userName = userName;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">getMsg</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> msg;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setMsg</span><span class="params">(String msg)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.msg = msg;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> Integer <span class="title function_">getAge</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> age;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setAge</span><span class="params">(Integer age)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.age = age;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">User</span><span class="params">(Long id, String userName, Integer age)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.id = id;</span><br><span class="line">        <span class="built_in">this</span>.userName = userName;</span><br><span class="line">        <span class="built_in">this</span>.age = age;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="VO"><a href="#VO" class="headerlink" title="VO"></a>VO</h3><p>VO（View Object）视图模型，用于展示层，它的作用是把某个指定页面（或组件）的所有数据封装起来。如果是一个DTO对应一个VO，则DTO等价于VO;但是如果一个DTO对应多个VO，则展示层需要把VO转换为服务层对应方法所要求的DTO，传送给服务层，从而达到服务层与展示层解耦的效果。</p>
+<p>一般用在业务逻辑层（Service）对前端（Web） 的视图模型效果控制的展示上，说白了就是后台向前端传输数据。示例：xxxVO，xxx一般为网页名称。注：在展示业务不复杂的系统，可直接使用DTO。</p>
+<h3 id="DTO"><a href="#DTO" class="headerlink" title="DTO"></a>DTO</h3><p>数据传输对象DTO（Data Transfer Object）是一个比较特殊的对象，它有两种存在形式：在后端，它的存在形式是java对象，也就是在controller里面定义的请求参数，通常在后端不需要关心怎么从json转成java对象的，这个都是由一些成熟的框架帮你完成啦，比如spring框架；在前端，它的存在形式通常是js里面的对象（也可以简单理解成json），即通过ajax请求的那个数据体。这也是为什么把他画成横跨两层的原因。举个例子，xxxDTO，xxx为业务领域相关的名称。</p>
+<p>现在微服务盛行，服务和服务之间调用的传输对象能叫DTO吗？我的理解是看情况，DTO的一个隐含意义是要能够完整的表达一个业务模块的输出。如果服务和服务之间相对独立，那就可以叫DTO；如果服务和服务之间不独立，每个都不是一个完整的业务模块，拆开可能仅仅是因为计算复杂度或者性能的问题，那这就不能够叫做DTO，只能是BO。</p>
+<p>DTO与BO或者DO的区别是DTO没有任何行为（方法），只是存储和提供它所拥有数据的查询（访问器和修改器）。DTO是简单对象，不包含任何需要测试的业务逻辑。</p>
+<h3 id="Entity-PO"><a href="#Entity-PO" class="headerlink" title="Entity/PO"></a>Entity/PO</h3><p>持久化对象PO（Persistent Object）等同于Entity，它们的概念是一致的。数据库表中的记录在java对象中的显示状态。最形象的理解就是一个PO对象对应数据库中的一条记录，一个PO的数据结构对应着库中一张表的表结构，即自身属性与数据表字段一一对应。好处是可以把一条记录作为一个对象处理，方便的转为其它对象。</p>
+<p>例如我们有一条数据，现在有一个简单类而且已经是被赋予了这条数据的实例，那么这条数据在这个简单类中的存在状态就是PO，不管这个简单类是DO还是BO抑或其它。PO只是数据持久化的一个状态。</p>
+<p>通常PO里面除了get，set之外没有别的方法。对于PO来说，数量是相对固定的，一定不会超过数据库表的数量。</p>
+<h3 id="DO"><a href="#DO" class="headerlink" title="DO"></a>DO</h3><p>领域对象 DO（Domain Object） 是从现实世界中抽象出来的有形或无形的业务实体，它用来接收数据库对应的实体，是一种抽象化的数据状态，介于数据库与业务逻辑之间。</p>
+<p>一般在业务逻辑层（Service）对数据库（SQL） 进行访问时，用于接收数据。xxxDO，xxx即为数据表名。另外，DO与Entity的不同点就是DO是与数据库存在着某种映射关系的Entity，总的来说DO是Entity的一种。</p>
+<p>现在主要有两个版本一个是阿里巴巴的开发手册中定义的DO（ Data Object），这个等同于上面的PO；另一个是在DDD（Domain-Driven Design）领域驱动设计中定义的DO（Domain Object），这个等同于上面的BO。</p>
+<h3 id="BO"><a href="#BO" class="headerlink" title="BO"></a>BO</h3><p>业务对象(Business Object，BO)是对数据进行检索和处理的组件，主要作用是把业务逻辑封装为一个对象，这个对象可以包括一个或多个其它的对象。形象描述为一个对象的形为和动作，当然也有涉及到其它对象的一些形为和动作。</p>
+<p>BO通常位于中间层或者业务逻辑层。BO支持序列化和反序列化，可以轻易地将BO的Java实例转换为一个XML文件或者一个流保存起来，并且在需要的时候，将这个BO从XML或者流中转换回一个Java实例。举个简单的例子，一个简历包含教育经历、工作经历、社会关系等三个模块，每个模块对应一个PO；建立一个BO对象处理简历，则每个BO包含这三个PO。</p>
+<p>应用中的所有实体(Entity)都是BO，但并不是所有BO都是实体。BO包括包含方法的实体对象(Entity Object)和不包含方法的值对象(VO)。</p>
+<h3 id="Model"><a href="#Model" class="headerlink" title="Model"></a>Model</h3><p>Model是数学逻辑名词，包括有限操作的集合以及定义于其上的关系，主要用于分析、设计过程。</p>
+<p>实体类和模型Model在计算机程序设计中有两个概念：一个是三层架构中的实体类，另一个是MVC架构中的模型。在“三层架构”中，为了面向对象编程，将各层传递的数据封装成实体类，便于数据传递和提高可读性。在MVC（模型Model-视图View-控制器Controller）模式中，Model代表模型，是业务流程/状态的处理以及业务规则的制定，接受视图请求的数据，并返回最终的处理结果。业务模型的设计可以说是MVC最主要的核心。</p>
+<h3 id="View"><a href="#View" class="headerlink" title="View"></a>View</h3><p>在MVC模式中，View代表视图，用来解析Model带来的数据模型，以展示视图数据，View的模型觉决定了需要什么样的Model来对接，相互联系。</p>
+<h3 id="DAO"><a href="#DAO" class="headerlink" title="DAO"></a>DAO</h3><p>数据访问对象DAO （Data Access Object）是一个数据访问接口，所谓数据访问，顾名思义，就是与数据库打交道，夹在业务逻辑与数据库资源中间。</p>
+<p>一般在业务逻辑层对数据库进行访问时使用。</p>
+<p>xxxDAO，xxx即为实体类名（Entity实体）。在核心J2EE模式中是这样介绍DAO模式的：为了建立一个健壮的J2EE应用，应该将所有对数据源的访问操作抽象封装在一个公共API中。用程序设计的语言来说，就是建立一个接口，接口中定义了此应用程序中将会用到的所有事务方法。在这个应用程序中，当需要和数据源进行交互的时候就使用这个接口，并且编写一个单独的类或者xml文件，来实现这个接口在逻辑上对特定数据的操作。</p>
+<h3 id="放在哪个目录"><a href="#放在哪个目录" class="headerlink" title="放在哪个目录"></a>放在哪个目录</h3><ul>
+<li>  PO通常放在名为bean、entity、model目录中。</li>
+<li>  DAO通常在DAO、mapper目录中。</li>
+<li>  BO通常在service、manager、business目录中。</li>
+</ul>
+<h3 id="POJO的扩展"><a href="#POJO的扩展" class="headerlink" title="POJO的扩展"></a>POJO的扩展</h3><p>POJO仅包含最简单的字段属性，没有多余的东西，它本质上就是一个普通的JavaBean。但是在POJO的基础上，能够扩展出不同的对象。</p>
+<ul>
+<li>  为POJO增加了持久化的方法（Insert、Update、Delete……）之后，POJO就变成了PO。</li>
+<li>  为POJO增加了数据绑定功能之后，POJO就变成了View Object，即UI Model。</li>
+<li>  为POJO增加业务逻辑的方法（比如单据审核、转帐……）之后，POJO就变成了Domain Model。</li>
+<li>  POJO还可以当作DTO使用。</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2022/10/12/%E6%B5%85%E6%9E%90%E9%A2%86%E5%9F%9F%E9%A9%B1%E5%8A%A8%E6%A8%A1%E5%9E%8BVO%E3%80%81DTO%E3%80%81BO%E3%80%81PO-%E7%AD%89%E7%9A%84%E6%A6%82%E5%BF%B5%E3%80%81%E5%8C%BA%E5%88%AB%E5%8F%8A%E5%85%B6%E7%94%A8%E6%B3%95/" data-id="cl9pgeocc020oycv19dnt1cwa" data-title="浅析领域驱动模型VO、DTO、BO、PO 等的概念、区别及其用法" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2022/10/13/WSL2%E5%AE%89%E8%A3%85Docker/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          WSL2安装Docker
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2022/10/09/Spring-Boot-%E5%A6%82%E4%BD%95%E5%BC%80%E5%90%AF%E4%BA%8B%E5%8A%A1%E6%94%AF%E6%8C%81%EF%BC%9F/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">Spring Boot 如何开启事务支持？</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

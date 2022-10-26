@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Scrapy框架的使用之Downloader Middleware的用法 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="Downloader Middleware即下载中间件，它是处于Scrapy的Request和Response之间的处理模块。我们首先来看看它的架构，如下图所示。Scheduler从队列中拿出一个Request发送给Downloader执行下载，这个过程会经过Downloader Middleware的处理。另外，当Downloader将Request下载完成得到Response返回给Spider">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Scrapy框架的使用之Downloader Middleware的用法">
+<meta property="og:url" content="http://moqiang02.github.io/2019/04/20/Scrapy%E6%A1%86%E6%9E%B6%E7%9A%84%E4%BD%BF%E7%94%A8%E4%B9%8BDownloader-Middleware%E7%9A%84%E7%94%A8%E6%B3%95/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="Downloader Middleware即下载中间件，它是处于Scrapy的Request和Response之间的处理模块。我们首先来看看它的架构，如下图所示。Scheduler从队列中拿出一个Request发送给Downloader执行下载，这个过程会经过Downloader Middleware的处理。另外，当Downloader将Request下载完成得到Response返回给Spider">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/Scrapy%E6%A1%86%E6%9E%B6%E7%9A%84%E4%BD%BF%E7%94%A8%E4%B9%8BDownloader/1.jpg">
+<meta property="article:published_time" content="2019-04-20T14:17:14.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.884Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="scrapy">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/Scrapy%E6%A1%86%E6%9E%B6%E7%9A%84%E4%BD%BF%E7%94%A8%E4%B9%8BDownloader/1.jpg">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Scrapy框架的使用之Downloader-Middleware的用法" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2019/04/20/Scrapy%E6%A1%86%E6%9E%B6%E7%9A%84%E4%BD%BF%E7%94%A8%E4%B9%8BDownloader-Middleware%E7%9A%84%E7%94%A8%E6%B3%95/" class="article-date">
+  <time class="dt-published" datetime="2019-04-20T14:17:14.000Z" itemprop="datePublished">2019-04-20</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/python/">python</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Scrapy框架的使用之Downloader Middleware的用法
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E"><span class="toc-number">1.</span> <span class="toc-text">一、使用说明</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E6%A0%B8%E5%BF%83%E6%96%B9%E6%B3%95"><span class="toc-number">2.</span> <span class="toc-text">二、核心方法</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-process-request-request-spider"><span class="toc-number">2.1.</span> <span class="toc-text">1. process_request(request, spider)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-process-response-request-response-spider"><span class="toc-number">2.2.</span> <span class="toc-text">2. process_response(request, response, spider)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-process-exception-request-exception-spider"><span class="toc-number">2.3.</span> <span class="toc-text">3. process_exception(request, exception, spider)</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E9%A1%B9%E7%9B%AE%E5%AE%9E%E6%88%98"><span class="toc-number">3.</span> <span class="toc-text">三、项目实战</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%9C%AC%E8%8A%82%E4%BB%A3%E7%A0%81"><span class="toc-number">4.</span> <span class="toc-text">四、本节代码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E7%BB%93%E8%AF%AD"><span class="toc-number">5.</span> <span class="toc-text">五、结语</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <p>Downloader Middleware即下载中间件，它是处于Scrapy的Request和Response之间的处理模块。我们首先来看看它的架构，如下图所示。<br><img src="/images/Scrapy%E6%A1%86%E6%9E%B6%E7%9A%84%E4%BD%BF%E7%94%A8%E4%B9%8BDownloader/1.jpg"><br>Scheduler从队列中拿出一个Request发送给Downloader执行下载，这个过程会经过Downloader Middleware的处理。另外，当Downloader将Request下载完成得到Response返回给Spider时会再次经过Downloader Middleware处理。<span id="more"></span></p>
+<p>也就是说，Downloader Middleware在整个架构中起作用的位置是以下两个：</p>
+<ul>
+<li>在Scheduler调度出队列的Request发送给Doanloader下载之前，也就是我们可以在Request执行下载之前对其进行修改。</li>
+<li>在下载后生成的Response发送给Spider之前，也就是我们可以在生成Resposne被Spider解析之前对其进行修改。</li>
+</ul>
+<p>Downloader Middleware的功能十分强大，修改User-Agent、处理重定向、设置代理、失败重试、设置Cookies等功能都需要借助它来实现。下面我们来了解一下Downloader Middleware的详细用法。</p>
+<h3 id="一、使用说明"><a href="#一、使用说明" class="headerlink" title="一、使用说明"></a>一、使用说明</h3><p>需要说明的是，Scrapy其实已经提供了许多Downloader Middleware，比如负责失败重试、自动重定向等功能的Middleware，它们被<code>DOWNLOADER_MIDDLEWARES_BASE</code>变量所定义。</p>
+<p>DOWNLOADER_MIDDLEWARES_BASE变量的内容如下所示：</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="string">&#x27;scrapy.downloadermiddlewares.robotstxt.RobotsTxtMiddleware&#x27;</span>: <span class="number">100</span>,</span><br><span class="line">    <span class="string">&#x27;scrapy.downloadermiddlewares.httpauth.HttpAuthMiddleware&#x27;</span>: <span class="number">300</span>,</span><br><span class="line">    <span class="string">&#x27;scrapy.downloadermiddlewares.downloadtimeout.DownloadTimeoutMiddleware&#x27;</span>: <span class="number">350</span>,</span><br><span class="line">    <span class="string">&#x27;scrapy.downloadermiddlewares.defaultheaders.DefaultHeadersMiddleware&#x27;</span>: <span class="number">400</span>,</span><br><span class="line">    <span class="string">&#x27;scrapy.downloadermiddlewares.useragent.UserAgentMiddleware&#x27;</span>: <span class="number">500</span>,</span><br><span class="line">    <span class="string">&#x27;scrapy.downloadermiddlewares.retry.RetryMiddleware&#x27;</span>: <span class="number">550</span>,</span><br><span class="line">    <span class="string">&#x27;scrapy.downloadermiddlewares.ajaxcrawl.AjaxCrawlMiddleware&#x27;</span>: <span class="number">560</span>,</span><br><span class="line">    <span class="string">&#x27;scrapy.downloadermiddlewares.redirect.MetaRefreshMiddleware&#x27;</span>: <span class="number">580</span>,</span><br><span class="line">    <span class="string">&#x27;scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware&#x27;</span>: <span class="number">590</span>,</span><br><span class="line">    <span class="string">&#x27;scrapy.downloadermiddlewares.redirect.RedirectMiddleware&#x27;</span>: <span class="number">600</span>,</span><br><span class="line">    <span class="string">&#x27;scrapy.downloadermiddlewares.cookies.CookiesMiddleware&#x27;</span>: <span class="number">700</span>,</span><br><span class="line">    <span class="string">&#x27;scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware&#x27;</span>: <span class="number">750</span>,</span><br><span class="line">    <span class="string">&#x27;scrapy.downloadermiddlewares.stats.DownloaderStats&#x27;</span>: <span class="number">850</span>,</span><br><span class="line">    <span class="string">&#x27;scrapy.downloadermiddlewares.httpcache.HttpCacheMiddleware&#x27;</span>: <span class="number">900</span>,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这是一个字典格式，字典的键名是Scrapy内置的Downloader Middleware的名称，键值代表了调用的优先级，优先级是一个数字，数字越小代表越靠近Scrapy引擎，数字越大代表越靠近Downloader，数字小的Downloader Middleware会被优先调用。</p>
+<p>如果自己定义的Downloader Middleware要添加到项目里，DOWNLOADER_MIDDLEWARES_BASE变量不能直接修改。Scrapy提供了另外一个设置变量DOWNLOADER_MIDDLEWARES，我们直接修改这个变量就可以添加自己定义的Downloader Middleware，以及禁用DOWNLOADER_MIDDLEWARES_BASE里面定义的Downloader Middleware。下面我们具体来看看Downloader Middleware的使用方法。</p>
+<h3 id="二、核心方法"><a href="#二、核心方法" class="headerlink" title="二、核心方法"></a>二、核心方法</h3><p>Scrapy内置的Downloader Middleware为Scrapy提供了基础的功能，但在项目实战中我们往往需要单独定义Downloader Middleware。不用担心，这个过程非常简单，我们只需要实现某几个方法即可。</p>
+<p>每个Downloader Middleware都定义了一个或多个方法的类，核心的方法有如下三个。</p>
+<ul>
+<li>process_request(request, spider)。</li>
+<li>process_response(request, response, spider)。</li>
+<li>process_exception(request, exception, spider)。</li>
+</ul>
+<p>我们只需要实现至少一个方法，就可以定义一个Downloader Middleware。下面我们来看看这三个方法的详细用法。</p>
+<h4 id="1-process-request-request-spider"><a href="#1-process-request-request-spider" class="headerlink" title="1. process_request(request, spider)"></a>1. process_request(request, spider)</h4><p>Request被Scrapy引擎调度给Downloader之前，process_request()方法就会被调用，也就是在Request从队列里调度出来到Downloader下载执行之前，我们都可以用process_request()方法对Request进行处理。方法的返回值必须为None、Response对象、Request对象之一，或者抛出IgnoreRequest异常。</p>
+<p>process_request()方法的参数有如下两个。</p>
+<ul>
+<li>request，是Request对象，即被处理的Request。</li>
+<li>spider，是Spdier对象，即此Request对应的Spider。</li>
+</ul>
+<p>返回类型不同，产生的效果也不同。下面归纳一下不同的返回情况。</p>
+<ul>
+<li>当返回是None时，Scrapy将继续处理该Request，接着执行其他Downloader Middleware的process_request()方法，一直到Downloader把Request执行后得到Response才结束。这个过程其实就是修改Request的过程，不同的Downloader Middleware按照设置的优先级顺序依次对Request进行修改，最后送至Downloader执行。</li>
+<li>当返回为Response对象时，更低优先级的Downloader Middleware的process_request()和process_exception()方法就不会被继续调用，每个Downloader Middleware的process_response()方法转而被依次调用。调用完毕之后，直接将Response对象发送给Spider来处理。</li>
+<li>当返回为Request对象时，更低优先级的Downloader Middleware的process_request()方法会停止执行。这个Request会重新放到调度队列里，其实它就是一个全新的Request，等待被调度。如果被Scheduler调度了，那么所有的Downloader Middleware的process_request()方法会被重新按照顺序执行。</li>
+<li>如果IgnoreRequest异常抛出，则所有的Downloader Middleware的process_exception()方法会依次执行。如果没有一个方法处理这个异常，那么Request的errorback()方法就会回调。如果该异常还没有被处理，那么它便会被忽略。</li>
+</ul>
+<h4 id="2-process-response-request-response-spider"><a href="#2-process-response-request-response-spider" class="headerlink" title="2. process_response(request, response, spider)"></a>2. process_response(request, response, spider)</h4><p>Downloader执行Request下载之后，会得到对应的Response。Scrapy引擎便会将Response发送给Spider进行解析。在发送之前，我们都可以用process_response()方法来对Response进行处理。方法的返回值必须为Request对象、Response对象之一，或者抛出IgnoreRequest异常。</p>
+<p>process_response()方法的参数有如下三个。</p>
+<ul>
+<li>request，是Request对象，即此Response对应的Request。</li>
+<li>response，是Response对象，即此被处理的Response。</li>
+<li>spider，是Spider对象，即此Response对应的Spider。</li>
+</ul>
+<p>下面归纳一下不同的返回情况。</p>
+<ul>
+<li>当返回为Request对象时，更低优先级的Downloader Middleware的process_response()方法不会继续调用。该Request对象会重新放到调度队列里等待被调度，它相当于一个全新的Request。然后，该Request会被process_request()方法顺次处理。</li>
+<li>当返回为Response对象时，更低优先级的Downloader Middleware的process_response()方法会继续调用，继续对该Response对象进行处理。</li>
+<li>如果IgnoreRequest异常抛出，则Request的errorback()方法会回调。如果该异常还没有被处理，那么它便会被忽略。</li>
+</ul>
+<h4 id="3-process-exception-request-exception-spider"><a href="#3-process-exception-request-exception-spider" class="headerlink" title="3. process_exception(request, exception, spider)"></a>3. process_exception(request, exception, spider)</h4><p>当Downloader或process_request()方法抛出异常时，例如抛出IgnoreRequest异常，process_exception()方法就会被调用。方法的返回值必须为None、Response对象、Request对象之一。</p>
+<p>process_exception()方法的参数有如下三个。</p>
+<ul>
+<li>request，是Request对象，即产生异常的Request。</li>
+<li>exception，是Exception对象，即抛出的异常。</li>
+<li>spdier，是Spider对象，即Request对应的Spider。</li>
+</ul>
+<p>下面归纳一下不同的返回值。</p>
+<ul>
+<li>当返回为None时，更低优先级的Downloader Middleware的process_exception()会被继续顺次调用，直到所有的方法都被调度完毕。</li>
+<li>当返回为Response对象时，更低优先级的Downloader Middleware的process_exception()方法不再被继续调用，每个Downloader Middleware的process_response()方法转而被依次调用。</li>
+<li>当返回为Request对象时，更低优先级的Downloader Middleware的process_exception()也不再被继续调用，该Request对象会重新放到调度队列里面等待被调度，它相当于一个全新的Request。然后，该Request又会被process_request()方法顺次处理。</li>
+</ul>
+<p>以上内容便是这三个方法的详细使用逻辑。在使用它们之前，请先对这三个方法的返回值的处理情况有一个清晰的认识。在自定义Downloader Middleware的时候，也一定要注意每个方法的返回类型。</p>
+<p>下面我们用一个案例实战来加深一下对Downloader Middleware用法的理解。</p>
+<h3 id="三、项目实战"><a href="#三、项目实战" class="headerlink" title="三、项目实战"></a>三、项目实战</h3><p>新建一个项目，命令如下所示：<br><code>scrapy startproject scrapydownloadertest</code></p>
+<p>新建了一个Scrapy项目，名为scrapydownloadertest。进入项目，新建一个Spider，命令如下所示：<br><code>scrapy genspider httpbin httpbin.org</code></p>
+<p>新建了一个Spider，名为httpbin，源代码如下所示：</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> scrapy</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">HttpbinSpider</span>(scrapy.Spider):</span><br><span class="line">    name = <span class="string">&#x27;httpbin&#x27;</span></span><br><span class="line">    allowed_domains = [<span class="string">&#x27;httpbin.org&#x27;</span>]</span><br><span class="line">    start_urls = [<span class="string">&#x27;http://httpbin.org/&#x27;</span>]</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">parse</span>(<span class="params">self, response</span>):</span><br><span class="line">        <span class="keyword">pass</span></span><br></pre></td></tr></table></figure>
+<p>接下来我们修改start_urls为：<code>http://httpbin.org/</code>。随后将parse()方法添加一行日志输出，将response变量的text属性输出出来，这样我们便可以看到Scrapy发送的Request信息了。</p>
+<p>修改Spider内容如下所示：</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> scrapy</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">HttpbinSpider</span>(scrapy.Spider):</span><br><span class="line">    name = <span class="string">&#x27;httpbin&#x27;</span></span><br><span class="line">    allowed_domains = [<span class="string">&#x27;httpbin.org&#x27;</span>]</span><br><span class="line">    start_urls = [<span class="string">&#x27;http://httpbin.org/get&#x27;</span>]</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">parse</span>(<span class="params">self, response</span>):</span><br><span class="line">        self.logger.debug(response.text)</span><br></pre></td></tr></table></figure>
+<p>接下来运行此Spider，执行如下命令：<br><code>scrapy crawl httpbin</code><br>Scrapy运行结果包含Scrapy发送的Request信息，内容如下所示：</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="string">&quot;args&quot;</span>: &#123;&#125;, </span><br><span class="line">  <span class="string">&quot;headers&quot;</span>: &#123;</span><br><span class="line">    <span class="string">&quot;Accept&quot;</span>: <span class="string">&quot;text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8&quot;</span>, </span><br><span class="line">    <span class="string">&quot;Accept-Encoding&quot;</span>: <span class="string">&quot;gzip,deflate,br&quot;</span>, </span><br><span class="line">    <span class="string">&quot;Accept-Language&quot;</span>: <span class="string">&quot;en&quot;</span>, </span><br><span class="line">    <span class="string">&quot;Connection&quot;</span>: <span class="string">&quot;close&quot;</span>, </span><br><span class="line">    <span class="string">&quot;Host&quot;</span>: <span class="string">&quot;httpbin.org&quot;</span>, </span><br><span class="line">    <span class="string">&quot;User-Agent&quot;</span>: <span class="string">&quot;Scrapy/1.4.0 (+http://scrapy.org)&quot;</span></span><br><span class="line">  &#125;, </span><br><span class="line">  <span class="string">&quot;origin&quot;</span>: <span class="string">&quot;60.207.237.85&quot;</span>, </span><br><span class="line">  <span class="string">&quot;url&quot;</span>: <span class="string">&quot;http://httpbin.org/get&quot;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们观察一下Headers，Scrapy发送的Request使用的User-Agent是<a href="+http://scrapy.org">Scrapy/1.4.0</a>，这其实是由Scrapy内置的<code>UserAgentMiddleware</code>设置的，<code>UserAgentMiddleware</code>的源码如下所示：</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> scrapy <span class="keyword">import</span> signals</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">UserAgentMiddleware</span>(<span class="title class_ inherited__">object</span>):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, user_agent=<span class="string">&#x27;Scrapy&#x27;</span></span>):</span><br><span class="line">        self.user_agent = user_agent</span><br><span class="line"></span><br><span class="line"><span class="meta">    @classmethod</span></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">from_crawler</span>(<span class="params">cls, crawler</span>):</span><br><span class="line">        o = cls(crawler.settings[<span class="string">&#x27;USER_AGENT&#x27;</span>])</span><br><span class="line">        crawler.signals.connect(o.spider_opened, signal=signals.spider_opened)</span><br><span class="line">        <span class="keyword">return</span> o</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">spider_opened</span>(<span class="params">self, spider</span>):</span><br><span class="line">        self.user_agent = <span class="built_in">getattr</span>(spider, <span class="string">&#x27;user_agent&#x27;</span>, self.user_agent)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">process_request</span>(<span class="params">self, request, spider</span>):</span><br><span class="line">        <span class="keyword">if</span> self.user_agent:</span><br><span class="line">            request.headers.setdefault(<span class="string">b&#x27;User-Agent&#x27;</span>, self.user_agent)</span><br></pre></td></tr></table></figure>
+<p>在from_crawler()方法中，首先尝试获取settings里面USER_AGENT，然后把USER_AGENT传递给<code>__init__()</code>方法进行初始化，其参数就是user_agent。如果没有传递USER_AGENT参数就默认设置为Scrapy字符串。我们新建的项目没有设置USER_AGENT，所以这里的user_agent变量就是Scrapy。接下来，在process_request()方法中，将user-agent变量设置为headers变量的一个属性，这样就成功设置了User-Agent。因此，User-Agent就是通过此Downloader Middleware的process_request()方法设置的。</p>
+<p>修改请求时的User-Agent可以有两种方式：<br>一是修改settings里面的USER_AGENT变量；<br>二是通过Downloader Middleware的process_request()方法来修改。</p>
+<p>第一种方法非常简单，我们只需要在setting.py里面加一行USER_AGENT的定义即可：<br><code>USER_AGENT = &#39;Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36&#39;</code><br>一般推荐使用此方法来设置。但是如果想设置得更灵活，比如设置随机的User-Agent，那就需要借助Downloader Middleware了。所以接下来我们用Downloader Middleware实现一个随机User-Agent的设置。</p>
+<p>在middlewares.py里面添加一个RandomUserAgentMiddleware的类，如下所示：</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> random</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">RandomUserAgentMiddleware</span>():</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):</span><br><span class="line">        self.user_agents = [</span><br><span class="line">            <span class="string">&#x27;Mozilla/5.0 (Windows; U; MSIE 9.0; Windows NT 9.0; en-US)&#x27;</span>,</span><br><span class="line">            <span class="string">&#x27;Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.2 (KHTML, like Gecko) Chrome/22.0.1216.0 Safari/537.2&#x27;</span>,</span><br><span class="line">            <span class="string">&#x27;Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:15.0) Gecko/20100101 Firefox/15.0.1&#x27;</span></span><br><span class="line">        ]</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">process_request</span>(<span class="params">self, request, spider</span>):</span><br><span class="line">        request.headers[<span class="string">&#x27;User-Agent&#x27;</span>] = random.choice(self.user_agents)</span><br></pre></td></tr></table></figure>
+<p>我们首先在类的<code>__init__()</code>方法中定义了三个不同的User-Agent，并用一个列表来表示。接下来实现了process_request()方法，它有一个参数request，我们直接修改request的属性即可。在这里我们直接设置了request变量的headers属性的User-Agent，设置内容是随机选择的User-Agent，这样一个Downloader Middleware就写好了。</p>
+<p>不过，要使之生效我们还需要再去调用这个Downloader Middleware。在settings.py中，将DOWNLOADER_MIDDLEWARES取消注释，并设置成如下内容：</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">DOWNLOADER_MIDDLEWARES = &#123;</span><br><span class="line">   <span class="string">&#x27;scrapydownloadertest.middlewares.RandomUserAgentMiddleware&#x27;</span>: <span class="number">543</span>,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>接下来我们重新运行Spider，就可以看到User-Agent被成功修改为列表中所定义的随机的一个User-Agent了：</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="string">&quot;args&quot;</span>: &#123;&#125;, </span><br><span class="line">  <span class="string">&quot;headers&quot;</span>: &#123;</span><br><span class="line">    <span class="string">&quot;Accept&quot;</span>: <span class="string">&quot;text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8&quot;</span>, </span><br><span class="line">    <span class="string">&quot;Accept-Encoding&quot;</span>: <span class="string">&quot;gzip,deflate,br&quot;</span>, </span><br><span class="line">    <span class="string">&quot;Accept-Language&quot;</span>: <span class="string">&quot;en&quot;</span>, </span><br><span class="line">    <span class="string">&quot;Connection&quot;</span>: <span class="string">&quot;close&quot;</span>, </span><br><span class="line">    <span class="string">&quot;Host&quot;</span>: <span class="string">&quot;httpbin.org&quot;</span>, </span><br><span class="line">    <span class="string">&quot;User-Agent&quot;</span>: <span class="string">&quot;Mozilla/5.0 (Windows; U; MSIE 9.0; Windows NT 9.0; en-US)&quot;</span></span><br><span class="line">  &#125;, </span><br><span class="line">  <span class="string">&quot;origin&quot;</span>: <span class="string">&quot;60.207.237.85&quot;</span>, </span><br><span class="line">  <span class="string">&quot;url&quot;</span>: <span class="string">&quot;http://httpbin.org/get&quot;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们就通过实现Downloader Middleware并利用process_request()方法成功设置了随机的User-Agent。</p>
+<p>另外，Downloader Middleware还有process_response()方法。Downloader对Request执行下载之后会得到Response，随后Scrapy引擎会将Response发送回Spider进行处理。但是在Response被发送给Spider之前，我们同样可以使用process_response()方法对Response进行处理。比如这里修改一下Response的状态码，在RandomUserAgentMiddleware添加如下代码：</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">process_response</span>(<span class="params">self, request, response, spider</span>):</span><br><span class="line">    response.status = <span class="number">201</span></span><br><span class="line">    <span class="keyword">return</span> response</span><br></pre></td></tr></table></figure>
+<p>我们将response变量的status属性修改为201，随后将response返回，这个被修改后的Response就会被发送到Spider。</p>
+<p>我们再在Spider里面输出修改后的状态码，在parse()方法中添加如下的输出语句：<br><code>self.logger.debug(&#39;Status Code: &#39; + str(response.status))</code></p>
+<p>重新运行之后，控制台输出了如下内容：<br><code>[httpbin] DEBUG: Status Code: 201</code><br>可以发现，Response的状态码成功修改了。</p>
+<p>因此要想对Response进行后处理，就可以借助于process_response()方法。</p>
+<p>另外还有一个process_exception()方法，它是用来处理异常的方法。如果需要异常处理的话，我们可以调用此方法。不过这个方法的使用频率相对低一些，在此不用实例演示。</p>
+<h3 id="四、本节代码"><a href="#四、本节代码" class="headerlink" title="四、本节代码"></a>四、本节代码</h3><p>本节源代码为：<a target="_blank" rel="noopener" href="https://github.com/Python3WebSpider/ScrapyDownloaderTest%E3%80%82">https://github.com/Python3WebSpider/ScrapyDownloaderTest。</a></p>
+<h3 id="五、结语"><a href="#五、结语" class="headerlink" title="五、结语"></a>五、结语</h3><p>本节讲解了Downloader Middleware的基本用法。此组件非常重要，是做异常处理和反爬处理的核心。后面我们会在实战中应用此组件来处理代理、Cookies等内容。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2019/04/20/Scrapy%E6%A1%86%E6%9E%B6%E7%9A%84%E4%BD%BF%E7%94%A8%E4%B9%8BDownloader-Middleware%E7%9A%84%E7%94%A8%E6%B3%95/" data-id="cl9pgenwx00y7ycv1ey8i9e98" data-title="Scrapy框架的使用之Downloader Middleware的用法" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/scrapy/" rel="tag">scrapy</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2019/04/21/asyncio%E5%BC%82%E6%AD%A5IO-%E5%8D%8F%E7%A8%8B%EF%BC%88Coroutine%EF%BC%89%E4%B8%8E%E4%BB%BB%E5%8A%A1-Task-%E8%AF%A6%E8%A7%A3/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          asyncio异步IO--协程（Coroutine）与任务(Task)详解
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2019/04/20/Tenacity%E2%80%94%E2%80%94Exception-Retry-%E4%BB%8E%E6%AD%A4%E6%97%A0%E6%AF%94%E7%AE%80%E5%8D%95/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">Tenacity——Exception Retry 从此无比简单</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

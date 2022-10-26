@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>LayoutInflate深度解析 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="一、 题外话相信大家对LayoutInflate都不陌生，特别在ListView的Adapter的getView方法中基本都会出现，使用inflate方法去加载一个布局，用于ListView的每个Item的布局。Inflate有三个参数，我在初学Android的时候这么理解的： 对于Inflate的三个参数(int resource, ViewGroup root, boolean attachT">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LayoutInflate深度解析">
+<meta property="og:url" content="http://moqiang02.github.io/2015/07/07/LayoutInflate%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="一、 题外话相信大家对LayoutInflate都不陌生，特别在ListView的Adapter的getView方法中基本都会出现，使用inflate方法去加载一个布局，用于ListView的每个Item的布局。Inflate有三个参数，我在初学Android的时候这么理解的： 对于Inflate的三个参数(int resource, ViewGroup root, boolean attachT">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/LayoutInflate%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90/1.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/LayoutInflate%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90/2.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/LayoutInflate%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90/3.jpg">
+<meta property="article:published_time" content="2015-07-07T15:42:28.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.792Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/LayoutInflate%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90/1.jpg">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-LayoutInflate深度解析" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2015/07/07/LayoutInflate%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90/" class="article-date">
+  <time class="dt-published" datetime="2015-07-07T15:42:28.000Z" itemprop="datePublished">2015-07-07</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/android/">android</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      LayoutInflate深度解析
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <h4 id="一、-题外话"><a href="#一、-题外话" class="headerlink" title="一、 题外话"></a>一、 题外话</h4><p>相信大家对LayoutInflate都不陌生，特别在ListView的Adapter的getView方法中基本都会出现，使用inflate方法去加载一个布局，用于ListView的每个Item的布局。Inflate有三个参数，我在初学Android的时候这么理解的：</p>
+<p>对于Inflate的三个参数(int resource, ViewGroup root, boolean attachToRoot)</p>
+<p>如果<code>inflate(layoutId, null )</code>则layoutId的最外层的控件的宽高是没有效果的</p>
+<p>如果<code>inflate(layoutId, root, false )</code> 则认为和上面效果是一样的</p>
+<p>如果<code>inflate(layoutId, root, true )</code> 则认为这样的话layoutId的最外层控件的宽高才能正常显示</p>
+<p>如果你也这么认为，那么你有就必要好好阅读这篇文章，因为这篇文章首先会验证上面的理解是 错误的 ，然后从源码角度去解释，最后会从ViewGroup与View的角度去解释。<span id="more"></span></p>
+<h4 id="二、-实践是验证真理的唯一标准"><a href="#二、-实践是验证真理的唯一标准" class="headerlink" title="二、 实践是验证真理的唯一标准"></a>二、 实践是验证真理的唯一标准</h4><p>下面我写一个特别常见的例子来验证上面的理解是错误的，一个特别简单的ListView，每个Item中放一个按钮：</p>
+<p>Activity的布局文件：</p>
+<figure class="highlight avrasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&lt;ListView xmlns:android=<span class="string">&quot;http://schemas.android.com/apk/res/android&quot;</span></span><br><span class="line"><span class="symbol">xmlns:</span>tools=<span class="string">&quot;http://schemas.android.com/tools&quot;</span></span><br><span class="line"><span class="symbol">android:</span>id=<span class="string">&quot;@+id/id_listview&quot;</span></span><br><span class="line"><span class="symbol">android:</span>layout_width=<span class="string">&quot;fill_parent&quot;</span></span><br><span class="line"><span class="symbol">android:</span>layout_height=<span class="string">&quot;wrap_content&quot;</span> &gt;</span><br><span class="line">&lt;/ListView&gt;</span><br></pre></td></tr></table></figure>
+<p>ListView的Item的布局文件：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">Button</span> <span class="attr">xmlns:android</span>=<span class="string">&quot;http://schemas.android.com/apk/res/android&quot;</span></span></span><br><span class="line"><span class="tag">  <span class="attr">xmlns:tools</span>=<span class="string">&quot;http://schemas.android.com/tools&quot;</span></span></span><br><span class="line"><span class="tag">  <span class="attr">android:id</span>=<span class="string">&quot;@+id/id_btn&quot;</span></span></span><br><span class="line"><span class="tag">  <span class="attr">android:layout_width</span>=<span class="string">&quot;120dp&quot;</span></span></span><br><span class="line"><span class="tag">  <span class="attr">android:layout_height</span>=<span class="string">&quot;120dp&quot;</span> &gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">Button</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>ListView的适配器：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.example.zhy_layoutinflater;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.List;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> android.content.Context;</span><br><span class="line"><span class="keyword">import</span> android.view.LayoutInflater;</span><br><span class="line"><span class="keyword">import</span> android.view.View;</span><br><span class="line"><span class="keyword">import</span> android.view.ViewGroup;</span><br><span class="line"><span class="keyword">import</span> android.widget.BaseAdapter;</span><br><span class="line"><span class="keyword">import</span> android.widget.Button;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MyAdapter</span> <span class="keyword">extends</span> <span class="title class_">BaseAdapter</span></span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> LayoutInflater mInflater;</span><br><span class="line">  <span class="keyword">private</span> List&lt;String&gt; mDatas;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">public</span> <span class="title function_">MyAdapter</span><span class="params">(Context context, List&lt;String&gt; datas)</span></span><br><span class="line">  &#123;</span><br><span class="line">    mInflater = LayoutInflater.from(context);</span><br><span class="line">    mDatas = datas;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="keyword">public</span> <span class="type">int</span> <span class="title function_">getCount</span><span class="params">()</span></span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">return</span> mDatas.size();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="keyword">public</span> Object <span class="title function_">getItem</span><span class="params">(<span class="type">int</span> position)</span></span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">return</span> mDatas.get(position);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="keyword">public</span> <span class="type">long</span> <span class="title function_">getItemId</span><span class="params">(<span class="type">int</span> position)</span></span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">return</span> position;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="keyword">public</span> View <span class="title function_">getView</span><span class="params">(<span class="type">int</span> position, View convertView, ViewGroup parent)</span></span><br><span class="line">  &#123;</span><br><span class="line"></span><br><span class="line">    <span class="type">ViewHolder</span> <span class="variable">holder</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">    <span class="keyword">if</span> (convertView == <span class="literal">null</span>)</span><br><span class="line">    &#123;</span><br><span class="line">      holder = <span class="keyword">new</span> <span class="title class_">ViewHolder</span>();</span><br><span class="line">      convertView = mInflater.inflate(R.layout.item, <span class="literal">null</span>);</span><br><span class="line"><span class="comment">//    convertView = mInflater.inflate(R.layout.item, parent ,false);</span></span><br><span class="line"><span class="comment">//	  convertView = mInflater.inflate(R.layout.item, parent ,true);</span></span><br><span class="line">      holder.mBtn = (Button) convertView.findViewById(R.id.id_btn);</span><br><span class="line">      convertView.setTag(holder);</span><br><span class="line">    &#125; <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">      holder = (ViewHolder) convertView.getTag();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    holder.mBtn.setText(mDatas.get(position));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> convertView;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">class</span> <span class="title class_">ViewHolder</span></span><br><span class="line">  &#123;</span><br><span class="line">    Button mBtn;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>主Activity:</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.example.zhy_layoutinflater;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.<span class="type">Arrays</span>;</span><br><span class="line"><span class="keyword">import</span> java.util.<span class="type">List</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> android.app.<span class="type">Activity</span>;</span><br><span class="line"><span class="keyword">import</span> android.os.<span class="type">Bundle</span>;</span><br><span class="line"><span class="keyword">import</span> android.widget.<span class="type">ListView</span>;</span><br><span class="line"></span><br><span class="line">public <span class="class"><span class="keyword">class</span> <span class="title">MainActivity</span> <span class="keyword">extends</span> <span class="title">Activity</span></span></span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="type">ListView</span> mListView;</span><br><span class="line">  <span class="keyword">private</span> <span class="type">MyAdapter</span> mAdapter;</span><br><span class="line">  <span class="keyword">private</span> <span class="type">List</span>&lt;<span class="type">String</span>&gt; mDatas = <span class="type">Arrays</span>.asList(<span class="string">&quot;Hello&quot;</span>, <span class="string">&quot;Java&quot;</span>, <span class="string">&quot;Android&quot;</span>);</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="keyword">protected</span> void onCreate(<span class="type">Bundle</span> savedInstanceState)</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">super</span>.onCreate(savedInstanceState);</span><br><span class="line">    setContentView(<span class="type">R</span>.layout.activity_main);</span><br><span class="line"></span><br><span class="line">    mListView = (<span class="type">ListView</span>) findViewById(<span class="type">R</span>.id.id_listview);</span><br><span class="line">    mAdapter = <span class="keyword">new</span> <span class="type">MyAdapter</span>(<span class="keyword">this</span>, mDatas);</span><br><span class="line">    mListView.setAdapter(mAdapter);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>好了，相信大家对这个例子都再熟悉不过了，没啥好说的，我们主要关注getView里面的inflate那行代码：下面我依次把getView里的写成：</p>
+<p>1、<code>convertView = mInflater.inflate(R.layout.item, null);</code></p>
+<p>2、<code>convertView = mInflater.inflate(R.layout.item, parent ,false);</code></p>
+<p>3、<code>convertView = mInflater.inflate(R.layout.item, parent ,true);</code></p>
+<p>分别看效果图：</p>
+<p>图1：<br><img src="/images/LayoutInflate%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90/1.jpg"><br>图2：<br><img src="/images/LayoutInflate%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90/2.jpg"><br>图3：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">FATAL EXCEPTION: main</span><br><span class="line">java.lang.UnsupportedOperationException: </span><br><span class="line">addView(View, LayoutParams) is not supported in AdapterView</span><br></pre></td></tr></table></figure>
+<p>嗯，没错没有图3，第三种写法会报错。</p>
+<p>由上面三行代码的变化，产生3个不同的结果，可以看到</p>
+<p><code>inflater(resId, null )</code>的确不能正确处理宽高的值，但是<code>inflater(resId,parent,false)</code>并非和<code>inflater(resId, null )</code>效果一致，它可以看出完美的显示了宽和高。</p>
+<p>而<code>inflater(resId,parent,true)</code>报错了（错误的原因在解析源码的时候说）。</p>
+<p>由此可见：文章开始提出的理解是绝对错误的。</p>
+<h4 id="三、源码解析"><a href="#三、源码解析" class="headerlink" title="三、源码解析"></a>三、源码解析</h4><p>下面我通过源码来解释，这三种写法真正的差异</p>
+<p>这三个方法，最终都会执行下面的代码：</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">public</span> <span class="keyword">View</span> inflate(XmlPullParser <span class="keyword">parser</span>, ViewGroup root, <span class="type">boolean</span> attachToRoot) &#123;</span><br><span class="line">    synchronized (mConstructorArgs) &#123;</span><br><span class="line">      final AttributeSet attrs = <span class="type">Xml</span>.asAttributeSet(<span class="keyword">parser</span>);</span><br><span class="line">      Context lastContext = (Context)mConstructorArgs[<span class="number">0</span>];</span><br><span class="line">      mConstructorArgs[<span class="number">0</span>] = mContext;</span><br><span class="line">      <span class="keyword">View</span> result = root;</span><br><span class="line"></span><br><span class="line">      try &#123;</span><br><span class="line">        // Look <span class="keyword">for</span> the root node.</span><br><span class="line">        <span class="type">int</span> <span class="keyword">type</span>;</span><br><span class="line">        <span class="keyword">while</span> ((<span class="keyword">type</span> = <span class="keyword">parser</span>.next()) != XmlPullParser.START_TAG &amp;&amp;</span><br><span class="line">            <span class="keyword">type</span> != XmlPullParser.END_DOCUMENT) &#123;</span><br><span class="line">          // Empty</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">type</span> != XmlPullParser.START_TAG) &#123;</span><br><span class="line">          throw <span class="built_in">new</span> InflateException(<span class="keyword">parser</span>.getPositionDescription()</span><br><span class="line">              + &quot;: No start tag found!&quot;);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        final String <span class="type">name</span> = <span class="keyword">parser</span>.getName();</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">DEBUG</span>) &#123;</span><br><span class="line">          <span class="keyword">System</span>.<span class="keyword">out</span>.println(&quot;**************************&quot;);</span><br><span class="line">          <span class="keyword">System</span>.<span class="keyword">out</span>.println(&quot;Creating root view: &quot;</span><br><span class="line">              + <span class="type">name</span>);</span><br><span class="line">          <span class="keyword">System</span>.<span class="keyword">out</span>.println(&quot;**************************&quot;);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (TAG_MERGE.equals(<span class="type">name</span>)) &#123;</span><br><span class="line">          <span class="keyword">if</span> (root == <span class="keyword">null</span> || !attachToRoot) &#123;</span><br><span class="line">            throw <span class="built_in">new</span> InflateException(&quot;&lt;merge /&gt; can be used only with a valid &quot;</span><br><span class="line">                + &quot;ViewGroup root and attachToRoot=true&quot;);</span><br><span class="line">          &#125;</span><br><span class="line"></span><br><span class="line">          rInflate(<span class="keyword">parser</span>, root, attrs, <span class="keyword">false</span>);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">          // <span class="keyword">Temp</span> <span class="keyword">is</span> the root <span class="keyword">view</span> that was <span class="built_in">found</span> <span class="keyword">in</span> the <span class="type">xml</span></span><br><span class="line">          <span class="keyword">View</span> <span class="keyword">temp</span>;</span><br><span class="line">          <span class="keyword">if</span> (TAG_1995.equals(<span class="type">name</span>)) &#123;</span><br><span class="line">            <span class="keyword">temp</span> = <span class="built_in">new</span> BlinkLayout(mContext, attrs);</span><br><span class="line">          &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">temp</span> = createViewFromTag(root, <span class="type">name</span>, attrs);</span><br><span class="line">          &#125;</span><br><span class="line"></span><br><span class="line">          ViewGroup.LayoutParams params = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">          <span class="keyword">if</span> (root != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (<span class="keyword">DEBUG</span>) &#123;</span><br><span class="line">              <span class="keyword">System</span>.<span class="keyword">out</span>.println(&quot;Creating params from root: &quot; +</span><br><span class="line">                  root);</span><br><span class="line">            &#125;</span><br><span class="line">            // <span class="keyword">Create</span> layout params that match root, <span class="keyword">if</span> supplied</span><br><span class="line">            params = root.generateLayoutParams(attrs);</span><br><span class="line">            <span class="keyword">if</span> (!attachToRoot) &#123;</span><br><span class="line">              // <span class="keyword">Set</span> the layout params <span class="keyword">for</span> <span class="keyword">temp</span> <span class="keyword">if</span> we are <span class="keyword">not</span></span><br><span class="line">              // attaching. (<span class="keyword">If</span> we are, we use addView, below)</span><br><span class="line">              <span class="keyword">temp</span>.setLayoutParams(params);</span><br><span class="line">            &#125;</span><br><span class="line">          &#125;</span><br><span class="line"></span><br><span class="line">          <span class="keyword">if</span> (<span class="keyword">DEBUG</span>) &#123;</span><br><span class="line">            <span class="keyword">System</span>.<span class="keyword">out</span>.println(&quot;-----&gt; start inflating children&quot;);</span><br><span class="line">          &#125;</span><br><span class="line">          // Inflate <span class="keyword">all</span> children under <span class="keyword">temp</span></span><br><span class="line">          rInflate(<span class="keyword">parser</span>, <span class="keyword">temp</span>, attrs, <span class="keyword">true</span>);</span><br><span class="line">          <span class="keyword">if</span> (<span class="keyword">DEBUG</span>) &#123;</span><br><span class="line">            <span class="keyword">System</span>.<span class="keyword">out</span>.println(&quot;-----&gt; done inflating children&quot;);</span><br><span class="line">          &#125;</span><br><span class="line"></span><br><span class="line">          // We are supposed <span class="keyword">to</span> attach <span class="keyword">all</span> the views we <span class="built_in">found</span> (<span class="type">int</span> <span class="keyword">temp</span>)</span><br><span class="line">          // <span class="keyword">to</span> root. <span class="keyword">Do</span> that now.</span><br><span class="line">          <span class="keyword">if</span> (root != <span class="keyword">null</span> &amp;&amp; attachToRoot) &#123;</span><br><span class="line">            root.addView(<span class="keyword">temp</span>, params);</span><br><span class="line">          &#125;</span><br><span class="line"></span><br><span class="line">          // Decide whether <span class="keyword">to</span> <span class="keyword">return</span> the root that was passed <span class="keyword">in</span> <span class="keyword">or</span> the</span><br><span class="line">          // top <span class="keyword">view</span> <span class="built_in">found</span> <span class="keyword">in</span> <span class="type">xml</span>.</span><br><span class="line">          <span class="keyword">if</span> (root == <span class="keyword">null</span> || !attachToRoot) &#123;</span><br><span class="line">            result = <span class="keyword">temp</span>;</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">      &#125; catch (XmlPullParserException e) &#123;</span><br><span class="line">        InflateException ex = <span class="built_in">new</span> InflateException(e.getMessage());</span><br><span class="line">        ex.initCause(e);</span><br><span class="line">        throw ex;</span><br><span class="line">      &#125; catch (IOException e) &#123;</span><br><span class="line">        InflateException ex = <span class="built_in">new</span> InflateException(</span><br><span class="line">            <span class="keyword">parser</span>.getPositionDescription()</span><br><span class="line">            + &quot;: &quot; + e.getMessage());</span><br><span class="line">        ex.initCause(e);</span><br><span class="line">        throw ex;</span><br><span class="line">      &#125; finally &#123;</span><br><span class="line">        // Don<span class="string">&#x27;t retain static reference on context.</span></span><br><span class="line"><span class="string">        mConstructorArgs[0] = lastContext;</span></span><br><span class="line"><span class="string">        mConstructorArgs[1] = null;</span></span><br><span class="line"><span class="string">      &#125;</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">      return result;</span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">  &#125;</span></span><br></pre></td></tr></table></figure>
+<p>第6行：首先声明了<code>View result = root ;</code>//最终返回值为result</p>
+<p>第43行执行了：<code>temp = createViewFromTag(root, name, attrs);</code>创建了View</p>
+<p>然后直接看48-59：</p>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span>(root==null)</span><br><span class="line">&#123;</span><br><span class="line"> params = root.generate<span class="constructor">LayoutParams(<span class="params">attrs</span>)</span>;</span><br><span class="line">        <span class="keyword">if</span> (!attachToRoot)</span><br><span class="line"> &#123;</span><br><span class="line">   temp.set<span class="constructor">LayoutParams(<span class="params">params</span>)</span>;</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到，当root为null,attachToRoot为false时，为temp设置了LayoutParams.</p>
+<p>继续往下，看73-75行：</p>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (root != null<span class="operator"> &amp;&amp; </span>attachToRoot)</span><br><span class="line">&#123;</span><br><span class="line">root.add<span class="constructor">View(<span class="params">temp</span>, <span class="params">params</span>)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>当root不为null，attachToRoot为true时，将tmp按照params添加到root中。</p>
+<p>然后78-81行：</p>
+<figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">if (root == <span class="literal">null</span> <span class="string">|| !attachToRoot) &#123; </span></span><br><span class="line">    result = temp; </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果root为null，或者attachToRoot为false则，将temp赋值给result。</p>
+<p>最后返回result。</p>
+<p>从上面的分析已经可以看出：</p>
+<p><code>Inflate(resId , null )</code>只创建temp ,返回temp</p>
+<p><code>Inflate(resId , parent, false )</code>创建temp，然后执行temp.setLayoutParams(params);返回temp</p>
+<p><code>Inflate(resId , parent, true )</code> 创建temp，然后执行root.addView(temp, params);最后返回root</p>
+<p>由上面已经能够解释：</p>
+<p><code>Inflate(resId , null )</code>不能正确处理宽和高是因为：layout_width,layout_height是相对了父级设置的，必须与父级的LayoutParams一致。而此temp的getLayoutParams为null</p>
+<p><code>Inflate(resId , parent,false )</code> 可以正确处理，因为temp.setLayoutParams(params);这个params正是root.generateLayoutParams(attrs);得到的。</p>
+<blockquote>
+<p>params = root.generateLayoutParams(attrs);<br>这段的意思是：如果调用inflate方法，传入了ViewGroup root参数，则会从root中得到由layout_width和layout_height组成的LayoutParams，在attachToRoot设置为false的话，就会对我们加载的视图View设置该LayoutParams。</p>
+</blockquote>
+<p><code>Inflate(resId , parent,true )</code>不仅能够正确的处理，而且已经把resId这个view加入到了parent，并且返回的是parent，和以上两者返回值有绝对的区别，还记得文章前面的例子上，MyAdapter里面的getView报的错误:</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">java.lang.UnsupportedOperationException: </span><br><span class="line">addView(View, LayoutParams) is not supported in AdapterView</span><br></pre></td></tr></table></figure>
+<p>这是因为源码中调用了<code>root.addView(temp, params);</code>而此时的root是我们的ListView，ListView为AdapterView的子类:</p>
+<p>直接看AdapterView的源码：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line">  <span class="keyword">public</span> <span class="built_in">void</span> <span class="title function_">addView</span>(<span class="params">View child</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">UnsupportedOperationException</span>(<span class="string">&quot;addView(View) is not supported in AdapterView&quot;</span>);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到这个错误为啥产生了。</p>
+<h4 id="四、-进一步的解析"><a href="#四、-进一步的解析" class="headerlink" title="四、 进一步的解析"></a>四、 进一步的解析</h4><p>上面我根据源码得出的结论可能大家还是有一丝的迷惑，我再写个例子论证我们上面得出的结论：</p>
+<p>主布局文件：</p>
+<figure class="highlight applescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&lt;Button xmlns:android=<span class="string">&quot;http://schemas.android.com/apk/res/android&quot;</span></span><br><span class="line">  xmlns:tools=<span class="string">&quot;http://schemas.android.com/tools&quot;</span></span><br><span class="line">  android:<span class="built_in">id</span>=<span class="string">&quot;@+id/id_btn&quot;</span></span><br><span class="line">  android:layout_width=<span class="string">&quot;120dp&quot;</span></span><br><span class="line">  android:layout_height=<span class="string">&quot;120dp&quot;</span></span><br><span class="line">  android:<span class="built_in">text</span>=<span class="string">&quot;Button&quot;</span> &gt;</span><br><span class="line">&lt;/Button&gt;</span><br></pre></td></tr></table></figure>
+<p>主Activity:</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.example.zhy_layoutinflater;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> android.app.<span class="type">ListActivity</span>;</span><br><span class="line"><span class="keyword">import</span> android.os.<span class="type">Bundle</span>;</span><br><span class="line"><span class="keyword">import</span> android.util.<span class="type">Log</span>;</span><br><span class="line"><span class="keyword">import</span> android.view.<span class="type">LayoutInflater</span>;</span><br><span class="line"><span class="keyword">import</span> android.view.<span class="type">View</span>;</span><br><span class="line"><span class="keyword">import</span> android.view.<span class="type">ViewGroup</span>;</span><br><span class="line"></span><br><span class="line">public <span class="class"><span class="keyword">class</span> <span class="title">MainActivity</span> <span class="keyword">extends</span> <span class="title">ListActivity</span></span></span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="type">LayoutInflater</span> mInflater;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="keyword">protected</span> void onCreate(<span class="type">Bundle</span> savedInstanceState)</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">super</span>.onCreate(savedInstanceState);</span><br><span class="line"></span><br><span class="line">    mInflater = <span class="type">LayoutInflater</span>.from(<span class="keyword">this</span>);</span><br><span class="line"></span><br><span class="line">    <span class="type">View</span> view1 = mInflater.inflate(<span class="type">R</span>.layout.activity_main, <span class="literal">null</span>);</span><br><span class="line">    <span class="type">View</span> view2 = mInflater.inflate(<span class="type">R</span>.layout.activity_main,</span><br><span class="line">        (<span class="type">ViewGroup</span>)findViewById(android.<span class="type">R</span>.id.content), <span class="literal">false</span>);</span><br><span class="line">    <span class="type">View</span> view3 = mInflater.inflate(<span class="type">R</span>.layout.activity_main,</span><br><span class="line">        (<span class="type">ViewGroup</span>)findViewById(android.<span class="type">R</span>.id.content), <span class="literal">true</span>);</span><br><span class="line"></span><br><span class="line">    <span class="type">Log</span>.e(<span class="string">&quot;TAG&quot;</span>, <span class="string">&quot;view1 = &quot;</span> + view1  +<span class="string">&quot; , view1.layoutParams = &quot;</span> + view1.getLayoutParams());</span><br><span class="line">    <span class="type">Log</span>.e(<span class="string">&quot;TAG&quot;</span>, <span class="string">&quot;view2 = &quot;</span> + view2  +<span class="string">&quot; , view2.layoutParams = &quot;</span> + view2.getLayoutParams());</span><br><span class="line">    <span class="type">Log</span>.e(<span class="string">&quot;TAG&quot;</span>, <span class="string">&quot;view3 = &quot;</span> + view3  );</span><br><span class="line"></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到我们的主Activity并没有执行setContentView，仅仅执行了LayoutInflater的3个方法。</p>
+<p>注：parent我们用的是Activity的内容区域：即android.R.id.content，是一个FrameLayout，我们在setContentView(resId)时，其实系统会自动为了包上一层FrameLayout（id=content）。</p>
+<p>按照我们上面的说法：</p>
+<p>view1的layoutParams 应该为null</p>
+<p>view2的layoutParams 应该不为null，且为FrameLayout.LayoutParams</p>
+<p>view3为FrameLayout，且将这个button添加到Activity的内容区域了（因为R.id.content代表Actvity内容区域）</p>
+<p>下面看一下输出结果，和Activity的展示：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">07-27 14:17:36.703: E/TAG(2911): <span class="attr">view1</span> = android.widget.Button@<span class="number">429</span>d1660 , view1.layoutParams = null</span><br><span class="line">07-27 14:17:36.703: E/TAG(2911): <span class="attr">view2</span> = android.widget.Button@<span class="number">42</span>a0e120 , view2.layoutParams = android.widget.FrameLayout<span class="variable">$LayoutParams</span>@<span class="number">42</span>a0e9a0</span><br><span class="line">07-27 14:17:36.703: E/TAG(2911): <span class="attr">view3</span> = android.widget.FrameLayout@<span class="number">42</span>a0a240</span><br></pre></td></tr></table></figure>
+<p>效果图：<br><img src="/images/LayoutInflate%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90/3.jpg"><br>可见，虽然我们没有执行setContentView，但是依然可以看到绘制的控件，是因为</p>
+<p><code>View view3 = mInflater.inflate(R.layout.activity_main,(ViewGroup)findViewById(android.R.id.content), true);</code></p>
+<p>这个方法内部已经执行了<code>root.addView(temp , params);</code> 上面已经解析过了。</p>
+<p>也可以看出：和我们的推测完全一致，到此已经完全说明了inflate3个重载的方法的区别。相信大家以后在使用时也能选择出最好的方式。不过下面准备从ViewGroup和View的角度来说一下，为啥layoutParams为null，就不能这确的处理。</p>
+<h4 id="五、从ViewGroup和View的角度来解析"><a href="#五、从ViewGroup和View的角度来解析" class="headerlink" title="五、从ViewGroup和View的角度来解析"></a>五、从ViewGroup和View的角度来解析</h4><p>如果大家对自定义ViewGroup和自定义View有一定的掌握，肯定不会对onMeasure方法陌生： ViewGroup的onMeasure方法所做的是：</p>
+<p>为childView设置测量模式和测量出来的值。</p>
+<p>如何设置呢？就是根据LayoutParams。</p>
+<p>如果childView的宽为：LayoutParams. MATCH_PARENT，则设置模式为MeasureSpec.EXACTLY，且为childView计算宽度。</p>
+<p>如果childView的宽为：固定值（即大于0），则设置模式为MeasureSpec.EXACTLY，且将lp.width直接作为childView的宽度。</p>
+<p>如果childView的宽为：LayoutParams. WRAP_CONTENT，则设置模式为：MeasureSpec.AT_MOST</p>
+<p>高度与宽度类似。</p>
+<p>View的onMeasure方法：</p>
+<p>主要做的就是根据ViewGroup传入的测量模式和测量值，计算自己应该的宽和高：</p>
+<p>一般是这样的流程：</p>
+<p>如果宽的模式是AT_MOST：则自己计算宽的值。</p>
+<p>如果宽的模式是EXACTLY：则直接使用<code>MeasureSpec.getSize(widthMeasureSpec);</code></p>
+<p>对于最后一块，如果不清楚，不要紧，以后我会在自定义ViewGroup和自定义View时详细讲解的。</p>
+<p>大概就是这样的流程，真正的绘制过程肯定比这个要复杂，就是为了说明如果View的宽和高如果设置为准确值，则一定依赖于LayoutParams，所以我们的<code>inflate(resId,null)</code>才没能正确处理宽和高。</p>
+<blockquote>
+<p>参考：<br><a target="_blank" rel="noopener" href="http://blog.csdn.net/lmj623565791/article/details/38171465">Android LayoutInflater深度解析 给你带来全新的认识</a><br><a target="_blank" rel="noopener" href="http://blog.csdn.net/xyz_fly/article/details/37932989">Android编程之LayoutInflater的inflate方法实例</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2015/07/07/LayoutInflate%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90/" data-id="cl9pgenst00kvycv16xo05y93" data-title="LayoutInflate深度解析" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/07/09/Ajax%E8%B7%A8%E5%9F%9F%E9%97%AE%E9%A2%98%E8%A7%A3%E5%86%B3%E6%9C%80%E5%A5%BD%E6%96%B9%E6%A1%88/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          Ajax跨域问题解决最好方案
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/07/05/%E7%BC%93%E5%86%B2%E5%8A%A0%E8%BD%BD%E5%9B%BE%E7%89%87%E7%9A%84-jQuery-%E6%8F%92%E4%BB%B6-lazyload-js-%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95%E8%AF%A6%E8%A7%A3/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">缓冲加载图片的 jQuery 插件 lazyload.js 使用方法详解</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

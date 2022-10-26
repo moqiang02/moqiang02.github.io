@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Android的Activity屏幕切换动画(二)-左右滑动深入与实战 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="上一篇文章讲了 Android的左右滑动切换，实现过程是非常简单，一些新手可能会向深入了了解Activity切换的原理，下面主要对左右滑动进行深入的探讨，并以项目中的一个切换效果来进一步了解。 Activity的切换效果使用的是Android的动画效果，Android的动画在官方有相关资料：http:&#x2F;&#x2F;developer.android.com&#x2F;guide&#x2F;topics&#x2F;graphics&#x2F;ani">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android的Activity屏幕切换动画(二)-左右滑动深入与实战">
+<meta property="og:url" content="http://moqiang02.github.io/2015/09/12/Android%E7%9A%84Activity%E5%B1%8F%E5%B9%95%E5%88%87%E6%8D%A2%E5%8A%A8%E7%94%BB-%E4%BA%8C-%E5%B7%A6%E5%8F%B3%E6%BB%91%E5%8A%A8%E6%B7%B1%E5%85%A5%E4%B8%8E%E5%AE%9E%E6%88%98/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="上一篇文章讲了 Android的左右滑动切换，实现过程是非常简单，一些新手可能会向深入了了解Activity切换的原理，下面主要对左右滑动进行深入的探讨，并以项目中的一个切换效果来进一步了解。 Activity的切换效果使用的是Android的动画效果，Android的动画在官方有相关资料：http:&#x2F;&#x2F;developer.android.com&#x2F;guide&#x2F;topics&#x2F;graphics&#x2F;ani">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/Android%E7%9A%84Activity%E5%B1%8F%E5%B9%95%E5%88%87%E6%8D%A2%E5%8A%A8%E7%94%BB%E4%BA%8C%E5%B7%A6%E5%8F%B3%E6%BB%91%E5%8A%A8%E6%B7%B1%E5%85%A5%E4%B8%8E%E5%AE%9E%E6%88%98/1.png">
+<meta property="article:published_time" content="2015-09-12T08:21:50.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.690Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="AndroidUI">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/Android%E7%9A%84Activity%E5%B1%8F%E5%B9%95%E5%88%87%E6%8D%A2%E5%8A%A8%E7%94%BB%E4%BA%8C%E5%B7%A6%E5%8F%B3%E6%BB%91%E5%8A%A8%E6%B7%B1%E5%85%A5%E4%B8%8E%E5%AE%9E%E6%88%98/1.png">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Android的Activity屏幕切换动画-二-左右滑动深入与实战" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2015/09/12/Android%E7%9A%84Activity%E5%B1%8F%E5%B9%95%E5%88%87%E6%8D%A2%E5%8A%A8%E7%94%BB-%E4%BA%8C-%E5%B7%A6%E5%8F%B3%E6%BB%91%E5%8A%A8%E6%B7%B1%E5%85%A5%E4%B8%8E%E5%AE%9E%E6%88%98/" class="article-date">
+  <time class="dt-published" datetime="2015-09-12T08:21:50.000Z" itemprop="datePublished">2015-09-12</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/android/">android</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Android的Activity屏幕切换动画(二)-左右滑动深入与实战
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <p>上一篇文章讲了 Android的左右滑动切换，实现过程是非常简单，一些新手可能会向深入了了解Activity切换的原理，下面主要对左右滑动进行深入的探讨，并以项目中的一个切换效果来进一步了解。</p>
+<p>Activity的切换效果使用的是Android的动画效果，Android的动画在官方有相关资料：<a target="_blank" rel="noopener" href="http://developer.android.com/guide/topics/graphics/animation.html">http://developer.android.com/guide/topics/graphics/animation.html</a> 和<a target="_blank" rel="noopener" href="http://developer.android.com/guide/topics/resources/animation-resource.html">http://developer.android.com/guide/topics/resources/animation-resource.html</a> ，Activity的切换动画实际上是Android的View Animation(视图动画)中的Tween Animation效果，Tween Animation分为4种动画效果，分别是：alpha (透明变化) translate(位置移动) scale(缩放) rotate(旋转), 而左右滑动切换使用的是 translate(位置移动)的效果，在下一篇我们再讨论一下 alpha (透明变化) 、scale(缩放)、 rotate(旋转) 这三种效果，本篇只讲translate(位置移动)。</p>
+<span id="more"></span>
+<p>Translate动画是非常好理解，就是定义一个开始的位置和一个结束位置，定义移动时间，然后就能自动产生移动动画。Android的translate移动方向有 横向(X) 竖向(Y), 左右滑动使用了横向移动效果，对于竖向(Y)的位置如下：<br><img src="/images/Android%E7%9A%84Activity%E5%B1%8F%E5%B9%95%E5%88%87%E6%8D%A2%E5%8A%A8%E7%94%BB%E4%BA%8C%E5%B7%A6%E5%8F%B3%E6%BB%91%E5%8A%A8%E6%B7%B1%E5%85%A5%E4%B8%8E%E5%AE%9E%E6%88%98/1.png"></p>
+<p>定义一个向上退出的动画（从位置2 移动位置3）和从下面进入（从位置1移动位置2）的动画定义文件如下：</p>
+<p>out_to_up.xml (从屏幕上面退出)</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=<span class="string">&quot;1.0&quot;</span> encoding=<span class="string">&quot;utf-8&quot;</span>?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">translate</span> <span class="attr">xmlns:android</span>=<span class="string">&quot;http://schemas.android.com/apk/res/android&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:interpolator</span>=<span class="string">&quot;@android:anim/accelerate_interpolator&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:fromYDelta</span>=<span class="string">&quot;0%p&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:toYDelta</span>=<span class="string">&quot;-100%p&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:duration</span>=<span class="string">&quot;1000&quot;</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">translate</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>in_from_down.xml (从屏幕下面进入)</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=<span class="string">&quot;1.0&quot;</span> encoding=<span class="string">&quot;utf-8&quot;</span>?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">translate</span> <span class="attr">xmlns:android</span>=<span class="string">&quot;http://schemas.android.com/apk/res/android&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:interpolator</span>=<span class="string">&quot;@android:anim/accelerate_interpolator&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:fromYDelta</span>=<span class="string">&quot;100%p&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:toYDelta</span>=<span class="string">&quot;0%p&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:duration</span>=<span class="string">&quot;1000&quot;</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">translate</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>接下来讲一讲translate的几个重要的属性：</p>
+<p>android:interpolator: 加速器，非常有用的属性，可以简单理解为动画的速度，可以是越来越快，也可以是越来越慢，或者是先快后忙，或者是均匀的速度等等，对于值如下：<br>@android:anim/accelerate_interpolator： 越来越快<br>@android:anim/decelerate_interpolator：越来越慢<br>@android:anim/accelerate_decelerate_interpolator：先快后慢<br>@android:anim/anticipate_interpolator: 先后退一小步然后向前加速<br>@android:anim/overshoot_interpolator：快速到达终点超出一小步然后回到终点<br>@android:anim/anticipate_overshoot_interpolator：到达终点超出一小步然后回到终点<br>@android:anim/bounce_interpolator：到达终点产生弹球效果，弹几下回到终点<br>@android:anim/linear_interpolator：均匀速度。</p>
+<p>android:duration: 动画运行时间，定义在多次时间（ms）内完成动画</p>
+<p>android:startOffset: 延迟一定时间后运行动画</p>
+<p>fromXDelta: X轴方向开始位置，可以是%，也可以是具体的像素 具体见图</p>
+<p>toXDelta:   X轴方向结束位置，可以是%，也可以是具体的像素</p>
+<p>fromYDelta: Y轴方向开始位置，可以是%，也可以是具体的像素</p>
+<p>toYDelta:    Y轴方向结束位置，可以是%，也可以是具体的像素</p>
+<p>当你了解上面的属性后，你可以组合出很多有趣的位置移动效果。比如使用加速器：@android:anim/bounce_interpolator 可以产生弹球落地时的效果。</p>
+<p>在实际项目中需要在进行只使用“左右上下滑动”的效果可能还不够炫，希望在切换时能产生更动态的效果，比如开始切换时第1个Activity先向后退一步，然后在向左方向退出屏幕。然后第2个Activity紧跟后面从右边进入屏幕，到达终点时有一个动态效果。在了解了动画加速器后，大家都知道可以采用：anticipate_overshoot_interpolator 、anticipate_interpolator、overshoot_interpolator这三个加速器实现左右滑动切换时启动或者结束的动态效果。</p>
+<p>动画文件定义如下：</p>
+<p>dync_out_to_left.xml </p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=<span class="string">&quot;1.0&quot;</span> encoding=<span class="string">&quot;utf-8&quot;</span>?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">translate</span> <span class="attr">xmlns:android</span>=<span class="string">&quot;http://schemas.android.com/apk/res/android&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:duration</span>=<span class="string">&quot;500&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:fromXDelta</span>=<span class="string">&quot;0%p&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:interpolator</span>=<span class="string">&quot;@android:anim/anticipate_interpolator&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:toXDelta</span>=<span class="string">&quot;-100%p&quot;</span> /&gt;</span></span><br></pre></td></tr></table></figure>
+<p>dync_in_from_right.xml</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=<span class="string">&quot;1.0&quot;</span> encoding=<span class="string">&quot;utf-8&quot;</span>?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">translate</span> <span class="attr">xmlns:android</span>=<span class="string">&quot;http://schemas.android.com/apk/res/android&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:duration</span>=<span class="string">&quot;500&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:fromXDelta</span>=<span class="string">&quot;100%p&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:interpolator</span>=<span class="string">&quot; @android:anim/anticipate_overshoot_interpolator &quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:toXDelta</span>=<span class="string">&quot;0%p&quot;</span> /&gt;</span></span><br></pre></td></tr></table></figure>
+<p>但是再使用以上动画配置，会出现以下问题：</p>
+<ol>
+<li>第1个Activity使用anticipate_interpolator时，开始移动时先向后退一步，然后向前移动。但向后退一步步伐太大，略显夸张，实际应用中只希望退后一小小步就行了。</li>
+<li>由于开始向后退一步，额外增加了移动时间，导致前一Activity和后一个Activity的时间不同步。</li>
+</ol>
+<p>为了解决以上问题，重新定义动态效果，将第1个Activity的移动分为2个动画效果：（1）用200毫秒时间先向后移动2%p的位置 (2) 延迟200毫秒后从2%p位置向前移动到-100%p位置。 然后第2个Activity从延迟200毫秒然后从102%p位置移动到0%p位置。</p>
+<p>动画定义如下：</p>
+<p>new_dync_out_to_left.xml</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=<span class="string">&quot;1.0&quot;</span> encoding=<span class="string">&quot;utf-8&quot;</span>?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">set</span> <span class="attr">xmlns:android</span>=<span class="string">&quot;http://schemas.android.com/apk/res/android&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:shareInterpolator</span>=<span class="string">&quot;false&quot;</span> &gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">translate</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:duration</span>=<span class="string">&quot;200&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:fromXDelta</span>=<span class="string">&quot;0%p&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:interpolator</span>=<span class="string">&quot;@android:anim/accelerate_decelerate_interpolator&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:toXDelta</span>=<span class="string">&quot;2%p&quot;</span> /&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">translate</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:duration</span>=<span class="string">&quot;1000&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:fromXDelta</span>=<span class="string">&quot;2%p&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:interpolator</span>=<span class="string">&quot;@android:anim/accelerate_interpolator&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:startOffset</span>=<span class="string">&quot;200&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:toXDelta</span>=<span class="string">&quot;-100%p&quot;</span> /&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">set</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>new_dync_in_from_right.xml</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=<span class="string">&quot;1.0&quot;</span> encoding=<span class="string">&quot;utf-8&quot;</span>?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">translate</span> <span class="attr">xmlns:android</span>=<span class="string">&quot;http://schemas.android.com/apk/res/android&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:duration</span>=<span class="string">&quot;1000&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:fromXDelta</span>=<span class="string">&quot;102%p&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:interpolator</span>=<span class="string">&quot;@android:anim/anticipate_overshoot_interpolator&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:startOffset</span>=<span class="string">&quot;200&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:toXDelta</span>=<span class="string">&quot;0%p&quot;</span> /&gt;</span></span><br></pre></td></tr></table></figure>
+<p><a target="_blank" rel="noopener" href="http://www.oschina.net/action/code/download?code=7734&id=12325">源码</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2015/09/12/Android%E7%9A%84Activity%E5%B1%8F%E5%B9%95%E5%88%87%E6%8D%A2%E5%8A%A8%E7%94%BB-%E4%BA%8C-%E5%B7%A6%E5%8F%B3%E6%BB%91%E5%8A%A8%E6%B7%B1%E5%85%A5%E4%B8%8E%E5%AE%9E%E6%88%98/" data-id="cl9pgenor005mycv1aafs5yg9" data-title="Android的Activity屏幕切换动画(二)-左右滑动深入与实战" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/AndroidUI/" rel="tag">AndroidUI</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/09/12/PHP%20Ajax%20%E8%B7%A8%E5%9F%9F%E9%97%AE%E9%A2%98%E6%9C%80%E4%BD%B3%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          PHP Ajax 跨域问题最佳解决方案（CORS）
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/09/12/Android%E7%9A%84Activity%E5%B1%8F%E5%B9%95%E5%88%87%E6%8D%A2%E5%8A%A8%E7%94%BB-%E4%B8%80-%E5%B7%A6%E5%8F%B3%E6%BB%91%E5%8A%A8%E5%88%87%E6%8D%A2/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">Android的Activity屏幕切换动画(一)-左右滑动切换</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Docker建立Laravel用的LNMP环境 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="雖然標題上是寫 Laravel 用的環境，不過這套環境也適用於 WordPress。 LNMP 是一般對 Linux + Nginx + MySQL（MariaDB）+ PHP 的簡稱，不過用 Docker 來做的話應該要稱做 NMP才對。本次的範例在任何的 Linux Distro 底下應該都會有一樣的效果，理論上在 MacOS 也差不多，不過 Mac 也許還是會有此許的不同，這點我就沒有再多做">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Docker建立Laravel用的LNMP环境">
+<meta property="og:url" content="http://moqiang02.github.io/2021/11/25/Docker%E5%BB%BA%E7%AB%8BLaravel%E7%94%A8%E7%9A%84LNMP%E7%8E%AF%E5%A2%83/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="雖然標題上是寫 Laravel 用的環境，不過這套環境也適用於 WordPress。 LNMP 是一般對 Linux + Nginx + MySQL（MariaDB）+ PHP 的簡稱，不過用 Docker 來做的話應該要稱做 NMP才對。本次的範例在任何的 Linux Distro 底下應該都會有一樣的效果，理論上在 MacOS 也差不多，不過 Mac 也許還是會有此許的不同，這點我就沒有再多做">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-11-25T14:01:38.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.734Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="Docker">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Docker建立Laravel用的LNMP环境" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2021/11/25/Docker%E5%BB%BA%E7%AB%8BLaravel%E7%94%A8%E7%9A%84LNMP%E7%8E%AF%E5%A2%83/" class="article-date">
+  <time class="dt-published" datetime="2021-11-25T14:01:38.000Z" itemprop="datePublished">2021-11-25</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Docker建立Laravel用的LNMP环境
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E7%BD%AE%E4%BD%9C%E6%A5%AD"><span class="toc-number">1.</span> <span class="toc-text">前置作業</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B7%A8%E5%AF%AB-PHP-%E7%9A%84-Dockerfile"><span class="toc-number">2.</span> <span class="toc-text">編寫 PHP 的 Dockerfile</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%96%B0%E5%A2%9E-Nginx-%E8%A8%AD%E5%AE%9A%E6%AA%94"><span class="toc-number">3.</span> <span class="toc-text">新增 Nginx 設定檔</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B7%A8%E5%AF%AB-docker-compose"><span class="toc-number">4.</span> <span class="toc-text">編寫 docker-compose</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9F%B7%E8%A1%8C-docker-compose"><span class="toc-number">5.</span> <span class="toc-text">執行 docker-compose</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BB%BA%E7%AB%8B%E8%B3%87%E6%96%99%E5%BA%AB%E8%88%87%E8%B3%87%E6%96%99%E5%BA%AB%E4%BD%BF%E7%94%A8%E8%80%85"><span class="toc-number">6.</span> <span class="toc-text">建立資料庫與資料庫使用者</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%A8-container-%E8%A3%A1%E7%9A%84-composer-%E5%BB%BA%E7%AB%8B-Laravel-%E5%B0%88%E6%A1%88"><span class="toc-number">7.</span> <span class="toc-text">用 container 裡的 composer 建立 Laravel 專案</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%96%8B%E5%95%9F-Laravel-%E7%9A%84%E6%B8%AC%E8%A9%A6%E9%A0%81"><span class="toc-number">8.</span> <span class="toc-text">開啟 Laravel 的測試頁</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B8%AC%E8%A9%A6-Laravel-%E8%88%87-MariaDB-%E7%9A%84%E9%80%A3%E7%B7%9A"><span class="toc-number">9.</span> <span class="toc-text">測試 Laravel 與 MariaDB 的連線</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <p>雖然標題上是寫 Laravel 用的環境，不過這套環境也適用於 WordPress。</p>
+<p>LNMP 是一般對 Linux + Nginx + MySQL（MariaDB）+ PHP 的簡稱，不過用 Docker 來做的話應該要稱做 NMP才對。本次的範例在任何的 Linux Distro 底下應該都會有一樣的效果，理論上在 MacOS 也差不多，不過 Mac 也許還是會有此許的不同，這點我就沒有再多做測試。<span id="more"></span></p>
+<p>會寫這篇的原因除了想開始學習 PHP 與 Laravel 之外，也是想多熟練 Docker，畢竟 config 或 yaml 寫好之後，帶到哪都可輕鬆重現環境，這種 IaC（Infrastructure-as-Code）加上版控的作法最近非常吸引我（就是喜歡不刺眼的黑黑畫面！）</p>
+<p>扣除建立 Laravel 練習環境這件事，這篇文章其實也等同於用 Docker 建立一個普通的 LNMP Web Server，不過因為是練習用，所以 nginx 或 php 的一些細項設定就不太會提到了。</p>
+<h2 id="前置作業"><a href="#前置作業" class="headerlink" title="前置作業"></a>前置作業</h2><p>首先在系統裡建立一個新資料夾 lnmp，裡面再分別建立四個資料夾，這邊將資料夾命名為：php、ngnix、mariadb 與 projects。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> lnmp &amp;&amp; <span class="built_in">cd</span> lnmp</span><br><span class="line"></span><br><span class="line"><span class="built_in">mkdir</span> nginx php mariadb projects</span><br><span class="line"></span><br><span class="line">tree</span><br><span class="line"></span><br><span class="line"><span class="comment"># 執行結果</span></span><br><span class="line">.</span><br><span class="line">├── mariaDB</span><br><span class="line">├── nginx</span><br><span class="line">├── php</span><br><span class="line">└── projects</span><br></pre></td></tr></table></figure>
+
+<p>4 個資料夾的用途如下：</p>
+<ul>
+<li>mariaDB：<br>  給 MariaDB 的 container 掛載用，存放 data base 的資料，也可以選擇不掛載</li>
+<li>nginx：<br>  給 nginx container 掛載用，存放 nginx conf</li>
+<li>php：<br>  放自行 build 的 php Dockerfile</li>
+<li>projects：<br>  統一將 Laravel 或 WordPress 的資料夾放在這邊</li>
+</ul>
+<p>使用 tree 指令是為了方便給大家看資料與資料夾間的關聯，這個指令通常不會內建在系統中，也不是很必要，可依個人喜好自行安裝</p>
+<h2 id="編寫-PHP-的-Dockerfile"><a href="#編寫-PHP-的-Dockerfile" class="headerlink" title="編寫 PHP 的 Dockerfile"></a>編寫 PHP 的 Dockerfile</h2><p>PHP 官方的 Docker Image 基底為 Debian，另外也有出基於 Alpine 的版本，Alpine 做出來的 image 會比較輕量，另外我們的 web servce 是使用 nginx，所以就要選 php-fpm 的 image，而不是 php image。</p>
+<p>本次的 Dockerfile 使用官方的 php:7.4-fpm-alpine 為底，如果只是想基本的練練 php，那直接使用官方的 php-fpm image 就可以了，但在 <a target="_blank" rel="noopener" href="https://laravel.com/docs/7.x#server-requirements">Laravel 的官網</a>中有提到，7.x 版的 Laravel 需要許多額外的套件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">- BCMath</span><br><span class="line">- Ctype</span><br><span class="line">- Fileinfo</span><br><span class="line">- JSON</span><br><span class="line">- Mbstring</span><br><span class="line">- OpenSSL</span><br><span class="line">- PDO</span><br><span class="line">- Tokenizer</span><br><span class="line">- XML</span><br></pre></td></tr></table></figure>
+
+<p>這些套件在公版 php image 裡是沒有的，所以我們必須自己寫 Dockerfile，將這些套件包進 image。</p>
+<p>另外 <a target="_blank" rel="noopener" href="https://make.wordpress.org/hosting/handbook/server-environment/">WordPress 的官網</a>也有提到所需的套件如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">- curl</span><br><span class="line">- dom</span><br><span class="line">- exif</span><br><span class="line">- fileinfo</span><br><span class="line">- <span class="built_in">hash</span></span><br><span class="line">- imagick</span><br><span class="line">- json</span><br><span class="line">- mbstring</span><br><span class="line">- mysqli</span><br><span class="line">- openssl</span><br><span class="line">- pcre</span><br><span class="line">- sodium</span><br><span class="line">- xml</span><br><span class="line">- zip</span><br><span class="line">- bcmath</span><br><span class="line">- filter</span><br><span class="line">- gd</span><br><span class="line">- iconv</span><br><span class="line">- intl</span><br><span class="line">- mcrypt</span><br><span class="line">- simplexml</span><br><span class="line">- xmlreader</span><br><span class="line">- zlib</span><br></pre></td></tr></table></figure>
+
+<p>上面大多 module 是預設已經有的，或是與 Laravel 有套件有重覆到，所以這次包的 image 就是以上面的 module 為目標，加上 Laravel 會用到的 composer 把它們全部包起來，Dockerfile 如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vim ./php/Dockerfile</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight docker"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 注：此处只能使用PHP的fpm版本，如果不带fmp的话，nginx无法执行php脚本。至于能不能执行php-cli的定时任务，待验证。</span></span><br><span class="line"><span class="keyword">FROM</span> php:<span class="number">7.4</span>-fpm-alpine</span><br><span class="line"><span class="keyword">MAINTAINER</span> Wade</span><br><span class="line"></span><br><span class="line"><span class="comment"># Install gd, iconv, mbstring, mysql, soap, sockets, zip, and zlib extensions</span></span><br><span class="line"><span class="comment"># $PHPIZE_DEPS include autoconf, make...etc</span></span><br><span class="line"><span class="comment"># see example at https://hub.docker.com/_/php/</span></span><br><span class="line"><span class="keyword">RUN</span><span class="language-bash"> apk add --update \</span></span><br><span class="line"><span class="language-bash">		<span class="variable">$PHPIZE_DEPS</span> \</span></span><br><span class="line"><span class="language-bash">		freetype-dev \</span></span><br><span class="line"><span class="language-bash">		git \</span></span><br><span class="line"><span class="language-bash">		libjpeg-turbo-dev \</span></span><br><span class="line"><span class="language-bash">		libpng-dev \</span></span><br><span class="line"><span class="language-bash">		libxml2-dev \</span></span><br><span class="line"><span class="language-bash">		libzip-dev \</span></span><br><span class="line"><span class="language-bash">		openssh-client \</span></span><br><span class="line"><span class="language-bash">		php7-json \</span></span><br><span class="line"><span class="language-bash">		php7-openssl \</span></span><br><span class="line"><span class="language-bash">		php7-pdo \</span></span><br><span class="line"><span class="language-bash">		php7-pdo_mysql \</span></span><br><span class="line"><span class="language-bash">		php7-session \</span></span><br><span class="line"><span class="language-bash">		php7-simplexml \</span></span><br><span class="line"><span class="language-bash">		php7-tokenizer \</span></span><br><span class="line"><span class="language-bash">		php7-xml \</span></span><br><span class="line"><span class="language-bash">		imagemagick \</span></span><br><span class="line"><span class="language-bash">		imagemagick-libs \</span></span><br><span class="line"><span class="language-bash">		imagemagick-dev \</span></span><br><span class="line"><span class="language-bash">		php7-imagick \</span></span><br><span class="line"><span class="language-bash">		php7-pcntl \</span></span><br><span class="line"><span class="language-bash">		php7-zip \</span></span><br><span class="line"><span class="language-bash">		sqlite \</span></span><br><span class="line"><span class="language-bash">	&amp;&amp; docker-php-ext-install iconv soap sockets exif bcmath pdo_mysql pcntl \</span></span><br><span class="line"><span class="language-bash">	&amp;&amp; docker-php-ext-configure gd --with-jpeg --with-freetype \</span></span><br><span class="line"><span class="language-bash">	&amp;&amp; docker-php-ext-install gd \</span></span><br><span class="line"><span class="language-bash">	&amp;&amp; docker-php-ext-install zip</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># add mysqli</span></span><br><span class="line"><span class="keyword">RUN</span><span class="language-bash"> <span class="built_in">printf</span> <span class="string">&quot;\n&quot;</span> | docker-php-ext-install mysqli</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># add intl</span></span><br><span class="line"><span class="keyword">RUN</span><span class="language-bash"> <span class="built_in">printf</span> <span class="string">&quot;\n&quot;</span> | apk add --update \</span></span><br><span class="line"><span class="language-bash">		icu-dev \</span></span><br><span class="line"><span class="language-bash">	&amp;&amp; docker-php-ext-configure intl \</span></span><br><span class="line"><span class="language-bash">	&amp;&amp; docker-php-ext-install intl</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># add mcrypt</span></span><br><span class="line"><span class="keyword">RUN</span><span class="language-bash"> <span class="built_in">printf</span> <span class="string">&quot;\n&quot;</span> | apk add --update \</span></span><br><span class="line"><span class="language-bash">		libmcrypt-dev \</span></span><br><span class="line"><span class="language-bash">	&amp;&amp; pecl install \</span></span><br><span class="line"><span class="language-bash">					mcrypt &amp;&amp; \</span></span><br><span class="line"><span class="language-bash">	docker-php-ext-enable mcrypt</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># add imagick</span></span><br><span class="line"><span class="keyword">RUN</span><span class="language-bash"> <span class="built_in">printf</span> <span class="string">&quot;\n&quot;</span> | pecl install \</span></span><br><span class="line"><span class="language-bash">		imagick &amp;&amp; \</span></span><br><span class="line"><span class="language-bash">		docker-php-ext-enable --ini-name 20-imagick.ini imagick</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># add pcov</span></span><br><span class="line"><span class="keyword">RUN</span><span class="language-bash"> <span class="built_in">printf</span> <span class="string">&quot;\n&quot;</span> | pecl install \</span></span><br><span class="line"><span class="language-bash">		pcov &amp;&amp; \</span></span><br><span class="line"><span class="language-bash">		docker-php-ext-enable pcov</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># add composer</span></span><br><span class="line"><span class="keyword">RUN</span><span class="language-bash"> php -r <span class="string">&quot;copy(&#x27;https://getcomposer.org/installer&#x27;, &#x27;composer-setup.php&#x27;);&quot;</span> \</span></span><br><span class="line"><span class="language-bash">	&amp;&amp; php composer-setup.php \</span></span><br><span class="line"><span class="language-bash">	&amp;&amp; php -r <span class="string">&quot;unlink(&#x27;composer-setup.php&#x27;);&quot;</span> \</span></span><br><span class="line"><span class="language-bash">	&amp;&amp; <span class="built_in">mv</span> composer.phar /usr/bin/composer</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># setup timezone</span></span><br><span class="line"><span class="keyword">RUN</span><span class="language-bash"> sed -i <span class="string">&#x27;s/;date.timezone =/date.timezone = &quot;Asia\/Shanghai&quot;/g&#x27;</span> /etc/php7/php.ini</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># change www-data&#x27;s uid and gid for laravel folder permisstion</span></span><br><span class="line"><span class="keyword">RUN</span><span class="language-bash"> apk --no-cache add shadow &amp;&amp; \</span></span><br><span class="line"><span class="language-bash">    usermod -u 1000 www-data &amp;&amp; \</span></span><br><span class="line"><span class="language-bash">    groupmod -g 1000 www-data</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#EOF</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>這份 Dockerfile 是以 GitHub 上，<a target="_blank" rel="noopener" href="https://gist.github.com/jpswade/4592d98e3596da59b7408c076e1c34db">jpswade</a> 的範例為參考再加上缺少的套件。下面用了很多獨立的行來安裝單一的套件，是我在範例外新增的，其實也可以合併成一個，或合併到最上面的 RUN，看個人的偏好（分開寫的好處是比較容易 debug），可以等內容都很確定之後再重寫的乾淨點。</p>
+<p>另外最底下把 image 裡 www-data 這個 user 的 uid 改成了 1000，這是為了之後 container 可以正常的存取檔案，而不受到檔案權限的阻擋。</p>
+<h2 id="新增-Nginx-設定檔"><a href="#新增-Nginx-設定檔" class="headerlink" title="新增 Nginx 設定檔"></a>新增 Nginx 設定檔</h2><p>在 nginx 裡建立一個 conf.d 的資料夾，再新增設定檔如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> ./nginx/conf.d</span><br><span class="line"></span><br><span class="line">vim ./nginx/conf.d/laravel.conf</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">server</span> &#123;</span><br><span class="line">  <span class="attribute">listen</span> <span class="number">80</span>;</span><br><span class="line">  <span class="attribute">server_name</span> my-lab;</span><br><span class="line">  <span class="attribute">root</span> /my_projects;</span><br><span class="line"></span><br><span class="line">  <span class="attribute">add_header</span> X-Frame-Options <span class="string">&quot;SAMEORIGIN&quot;</span>;</span><br><span class="line">  <span class="attribute">add_header</span> X-Content-Type-Options <span class="string">&quot;nosniff&quot;</span>;</span><br><span class="line"></span><br><span class="line">  <span class="attribute">index</span> index.php;</span><br><span class="line"></span><br><span class="line">  <span class="attribute">charset</span> utf-<span class="number">8</span>;</span><br><span class="line"></span><br><span class="line">  <span class="section">location</span> / &#123;</span><br><span class="line">      <span class="attribute">try_files</span> <span class="variable">$uri</span> <span class="variable">$uri</span>/ /index.php?<span class="variable">$query_string</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="section">location</span> = /favicon.ico &#123; <span class="attribute">access_log</span> <span class="literal">off</span>; <span class="attribute">log_not_found</span> <span class="literal">off</span>; &#125;</span><br><span class="line">  <span class="section">location</span> = /robots.txt  &#123; <span class="attribute">access_log</span> <span class="literal">off</span>; <span class="attribute">log_not_found</span> <span class="literal">off</span>; &#125;</span><br><span class="line"></span><br><span class="line">  <span class="attribute">error_page</span> <span class="number">404</span> /index.php;</span><br><span class="line"></span><br><span class="line">  <span class="section">location</span> <span class="regexp">~ \.php$</span> &#123;</span><br><span class="line">      <span class="attribute">fastcgi_pass</span> php:<span class="number">9000</span>;</span><br><span class="line">      <span class="attribute">fastcgi_param</span> SCRIPT_FILENAME <span class="variable">$realpath_root</span><span class="variable">$fastcgi_script_name</span>;</span><br><span class="line">      <span class="comment">#fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;</span></span><br><span class="line">      <span class="attribute">include</span> fastcgi_params;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="section">location</span> <span class="regexp">~ /\.(?!well-known).*</span> &#123;</span><br><span class="line">      <span class="attribute">deny</span> all;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>基本上是直接拿 <a target="_blank" rel="noopener" href="https://laravel.com/docs/8.x/deployment#nginx">Laravel 官網的 conf 檔</a>來改，要注意的地方如下：</p>
+<ul>
+<li>server_name：<br>  自訂網站的域名，即使沒有申請，也建議設一下，之後再修改 hosts 檔就可以模擬真實的情況。</li>
+<li>root：<br>  網頁檔存放的路徑，路徑可自訂，之後啟動 container 時要把本機的 projects 資料夾掛載到這邊。</li>
+<li>fastcgi_pass：<br>  負責解析 php 的 service，一般的 LNMP Server 在這邊可能會是本機 127.0.0.1:9000，不過我們的 php 會放在別的 container 裡，並且會將該 php container 命名為 php，之後 docker-compose 啟動的每個 container 都能互相解析彼此的 host name，所以這邊設 php:9000 即可。</li>
+</ul>
+<h2 id="編寫-docker-compose"><a href="#編寫-docker-compose" class="headerlink" title="編寫 docker-compose"></a>編寫 docker-compose</h2><p>接著用 docker-compose 將所有的 service 都建構出來執行，內容如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vim docker-compose.yml</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">services:</span></span><br><span class="line"></span><br><span class="line">  <span class="comment"># php-fpm 7.3</span></span><br><span class="line">  <span class="attr">php:</span></span><br><span class="line">    <span class="attr">build:</span></span><br><span class="line">      <span class="attr">context:</span> <span class="string">.</span></span><br><span class="line">      <span class="attr">dockerfile:</span> <span class="string">./php/Dockerfile</span></span><br><span class="line">    <span class="attr">container_name:</span> <span class="string">php</span></span><br><span class="line">    <span class="attr">restart:</span> <span class="string">unless-stopped</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./projects:/my_projects</span></span><br><span class="line"></span><br><span class="line">  <span class="comment"># nginx</span></span><br><span class="line">  <span class="attr">nginx:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">nginx:latest</span></span><br><span class="line">    <span class="attr">container_name:</span> <span class="string">nginx</span></span><br><span class="line">    <span class="attr">restart:</span> <span class="string">unless-stopped</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="number">80</span><span class="string">:80</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./nginx/conf.d:/etc/nginx/conf.d</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./projects:/my_projects</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">TZ=Asia/Shanghai</span></span><br><span class="line"></span><br><span class="line">  <span class="comment"># MariaDB</span></span><br><span class="line">  <span class="attr">mariadb:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">mariadb</span></span><br><span class="line">    <span class="attr">container_name:</span> <span class="string">mariadb</span></span><br><span class="line">    <span class="attr">restart:</span> <span class="string">unless-stopped</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="number">3306</span><span class="string">:3306</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./mariadb:/var/lib/mysql</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="attr">MYSQL_ROOT_PASSWORD:</span> <span class="string">abc123</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>php：<br>  - build 的 dockerfile 裡，指定要用哪個 Dockerfile 來 build php 的 image<br>  - 在 volumes 這邊，必須要跟 nginx 一起掛載同個目錄，本例為本機上的 projects 資料夾</li>
+<li>nginx：<br>  - ports，基本就是 80:80 的 mapping 或是加個 443:443<br>  - volumes 部分，將本機上的 conf 與 projects 掛載到 container 中</li>
+<li>mariadb：<br>  - ports 用預設的 3306:3306<br>  - volumes 可將 container 裡的 DB 資料放到本機上，不設定的話，container 刪除後 DB 的資料也會不見，如果每次都想啟個乾淨環境的話就不用設這個<br>  - environments 這邊設定 DB 的 root 密碼</li>
+</ul>
+<h2 id="執行-docker-compose"><a href="#執行-docker-compose" class="headerlink" title="執行 docker-compose"></a>執行 docker-compose</h2><p>docker-compose.yml 寫好後，直接執行即可</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">docker-compose up -d</span><br><span class="line"></span><br><span class="line"><span class="comment"># 執行結果</span></span><br><span class="line"></span><br><span class="line">Creating network <span class="string">&quot;lnmp_default&quot;</span> with the default driver</span><br><span class="line">Creating php     ... <span class="keyword">done</span></span><br><span class="line">Creating nginx   ... <span class="keyword">done</span></span><br><span class="line">Creating mariadb ... <span class="keyword">done</span></span><br></pre></td></tr></table></figure>
+
+<p>第一次執行時，php 的 image 需要 build ，所以要花比較多的時間，完成後可用指令查看 container 是否有成功的執行</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">docker ps</span><br><span class="line"></span><br><span class="line"><span class="comment"># 執行結果</span></span><br><span class="line"></span><br><span class="line">CONTAINER ID   IMAGE          COMMAND                  CREATED              STATUS          PORTS                                       NAMES</span><br><span class="line">9860ea671988   nginx:latest   <span class="string">&quot;/docker-entrypoint.…&quot;</span>   About a minute ago   Up 58 seconds   0.0.0.0:80-&gt;80/tcp, :::80-&gt;80/tcp           nginx</span><br><span class="line">b29ff7a5a9cb   lnmp_php       <span class="string">&quot;docker-php-entrypoi…&quot;</span>   About a minute ago   Up 58 seconds   9000/tcp                                    php</span><br><span class="line">ed9dbd32714f   mariadb        <span class="string">&quot;docker-entrypoint.s…&quot;</span>   About a minute ago   Up 58 seconds   0.0.0.0:3306-&gt;3306/tcp, :::3306-&gt;3306/tcp   mariadb</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>启动出现问题：docker-compose生成的容器立刻退出，exited with code 0<br>原因：docker容器执行任务完成后就会处于exited状态<br>解决：<br>Docker镜像的缺省命令是bash，如果不加 <code>-it</code>，bash命令执行了自动会退出，加<code>-it</code>后docker命令会为容器分配一个伪终端，并接管其stdin/stdout支持交互操作，这时候bash命令不会自动退出<br>像不使用docker-compose，我们会执行类似如下的命令<br><code>docker run -it --name node node</code><br>但docker-compose需要额外配置下，需要在docker-compose.yml中包含以下行:</p>
+</blockquote>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">nginx:</span></span><br><span class="line">  <span class="string">...</span></span><br><span class="line">  <span class="attr">stdin_open:</span> <span class="literal">true</span></span><br><span class="line">  <span class="attr">tty:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>第一个对应于docker run中的 <code>-i</code>，第二个对应于 <code>-t</code>。</p>
+</blockquote>
+<h2 id="建立資料庫與資料庫使用者"><a href="#建立資料庫與資料庫使用者" class="headerlink" title="建立資料庫與資料庫使用者"></a>建立資料庫與資料庫使用者</h2><p>docker-compose 成功啟動後，表示 php、nginx、MariaDB 應該有順利運行了，再我們就建個資料庫給 Laravel 使用</p>
+<p>首先用 root 登入 container 裡的 DB</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker <span class="built_in">exec</span> -it mariadb mysql -u root -p</span><br></pre></td></tr></table></figure>
+
+<p>執行後會提示要輸入密碼，打上之前在 docker-compose.yml 裡定義好的 root 密碼</p>
+<p>建立名為 laravel 的資料庫</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> DATABASE laravel;</span><br></pre></td></tr></table></figure>
+
+<p>新增使用者 laravel_user，密碼為 abcd1234</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">USER</span> <span class="string">&#x27;laravel_user&#x27;</span> IDENTIFIED <span class="keyword">BY</span> <span class="string">&#x27;abcd1234&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>賦予使用者 laravel_user 存取 laravel 資料庫的權限，最後離開 DB</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">GRANT</span> <span class="keyword">ALL</span> PRIVILEGES <span class="keyword">ON</span> laravel.<span class="operator">*</span> <span class="keyword">TO</span> <span class="string">&#x27;laravel_user&#x27;</span>;</span><br><span class="line"></span><br><span class="line">FLUSH PRIVILEGES;</span><br><span class="line"></span><br><span class="line">quit;</span><br></pre></td></tr></table></figure>
+
+<h2 id="用-container-裡的-composer-建立-Laravel-專案"><a href="#用-container-裡的-composer-建立-Laravel-專案" class="headerlink" title="用 container 裡的 composer 建立 Laravel 專案"></a>用 container 裡的 composer 建立 Laravel 專案</h2><p>Laravel 可以從官網直接下載，也可以使用 composer 來安裝，既然我們有把 composer 這個套件包進 php 的 image 裡，就試試看用這種方式安裝吧！</p>
+<p>首先進到 projects 目錄中</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> projects</span><br></pre></td></tr></table></figure>
+
+<p>查看 php image 的名稱</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">docker images</span><br><span class="line"></span><br><span class="line"><span class="comment"># 執行結果，lnmp_php 就是剛才自製的 php image 名稱</span></span><br><span class="line"></span><br><span class="line">REPOSITORY   TAG              IMAGE ID       CREATED        SIZE</span><br><span class="line">lnmp_php     latest           e282a489e005   12 hours ago   518MB</span><br><span class="line">php          7.4-fpm-alpine   5ae3ea657944   40 hours ago   82.9MB</span><br><span class="line">mariadb      latest           fd17f5776802   4 days ago     409MB</span><br><span class="line">nginx        latest           08b152afcfae   9 days ago     133MB</span><br></pre></td></tr></table></figure>
+
+<p>接著用自製的 php image 來執行 composer 指令</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run --<span class="built_in">rm</span> -v $(<span class="built_in">pwd</span>):/app lnmp_php composer create-project laravel/laravel /app/take1</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>  <code>--rm</code>：該 container 執行後就會刪除，因為建立專案是一次性的行為，因此加上自行刪除指令就不會留下多餘的 container</li>
+<li>  <code>-v $(pwd):/app</code>：將目前的資料夾掛載到 container 裡的 /app</li>
+<li>  <code>lnmp_php</code>：php 的 image 檔</li>
+<li><code>composer create-project laravel/laravel /app/take1</code>：用 composer 在 container 裡的 /app/take1 中建立 Laravel 專案，如果 composer 是裝在本機而非 docker image 的話，只需要這一行就夠了。<br>  另外因為本機的 projects 資料夾已和 container 中的 /app 做掛載綁定，因此指令完成後，就會在本機的 projects 裡建立一個名為 take1 的資料夾，裡面的內容即為 Laravel 的檔案</li>
+</ul>
+<h2 id="開啟-Laravel-的測試頁"><a href="#開啟-Laravel-的測試頁" class="headerlink" title="開啟 Laravel 的測試頁"></a>開啟 Laravel 的測試頁</h2><p>還記得之前在 nginx conf 中設的 server_name「my-lab」 嗎？我們先給網站指定了域名，但這只是個假域名，所以記得先去 /etc/hosts 把 my-lab 這個域名與這台 Docker 主機的 ip 做 mapping。</p>
+<p>接著就來試著用瀏覽器打開 Laravel 的首頁 <a target="_blank" rel="noopener" href="http://my-lab/take1/public/">http://my-lab/take1/public/</a> 看是否运行成功。</p>
+<h2 id="測試-Laravel-與-MariaDB-的連線"><a href="#測試-Laravel-與-MariaDB-的連線" class="headerlink" title="測試 Laravel 與 MariaDB 的連線"></a>測試 Laravel 與 MariaDB 的連線</h2><p>最後我們來測試 Laravel 是否可正常的與 DB 連線，如果只是想單純測試 php 與 DB 的連線，只要新增一段程式碼到 ./projects/take1/public 裡就可以了</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vim ./projects/take1/public/db_test.php</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="variable">$servername</span> = <span class="string">&quot;mariadb&quot;</span>;</span><br><span class="line"><span class="variable">$database</span> = <span class="string">&quot;laravel&quot;</span>;</span><br><span class="line"><span class="variable">$username</span> = <span class="string">&quot;laravel_user&quot;</span>;</span><br><span class="line"><span class="variable">$password</span> = <span class="string">&quot;abcd1234&quot;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Create connection</span></span><br><span class="line"><span class="variable">$conn</span> = <span class="keyword">new</span> <span class="title function_ invoke__">mysqli</span>(<span class="variable">$servername</span>, <span class="variable">$username</span>, <span class="variable">$password</span>, <span class="variable">$database</span>);</span><br><span class="line"><span class="comment">// Check connection</span></span><br><span class="line"><span class="keyword">if</span> (<span class="variable">$conn</span>-&gt;connect_error) &#123;</span><br><span class="line">   <span class="keyword">die</span>(<span class="string">&quot;Connection failed: &quot;</span> . <span class="variable">$conn</span>-&gt;connect_error);</span><br><span class="line">&#125;</span><br><span class="line">  <span class="keyword">echo</span> <span class="string">&quot;Connected successfully&quot;</span>;</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>再來用 curl 試一下這隻程式</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">curl -L <span class="string">&#x27;http://my-lab/take1/public/db_test.php&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 執行結果</span></span><br><span class="line"></span><br><span class="line">Connected successfully</span><br></pre></td></tr></table></figure>
+
+<p>不過除了 php 之外，我也想知道 Laravel 能否正常連到 DB，這時我們就先編輯一下 Laravel 的 .env 這個檔案</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vim ./projects/take1/.env</span><br></pre></td></tr></table></figure>
+
+<p>找到下面這段，並把它改成我們的連線資訊</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">DB_CONNECTION=mysql</span><br><span class="line">DB_HOST=mariadb</span><br><span class="line">DB_PORT=3306</span><br><span class="line">DB_DATABASE=laravel</span><br><span class="line">DB_USERNAME=laravel_user</span><br><span class="line">DB_PASSWORD=abcd1234</span><br></pre></td></tr></table></figure>
+
+<p>最後再以 Laravel artisan 指令的 migrate 當作測試</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">docker <span class="built_in">exec</span> -it php php /my_projects/take1/artisan migrate:status</span><br><span class="line"></span><br><span class="line"><span class="comment"># 執行結果</span></span><br><span class="line"></span><br><span class="line">Migration table not found.</span><br></pre></td></tr></table></figure>
+
+<p>有出現 table not found 就表示 Laravel 有連到 DB 了（不然只會出現錯誤的訊息）</p>
+<hr>
+<p>參考資料：</p>
+<p><a target="_blank" rel="noopener" href="https://gist.github.com/jpswade/4592d98e3596da59b7408c076e1c34db">PHP 7.4 PHP-FPM Alpine with core extensions gd</a></p>
+<p><a target="_blank" rel="noopener" href="https://cinhtau.net/2017/04/19/usermod-and-groupmod-alpine/">USE USERMOD AND GROUPMOD IN ALPINE LINUX DOCKER IMAGES</a></p>
+<p><a target="_blank" rel="noopener" href="https://github.com/composer/docker/issues/30">composer create-project, the permissions of all directories is 777?</a></p>
+<p><a target="_blank" rel="noopener" href="http://www.inanzzz.com/index.php/post/hmjt/using-a-custom-user-for-php-fpm-and-nginx-configurations-in-docker-containers">Using a custom user for PHP-FPM and Nginx configurations in docker containers</a></p>
+<p><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/9026630/check-for-database-connection-otherwise-display-message">Check for database connection, otherwise display message</a></p>
+<blockquote>
+<p>转自：<a target="_blank" rel="noopener" href="https://notes.wadeism.net/developer/2825/">https://notes.wadeism.net/developer/2825/</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2021/11/25/Docker%E5%BB%BA%E7%AB%8BLaravel%E7%94%A8%E7%9A%84LNMP%E7%8E%AF%E5%A2%83/" data-id="cl9pgenqh00ceycv19w828kxx" data-title="Docker建立Laravel用的LNMP环境" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Docker/" rel="tag">Docker</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2021/11/25/Docker-%E6%8C%82%E8%BD%BD%E7%9B%AE%E5%BD%95%EF%BC%88bind-mounts%EF%BC%89%E5%92%8CVolume%E6%98%AF%E4%B8%8D%E5%90%8C%E7%9A%84/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          Docker - 挂载目录（bind mounts）和Volume是不同的
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2021/11/25/Gorm%E4%B8%ADreferences%E7%9A%84%E5%90%AB%E4%B9%89/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">Gorm中references的含义</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

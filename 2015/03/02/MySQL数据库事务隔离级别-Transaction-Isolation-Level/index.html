@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>MySQL数据库事务隔离级别(Transaction Isolation Level) | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="今天在学习JDBC的时候看到了关于MySql的事务的隔离级别的问题，感觉内容挺高级的，所以记录一篇文章，以备后面使用。 数据库隔离级别有四种，应用《高性能mysql》一书中的说明：">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL数据库事务隔离级别(Transaction Isolation Level)">
+<meta property="og:url" content="http://moqiang02.github.io/2015/03/02/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB-Transaction-Isolation-Level/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="今天在学习JDBC的时候看到了关于MySql的事务的隔离级别的问题，感觉内容挺高级的，所以记录一篇文章，以备后面使用。 数据库隔离级别有四种，应用《高性能mysql》一书中的说明：">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/1.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/2.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/3.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/4.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/5.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/6.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/7.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/8.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/9.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/10.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/11.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/12.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/13.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/14.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/15.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/16.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/17.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/18.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/19.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/20.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/21.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/22.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/23.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/24.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/25.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/26.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/27.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/28.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/29.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/30.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/31.jpg">
+<meta property="article:published_time" content="2015-03-02T15:44:29.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.822Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/1.jpg">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-MySQL数据库事务隔离级别-Transaction-Isolation-Level" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2015/03/02/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB-Transaction-Isolation-Level/" class="article-date">
+  <time class="dt-published" datetime="2015-03-02T15:44:29.000Z" itemprop="datePublished">2015-03-02</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/mysql/">mysql</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      MySQL数据库事务隔离级别(Transaction Isolation Level)
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <p>今天在学习JDBC的时候看到了关于MySql的事务的隔离级别的问题，感觉内容挺高级的，所以记录一篇文章，以备后面使用。</p>
+<p>数据库隔离级别有四种，应用《高性能mysql》一书中的说明：</p>
+<p> <img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/1.jpg"><br> <span id="more"></span><br> <img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/2.jpg"><br> <img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/3.jpg"></p>
+<p>然后说说修改事务隔离级别的方法：</p>
+<p>1.全局修改，修改mysql.ini配置文件，在最后加上</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">#可选参数有：<span class="keyword">READ</span>-<span class="keyword">UNCOMMITTED</span>, <span class="keyword">READ</span>-<span class="keyword">COMMITTED</span>, <span class="keyword">REPEATABLE</span>-<span class="keyword">READ</span>, <span class="keyword">SERIALIZABLE</span>.</span><br><span class="line">[mysqld]</span><br><span class="line"><span class="keyword">transaction</span>-<span class="keyword">isolation</span> = <span class="keyword">REPEATABLE</span>-<span class="keyword">READ</span></span><br></pre></td></tr></table></figure>
+<p>这里全局默认是REPEATABLE-READ,其实MySQL本来默认也是这个级别</p>
+<p>2.对当前session修改，在登录mysql客户端后，执行命令：</p>
+<pre><code>set session transaction isolation level read uncommitted;
+</code></pre>
+<p> <img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/4.jpg"></p>
+<p>要记住mysql有一个autocommit参数，默认是on，他的作用是每一条单独的查询都是一个事务，并且自动开始，自动提交（执行完以后就自动结束了，如果你要使用select for update，而不手动调用 start transaction，这个for update的行锁机制等于没用，因为行锁在自动提交后就释放了），所以事务隔离级别和锁机制即使你不显式调用start transaction，这种机制在单独的一条查询语句中也是适用的，分析锁的运作的时候一定要注意这一点。</p>
+<p>再来说说锁机制：<br>共享锁：由读表操作加上的锁，加锁后其他用户只能获取该表或行的共享锁，不能获取排它锁，也就是说只能读不能写<br>排它锁：由写表操作加上的锁，加锁后其他用户不能获取该表或行的任何锁，典型是mysql事务中</p>
+<pre><code>start transaction;
+select * from user where userId = 1 for update;
+</code></pre>
+<p>执行完这句以后<br>　　1）当其他事务想要获取共享锁，比如事务隔离级别为SERIALIZABLE的事务，执行</p>
+<pre><code>　　select * from user;
+</code></pre>
+<p> 　　将会被挂起，因为SERIALIZABLE的select语句需要获取共享锁<br>　　2）当其他事务执行</p>
+<pre><code>　　select * from user where userId = 1 for update;
+　　update user set userAge = 100 where userId = 1; 
+</code></pre>
+<p>　　也会被挂起，因为for update会获取这一行数据的排它锁，需要等到前一个事务释放该排它锁才可以继续进行。</p>
+<p>锁的范围:<br>行锁: 对某行记录加上锁<br>表锁: 对整个表加上锁<br>这样组合起来就有,行级共享锁,表级共享锁,行级排他锁,表级排他锁。</p>
+<p>下面来说说不同的事务隔离级别的实例效果，例子使用InnoDB，开启两个客户端A，B，在A中修改事务隔离级别，在B中开启事务并修改数据，然后在A中的事务查看B的事务修改效果(两个客户端相当于是两个连接，在一个客户端中的修改参数变量的值是不会影响到另外的一个客户端的)：</p>
+<p>1.READ-UNCOMMITTED(读取未提交内容)级别<br>　　1)A修改事务级别并开始事务，对user表做一次查询<br><img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/5.jpg"><br>　　2)B更新一条记录<br><img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/6.jpg"><br>　　3）此时B事务还未提交，A在事务内做一次查询，发现查询结果已经改变<br><img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/7.jpg"><br>　　4）B进行事务回滚<br><img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/8.jpg"><br>　　5）A再做一次查询，查询结果又变回去了<br><img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/9.jpg"><br>　　6）A表对user表数据进行修改<br><img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/10.jpg"><br>　　7）B表重新开始事务后，对user表记录进行修改，修改被挂起，直至超时，但是对另一条数据的修改成功，说明A的修改对user表的数据行加行共享锁(因为可以使用select)<br><img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/11.jpg"><br>　　可以看出READ-UNCOMMITTED隔离级别，当两个事务同时进行时，即使事务没有提交，所做的修改也会对事务内的查询做出影响，这种级别显然很不安全。但是在表对某行进行修改时，会对该行加上行共享锁</p>
+<p>2.READ-COMMITTED（读取提交内容）<br>　　1）设置A的事务隔离级别，并进入事务做一次查询<br><img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/12.jpg">　　　<br>　　2）B开始事务，并对记录进行修改<br><img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/13.jpg">　　　<br>　　3）A再对user表进行查询，发现记录没有受到影响<br><img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/14.jpg"><br>　　4）B提交事务<br><img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/15.jpg"><br>　　5）A再对user表查询，发现记录被修改<br><img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/16.jpg"><br>　　6）A对user表进行修改<br><img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/17.jpg"><br>　　7）B重新开始事务，并对user表同一条进行修改，发现修改被挂起，直到超时，但对另一条记录修改，却是成功，说明A的修改对user表加上了行共享锁(因为可以select)<br><img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/18.jpg"><br><img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/19.jpg"><br>　　READ-COMMITTED事务隔离级别，只有在事务提交后，才会对另一个事务产生影响，并且在对表进行修改时，会对表数据行加上行共享锁</p>
+<p>3.REPEATABLE-READ(可重读)<br>　　1）A设置事务隔离级别，进入事务后查询一次<br><img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/20.jpg"><br>　　2）B开始事务，并对user表进行修改<br><img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/21.jpg"><br>　　3）A查看user表数据，数据未发生改变<br><img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/22.jpg"><br>　　4）B提交事务<br><img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/23.jpg"><br>　　5）A再进行一次查询，结果还是没有变化<br><img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/24.jpg"><br>　　6）A提交事务后，再查看结果，结果已经更新<br><img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/25.jpg"><br>　　7）A重新开始事务，并对user表进行修改<br><img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/26.jpg"><br>　　8）B表重新开始事务，并对user表进行修改，修改被挂起，直到超时，对另一条记录修改却成功，说明A对表进行修改时加了行共享锁(可以select)<br><img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/27.jpg"><br><img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/28.jpg">　　　<br>　　REPEATABLE-READ事务隔离级别，当两个事务同时进行时，其中一个事务修改数据对另一个事务不会造成影响，即使修改的事务已经提交也不会对另一个事务造成影响。<br>　　在事务中对某条记录修改，会对记录加上行共享锁，直到事务结束才会释放。</p>
+<p>4.SERIERLIZED(可串行化)<br>　　1）修改A的事务隔离级别，并作一次查询<br><img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/29.jpg"><br>　　2）B对表进行查询，正常得出结果，可知对user表的查询是可以进行的<br><img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/30.jpg"><br>　　3）B开始事务，并对记录做修改，因为A事务未提交，所以B的修改处于等待状态，等待A事务结束，最后超时，说明A在对user表做查询操作后，对表加上了共享锁<br><img src="/images/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/31.jpg"><br>　　SERIALIZABLE事务隔离级别最严厉，在进行查询时就会对表或行加上共享锁，其他事务对该表将只能进行读操作，而不能进行写操作。</p>
+<p>转自：<a target="_blank" rel="noopener" href="http://blog.csdn.net/jiangwei0910410003/article/details/24960785">http://blog.csdn.net/jiangwei0910410003/article/details/24960785</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2015/03/02/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB-Transaction-Isolation-Level/" data-id="cl9pgenu400p0ycv12emefldi" data-title="MySQL数据库事务隔离级别(Transaction Isolation Level)" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/03/05/%E8%A7%A3%E5%86%B3CI%E6%A1%86%E6%9E%B6%E7%9A%84Disallowed-Key-Characters%E9%94%99%E8%AF%AF%E6%8F%90%E7%A4%BA/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          解决CI框架的Disallowed Key Characters错误提示
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/03/02/MySQL%E4%B8%ADselect-for-update%E9%94%81%E8%A1%A8%E7%9A%84%E9%97%AE%E9%A2%98/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">MySQL中select * for update锁表的问题</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

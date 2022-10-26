@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Nginx访问频率控制 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="HTTP服务器的吞吐率（单位时间吞吐量）通常有一个上限，尤其是普通配置的机器，在带宽够的情况下，用压测工具经常能把服务器压出翔，为了线上环境稳定性，防止恶意攻击影响到其他用户，可选择对客户端访问频率进行合理限制。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Nginx访问频率控制">
+<meta property="og:url" content="http://moqiang02.github.io/2019/05/11/Nginx%E8%AE%BF%E9%97%AE%E9%A2%91%E7%8E%87%E6%8E%A7%E5%88%B6/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="HTTP服务器的吞吐率（单位时间吞吐量）通常有一个上限，尤其是普通配置的机器，在带宽够的情况下，用压测工具经常能把服务器压出翔，为了线上环境稳定性，防止恶意攻击影响到其他用户，可选择对客户端访问频率进行合理限制。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-05-11T06:49:13.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.833Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Nginx访问频率控制" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2019/05/11/Nginx%E8%AE%BF%E9%97%AE%E9%A2%91%E7%8E%87%E6%8E%A7%E5%88%B6/" class="article-date">
+  <time class="dt-published" datetime="2019-05-11T06:49:13.000Z" itemprop="datePublished">2019-05-11</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/nginx/">nginx</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Nginx访问频率控制
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <p>HTTP服务器的吞吐率（单位时间吞吐量）通常有一个上限，尤其是普通配置的机器，在带宽够的情况下，用压测工具经常能把服务器压出翔，为了线上环境稳定性，防止恶意攻击影响到其他用户，可选择对客户端访问频率进行合理限制。<span id="more"></span></p>
+<h3 id="限制原理"><a href="#限制原理" class="headerlink" title="限制原理"></a>限制原理</h3><p>限制原理并不难，可一句话概括为：“根据客户端特征，限制其访问频率”，客户端特征主要指IP、UserAgent等。使用IP比UserAgent更可靠，因为IP无法造假，UserAgent可随意伪造。</p>
+<p>虽然IP无法造假，但恶意人员可以利用代理，因此仅依靠限制IP访问频率并不能应对大量代理的情况，另外在限制IP访问频率时也要考虑多用户共享网络出口的情况，比如校园网、企业局域网网络之类。</p>
+<h3 id="实践"><a href="#实践" class="headerlink" title="实践"></a>实践</h3><p>由于存在盲区，不知道Nginx中有访问控制模块，想着自己在应用代码中使用Redis实现基于IP的访问频率控制，在准备写代码之前发现Nginx有limit_req模块可限制基于IP的访问频率，因此选择Nginx，这肯定比自己实现更省事，性能也更优秀。</p>
+<p><strong>limit_req_zone</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Syntax:  limit_req_zone key <span class="attribute">zone</span>=name:size <span class="attribute">rate</span>=rate;</span><br><span class="line">Default: —</span><br><span class="line">Context: http</span><br></pre></td></tr></table></figure>
+<ul>
+<li>key，表示作为限制的请求特征，可以包含文本与变量，IP场景使用$binary_remote_addr</li>
+<li>name，zone的名称，limit_req会用到</li>
+<li>size，zone的大小，1M大小在64位系统可存储8000个state(ip、count…)，每次添加新state时，可能删除至多两个前60秒未使用的- state，若添加新state时zone大小不够，则删除较旧的state，释放空间后依旧不够返回503</li>
+<li>rate，访问速率，支持秒或者分钟为单位，但nginx内部使用毫秒追踪请求数，如果限制是10r/1s（每秒十个请求），实际上是1r/100ms</li>
+</ul>
+<p><strong>limit_req</strong></p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Syntax:  limit_req <span class="type">zone</span>=<span class="type">name</span> [burst=number] [nodelay];</span><br><span class="line"><span class="keyword">Default</span>: —</span><br><span class="line">Context: http, <span class="keyword">server</span>, <span class="keyword">location</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>name，limit_req_zone中配置的名称</li>
+<li>burst，可理解为缓冲卡槽，如果设置则所有请求都经由缓冲卡槽转发给upstream，通常可并发接收的请求数为number + 1，但当number为0时会拒绝所有请求</li>
+<li>nodelay，缓冲卡槽中请求转发给upstream的时机，不设置时，会按照zone的速率逐个转发，当设置为nodelay时，请求到达缓冲卡槽后会立即转发给upstream，但卡槽中的占位依旧按照频率释放</li>
+</ul>
+<h3 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h3><p>理解limit_req_zone与limit_req之后，感叹这真是个好设计，也知道它背后的形象的名称：漏桶算法。</p>
+<p>了解配置方式后开始实际操作，在Nginx配置中的http内添加：<br><code>limit_req_zone $binary_remote_addr zone=one:2m rate=10r/s;</code></p>
+<p>在需要限制的server内添加：<br><code>limit_req zone=one burst=10 nodelay;</code></p>
+<p>按照官方文档，2M大小在64位系统中大约可存储16000个状态数据，针对自己的个人网站足够，<code>10r/s</code>即<code>1r/100ms</code>，配合burst=10应该也OK，重启Nginx，然后使用压测工具检验一下。</p>
+<p>rate、burst、nodelay的不同特点：<br>排除其他因素，rate的大小针对同一客户端的平均吞吐率起到决定性作用，而burst与nodelay可根据业务需求选择，burst越大可接收的并发请求越多，但rate跟不上可能导致大量客户端请求超时，nodelay在rate较小时可以提升业务在瞬时的吞吐率表现</p>
+<h3 id="白名单"><a href="#白名单" class="headerlink" title="白名单"></a>白名单</h3><p>之所以会限制IP访问频率，主要是为了阻止外部调用者的恶意行为，但经过上述配置后，对系统内部调用者同样会有所限制，因此我们希望将内部调用者列入白名单内，使其不受访问频率限制。</p>
+<p>这主要借助Nginx中的geo与map功能，通过geo将IP映射成值，然后再通过map将值映射成变量或常量，恰好limit_req_zone中如果key为’’表示不对其进行频率限制，所以只需要将白名单用户的key设置为’’。</p>
+<p>修改配置文件中http的内容：</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">geo</span> <span class="variable">$limit</span> &#123;</span><br><span class="line">    <span class="attribute">default</span> <span class="number">1</span>;</span><br><span class="line">    127.0.0.1 0;     <span class="comment"># 本机地址</span></span><br><span class="line">    172.31.0.0/16 0; <span class="comment"># 内网地址</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="attribute">map</span> <span class="variable">$limit</span> <span class="variable">$limit_key</span> &#123;</span><br><span class="line">    0 &quot;&quot;;</span><br><span class="line">    1 $binary_remote_addr;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="attribute">limit_req_zone</span> <span class="variable">$limit_key</span> zone=one:<span class="number">2m</span> rate=10r/s;</span><br></pre></td></tr></table></figure>
+
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>至此，根据IP限制访问频率配置完成，Nginx中与limit_req类似的还有limit_conn，可用来在连接层面进行限制，同时针对limit_req还有两个配置项limit_req_status与limit_req_log_level，前者用来设置达到限制时返回何种状态码，后者制定达到限制时的日志采用何种级别，会导致达到限制的信息出现在不同的日志文件中。</p>
+<p>从打算自己实现，到使用Nginx实现，感觉自己的对服务器的理解还需要提升，应该从合理性角度就可以推断出Nginx包含该类功能，而不是在搜索的过程中发现Nginx包含该功能。</p>
+<hr>
+<p><code>limit_req_zone $binary_remote_addr zone=one:10m rate=1r/s;</code><br>配置参数：<br><code>$binary_remote_addr</code>：表示通过remote_addr这个标识来做限制，“binary_”的目的是缩写内存占用量，是限制同一客户端ip地址<br><code>zone=one:10m</code>：表示生成一个大小为10M，名字为one的内存区域，用来存储访问的频次信息<br><code>rate=1r/s</code>：表示允许相同标识的客户端的访问频次，这里限制的是每秒1次，即每秒只处理一个请求，还可以有比如30r/m的，即限制每2秒访问一次，即每2秒才处理一个请求。</p>
+<p><code> limit_req zone=one burst=5 nodelay;</code><br>配置参数：<br><code>zone=one</code>：设置使用哪个配置区域来做限制，与上面limit_req_zone 里的name对应<br><code>burst=5</code>：重点说明一下这个配置，burst爆发的意思，这个配置的意思是设置一个大小为5的缓冲区当有大量请求（爆发）过来时，超过了访问频次限制的请求可以先放到这个缓冲区内等待，但是这个等待区里的位置只有5个，超过的请求会直接报503的错误然后返回。<br><code>nodelay</code>：<br>如果设置，会在瞬时提供处理(burst + rate)个请求的能力，请求超过（burst + rate）的时候就会直接返回503，永远不存在请求需要等待的情况。（这里的rate的单位是：r/s）<br>如果没有设置，则所有请求会依次等待排队</p>
+<p><strong>总结：</strong><br><code>limit_req zone=req_zone;</code></p>
+<ul>
+<li>严格依照在limti_req_zone中配置的rate来处理请求</li>
+<li>超过rate处理能力范围的，直接drop</li>
+<li>表现为对收到的请求无延时</li>
+</ul>
+<p><code>limit_req zone=req_zone burst=5;</code></p>
+<ul>
+<li>依照在limti_req_zone中配置的rate来处理请求</li>
+<li>同时设置了一个大小为5的缓冲队列，在缓冲队列中的请求会等待慢慢处理</li>
+<li>超过了burst缓冲队列长度和rate处理能力的请求被直接丢弃</li>
+<li>表现为对收到的请求有延时</li>
+</ul>
+<p><code>limit_req zone=req_zone burst=5 nodelay;</code></p>
+<ul>
+<li>依照在limti_req_zone中配置的rate来处理请求</li>
+<li>同时设置了一个大小为5的缓冲队列，当请求到来时，会爆发出一个峰值处理能力，对于峰值处理数量之外的请求，直接丢弃</li>
+<li>在完成峰值请求之后，缓冲队列不能再放入请求。如果rate＝10r/m，且这段时间内没有请求再到来，则每6 s 缓冲队列就能回复一个缓冲请求的能力，直到回复到能缓冲5个请求位置。</li>
+</ul>
+<blockquote>
+<p>摘自:<a target="_blank" rel="noopener" href="https://blog.csdn.net/hellow__world/article/details/78658041">Nginx下limit_req模块burst参数超详细解析</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2019/05/11/Nginx%E8%AE%BF%E9%97%AE%E9%A2%91%E7%8E%87%E6%8E%A7%E5%88%B6/" data-id="cl9pgenuk00qaycv17w8158bi" data-title="Nginx访问频率控制" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2019/05/12/mysql%E4%B8%ADsum-if-%E4%BD%BF%E7%94%A8/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          mysql中sum(if())使用
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2019/05/11/vue2%E5%A6%82%E4%BD%95%E4%BF%9D%E6%8C%81%E5%8E%86%E5%8F%B2%E9%A1%B5%E9%9D%A2%E6%95%B0%E6%8D%AE%E4%B8%8D%E5%8F%98%EF%BC%8C%E5%AE%9E%E7%8E%B0%E8%BF%94%E5%9B%9E%E5%90%8E%E4%B8%8D%E9%87%8D%E7%BD%AE%E6%95%B0%E6%8D%AE/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">vue2如何保持历史页面数据不变，实现返回后不重置数据(keep-alive)</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

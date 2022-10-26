@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>在laravel5實作瀏覽器推播通知 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="更新於 2017&#x2F;1&#x2F;10：Laravel 官方已推出 Laravel Echo，可簡化整個建置流程，有興趣可前往參考。  今天在逛 PHPHub 時剛好看到這篇，想著之前也想做類似 Facebook 的通知服務，剛好之前也有碰過一陣子的 socket.io，所以就試著實做看看了。不過推播通知在手機上是相當常見的，但在 Web 上不知為何卻相當少見，也可能是我見識太淺了，看過的網站太少XD。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="在laravel5實作瀏覽器推播通知">
+<meta property="og:url" content="http://moqiang02.github.io/2017/02/03/%E5%9C%A8laravel5%E5%AF%A6%E4%BD%9C%E7%80%8F%E8%A6%BD%E5%99%A8%E6%8E%A8%E6%92%AD%E9%80%9A%E7%9F%A5/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="更新於 2017&#x2F;1&#x2F;10：Laravel 官方已推出 Laravel Echo，可簡化整個建置流程，有興趣可前往參考。  今天在逛 PHPHub 時剛好看到這篇，想著之前也想做類似 Facebook 的通知服務，剛好之前也有碰過一陣子的 socket.io，所以就試著實做看看了。不過推播通知在手機上是相當常見的，但在 Web 上不知為何卻相當少見，也可能是我見識太淺了，看過的網站太少XD。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E5%9C%A8laravel5%E5%AF%A6%E4%BD%9C%E7%80%8F%E8%A6%BD%E5%99%A8%E6%8E%A8%E6%92%AD%E9%80%9A%E7%9F%A5/01.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E5%9C%A8laravel5%E5%AF%A6%E4%BD%9C%E7%80%8F%E8%A6%BD%E5%99%A8%E6%8E%A8%E6%92%AD%E9%80%9A%E7%9F%A5/test-event.gif">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E5%9C%A8laravel5%E5%AF%A6%E4%BD%9C%E7%80%8F%E8%A6%BD%E5%99%A8%E6%8E%A8%E6%92%AD%E9%80%9A%E7%9F%A5/test-socket.gif">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E5%9C%A8laravel5%E5%AF%A6%E4%BD%9C%E7%80%8F%E8%A6%BD%E5%99%A8%E6%8E%A8%E6%92%AD%E9%80%9A%E7%9F%A5/02.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E5%9C%A8laravel5%E5%AF%A6%E4%BD%9C%E7%80%8F%E8%A6%BD%E5%99%A8%E6%8E%A8%E6%92%AD%E9%80%9A%E7%9F%A5/demo.gif">
+<meta property="article:published_time" content="2017-02-03T14:28:20.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:54.104Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="Laravel">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/%E5%9C%A8laravel5%E5%AF%A6%E4%BD%9C%E7%80%8F%E8%A6%BD%E5%99%A8%E6%8E%A8%E6%92%AD%E9%80%9A%E7%9F%A5/01.png">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-在laravel5實作瀏覽器推播通知" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2017/02/03/%E5%9C%A8laravel5%E5%AF%A6%E4%BD%9C%E7%80%8F%E8%A6%BD%E5%99%A8%E6%8E%A8%E6%92%AD%E9%80%9A%E7%9F%A5/" class="article-date">
+  <time class="dt-published" datetime="2017-02-03T14:28:20.000Z" itemprop="datePublished">2017-02-03</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/php/">php</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      在laravel5實作瀏覽器推播通知
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%B5%B7%E6%89%8B%E5%BC%8F"><span class="toc-number">1.</span> <span class="toc-text">起手式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%80%E9%BA%BC%E6%98%AF%E9%9A%8A%E5%88%97"><span class="toc-number">2.</span> <span class="toc-text">什麼是隊列</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%80%E9%BA%BC%E6%98%AF%E5%BB%A3%E6%92%AD"><span class="toc-number">3.</span> <span class="toc-text">什麼是廣播</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BB%BA%E7%AB%8B%E6%8E%A8%E6%92%AD%E9%80%9A%E7%9F%A5%E4%BA%8B%E4%BB%B6"><span class="toc-number">4.</span> <span class="toc-text">建立推播通知事件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BB%BA%E7%AB%8B-Socket-io-Server"><span class="toc-number">5.</span> <span class="toc-text">建立 Socket.io Server</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B8%AC%E8%A9%A6%E8%88%87-Laravel-%E6%98%AF%E5%90%A6%E6%AD%A3%E7%A2%BA%E4%B8%B2%E6%8E%A5"><span class="toc-number">6.</span> <span class="toc-text">測試與 Laravel 是否正確串接</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%80%A3%E6%8E%A5%E5%89%8D%E7%AB%AF%E8%88%87-socket-io"><span class="toc-number">7.</span> <span class="toc-text">連接前端與 socket.io</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%89%8D%E7%AB%AF"><span class="toc-number">7.1.</span> <span class="toc-text">前端</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%BE%8C%E7%AB%AF"><span class="toc-number">7.2.</span> <span class="toc-text">後端</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8D%80%E5%88%86%E4%BD%BF%E7%94%A8%E8%80%85"><span class="toc-number">8.</span> <span class="toc-text">區分使用者</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%89%8D%E7%AB%AF-1"><span class="toc-number">8.1.</span> <span class="toc-text">前端</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%BE%8C%E7%AB%AF-1"><span class="toc-number">8.2.</span> <span class="toc-text">後端</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Demo"><span class="toc-number">9.</span> <span class="toc-text">Demo</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BE%8C%E8%A8%98"><span class="toc-number">10.</span> <span class="toc-text">後記</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <blockquote>
+<p>更新於 2017/1/10：Laravel 官方已推出 Laravel Echo，可簡化整個建置流程，有興趣可前往參考。</p>
+</blockquote>
+<p>今天在逛 PHPHub 時剛好看到<a target="_blank" rel="noopener" href="https://laravel.com/docs/5.3/broadcasting#receiving-broadcasts">這篇</a>，想著之前也想做類似 Facebook 的通知服務，剛好之前也有碰過一陣子的 socket.io，所以就試著實做看看了。不過推播通知在手機上是相當常見的，但在 Web 上不知為何卻相當少見，也可能是我見識太淺了，看過的網站太少XD。<span id="more"></span></p>
+<h3 id="起手式"><a href="#起手式" class="headerlink" title="起手式"></a>起手式</h3><p>首先我們需要先建 Laravel 專案：</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$</span> laravel new notification</span><br><span class="line"><span class="variable">$</span> <span class="built_in">cd</span> notification</span><br><span class="line"><span class="variable">$</span> composer install</span><br><span class="line"><span class="variable">$</span> npm install</span><br></pre></td></tr></table></figure>
+<p>設定你的 <code>.env</code>，除了資料庫外我們還會使用到隊列（Queue）及廣播（broadcast），看起來會像：<br>.env</p>
+<figure class="highlight node-repl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">...</span></span><br><span class="line">QUEUE_DRIVER=redis</span><br><span class="line">BROADCAST_DRIVER=redis</span><br><span class="line"><span class="meta prompt_">...</span></span><br></pre></td></tr></table></figure>
+<p>要使用 Redis 必須在 Composer 安裝 <code>predis/predis</code>：</p>
+<p><code>$ composer require predis/predis</code></p>
+<p>接著執行遷移，跟 5.2 提供的 Auth scaffold（幫我們把 Auth 的部分連 View 都建完）：</p>
+<figure class="highlight crystal"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$ </span>php artisan migrate</span><br><span class="line"><span class="variable">$ </span>php artisan <span class="symbol">make:</span>auth</span><br></pre></td></tr></table></figure>
+<p>試試看應用程式有沒有正常執行，最後新增兩個使用者，看要在瀏覽器直接建立，或是其他方式也可以。</p>
+<h3 id="什麼是隊列"><a href="#什麼是隊列" class="headerlink" title="什麼是隊列"></a>什麼是隊列</h3><p>隊列簡單來說就像是 JavaScript 的非同步機制，讓你把一個耗時的工作丟給別人做，你的程式會跳過這部分繼續執行。最常見到的案例就是寄 e-mail 跟簡訊。</p>
+<h3 id="什麼是廣播"><a href="#什麼是廣播" class="headerlink" title="什麼是廣播"></a>什麼是廣播</h3><p>我們會利用 Laravel 的廣播事件做推送通知的服務，開始之前建議大概瀏覽一下文件，廣播的方式大概如下圖：<br><img src="/images/%E5%9C%A8laravel5%E5%AF%A6%E4%BD%9C%E7%80%8F%E8%A6%BD%E5%99%A8%E6%8E%A8%E6%92%AD%E9%80%9A%E7%9F%A5/01.png"></p>
+<p>流程如下：</p>
+<ul>
+<li>在 Laravel 執行一個推播通知事件</li>
+<li>推播通知事件的資訊會推送至 Redis 中</li>
+<li>Node 端會訂閱該 Redis 的頻道，接收到推播通知事件的資訊</li>
+<li>透過 websocket 將推播通知送給使用者</li>
+</ul>
+<h3 id="建立推播通知事件"><a href="#建立推播通知事件" class="headerlink" title="建立推播通知事件"></a>建立推播通知事件</h3><p>首先先讓我們建立一個推播通知事件，所有的推播都會透過此事件推送到 Redis：</p>
+<p><code>$ php artisan make:event PushNotification</code></p>
+<p>程式碼如下：<br>app/Events/PushNotification.php</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">App</span>\<span class="title class_">Events</span>;</span><br><span class="line"><span class="keyword">use</span> <span class="title">App</span>\<span class="title">Events</span>\<span class="title">Event</span>;</span><br><span class="line"><span class="keyword">use</span> <span class="title">App</span>\<span class="title">User</span>;</span><br><span class="line"><span class="keyword">use</span> <span class="title">Illuminate</span>\<span class="title">Queue</span>\<span class="title">SerializesModels</span>;</span><br><span class="line"><span class="keyword">use</span> <span class="title">Illuminate</span>\<span class="title">Contracts</span>\<span class="title">Broadcasting</span>\<span class="title">ShouldBroadcast</span>;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">PushNotification</span> <span class="keyword">extends</span> <span class="title">Event</span> <span class="keyword">implements</span> <span class="title">ShouldBroadcast</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">use</span> <span class="title">SerializesModels</span>;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@var</span> string</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$token</span>;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@var</span> string</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$message</span>;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Create a new event instance.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> User $user</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span>      $message</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params">User <span class="variable">$user</span>, <span class="variable">$message</span></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;token = <span class="title function_ invoke__">sha1</span>(<span class="variable">$user</span>-&gt;id . <span class="string">&#x27;|&#x27;</span> . <span class="variable">$user</span>-&gt;email);</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;message = <span class="variable">$message</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Get the channels the event should be broadcast on.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> array</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">broadcastOn</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> [<span class="string">&#x27;notification&#x27;</span>];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我們的事件會有兩個屬性，一個是要推播的 message，另一個比較特別的則是 token。token 會作為 socket.io 中 room 的名稱，代表一個使用者。也就是說一個使用者只會有一個 room（token），這麼做可以讓我們指定要推播給哪個使用者。</p>
+<p>broadcastOn 則是設定在 Redis 中的頻道名稱，我們會在 socket.io server 端透過這個名稱來訂閱由此事件傳遞的資訊。</p>
+<p>若不太明白可以先接著往下看，會有更詳細的說明。</p>
+<blockquote>
+<p>token 的雜湊方式可以隨你喜歡更改，但要確定每次雜湊出來的值都相同，因為我們在 render view 給使用者的時候也會雜湊一組 token 給前端的 JavaScript，以加入 socket.io 中特定的 room。</p>
+</blockquote>
+<h3 id="建立-Socket-io-Server"><a href="#建立-Socket-io-Server" class="headerlink" title="建立 Socket.io Server"></a>建立 Socket.io Server</h3><p>我們的 socket.io 會有兩個任務：</p>
+<ul>
+<li>接收由 Laravel 的 PushNotification 事件送來的推播資訊</li>
+<li>將內容透過 websocket 推播給使用者</li>
+</ul>
+<p>讓我們先使用 npm 安裝必要的套件：分別是 express（http server）、socket.io（websocket server）及 ioredis（訂閱 redis）：</p>
+<p><code>$ npm install express socket.io ioredis --save</code></p>
+<p>接著我們建立 socket.js，先寫 redis 部份的程式碼測試與 Laravel 廣播事件的串接是否有問題：<br>socket.js</p>
+<figure class="highlight arcade"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> Redis = require(<span class="string">&#x27;ioredis&#x27;</span>);</span><br><span class="line"><span class="keyword">var</span> redis = <span class="keyword">new</span> Redis();</span><br><span class="line"><span class="comment">// 訂閱 redis 的 notification 頻道，也就是我們在事件中 broadcastOn 所設定的</span></span><br><span class="line">redis.subscribe(<span class="string">&#x27;notification&#x27;</span>, <span class="keyword">function</span>(<span class="params">err, count</span>) &#123;</span><br><span class="line">  <span class="built_in">console</span>.<span class="built_in">log</span>(<span class="string">&#x27;connect!&#x27;</span>);</span><br><span class="line">&#125;);</span><br><span class="line"><span class="comment">// 當該頻道接收到訊息時就列在 terminal 上</span></span><br><span class="line">redis.on(<span class="string">&#x27;message&#x27;</span>, <span class="keyword">function</span>(<span class="params">channel, notification</span>) &#123;</span><br><span class="line">  <span class="built_in">console</span>.<span class="built_in">log</span>(notification);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<h3 id="測試與-Laravel-是否正確串接"><a href="#測試與-Laravel-是否正確串接" class="headerlink" title="測試與 Laravel 是否正確串接"></a>測試與 Laravel 是否正確串接</h3><p>首先你必須先確認這些東西有沒有執行：</p>
+<ul>
+<li>Laravel Application（Nginx or php artisan serve）</li>
+<li>Redis server</li>
+<li>隊列監聽器（php artisan queue:listen）</li>
+<li>socket.io server（node socket.js）</li>
+</ul>
+<p>確認完畢後，我們進入 Laravel 的 Tinker 做測試：</p>
+<p><code>$ php artisan tinker</code></p>
+<p><img src="/images/%E5%9C%A8laravel5%E5%AF%A6%E4%BD%9C%E7%80%8F%E8%A6%BD%E5%99%A8%E6%8E%A8%E6%92%AD%E9%80%9A%E7%9F%A5/test-event.gif"></p>
+<p>我們直接觸發事件：</p>
+<p><code>event(new App\Events\PushNotification(App\User::first(), &#39;banana!&#39;))</code></p>
+<p>你應該在 node 的 terminal 看到：</p>
+<p><code>&#123;&quot;event&quot;:&quot;App\\Events\\PushNotification&quot;,&quot;data&quot;:&#123;&quot;token&quot;:&quot;long-hash-string&quot;,&quot;message&quot;:&quot;banana!&quot;&#125;&#125;</code></p>
+<h3 id="連接前端與-socket-io"><a href="#連接前端與-socket-io" class="headerlink" title="連接前端與 socket.io"></a>連接前端與 socket.io</h3><h4 id="前端"><a href="#前端" class="headerlink" title="前端"></a>前端</h4><p>首先我們必須先安裝 socket.io-client，這是 socket.io 在前端所使用的套件，我們會透過 server side 的開發方式，再透過 elixir 的 browserify 轉成前端可執行的 JavaScript。</p>
+<p><code>$ npm install socket.io-client --save</code></p>
+<p>建立 <code>resources/assets/js/app.js</code>，撰寫以下程式碼：<br>resources/assets/js/app.js</p>
+<figure class="highlight arcade"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> io = require(<span class="string">&#x27;socket.io-client&#x27;</span>);</span><br><span class="line"><span class="comment">// 建立 socket.io 的連線</span></span><br><span class="line"><span class="keyword">var</span> notification = io.connect(<span class="string">&#x27;http://localhost:3000&#x27;</span>);</span><br><span class="line"><span class="comment">// 當從 socket.io server 收到 notification 時將訊息印在 console 上</span></span><br><span class="line">notification.on(<span class="string">&#x27;notification&#x27;</span>, <span class="keyword">function</span>(<span class="params">message</span>) &#123;</span><br><span class="line">  <span class="built_in">console</span>.<span class="built_in">log</span>(message);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>接著修改 gulpfile.js，然後執行 gulp，他會將編譯結果放在 <code>public/js/app.js</code>：<br>gulpfile.js</p>
+<figure class="highlight lisp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">elixir(<span class="name">function</span>(<span class="name">mix</span>) &#123;</span><br><span class="line">    mix.browserify(&#x27;app.js&#x27;)<span class="comment">;</span></span><br><span class="line">&#125;)<span class="comment">;</span></span><br></pre></td></tr></table></figure>
+<p>接著我們希望在 <code>/home</code> 能接收推播（5.2 的 <code>make:auth</code> 預設提供 <code>/home</code> 作為登入後的首頁），所以先在 <code>resources/views/layouts/app.blade.php</code> 下方加上 <code>@yield(&#39;scripts&#39;)</code> ，看起來會像這樣：<br>resources/views/layouts/app.blade.php</p>
+<figure class="highlight handlebars"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="language-xml">...</span></span><br><span class="line"><span class="language-xml">    <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;/<span class="name">nav</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">@yield(&#x27;content&#x27;)</span></span><br><span class="line"><span class="language-xml">@yield(&#x27;scripts&#x27;)</span></span><br><span class="line"><span class="language-xml"><span class="comment">&lt;!-- JavaScripts --&gt;</span></span></span><br><span class="line"><span class="language-xml"></span><span class="template-variable">&#123;&#123;<span class="name">--</span> &lt;script <span class="attr">src</span>=<span class="string">&quot;&#123;&#123; elixir(&#x27;js/app.js&#x27;) &#125;&#125;&quot;</span>&gt;&lt;/script&gt; --&#125;&#125;</span><span class="language-xml"></span></span><br><span class="line"><span class="language-xml">...</span></span><br></pre></td></tr></table></figure>
+<p>然後在 <code>resources/views/home.blade.php</code> 下面載入剛剛寫好的 JavaScript：<br>resources/views/home.blade.php</p>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">@section</span>(<span class="string">&#x27;content&#x27;</span>)</span><br><span class="line">&lt;script src=<span class="string">&quot;/js/app.js&quot;</span>&gt;&lt;/script&gt;</span><br><span class="line"><span class="variable">@endsection</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="後端"><a href="#後端" class="headerlink" title="後端"></a>後端</h4><p>修改剛剛的 socket.js，增加 socket.io 及推送通知至前端的程式碼：<br>socket.js</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> app = <span class="built_in">require</span>(<span class="string">&#x27;express&#x27;</span>);</span><br><span class="line"><span class="keyword">var</span> http = <span class="built_in">require</span>(<span class="string">&#x27;http&#x27;</span>).<span class="title class_">Server</span>(app);</span><br><span class="line"><span class="keyword">var</span> io = <span class="built_in">require</span>(<span class="string">&#x27;socket.io&#x27;</span>)(http);</span><br><span class="line"><span class="keyword">var</span> <span class="title class_">Redis</span> = <span class="built_in">require</span>(<span class="string">&#x27;ioredis&#x27;</span>);</span><br><span class="line"><span class="keyword">var</span> redis = <span class="keyword">new</span> <span class="title class_">Redis</span>();</span><br><span class="line">redis.<span class="title function_">subscribe</span>(<span class="string">&#x27;notification&#x27;</span>, <span class="keyword">function</span>(<span class="params">err, count</span>) &#123;</span><br><span class="line">  <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;connect!&#x27;</span>);</span><br><span class="line">&#125;);</span><br><span class="line">redis.<span class="title function_">on</span>(<span class="string">&#x27;message&#x27;</span>, <span class="keyword">function</span>(<span class="params">channel, notification</span>) &#123;</span><br><span class="line">  <span class="variable language_">console</span>.<span class="title function_">log</span>(notification);</span><br><span class="line">  notification = <span class="title class_">JSON</span>.<span class="title function_">parse</span>(notification);</span><br><span class="line">  <span class="comment">// 將訊息推播給使用者</span></span><br><span class="line">  io.<span class="title function_">emit</span>(<span class="string">&#x27;notification&#x27;</span>, notification.<span class="property">data</span>.<span class="property">message</span>);</span><br><span class="line">&#125;);</span><br><span class="line"><span class="comment">// 監聽 3000 port</span></span><br><span class="line">http.<span class="title function_">listen</span>(<span class="number">3000</span>, <span class="keyword">function</span>(<span class="params"></span>) &#123;</span><br><span class="line">  <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;Listening on Port 3000&#x27;</span>);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>接著就可以測試前端是否可以收到通知了！</p>
+<p><img src="/images/%E5%9C%A8laravel5%E5%AF%A6%E4%BD%9C%E7%80%8F%E8%A6%BD%E5%99%A8%E6%8E%A8%E6%92%AD%E9%80%9A%E7%9F%A5/test-socket.gif"></p>
+<h3 id="區分使用者"><a href="#區分使用者" class="headerlink" title="區分使用者"></a>區分使用者</h3><p>如果你有開不同瀏覽器登入不同使用者的話會發現，不管你在事件的 User 傳入誰，每個使用者都會收到通知。</p>
+<p>因為所有使用者都屬於同一個 channel（notification）。這時就要使用 token 及 socket.io 的 room 來區分使用者。每個 token 代表一個 room，也就是一個使用者，我們就可以由 Laravel 廣播事件內的 token 決定要接推播通知傳給哪個使用者：<br><img src="/images/%E5%9C%A8laravel5%E5%AF%A6%E4%BD%9C%E7%80%8F%E8%A6%BD%E5%99%A8%E6%8E%A8%E6%92%AD%E9%80%9A%E7%9F%A5/02.png"></p>
+<h4 id="前端-1"><a href="#前端-1" class="headerlink" title="前端"></a>前端</h4><p>我們要做的事情有：</p>
+<ul>
+<li>在 Controller 產生 token（與事件中的相同），並傳遞至 View</li>
+<li>前端的 JavaScript 取得 token，並傳給 socket.io server 加入指定的 room</li>
+</ul>
+<p>首先，先修改<code>HomeControllr@index</code><br>app/Http/Controllers/HomeControllr.php</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Show the application dashboard.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> Response</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">index</span>(<span class="params">Request <span class="variable">$request</span></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="variable">$user</span> = <span class="variable">$request</span>-&gt;<span class="title function_ invoke__">user</span>();</span><br><span class="line">    <span class="variable">$token</span> = <span class="title function_ invoke__">sha1</span>(<span class="variable">$user</span>-&gt;id . <span class="string">&#x27;|&#x27;</span> . <span class="variable">$user</span>-&gt;email);</span><br><span class="line">    <span class="keyword">return</span> <span class="title function_ invoke__">view</span>(<span class="string">&#x27;home&#x27;</span>, <span class="title function_ invoke__">compact</span>(<span class="string">&#x27;token&#x27;</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>接著修改剛剛新增在 <code>resources/views/home.blade.php</code> 的部分，將 token 傳至 JavaScript 中：<br>resources/views/home.blade.php</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line">@section(&#x27;content&#x27;)</span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-handlebars"><span class="language-xml"></span></span></span><br><span class="line"><span class="language-xml"><span class="language-handlebars">    Notification.TOKEN = &#x27;</span><span class="template-variable">&#123;&#123; <span class="name">$token</span> or <span class="literal">null</span> &#125;&#125;</span><span class="language-xml">&#x27;;</span></span></span><br><span class="line"><span class="language-xml"><span class="language-handlebars"></span></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;/js/app.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">@endsection</span><br></pre></td></tr></table></figure>
+<p>修改 <code>resources/assets/js/app.js</code>，使用 token 加入使用者的 room：<br>resources/assets/js/app.js</p>
+<figure class="highlight dsconfig"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">var</span> <span class="string">io</span> = <span class="string">require</span>(<span class="string">&#x27;socket.io-client&#x27;</span>);</span><br><span class="line"><span class="string">var</span> <span class="string">notification</span> = <span class="string">io</span>.<span class="string">connect</span>(<span class="string">&#x27;http://localhost:3000&#x27;</span>);</span><br><span class="line">// 當連接到 <span class="string">socket</span>.<span class="string">io</span> <span class="string">server</span> 時觸發 <span class="built_in">set-token</span> 設定使用者的 <span class="string">room</span></span><br><span class="line"><span class="string">notification</span>.<span class="string">on</span>(<span class="string">&#x27;connect&#x27;</span>, <span class="string">function</span>() &#123;</span><br><span class="line">  <span class="string">notification</span>.<span class="string">emit</span>(<span class="string">&#x27;set-token&#x27;</span>, <span class="string">Notification</span>.<span class="string">TOKEN</span>);</span><br><span class="line">&#125;);</span><br><span class="line"><span class="string">notification</span>.<span class="string">on</span>(<span class="string">&#x27;notification&#x27;</span>, <span class="string">function</span>(<span class="string">message</span>) &#123;</span><br><span class="line">  <span class="string">console</span>.<span class="string">log</span>(<span class="string">message</span>);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<h4 id="後端-1"><a href="#後端-1" class="headerlink" title="後端"></a>後端</h4><p>修改 socket.js，讓使用者加入屬於他的 room，並由 Laravel 廣播事件資訊內的 token 決定要傳給哪個使用者（room）：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> app = <span class="built_in">require</span>(<span class="string">&#x27;express&#x27;</span>);</span><br><span class="line"><span class="keyword">var</span> http = <span class="built_in">require</span>(<span class="string">&#x27;http&#x27;</span>).<span class="title class_">Server</span>(app);</span><br><span class="line"><span class="keyword">var</span> io = <span class="built_in">require</span>(<span class="string">&#x27;socket.io&#x27;</span>)(http);</span><br><span class="line"><span class="keyword">var</span> <span class="title class_">Redis</span> = <span class="built_in">require</span>(<span class="string">&#x27;ioredis&#x27;</span>);</span><br><span class="line"><span class="keyword">var</span> redis = <span class="keyword">new</span> <span class="title class_">Redis</span>();</span><br><span class="line">redis.<span class="title function_">subscribe</span>(<span class="string">&#x27;notification&#x27;</span>, <span class="keyword">function</span>(<span class="params">err, count</span>) &#123;</span><br><span class="line">  <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;connect!&#x27;</span>);</span><br><span class="line">&#125;);</span><br><span class="line">io.<span class="title function_">on</span>(<span class="string">&#x27;connection&#x27;</span>, <span class="keyword">function</span>(<span class="params">socket</span>) &#123;</span><br><span class="line">  <span class="comment">// 當使用者觸發 set-token 時將他加入屬於他的 room</span></span><br><span class="line">  socket.<span class="title function_">on</span>(<span class="string">&#x27;set-token&#x27;</span>, <span class="keyword">function</span>(<span class="params">token</span>) &#123;</span><br><span class="line">    <span class="variable language_">console</span>.<span class="title function_">log</span>(token);</span><br><span class="line">    socket.<span class="title function_">join</span>(<span class="string">&#x27;token:&#x27;</span> + token);</span><br><span class="line">  &#125;);</span><br><span class="line">&#125;);</span><br><span class="line">redis.<span class="title function_">on</span>(<span class="string">&#x27;message&#x27;</span>, <span class="keyword">function</span>(<span class="params">channel, notification</span>) &#123;</span><br><span class="line">  <span class="variable language_">console</span>.<span class="title function_">log</span>(notification);</span><br><span class="line">  notification = <span class="title class_">JSON</span>.<span class="title function_">parse</span>(notification);</span><br><span class="line">  <span class="comment">// 使用 to() 指定傳送的 room，也就是傳遞給指定的使用者</span></span><br><span class="line">  io.<span class="title function_">to</span>(<span class="string">&#x27;token:&#x27;</span> + notification.<span class="property">data</span>.<span class="property">token</span>).<span class="title function_">emit</span>(<span class="string">&#x27;notification&#x27;</span>, notification.<span class="property">data</span>.<span class="property">message</span>);</span><br><span class="line">&#125;);</span><br><span class="line"><span class="comment">// 監聽 3000 port</span></span><br><span class="line">http.<span class="title function_">listen</span>(<span class="number">3000</span>, <span class="keyword">function</span>(<span class="params"></span>) &#123;</span><br><span class="line">  <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;Listening on Port 3000&#x27;</span>);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<h3 id="Demo"><a href="#Demo" class="headerlink" title="Demo"></a>Demo</h3><p><img src="/images/%E5%9C%A8laravel5%E5%AF%A6%E4%BD%9C%E7%80%8F%E8%A6%BD%E5%99%A8%E6%8E%A8%E6%92%AD%E9%80%9A%E7%9F%A5/demo.gif"></p>
+<p>基本上前端收的到通知之後，如何呈現就不是困難的問題了。</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/jigsawye/laravel-push-notification-demo">本文的原始碼</a></p>
+<h3 id="後記"><a href="#後記" class="headerlink" title="後記"></a>後記</h3><p>實作其實沒那麼困難，不過如果真的要上 Production 的話還是得再思考一下！因為感覺這個 Solution 沒有很透徹XD！</p>
+<p>像是 token 的部分這樣安全性不知道會不會不佳，如果想更安全可以用更複雜的演算法，或是在 Laravel 跟 socket.io server 用相同的加密演算法，互相加解密也可以。作法應該還很多種，有厲害的大大還麻煩幫忙補充XD</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2017/02/03/%E5%9C%A8laravel5%E5%AF%A6%E4%BD%9C%E7%80%8F%E8%A6%BD%E5%99%A8%E6%8E%A8%E6%92%AD%E9%80%9A%E7%9F%A5/" data-id="cl9pgeo9h01u0ycv15dobahyo" data-title="在laravel5實作瀏覽器推播通知" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Laravel/" rel="tag">Laravel</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2017/02/03/Laravel-Echo-%E6%A6%82%E8%BF%B0%E7%AF%87/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          Laravel Echo 概述篇
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2017/02/01/SS-Panel-v3-%E6%9C%80%E6%96%B0%E9%83%A8%E7%BD%B2%E6%95%99%E7%A8%8B/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">SS-Panel v3 最新部署教程</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

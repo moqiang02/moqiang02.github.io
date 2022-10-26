@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>mysqldump 深入浅出 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="mysqldump 是用于转存储 mysql 数据库的实用程序。 主要产生一个 SQL 脚本，其中包含从头重新创建数据库的所有命令。 导出脚本过程大概如下：创建数据库判断语句、删除表、创建表、锁表、禁用索引、插入数据、启用索引、解锁表。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="mysqldump 深入浅出">
+<meta property="og:url" content="http://moqiang02.github.io/2020/11/13/mysqldump-%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="mysqldump 是用于转存储 mysql 数据库的实用程序。 主要产生一个 SQL 脚本，其中包含从头重新创建数据库的所有命令。 导出脚本过程大概如下：创建数据库判断语句、删除表、创建表、锁表、禁用索引、插入数据、启用索引、解锁表。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-11-13T14:55:43.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.983Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-mysqldump-深入浅出" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2020/11/13/mysqldump-%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA/" class="article-date">
+  <time class="dt-published" datetime="2020-11-13T14:55:43.000Z" itemprop="datePublished">2020-11-13</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/mysql/">mysql</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      mysqldump 深入浅出
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BF%AB%E9%80%9F%E4%BD%BF%E7%94%A8"><span class="toc-number">1.</span> <span class="toc-text">快速使用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E6%95%B0"><span class="toc-number">2.</span> <span class="toc-text">参数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9E%E4%BE%8B"><span class="toc-number">3.</span> <span class="toc-text">实例</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AF%BC%E5%87%BA%E6%9F%90%E4%B8%AA%E8%A1%A8"><span class="toc-number">3.1.</span> <span class="toc-text">导出某个表</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E8%A1%A8%E6%9D%A1%E4%BB%B6%E5%AF%BC%E5%87%BA"><span class="toc-number">3.2.</span> <span class="toc-text">数据表条件导出</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BF%BD%E7%95%A5%E6%9F%90%E5%BC%A0%E8%A1%A8"><span class="toc-number">3.3.</span> <span class="toc-text">忽略某张表</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AF%BC%E5%85%A5%E6%9F%90%E4%B8%AA%E8%A1%A8%E6%95%B0%E6%8D%AE%E8%84%9A%E6%9C%AC"><span class="toc-number">3.4.</span> <span class="toc-text">导入某个表数据脚本</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A4%87%E4%BB%BD%E8%84%9A%E6%9C%AC"><span class="toc-number">4.</span> <span class="toc-text">备份脚本</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%81%A2%E5%A4%8D%E5%A4%87%E4%BB%BD"><span class="toc-number">5.</span> <span class="toc-text">恢复备份</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <p><code>mysqldump</code> 是用于转存储 <code>mysql</code> 数据库的实用程序。</p>
+<p>主要产生一个 <code>SQL</code> 脚本，其中包含从头重新创建数据库的所有命令。</p>
+<p>导出脚本过程大概如下：创建数据库判断语句、删除表、创建表、锁表、禁用索引、插入数据、启用索引、解锁表。<span id="more"></span></p>
+<h2 id="快速使用"><a href="#快速使用" class="headerlink" title="快速使用"></a>快速使用</h2><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># game 是库名</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 完整导出一个库</span></span><br><span class="line"><span class="comment"># 包括建库语句、表结构、数据</span></span><br><span class="line">mysqldump -uroot -proot <span class="attribute">--host</span>=127.0.0.1 <span class="attribute">--port</span>=3306 --databases game &gt; test.sql</span><br><span class="line"></span><br><span class="line"><span class="comment"># 只导出表结构</span></span><br><span class="line">mysqldump -uroot -proot <span class="attribute">--host</span>=127.0.0.1 <span class="attribute">--port</span>=3306 -d game &gt; test.sql</span><br><span class="line"></span><br><span class="line"><span class="comment"># 只导出数据</span></span><br><span class="line">mysqldump -uroot -proot <span class="attribute">--host</span>=127.0.0.1 <span class="attribute">--port</span>=3306 -t game &gt; test.sql</span><br><span class="line"></span><br><span class="line"><span class="comment"># 导出一个数据库中多个表的数据和结构</span></span><br><span class="line">mysqldump -uroot -proot <span class="attribute">--host</span>=127.0.0.1 game --tables articles<span class="built_in"> users </span>&gt; test.sql</span><br><span class="line">mysqldump -uroot -proot <span class="attribute">--host</span>=127.0.0.1 game articles<span class="built_in"> users </span>&gt; test.sql</span><br><span class="line"></span><br><span class="line"><span class="comment"># 恢复导出数据</span></span><br><span class="line">mysql -u username -proot databse &lt; backup.sql</span><br></pre></td></tr></table></figure>
+
+<h2 id="参数"><a href="#参数" class="headerlink" title="参数"></a>参数</h2><p><code>--user=user_name, -u user_name</code></p>
+<p>连接数据库的用户名。</p>
+<p><code>--password=password, -p[password]</code></p>
+<p>连接数据库的密码，如果使用 <code>-p</code> 缩写，和密码之间不能有空格。</p>
+<p><code>--opt or --compact</code></p>
+<ul>
+<li>使用 <code>--opt</code> 等于使用这些参数 <code>--add-drop-table, --add-locks, --create-options, --disable-keys, --extended-insert, --lock-tables, --quick, and --set-charset</code>，默认情况下即使不加 <code>--opt</code> 参数也是开启的。</li>
+<li>使用 <code>--compact</code> 等于使用这些参数 <code>--skip-add-drop-table, --skip-add-locks, --skip-comments, --skip-disable-keys, and --skip-set-charset</code>，默认不开启。</li>
+</ul>
+<p><code>--databases, -B</code></p>
+<p>指定导出的库名。</p>
+<p><code>--all-databases</code></p>
+<p>表示导出所有的库。</p>
+<p><code>--tables</code></p>
+<p>会覆盖 <code>--databases or -B</code> 选项，指定导出某个表就会忽略库选项。</p>
+<p><code>--no-data, -d</code></p>
+<p>不导出数据，只导出表结构。</p>
+<p>Do not dump table contents</p>
+<p><code>--no-create-info, -t</code></p>
+<p>只导出数据，不导出表结构，不添加 <code>CREATE TABLE</code> 语句。</p>
+<p><code>--no-create-db, -n</code></p>
+<p>不添加 <code>CREATE DATABASE</code> 建库语句。</p>
+<p><code>--routines, -R</code></p>
+<p>导出存储过程以及自定义函数</p>
+<h2 id="实例"><a href="#实例" class="headerlink" title="实例"></a>实例</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">/</span><span class="operator">/</span> 导出一个数据库</span><br><span class="line"><span class="operator">/</span><span class="operator">/</span> 包括建库语句、删表语句、建表语句、插入数据</span><br><span class="line">mysqldump <span class="operator">-</span>uroot <span class="operator">-</span>proot <span class="comment">--host=127.0.0.1 --port=3306 --databases game &gt; test.sql</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> DATABASE <span class="comment">/*!32312 IF NOT EXISTS*/</span> `game` <span class="comment">/*!40100 DEFAULT CHARACTER SET latin1 */</span>;</span><br><span class="line"></span><br><span class="line">USE `game`;</span><br><span class="line"></span><br><span class="line"><span class="comment">--</span></span><br><span class="line"><span class="comment">-- Table structure for table `address`</span></span><br><span class="line"><span class="comment">--</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span> IF <span class="keyword">EXISTS</span> `address`;</span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> `address` (</span><br><span class="line">        ...</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">LOCK TABLES `address` WRITE;</span><br><span class="line"><span class="comment">/*!40000 ALTER TABLE `address` DISABLE KEYS */</span>;</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> ...</span><br><span class="line"><span class="comment">/*!40000 ALTER TABLE `address` ENABLE KEYS */</span>;</span><br><span class="line">UNLOCK TABLES;</span><br><span class="line">...</span><br><span class="line"></span><br><span class="line"><span class="operator">/</span><span class="operator">/</span> <span class="operator">-</span>d 不导出数据，导出所有的建表删表语句，不包括建库语句，</span><br><span class="line">mysqldump <span class="operator">-</span>uroot <span class="operator">-</span>proot <span class="comment">--host=127.0.0.1 --port=3306 -d game &gt; test.sql</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span> IF <span class="keyword">EXISTS</span> `address`;</span><br><span class="line"><span class="comment">/*!40101 SET @saved_cs_client     = @@character_set_client */</span>;</span><br><span class="line"><span class="comment">/*!40101 SET character_set_client = utf8 */</span>;</span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> `address` (</span><br><span class="line">        ...</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="operator">/</span><span class="operator">/</span> <span class="operator">-</span>t 不导出结构，导出所有表中的数据，不包括建库语句，都是插入语句</span><br><span class="line">mysqldump <span class="operator">-</span>uroot <span class="operator">-</span>proot <span class="comment">--host=127.0.0.1 --port=3306 -t game &gt; test.sql</span></span><br><span class="line"></span><br><span class="line">LOCK TABLES `address` WRITE;</span><br><span class="line"><span class="comment">/*!40000 ALTER TABLE `address` DISABLE KEYS */</span>;</span><br><span class="line"><span class="comment">/*!40000 ALTER TABLE `address` ENABLE KEYS */</span>;</span><br><span class="line">UNLOCK TABLES;</span><br><span class="line"></span><br><span class="line"><span class="operator">/</span><span class="operator">/</span> 导出一个数据库的表结构以及数据，不包括建库语句</span><br><span class="line">mysqldump <span class="operator">-</span>uroot <span class="operator">-</span>proot <span class="comment">--host=127.0.0.1 --port=3306 game &gt; test.sql</span></span><br><span class="line"></span><br><span class="line"><span class="operator">/</span><span class="operator">/</span> 导出多个数据库的表结构以及数据，包括建库语句</span><br><span class="line">mysqldump <span class="operator">-</span>uroot <span class="operator">-</span>proot <span class="comment">--host=127.0.0.1 -B game game2 &gt; test.sql</span></span><br><span class="line"></span><br><span class="line"><span class="operator">/</span><span class="operator">/</span> 导出多个数据库的结构，包括建库语句</span><br><span class="line">mysqldump <span class="operator">-</span>uroot <span class="operator">-</span>proot <span class="comment">--host=127.0.0.1 -d -B game game2 &gt; test.sql</span></span><br><span class="line"></span><br><span class="line"><span class="operator">/</span><span class="operator">/</span> 导出多个数据库的数据，包括建库语句</span><br><span class="line">mysqldump <span class="operator">-</span>uroot <span class="operator">-</span>proot <span class="comment">--host=127.0.0.1 -t -B game game2 &gt; test.sql</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="导出某个表"><a href="#导出某个表" class="headerlink" title="导出某个表"></a>导出某个表</h3><figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 导出一个数据库中一个表的结构，导出 articles 表的结构和数据</span></span><br><span class="line">mysqldump -uroot -proot <span class="attr">--host</span>=<span class="number">127.0</span>.<span class="number">0.1</span> game articles &gt; test<span class="selector-class">.sql</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 导出一个数据库中多个表的数据和结构</span></span><br><span class="line">mysqldump -uroot -proot <span class="attr">--host</span>=<span class="number">127.0</span>.<span class="number">0.1</span> game <span class="attr">--tables</span> articles users &gt; test<span class="selector-class">.sql</span></span><br><span class="line">mysqldump -uroot -proot <span class="attr">--host</span>=<span class="number">127.0</span>.<span class="number">0.1</span> game articles users &gt; test<span class="selector-class">.sql</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 导出一个数据库中多个表的结构</span></span><br><span class="line">mysqldump -uroot -proot <span class="attr">--host</span>=<span class="number">127.0</span>.<span class="number">0.1</span> -d game articles users &gt; test<span class="selector-class">.sql</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 导出一个数据库中多个表的数据</span></span><br><span class="line">mysqldump -uroot -proot <span class="attr">--host</span>=<span class="number">127.0</span>.<span class="number">0.1</span> -t game articles users &gt; test.sql</span><br></pre></td></tr></table></figure>
+
+<h3 id="数据表条件导出"><a href="#数据表条件导出" class="headerlink" title="数据表条件导出"></a>数据表条件导出</h3><figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 导出 articles 表 id = 1 的数据</span></span><br><span class="line">mysqldump -uroot -proot <span class="attr">--host</span>=<span class="number">127.0</span>.<span class="number">0.1</span> <span class="attr">--where</span>=<span class="string">&#x27;id=1&#x27;</span> game articles &gt; test.sql</span><br></pre></td></tr></table></figure>
+
+<h3 id="忽略某张表"><a href="#忽略某张表" class="headerlink" title="忽略某张表"></a>忽略某张表</h3><figure class="highlight ada"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--ignore-table database.tableName</span></span><br></pre></td></tr></table></figure>
+
+<p>多次添加忽略多张表。</p>
+<h3 id="导入某个表数据脚本"><a href="#导入某个表数据脚本" class="headerlink" title="导入某个表数据脚本"></a>导入某个表数据脚本</h3><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 数据来源</span></span><br><span class="line"><span class="attribute">src_user</span>=<span class="string">&quot;root&quot;</span> # 用户名</span><br><span class="line"><span class="attribute">src_password</span>=<span class="string">&quot;root&quot;</span> # 密码</span><br><span class="line"><span class="attribute">src_host</span>=<span class="string">&quot;localhost&quot;</span> # Host</span><br><span class="line"><span class="attribute">src_port</span>=<span class="string">&quot;3306&quot;</span> # 端口</span><br><span class="line"><span class="attribute">src_database</span>=<span class="string">&quot;test&quot;</span> # 数据库名</span><br><span class="line"><span class="attribute">src_table</span>=<span class="string">&quot;edu&quot;</span> # 表名</span><br><span class="line"></span><br><span class="line"><span class="comment"># 数据导入的数据库配置</span></span><br><span class="line"><span class="attribute">dst_user</span>=<span class="string">&quot;root&quot;</span> # 用户名</span><br><span class="line"><span class="attribute">dst_password</span>=<span class="string">&quot;root&quot;</span> # 密码</span><br><span class="line"><span class="attribute">dst_host</span>=<span class="string">&quot;localhost&quot;</span> # Host</span><br><span class="line"><span class="attribute">dst_port</span>=<span class="string">&quot;3306&quot;</span> # 端口</span><br><span class="line"><span class="attribute">dst_database</span>=<span class="string">&quot;test&quot;</span> # 数据库名</span><br><span class="line"></span><br><span class="line">mysqldump <span class="attribute">--host</span>=<span class="variable">$src_host</span> <span class="attribute">--port</span>=<span class="variable">$src_port</span> -u<span class="variable">$src_user</span> -p<span class="variable">$src_password</span> <span class="variable">$src_database</span> --tables <span class="variable">$src_table</span> | mysql <span class="attribute">--host</span>=<span class="variable">$dst_host</span> <span class="attribute">--port</span>=<span class="variable">$dst_port</span> -u<span class="variable">$dst_user</span> -p<span class="variable">$dst_password</span> <span class="variable">$dst_database</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="备份脚本"><a href="#备份脚本" class="headerlink" title="备份脚本"></a>备份脚本</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 以下配置信息请自己修改</span></span><br><span class="line">mysql_user=<span class="string">&quot;root&quot;</span> <span class="comment">#MySQL备份用户</span></span><br><span class="line">mysql_password=<span class="string">&quot;root&quot;</span> <span class="comment">#MySQL备份用户的密码</span></span><br><span class="line">mysql_host=<span class="string">&quot;localhost&quot;</span></span><br><span class="line">mysql_port=<span class="string">&quot;3306&quot;</span></span><br><span class="line">mysql_charset=<span class="string">&quot;utf8mb4&quot;</span> <span class="comment">#MySQL编码</span></span><br><span class="line">backup_db_arr=(<span class="string">&quot;db1&quot;</span> <span class="string">&quot;db2&quot;</span>) <span class="comment">#要备份的数据库名称，多个用空格分开隔开 如(&quot;db1&quot; &quot;db2&quot; &quot;db3&quot;)</span></span><br><span class="line">backup_location=/var/www/mysql  <span class="comment">#备份数据存放位置，末尾请不要带&quot;/&quot;,此项可以保持默认，程序会自动创建文件夹</span></span><br><span class="line">expire_backup_delete=<span class="string">&quot;OFF&quot;</span> <span class="comment">#是否开启过期备份删除 ON为开启 OFF为关闭</span></span><br><span class="line">expire_days=3 <span class="comment">#过期时间天数 默认为三天，此项只有在expire_backup_delete开启时有效</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 本行开始以下不需要修改</span></span><br><span class="line">backup_time=`<span class="built_in">date</span> +%Y%m%d%H%M`  <span class="comment">#定义备份详细时间</span></span><br><span class="line">backup_Ymd=`<span class="built_in">date</span> +%Y-%m-%d` <span class="comment">#定义备份目录中的年月日时间</span></span><br><span class="line">backup_3ago=`<span class="built_in">date</span> -d <span class="string">&#x27;3 days ago&#x27;</span> +%Y-%m-%d` <span class="comment">#3天之前的日期</span></span><br><span class="line">backup_dir=<span class="variable">$backup_location</span>/<span class="variable">$backup_Ymd</span>  <span class="comment">#备份文件夹全路径</span></span><br><span class="line">welcome_msg=<span class="string">&quot;Welcome to use MySQL backup tools!&quot;</span> <span class="comment">#欢迎语</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 判断MYSQL是否启动,mysql没有启动则备份退出</span></span><br><span class="line">mysql_ps=`ps -ef |grep mysql |<span class="built_in">wc</span> -l`</span><br><span class="line">mysql_listen=`netstat -an |grep LISTEN |grep <span class="variable">$mysql_port</span>|<span class="built_in">wc</span> -l`</span><br><span class="line"><span class="keyword">if</span> [ [<span class="variable">$mysql_ps</span> == 0] -o [<span class="variable">$mysql_listen</span> == 0] ]; <span class="keyword">then</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;ERROR:MySQL is not running! backup stop!&quot;</span></span><br><span class="line">        <span class="built_in">exit</span></span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="variable">$welcome_msg</span></span><br><span class="line"><span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 连接到mysql数据库，无法连接则备份退出</span></span><br><span class="line">mysql -h<span class="variable">$mysql_host</span> -P<span class="variable">$mysql_port</span> -u<span class="variable">$mysql_user</span> -p<span class="variable">$mysql_password</span> &lt;&lt;<span class="string">end</span></span><br><span class="line"><span class="string">use mysql;</span></span><br><span class="line"><span class="string">select host,user from user where user=&#x27;root&#x27; and host=&#x27;localhost&#x27;;</span></span><br><span class="line"><span class="string">exit</span></span><br><span class="line"><span class="string">end</span></span><br><span class="line"></span><br><span class="line">flag=`<span class="built_in">echo</span> $?`</span><br><span class="line"><span class="keyword">if</span> [ <span class="variable">$flag</span> != <span class="string">&quot;0&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;ERROR:Can&#x27;t connect mysql server! backup stop!&quot;</span></span><br><span class="line">        <span class="built_in">exit</span></span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;MySQL connect ok! Please wait......&quot;</span></span><br><span class="line">        <span class="comment"># 判断有没有定义备份的数据库，如果定义则开始备份，否则退出备份</span></span><br><span class="line">        <span class="keyword">if</span> [ <span class="string">&quot;<span class="variable">$backup_db_arr</span>&quot;</span> != <span class="string">&quot;&quot;</span> ];<span class="keyword">then</span></span><br><span class="line">                <span class="comment">#dbnames=$(cut -d &#x27;,&#x27; -f1-5 $backup_database)</span></span><br><span class="line">                <span class="comment">#echo &quot;arr is ($&#123;backup_db_arr[@]&#125;)&quot;</span></span><br><span class="line">                <span class="keyword">for</span> dbname <span class="keyword">in</span> <span class="variable">$&#123;backup_db_arr[@]&#125;</span></span><br><span class="line">                <span class="keyword">do</span></span><br><span class="line">                        <span class="built_in">echo</span> <span class="string">&quot;database <span class="variable">$dbname</span> backup start...&quot;</span></span><br><span class="line">                        `<span class="built_in">mkdir</span> -p <span class="variable">$backup_dir</span>`</span><br><span class="line">                        `mysqldump -h<span class="variable">$mysql_host</span> -P<span class="variable">$mysql_port</span> -u<span class="variable">$mysql_user</span> -p<span class="variable">$mysql_password</span> <span class="variable">$dbname</span> --default-character-set=<span class="variable">$mysql_charset</span> | gzip &gt; <span class="variable">$backup_dir</span>/<span class="variable">$dbname</span>-<span class="variable">$backup_time</span>.sql.gz`</span><br><span class="line">                        flag=`<span class="built_in">echo</span> $?`</span><br><span class="line">                        <span class="keyword">if</span> [ <span class="variable">$flag</span> == <span class="string">&quot;0&quot;</span> ];<span class="keyword">then</span></span><br><span class="line">                                <span class="built_in">echo</span> <span class="string">&quot;database <span class="variable">$dbname</span> success backup to <span class="variable">$backup_dir</span>/<span class="variable">$dbname</span>-<span class="variable">$backup_time</span>.sql.gz&quot;</span></span><br><span class="line">                        <span class="keyword">else</span></span><br><span class="line">                                <span class="built_in">echo</span> <span class="string">&quot;database <span class="variable">$dbname</span> backup fail!&quot;</span></span><br><span class="line">                        <span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line">                <span class="keyword">done</span></span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">                <span class="built_in">echo</span> <span class="string">&quot;ERROR:No database to backup! backup stop&quot;</span></span><br><span class="line">                <span class="built_in">exit</span></span><br><span class="line">        <span class="keyword">fi</span></span><br><span class="line">        <span class="comment"># 如果开启了删除过期备份，则进行删除操作</span></span><br><span class="line">        <span class="keyword">if</span> [ <span class="string">&quot;<span class="variable">$expire_backup_delete</span>&quot;</span> == <span class="string">&quot;ON&quot;</span> -a  <span class="string">&quot;<span class="variable">$backup_location</span>&quot;</span> != <span class="string">&quot;&quot;</span> ];<span class="keyword">then</span></span><br><span class="line">                 <span class="comment">#`find $backup_location/ -type d -o -type f -ctime +$expire_days -exec rm -rf &#123;&#125; \;`</span></span><br><span class="line">                 `find <span class="variable">$backup_location</span>/ -<span class="built_in">type</span> d -mtime +<span class="variable">$expire_days</span> | xargs <span class="built_in">rm</span> -rf`</span><br><span class="line">                 <span class="built_in">echo</span> <span class="string">&quot;Expired backup data delete complete!&quot;</span></span><br><span class="line">        <span class="keyword">fi</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;All database backup success! Thank you!&quot;</span></span><br><span class="line">        <span class="built_in">exit</span></span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
+
+<p>修改shell脚本的属性：</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">chmod <span class="number">600</span> <span class="regexp">/root/my</span>sql_backup.sh</span><br><span class="line">chmod +x <span class="regexp">/root/my</span>sql_backup.sh</span><br></pre></td></tr></table></figure>
+
+<p>设置好属性之后，把命令加入 <code>crontab</code>，设置每天 <code>00:00</code> 定时自动备份。</p>
+<figure class="highlight basic"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="symbol">00 </span><span class="number">00</span> * * * /path/<span class="keyword">to</span>/mysql_backup.sh</span><br></pre></td></tr></table></figure>
+
+<h2 id="恢复备份"><a href="#恢复备份" class="headerlink" title="恢复备份"></a>恢复备份</h2><figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">mysql -u username -proot databse &lt; backup.sql</span><br><span class="line"></span><br><span class="line">// 和建库语句一起导入</span><br><span class="line">mysql -uroot -proot --host<span class="operator">=</span><span class="number">127.0</span>.<span class="number">0.1</span> --port<span class="operator">=</span><span class="number">33006</span>  &lt; global.sql</span><br><span class="line"></span><br><span class="line">或者</span><br><span class="line"></span><br><span class="line">mysql -u root -p</span><br><span class="line"></span><br><span class="line">use dbname<span class="comment">;</span></span><br><span class="line"></span><br><span class="line">source dbname.sql</span><br></pre></td></tr></table></figure>
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2020/11/13/mysqldump-%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA/" data-id="cl9pgeo2301cpycv131kz5wud" data-title="mysqldump 深入浅出" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2020/11/15/flex%E5%B8%83%E5%B1%80-%E4%B8%89%E4%B8%AAdiv-%E4%B8%A4%E4%B8%AA%E5%B7%A6%E5%AF%B9%E9%BD%90-%E4%B8%80%E4%B8%AA%E5%8F%B3%E5%AF%B9%E9%BD%90/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          flex布局 三个div 两个左对齐 一个右对齐
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2020/10/31/conda%E7%8E%AF%E5%A2%83%E7%AE%A1%E7%90%86%E5%91%BD%E4%BB%A4/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">conda环境管理命令</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

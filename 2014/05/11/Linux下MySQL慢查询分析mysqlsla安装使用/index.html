@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Linux下MySQL慢查询分析mysqlsla安装使用 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="说明： 操作系统：CentOS 5.X 64位 MySQL版本：mysql-5.5.35 MySQL配置文件：&#x2F;etc&#x2F;my.cnf MySQL 数据库存放目录：&#x2F;data&#x2F;mysql 实现目的：开启MySQL慢查询日志功能，安装使用MySQL慢查询分析mysqlsla">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linux下MySQL慢查询分析mysqlsla安装使用">
+<meta property="og:url" content="http://moqiang02.github.io/2014/05/11/Linux%E4%B8%8BMySQL%E6%85%A2%E6%9F%A5%E8%AF%A2%E5%88%86%E6%9E%90mysqlsla%E5%AE%89%E8%A3%85%E4%BD%BF%E7%94%A8/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="说明： 操作系统：CentOS 5.X 64位 MySQL版本：mysql-5.5.35 MySQL配置文件：&#x2F;etc&#x2F;my.cnf MySQL 数据库存放目录：&#x2F;data&#x2F;mysql 实现目的：开启MySQL慢查询日志功能，安装使用MySQL慢查询分析mysqlsla">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/Linux%E4%B8%8BMySQL%E6%85%A2%E6%9F%A5%E8%AF%A2%E5%88%86%E6%9E%90mysqlsla%E5%AE%89%E8%A3%85%E4%BD%BF%E7%94%A8/1.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/Linux%E4%B8%8BMySQL%E6%85%A2%E6%9F%A5%E8%AF%A2%E5%88%86%E6%9E%90mysqlsla%E5%AE%89%E8%A3%85%E4%BD%BF%E7%94%A8/2.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/Linux%E4%B8%8BMySQL%E6%85%A2%E6%9F%A5%E8%AF%A2%E5%88%86%E6%9E%90mysqlsla%E5%AE%89%E8%A3%85%E4%BD%BF%E7%94%A8/3.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/Linux%E4%B8%8BMySQL%E6%85%A2%E6%9F%A5%E8%AF%A2%E5%88%86%E6%9E%90mysqlsla%E5%AE%89%E8%A3%85%E4%BD%BF%E7%94%A8/4.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/Linux%E4%B8%8BMySQL%E6%85%A2%E6%9F%A5%E8%AF%A2%E5%88%86%E6%9E%90mysqlsla%E5%AE%89%E8%A3%85%E4%BD%BF%E7%94%A8/5.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/Linux%E4%B8%8BMySQL%E6%85%A2%E6%9F%A5%E8%AF%A2%E5%88%86%E6%9E%90mysqlsla%E5%AE%89%E8%A3%85%E4%BD%BF%E7%94%A8/6.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/Linux%E4%B8%8BMySQL%E6%85%A2%E6%9F%A5%E8%AF%A2%E5%88%86%E6%9E%90mysqlsla%E5%AE%89%E8%A3%85%E4%BD%BF%E7%94%A8/7.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/Linux%E4%B8%8BMySQL%E6%85%A2%E6%9F%A5%E8%AF%A2%E5%88%86%E6%9E%90mysqlsla%E5%AE%89%E8%A3%85%E4%BD%BF%E7%94%A8/8.jpg">
+<meta property="article:published_time" content="2014-05-11T14:55:11.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.795Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/Linux%E4%B8%8BMySQL%E6%85%A2%E6%9F%A5%E8%AF%A2%E5%88%86%E6%9E%90mysqlsla%E5%AE%89%E8%A3%85%E4%BD%BF%E7%94%A8/1.jpg">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Linux下MySQL慢查询分析mysqlsla安装使用" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2014/05/11/Linux%E4%B8%8BMySQL%E6%85%A2%E6%9F%A5%E8%AF%A2%E5%88%86%E6%9E%90mysqlsla%E5%AE%89%E8%A3%85%E4%BD%BF%E7%94%A8/" class="article-date">
+  <time class="dt-published" datetime="2014-05-11T14:55:11.000Z" itemprop="datePublished">2014-05-11</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/mysql/">mysql</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Linux下MySQL慢查询分析mysqlsla安装使用
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%BC%80%E5%90%AFMySQL%E6%85%A2%E6%9F%A5%E8%AF%A2%E5%8A%9F%E8%83%BD"><span class="toc-number">1.</span> <span class="toc-text">一、开启MySQL慢查询功能</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%AE%89%E8%A3%85%E4%BD%BF%E7%94%A8MySQL%E6%85%A2%E6%9F%A5%E8%AF%A2%E5%88%86%E6%9E%90%E5%B7%A5%E5%85%B7mysqlsla"><span class="toc-number">2.</span> <span class="toc-text">二、安装使用MySQL慢查询分析工具mysqlsla</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <p>说明：</p>
+<p>操作系统：CentOS 5.X 64位</p>
+<p>MySQL版本：mysql-5.5.35</p>
+<p>MySQL配置文件：/etc/my.cnf</p>
+<p>MySQL 数据库存放目录：/data/mysql</p>
+<p>实现目的：开启MySQL慢查询日志功能，安装使用MySQL慢查询分析mysqlsla</p>
+<span id="more"></span>
+<p>具体操作：</p>
+<h3 id="一、开启MySQL慢查询功能"><a href="#一、开启MySQL慢查询功能" class="headerlink" title="一、开启MySQL慢查询功能"></a>一、开启MySQL慢查询功能</h3><p><code>mysql -u  root -p  #进入MySQL控制台</code><br><img src="/images/Linux%E4%B8%8BMySQL%E6%85%A2%E6%9F%A5%E8%AF%A2%E5%88%86%E6%9E%90mysqlsla%E5%AE%89%E8%A3%85%E4%BD%BF%E7%94%A8/1.jpg"></p>
+<p><code>show variables like &#39;%slow%&#39;;   #查看MySQL慢查询是否开启</code><br><img src="/images/Linux%E4%B8%8BMySQL%E6%85%A2%E6%9F%A5%E8%AF%A2%E5%88%86%E6%9E%90mysqlsla%E5%AE%89%E8%A3%85%E4%BD%BF%E7%94%A8/2.jpg"></p>
+<p><code>set global slow_query_log=ON;   #开启MySQL慢查询功能</code><br><img src="/images/Linux%E4%B8%8BMySQL%E6%85%A2%E6%9F%A5%E8%AF%A2%E5%88%86%E6%9E%90mysqlsla%E5%AE%89%E8%A3%85%E4%BD%BF%E7%94%A8/3.jpg"></p>
+<p><code>show variables like &quot;long_query_time&quot;;  #查看MySQL慢查询时间设置，默认10秒</code></p>
+<p><code>set global long_query_time=5;  #修改为记录5秒内的查询</code><br><img src="/images/Linux%E4%B8%8BMySQL%E6%85%A2%E6%9F%A5%E8%AF%A2%E5%88%86%E6%9E%90mysqlsla%E5%AE%89%E8%A3%85%E4%BD%BF%E7%94%A8/4.jpg"></p>
+<p><code>select sleep(6);  #测试MySQL慢查询</code></p>
+<p><code>show variables like &quot;%slow%&quot;;  #查看MySQL慢查询日志路径</code></p>
+<p><code>show global status like &#39;%slow%&#39;;  #查看MySQL慢查询状态</code><br><img src="/images/Linux%E4%B8%8BMySQL%E6%85%A2%E6%9F%A5%E8%AF%A2%E5%88%86%E6%9E%90mysqlsla%E5%AE%89%E8%A3%85%E4%BD%BF%E7%94%A8/5.jpg"></p>
+<p><code>exit;  #退出MySQL控制台</code></p>
+<p><code>cat /data/mysql/127-slow.log  #查看MySQL慢查询日志是否被记录</code><br><img src="/images/Linux%E4%B8%8BMySQL%E6%85%A2%E6%9F%A5%E8%AF%A2%E5%88%86%E6%9E%90mysqlsla%E5%AE%89%E8%A3%85%E4%BD%BF%E7%94%A8/6.jpg"></p>
+<p><strong>备注：还可以通过修改MySQL配置文件参数，开启MySQL慢查询。</strong></p>
+<p><code>vi  /etc/my.cnf  #编辑，在[mysqld]段添加以下代码</code><br>方法一：<br><img src="/images/Linux%E4%B8%8BMySQL%E6%85%A2%E6%9F%A5%E8%AF%A2%E5%88%86%E6%9E%90mysqlsla%E5%AE%89%E8%A3%85%E4%BD%BF%E7%94%A8/7.jpg"></p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">slow-query-log</span> = <span class="literal">on</span>  <span class="comment">#开启MySQL慢查询功能（如果on无效的话，把on改为1即可）</span></span><br><span class="line"></span><br><span class="line"><span class="attr">slow_query_log_file</span> = /data/mysql/<span class="number">127</span>-slow.log  <span class="comment">#设置MySQL慢查询日志路径</span></span><br><span class="line"></span><br><span class="line"><span class="attr">long_query_time</span> = <span class="number">5</span>  <span class="comment">#修改为记录5秒内的查询，默认不设置此参数为记录10秒内的查询</span></span><br><span class="line"></span><br><span class="line"><span class="attr">log-queries-not-using-indexes</span> = <span class="literal">on</span>  <span class="comment">#记录未使用索引的查询（如果on无效的话，去掉on即可）</span></span><br></pre></td></tr></table></figure>
+<p>方法二：</p>
+<figure class="highlight arcade"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">long_query_time = <span class="number">1</span> </span><br><span class="line">     </span><br><span class="line"><span class="built_in">log</span>-slow-queries = <span class="regexp">/var/y</span>oupath/slow.<span class="built_in">log</span>  </span><br><span class="line">     </span><br><span class="line"><span class="built_in">log</span>-queries-not-using-indexes </span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>log-long-format（可选）  这里需要注意这个参数，不要被网上一些关于mysql慢查询的相关文章所迷惑——他们对此参数的解释是（如果设置了，所有没有使用索引的查询也将被记录），我看了就奇怪了，这不和参数log-queries-not-using-indexes的功能是一样的么，于是百度之，可笑的是，即然有很多文章都是类似描述，实际上与这个参数对应的是另一个参数：log-short-format。<br>简单的说log-long-format选项是用来设置日志的格式，它是以扩展方式记录有关事件。扩展方式可记录谁发出查询和什么时候发出查询的信息。可使我们更好地掌握客户端的操作情况。<br>准确的说，它是记录激活的更新日志、二进制更新日志、和慢查询日志的大量信息。例如，所有查询的用户名和时间戳将记录下来。不赞成选用该选项，因为它现在代表 默认记录行为。</p>
+</blockquote>
+<blockquote>
+<p>log-short-format（可选）  记录激活的更新日志、二进制更新日志、和慢查询日志的少量信息。例如，用户名和时间戳不记录下来。</p>
+</blockquote>
+<p><code>:wq! #保存退出</code></p>
+<p><code>service mysqld restart #重启MySQL服务</code></p>
+<h3 id="二、安装使用MySQL慢查询分析工具mysqlsla"><a href="#二、安装使用MySQL慢查询分析工具mysqlsla" class="headerlink" title="二、安装使用MySQL慢查询分析工具mysqlsla"></a>二、安装使用MySQL慢查询分析工具mysqlsla</h3><p>1、安装mysqlsla</p>
+<p><code>yum install  wget  perl  perl-DBI  perl-DBD-MySQL  mysql  #执行此命令安装依赖包</code></p>
+<p><code>cd /usr/local/src #进入软件包存放目录</code></p>
+<p><code>wget http://hackmysql.com/scripts/mysqlsla-2.03.tar.gz  #下载mysqlsla</code></p>
+<p><code>tar zxvf mysqlsla-2.03.tar.gz  #解压</code></p>
+<p><code>cd  mysqlsla-2.03  #进入安装目录</code><br><img src="/images/Linux%E4%B8%8BMySQL%E6%85%A2%E6%9F%A5%E8%AF%A2%E5%88%86%E6%9E%90mysqlsla%E5%AE%89%E8%A3%85%E4%BD%BF%E7%94%A8/8.jpg"></p>
+<p><code>perl Makefile.PL  #配置</code></p>
+<blockquote>
+<p>如果报错：Can’t locate ExtUtils/MakeMaker.pm<br>解决：yum install perl-ExtUtils-CBuilder perl-ExtUtils-MakeMaker</p>
+</blockquote>
+<p><code>make  #编译</code></p>
+<p><code>make install  #安装</code></p>
+<p>2、使用mysqlsla分析MySQL慢查询日志</p>
+<p>查询记录最多的20个sql语句，并写到select.log中去</p>
+<p><code>mysqlsla -lt slow --sort t_sum --top 20  /data/mysql/127-slow.log &gt;/tmp/select.log</code></p>
+<blockquote>
+<p>如果报错：Can’t locate Time/HiRes.pm in @INC<br>解决：<code>yum -y  install perl-Time-HiRes</code></p>
+</blockquote>
+<p>统计慢查询文件为<code>/data/mysql/127-slow.log</code>的所有select的慢查询sql，并显示执行时间最长的100条sql，并写到sql_select.log中去</p>
+<p><code>mysqlsla -lt slow  -sf &quot;+select&quot; -top 100  /data/mysql/127-slow.log &gt;/tmp/sql_select.log</code></p>
+<p>统计慢查询文件为<code>/data/mysql/127-slow.log</code>的数据库为mydata的所有select和update的慢查询sql，并查询次数最多的100条sql，并写到sql_num.sql中去</p>
+<p><code>mysqlsla -lt slow  -sf &quot;+select,update&quot; -top 100 -sort c_sum  -db mydata /data/mysql/127-slow.log &gt;/tmp/sql_num.log</code></p>
+<p>至此，Linux下MySQL慢查询分析mysqlsla安装使用教程完成。<br>» 本文链接：<a target="_blank" rel="noopener" href="http://www.osyunwei.com/archives/7659.html">http://www.osyunwei.com/archives/7659.html</a></p>
+<hr>
+<p><strong>参数意义</strong></p>
+<p>lt：表示日志类型，有slow，general，binary，msl，udl。<br>sf：[+-][TYPE]，[TYPE]有SELECT，CREATE，DROP，UPDATE，INSERT，例如”+SELECT,INSERT”，不出现的默认是-，即不包括。<br>db：要处理哪个库的日志。<br>top：表示取按规则排序的前多少条。<br>sort：按某种规则排序，t_sum按总时间排序，c_sum按总次数排序。</p>
+<p><strong>结果解释</strong></p>
+<p>Count：sql的执行次数及占总的slow log数量的百分比。</p>
+<p>Time：执行时间，包括总时间，平均时间，最小，最大时间，时间占到总慢sql时间的百分比。</p>
+<p>95% of Time：去除最快和最慢的sql，覆盖率占95%的sql的执行时间。</p>
+<p>Lock Time：等待锁的时间。</p>
+<p>95% of Lock：95%的慢sql等待锁时间。</p>
+<p>Rows sent：结果行统计数量，包括平均，最小，最大数量。</p>
+<p>Rows examined：扫描的行数量。</p>
+<p>Database：属于哪个数据库</p>
+<p>Users：哪个用户，IP，占到所有用户执行的sql百分比</p>
+<p>Query abstract：抽象后的sql语句</p>
+<p>Query sample：sql语句</p>
+<p>测试：</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">[root@mwtec-80 bin]# ./mysqlsla -lt slow /tmp/slow<span class="emphasis">_query.log215 -sf &quot;+select&quot; -top 2 -sort c_</span>sum</span><br><span class="line">Report for slow logs: /tmp/slow<span class="emphasis">_query.log215</span></span><br><span class="line"><span class="emphasis">13 queries total, 7 unique</span></span><br><span class="line"><span class="emphasis">Sorted by &#x27;c_</span>sum&#x27;</span><br><span class="line">Grand Totals: Time 219 s, Lock 0 s, Rows sent 10.63k, Rows Examined 59.31M</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">__ 001 __</span><span class="emphasis">_</span></span><br><span class="line"><span class="emphasis">Count         : 3  (23.08%)</span></span><br><span class="line"><span class="emphasis">Time          : 3.730898 s total, 1.243633 s avg, 1.243623 s to 1.243651 s max  (1.70%)</span></span><br><span class="line"><span class="emphasis">Lock Time (s) : 0 total, 0 avg, 0 to 0 max  (0.00%)</span></span><br><span class="line"><span class="emphasis">Rows sent     : 1 avg, 1 to 1 max  (0.03%)</span></span><br><span class="line"><span class="emphasis">Rows examined : 0 avg, 0 to 0 max  (0.00%)</span></span><br><span class="line"><span class="emphasis">Database      : </span></span><br><span class="line"><span class="emphasis">Users         : </span></span><br><span class="line"><span class="emphasis">        diandong@ 10.31.247.159 : 66.67% (2) of query, 46.15% (6) of all users</span></span><br><span class="line"><span class="emphasis">        diandong@ 10.31.247.212 : 33.33% (1) of query, 7.69% (1) of all users</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">Query abstract:</span></span><br><span class="line"><span class="emphasis">SELECT @@session.tx_</span>isolation;</span><br><span class="line"></span><br><span class="line">Query sample:</span><br><span class="line">SELECT @@session.tx<span class="emphasis">_isolation;</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis"><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">____</span><span class="strong">__ 002 __</span>_</span></span><br><span class="line">Count         : 3  (23.08%)</span><br><span class="line">Time          : 27.367664 s total, 9.122555 s avg, 9.121485 s to 9.124615 s max  (12.48%)</span><br><span class="line">Lock Time (s) : 0 total, 0 avg, 0 to 0 max  (0.00%)</span><br><span class="line">Rows sent     : 1 avg, 1 to 1 max  (0.03%)</span><br><span class="line">Rows examined : 0 avg, 0 to 0 max  (0.00%)</span><br><span class="line">Database      : diandong</span><br><span class="line">Users         : </span><br><span class="line"><span class="code">        diandong@ 10.31.247.159 : 100.00% (3) of query, 46.15% (6) of all users</span></span><br><span class="line"><span class="code"></span></span><br><span class="line">Query abstract:</span><br><span class="line">SELECT N;</span><br><span class="line"></span><br><span class="line">Query sample:</span><br><span class="line">select 1;</span><br></pre></td></tr></table></figure>
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/05/11/Linux%E4%B8%8BMySQL%E6%85%A2%E6%9F%A5%E8%AF%A2%E5%88%86%E6%9E%90mysqlsla%E5%AE%89%E8%A3%85%E4%BD%BF%E7%94%A8/" data-id="cl9pgensy00lbycv1ash25riz" data-title="Linux下MySQL慢查询分析mysqlsla安装使用" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/05/20/SVN%E7%8A%B6%E6%80%81%E5%9B%BE%E6%A0%87%E6%B6%88%E5%A4%B1%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          SVN状态图标消失的解决方法
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/04/30/memcached%E5%88%86%E5%B8%83%E5%BC%8F%E9%83%A8%E7%BD%B2/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">memcached分布式部署</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>RabbitMQ从新手到熟悉（四）RabbitMQ高级之如何保证消息可靠性？ | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="楔子本篇是消息队列RabbitMQ的第四弹。 RabbitMQ我已经写了三篇了，基础的收发消息和基础的概念我都已经写了，学任何东西都是这样，先基础的上手能用，然后遇到问题再去解决，无法理解就去深入源码，随着时间的积累对这一门技术的理解也会随之提高。 基础操作已经熟练后，相信大家不可避免的会生出向那更高处攀登的心来，今天我就罗列一些RabbitMQ比较高级的用法，有些用得到有些用不上，但是一定要有所">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RabbitMQ从新手到熟悉（四）RabbitMQ高级之如何保证消息可靠性？">
+<meta property="og:url" content="http://moqiang02.github.io/2022/09/29/RabbitMQ%E4%BB%8E%E6%96%B0%E6%89%8B%E5%88%B0%E7%86%9F%E6%82%89%EF%BC%88%E5%9B%9B%EF%BC%89RabbitMQ%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E6%B6%88%E6%81%AF%E5%8F%AF%E9%9D%A0%E6%80%A7%EF%BC%9F/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="楔子本篇是消息队列RabbitMQ的第四弹。 RabbitMQ我已经写了三篇了，基础的收发消息和基础的概念我都已经写了，学任何东西都是这样，先基础的上手能用，然后遇到问题再去解决，无法理解就去深入源码，随着时间的积累对这一门技术的理解也会随之提高。 基础操作已经熟练后，相信大家不可避免的会生出向那更高处攀登的心来，今天我就罗列一些RabbitMQ比较高级的用法，有些用得到有些用不上，但是一定要有所">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/RabbitMQ%E4%BB%8E%E6%96%B0%E6%89%8B%E5%88%B0%E7%86%9F%E6%82%894/0.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/RabbitMQ%E4%BB%8E%E6%96%B0%E6%89%8B%E5%88%B0%E7%86%9F%E6%82%894/1.png">
+<meta property="article:published_time" content="2022-09-29T02:31:31.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.873Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="消息队列">
+<meta property="article:tag" content="SpringBoot">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/RabbitMQ%E4%BB%8E%E6%96%B0%E6%89%8B%E5%88%B0%E7%86%9F%E6%82%894/0.png">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-RabbitMQ从新手到熟悉（四）RabbitMQ高级之如何保证消息可靠性？" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2022/09/29/RabbitMQ%E4%BB%8E%E6%96%B0%E6%89%8B%E5%88%B0%E7%86%9F%E6%82%89%EF%BC%88%E5%9B%9B%EF%BC%89RabbitMQ%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E6%B6%88%E6%81%AF%E5%8F%AF%E9%9D%A0%E6%80%A7%EF%BC%9F/" class="article-date">
+  <time class="dt-published" datetime="2022-09-29T02:31:31.000Z" itemprop="datePublished">2022-09-29</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/java/">java</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      RabbitMQ从新手到熟悉（四）RabbitMQ高级之如何保证消息可靠性？
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A5%94%E5%AD%90"><span class="toc-number">1.</span> <span class="toc-text">楔子</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%F0%9F%93%96%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E6%B6%88%E6%81%AF%E7%9A%84%E5%8F%AF%E9%9D%A0%E6%80%A7%EF%BC%9F"><span class="toc-number">2.</span> <span class="toc-text">1. 📖如何保证消息的可靠性？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%F0%9F%94%8D%E7%94%9F%E4%BA%A7%E8%80%85%E5%8F%91%E9%80%81%E6%B6%88%E6%81%AF%E5%88%B0MQ%E5%A4%B1%E8%B4%A5"><span class="toc-number">3.</span> <span class="toc-text">2. 🔍生产者发送消息到MQ失败</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%F0%9F%93%94MQ%E6%8E%A5%E6%94%B6%E5%A4%B1%E8%B4%A5%E6%88%96%E8%80%85%E8%B7%AF%E7%94%B1%E5%A4%B1%E8%B4%A5"><span class="toc-number">4.</span> <span class="toc-text">3. 📔MQ接收失败或者路由失败</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%F0%9F%93%91%E6%B6%88%E6%81%AF%E5%85%A5%E9%98%9F%E4%B9%8B%E5%90%8EMQ%E5%AE%95%E6%9C%BA"><span class="toc-number">5.</span> <span class="toc-text">4. 📑消息入队之后MQ宕机</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%F0%9F%93%8C%E6%B6%88%E8%B4%B9%E8%80%85%E6%97%A0%E6%B3%95%E6%AD%A3%E5%B8%B8%E6%B6%88%E8%B4%B9"><span class="toc-number">6.</span> <span class="toc-text">5. 📌消费者无法正常消费</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%F0%9F%92%A1%E6%B6%88%E6%81%AF%E5%8F%AF%E9%9D%A0%E6%80%A7%E6%A1%88%E4%BE%8B"><span class="toc-number">7.</span> <span class="toc-text">6. 💡消息可靠性案例</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <h2 id="楔子"><a href="#楔子" class="headerlink" title="楔子"></a>楔子</h2><p>本篇是消息队列<code>RabbitMQ</code>的第四弹。</p>
+<p><code>RabbitMQ</code>我已经写了三篇了，基础的收发消息和基础的概念我都已经写了，学任何东西都是这样，先基础的上手能用，然后遇到问题再去解决，无法理解就去深入源码，随着时间的积累对这一门技术的理解也会随之提高。</p>
+<p>基础操作已经熟练后，相信大家不可避免的会生出向那更高处攀登的心来，今天我就罗列一些<code>RabbitMQ</code>比较高级的用法，有些用得到有些用不上，但是一定要有所了解，因为大部分情况我们都是面向面试学习~<span id="more"></span></p>
+<ul>
+<li>  如何保证消息的可靠性？</li>
+<li>  消息队列如何进行限流？</li>
+<li>  如何设置延时队列进行延时消费？</li>
+</ul>
+<p><strong>本文代码：</strong> <a target="_blank" rel="noopener" href="https://gitee.com/he-erduo/spring-boot-learning-demo">码云地址</a> <a target="_blank" rel="noopener" href="https://github.com/he-erduo/spring-boot-learning-demo">GitHub地址</a></p>
+<h2 id="1-📖如何保证消息的可靠性？"><a href="#1-📖如何保证消息的可靠性？" class="headerlink" title="1. 📖如何保证消息的可靠性？"></a>1. 📖如何保证消息的可靠性？</h2><p><img src="/images/RabbitMQ%E4%BB%8E%E6%96%B0%E6%89%8B%E5%88%B0%E7%86%9F%E6%82%894/0.png"></p>
+<p>先来看看我们的万年老图，从图上我们大概可以看出来一个消息会经历四个节点，只有保证这四个节点的可靠性才能保证整个系统的可靠性。</p>
+<ul>
+<li>  生产者发出后保证到达了MQ。</li>
+<li>  MQ收到消息保证分发到了消息对应的Exchange。</li>
+<li>  Exchange分发消息入队之后保证消息的持久性。</li>
+<li>  消费者收到消息之后保证消息的正确消费。</li>
+</ul>
+<p>经历了这四个保证，我们才能保证消息的可靠性，从而保证消息不会丢失。</p>
+<h2 id="2-🔍生产者发送消息到MQ失败"><a href="#2-🔍生产者发送消息到MQ失败" class="headerlink" title="2. 🔍生产者发送消息到MQ失败"></a>2. 🔍生产者发送消息到MQ失败</h2><p>我们的生产者发送消息之后可能由于网络闪断等各种原因导致我们的消息并没有发送到MQ之中，但是这个时候我们生产端又不知道我们的消息没有发出去，这就会造成消息的丢失。</p>
+<p>为了解决这个问题，<code>RabbitMQ</code>引入了<strong>事务机制</strong>和<strong>发送方确认机制（publisher confirm）</strong>，由于事务机制过于耗费性能所以一般不用，这里我着重讲述<strong>发送方确认机制</strong>。</p>
+<p>这个机制很好理解，就是<strong>消息发送到MQ那端之后，MQ会回一个确认收到的消息给我们</strong>。</p>
+<p>打开此功能需要配置，接下来我来演示一下配置：</p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">rabbitmq:</span></span><br><span class="line">    <span class="attr">addresses:</span> <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span></span><br><span class="line">    <span class="attr">host:</span> <span class="number">5672</span></span><br><span class="line">    <span class="attr">username:</span> <span class="string">guest</span></span><br><span class="line">    <span class="attr">password:</span> <span class="string">guest</span></span><br><span class="line">    <span class="attr">virtual-host:</span> <span class="string">/</span></span><br><span class="line">    <span class="comment"># 打开消息确认机制</span></span><br><span class="line">    <span class="attr">publisher-confirm-type:</span> <span class="string">correlated</span></span><br></pre></td></tr></table></figure>
+
+<p>我们只需要在配置里面打开消息确认即可。</p>
+<p><strong>生产者：</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">sendAndConfirm</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="type">User</span> <span class="variable">user</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">User</span>();</span><br><span class="line"></span><br><span class="line">    log.info(<span class="string">&quot;Message content : &quot;</span> + user);</span><br><span class="line"></span><br><span class="line">    <span class="type">CorrelationData</span> <span class="variable">correlationData</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">CorrelationData</span>(UUID.randomUUID().toString());</span><br><span class="line">    rabbitTemplate.convertAndSend(Producer.QUEUE_NAME,user,correlationData);</span><br><span class="line">    log.info(<span class="string">&quot;消息发送完毕。&quot;</span>);</span><br><span class="line"></span><br><span class="line">    rabbitTemplate.setConfirmCallback(<span class="keyword">new</span> <span class="title class_">RabbitTemplate</span>.ConfirmCallback()&#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">confirm</span><span class="params">(CorrelationData correlationData, <span class="type">boolean</span> ack, String cause)</span> &#123;</span><br><span class="line">            log.info(<span class="string">&quot;CorrelationData content : &quot;</span> + correlationData);</span><br><span class="line">            log.info(<span class="string">&quot;Ack status : &quot;</span> + ack);</span><br><span class="line">            log.info(<span class="string">&quot;Cause content : &quot;</span> + cause);</span><br><span class="line">            <span class="keyword">if</span>(ack)&#123;</span><br><span class="line">                log.info(<span class="string">&quot;消息成功发送，订单入库，更改订单状态&quot;</span>);</span><br><span class="line">            &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">                log.info(<span class="string">&quot;消息发送失败：&quot;</span>+correlationData+<span class="string">&quot;, 出现异常：&quot;</span>+cause);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>生产者代码里我们看到又多了一个参数：<code>CorrelationData</code>，这个参数是用来做消息的唯一标识，同时我们打开消息确认之后需要对<code>rabbitTemplate</code>多设置一个<code>setConfirmCallback</code>，参数是一个匿名类，我们消息确认成功or失败之后的处理就是写在这个匿名类里面。</p>
+<p>比如一条订单消息，当消息确认到达MQ确认之后再行入库或者修改订单的节点状态，如果消息没有成功到达MQ可以进行一次记录或者将订单状态修改。</p>
+<p><strong>Tip</strong>：消息确认失败不只有消息没发过去会触发，消息发过去但是找不到对应的Exchange，也会触发。</p>
+<h2 id="3-📔MQ接收失败或者路由失败"><a href="#3-📔MQ接收失败或者路由失败" class="headerlink" title="3. 📔MQ接收失败或者路由失败"></a>3. 📔MQ接收失败或者路由失败</h2><p>生产者的发送消息处理好了之后，我们就可以来看看MQ端的处理，MQ可能出现两个问题：</p>
+<ol>
+<li> 消息找不到对应的Exchange。</li>
+<li> 找到了Exchange但是找不到对应的Queue。</li>
+</ol>
+<p>这两种情况都可以用<code>RabbitMQ</code>提供的<code>mandatory</code>参数来解决，它会设置消息投递失败的策略，有两种策略：自动删除或返回到客户端。</p>
+<p>我们既然要做可靠性，当然是设置为返回到客户端(<strong>true</strong>是返回客户端，<strong>false</strong>是自动删除)。</p>
+<p><strong>配置：</strong></p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">rabbitmq:</span></span><br><span class="line">    <span class="attr">addresses:</span> <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span></span><br><span class="line">    <span class="attr">host:</span> <span class="number">5672</span></span><br><span class="line">    <span class="attr">username:</span> <span class="string">guest</span></span><br><span class="line">    <span class="attr">password:</span> <span class="string">guest</span></span><br><span class="line">    <span class="attr">virtual-host:</span> <span class="string">/</span></span><br><span class="line">    <span class="comment"># 打开消息确认机制</span></span><br><span class="line">    <span class="attr">publisher-confirm-type:</span> <span class="string">correlated</span></span><br><span class="line">    <span class="comment"># 打开消息返回</span></span><br><span class="line">    <span class="attr">publisher-returns:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">template:</span></span><br><span class="line">      <span class="attr">mandatory:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+
+<p>我们只需要在配置里面打开消息返回即可，<code>template.mandatory: true</code>这一步不要少~</p>
+<p><strong>生产者：</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">sendAndReturn</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="type">User</span> <span class="variable">user</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">User</span>();</span><br><span class="line"></span><br><span class="line">    log.info(<span class="string">&quot;Message content : &quot;</span> + user);</span><br><span class="line"></span><br><span class="line">    rabbitTemplate.setReturnCallback((message, replyCode, replyText, exchange, routingKey) -&gt; &#123;</span><br><span class="line">        log.info(<span class="string">&quot;被退回的消息为：&#123;&#125;&quot;</span>, message);</span><br><span class="line">        log.info(<span class="string">&quot;replyCode：&#123;&#125;&quot;</span>, replyCode);</span><br><span class="line">        log.info(<span class="string">&quot;replyText：&#123;&#125;&quot;</span>, replyText);</span><br><span class="line">        log.info(<span class="string">&quot;exchange：&#123;&#125;&quot;</span>, exchange);</span><br><span class="line">        log.info(<span class="string">&quot;routingKey：&#123;&#125;&quot;</span>, routingKey);</span><br><span class="line">    &#125;);</span><br><span class="line"></span><br><span class="line">    rabbitTemplate.convertAndSend(<span class="string">&quot;fail&quot;</span>,user);</span><br><span class="line">    log.info(<span class="string">&quot;消息发送完毕。&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里我们可以拿到被退回消息的所有信息，然后再进行处理，比如放到一个新的队列单独处理，路由失败一般都是配置问题了。</p>
+<h2 id="4-📑消息入队之后MQ宕机"><a href="#4-📑消息入队之后MQ宕机" class="headerlink" title="4. 📑消息入队之后MQ宕机"></a>4. 📑消息入队之后MQ宕机</h2><p>到这一步基本都是一些很小概率的问题了，比如MQ突然宕机了或者被关闭了，这种问题就必须要对消息做持久化，以便MQ重新启动之后消息还能重新恢复过来。</p>
+<p>消息的持久化要做，但是不能只做消息的持久化，还要做队列的持久化和Exchange的持久化。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Bean</span></span><br><span class="line"><span class="keyword">public</span> DirectExchange <span class="title function_">directExchange</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="comment">// 三个构造参数：name durable autoDelete</span></span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">DirectExchange</span>(<span class="string">&quot;directExchange&quot;</span>, <span class="literal">false</span>, <span class="literal">false</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Bean</span></span><br><span class="line"><span class="keyword">public</span> Queue <span class="title function_">erduo</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="comment">// 其三个参数：durable exclusive autoDelete</span></span><br><span class="line">    <span class="comment">// 一般只设置一下持久化即可</span></span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Queue</span>(<span class="string">&quot;erduo&quot;</span>,<span class="literal">true</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>创建Exchange和队列时只要设置好持久化，发送的消息默认就是持久化消息。</p>
+<p>设置持久化时一定要将Exchange和队列都设置上持久化：</p>
+<p>单单只设置Exchange持久化，重启之后队列会丢失。单单只设置队列的持久化，重启之后Exchange会消失，既而消息也丢失，所以如果不两个一块设置持久化将毫无意义。</p>
+<p><strong>Tip：</strong> 这些都是MQ宕机引起的问题，如果出现服务器宕机或者磁盘损坏则上面的手段统统无效，必须引入镜像队列，做异地多活来抵御这种不可抗因素。</p>
+<h2 id="5-📌消费者无法正常消费"><a href="#5-📌消费者无法正常消费" class="headerlink" title="5. 📌消费者无法正常消费"></a>5. 📌消费者无法正常消费</h2><p>最后一步会出问题的地方就在消费者端了，不过这个解决问题的方法我们之前的文章已经说过了，就是消费者的消息确认。</p>
+<p>如果设置了手动确认，则需要在业务处理完成之后，手动调用<code>channel.basicAck()</code>，手动的签收。</p>
+<p>如果业务处理失败，则手动调用<code>channel.basicNack()</code>方法拒收，并让MQ重新发送该消息。</p>
+<p>如果不做任何关于acknowledge的配置，默认就是自动确认签收的。</p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">rabbitmq:</span></span><br><span class="line">    <span class="attr">addresses:</span> <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span></span><br><span class="line">    <span class="attr">host:</span> <span class="number">5672</span></span><br><span class="line">    <span class="attr">username:</span> <span class="string">guest</span></span><br><span class="line">    <span class="attr">password:</span> <span class="string">guest</span></span><br><span class="line">    <span class="attr">virtual-host:</span> <span class="string">/</span></span><br><span class="line">    <span class="comment"># 手动确认消息</span></span><br><span class="line">    <span class="attr">listener:</span></span><br><span class="line">      <span class="attr">simple:</span></span><br><span class="line">          <span class="attr">acknowledge-mode:</span> <span class="string">manual</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">    通过channel的basicAck方法手动签收，通过basicNack方法拒绝签收</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="meta">@RabbitListener(queues = &#123;RabbitMQConfig.DIRECT_QUEUE&#125;)</span> <span class="comment">//监听</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">receiveMessage</span><span class="params">(String message,Channel channel,<span class="meta">@Header(AmqpHeaders.DELIVERY_TAG)</span> <span class="type">long</span> deliveryTag)</span> &#123;</span><br><span class="line">    <span class="keyword">try</span>&#123;</span><br><span class="line">        <span class="comment">//String message= (String)amqpTemplate.receiveAndConvert(RabbitMQConfig.DIRECT_QUEUE);</span></span><br><span class="line">        System.out.println(<span class="string">&quot;接收的mq消息：&quot;</span>+message);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 业务处理 异常测试</span></span><br><span class="line">        <span class="comment">// System.out.println(&quot;业务处理&quot;+1/0);</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// long deliveryTag 消息接收tag boolean multiple 是否批量确认</span></span><br><span class="line">        System.out.println(<span class="string">&quot;deliveryTag=&quot;</span>+deliveryTag);</span><br><span class="line"></span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">            * 无异常就确认消息</span></span><br><span class="line"><span class="comment">            * basicAck(long deliveryTag, boolean multiple)</span></span><br><span class="line"><span class="comment">            * deliveryTag:取出来当前消息在队列中的的索引;</span></span><br><span class="line"><span class="comment">            * multiple:为true的话就是批量确认,如果当前deliveryTag为5,那么就会确认</span></span><br><span class="line"><span class="comment">            * deliveryTag为5及其以下的消息;一般设置为false</span></span><br><span class="line"><span class="comment">            */</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span>(deliveryTag==<span class="number">5</span>)&#123;</span><br><span class="line">            channel.basicAck(deliveryTag,<span class="literal">true</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;<span class="keyword">catch</span> (Exception e)&#123;</span><br><span class="line"></span><br><span class="line">        e.printStackTrace();</span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">            * 有异常就绝收消息</span></span><br><span class="line"><span class="comment">            * basicNack(long deliveryTag, boolean multiple, boolean requeue)</span></span><br><span class="line"><span class="comment">            * requeue:true为将消息重返当前消息队列,还可以重新发送给消费者;</span></span><br><span class="line"><span class="comment">            *         false:将消息丢弃</span></span><br><span class="line"><span class="comment">            */</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// long deliveryTag, boolean multiple, boolean requeue</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line"></span><br><span class="line">            channel.basicNack(deliveryTag,<span class="literal">false</span>,<span class="literal">true</span>);</span><br><span class="line">            <span class="comment">// long deliveryTag, boolean requeue</span></span><br><span class="line">            <span class="comment">// channel.basicReject(deliveryTag,true);</span></span><br><span class="line"></span><br><span class="line">            Thread.sleep(<span class="number">1000</span>);     <span class="comment">// 这里只是便于出现死循环时查看</span></span><br><span class="line"></span><br><span class="line">            <span class="comment">/*</span></span><br><span class="line"><span class="comment">                * 一般实际异常情况下的处理过程：记录出现异常的业务数据，将它单独插入到一个单独的模块，</span></span><br><span class="line"><span class="comment">                * 然后尝试3次，如果还是处理失败的话，就进行人工介入处理</span></span><br><span class="line"><span class="comment">            */</span></span><br><span class="line"></span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e1) &#123;</span><br><span class="line">            e1.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>channel.basicReject(deliveryTag, true);</code><br>basic.reject方法拒绝deliveryTag对应的消息，第二个参数是否requeue，true则重新入队列，否则丢弃或者进入死信队列。<br>该方法reject后，该消费者还是会消费到该条被reject的消息。</p>
+<p><code>channel.basicNack(deliveryTag, false, true);</code><br>basic.nack方法为不确认deliveryTag对应的消息，第二个参数是否应用于多消息，第三个参数是否requeue，与basic.reject区别就是同时支持多个消息，可以nack该消费者先前接收未ack的所有消息。nack后的消息也会被自己消费到。</p>
+<p><code>channel.basicRecover(true);</code><br>basic.recover是否恢复消息到队列，参数是是否requeue，true则重新入队列，并且尽可能的将之前recover的消息投递给其他消费者消费，而不是自己再次消费。false则消息会重新被投递给自己。</p>
+<p>打开手动消息确认之后，只要我们这条消息没有成功消费，无论中间是出现消费者宕机还是代码异常，只要连接断开之后这条信息还没有被消费那么这条消息就会被重新放入队列再次被消费。</p>
+<p>当然这也可能会出现重复消费的情况，不过在分布式系统中幂等性是一定要做的，所以一般重复消费都会被接口的幂等给拦掉。</p>
+<p>所谓幂等性就是：<strong>一个操作多次执行产生的结果与一次执行产生的结果一致。</strong></p>
+<p>幂等性相关内容不在本章讨论范围~所以我就不多做阐述了。</p>
+<h2 id="6-💡消息可靠性案例"><a href="#6-💡消息可靠性案例" class="headerlink" title="6. 💡消息可靠性案例"></a>6. 💡消息可靠性案例</h2><p><img src="/images/RabbitMQ%E4%BB%8E%E6%96%B0%E6%89%8B%E5%88%B0%E7%86%9F%E6%82%894/1.png"></p>
+<p>这个图是我很早之前画的，是为了记录当时使用<code>RabbitMQ</code>做消息可靠性的具体做法，这里我正好拿出来做个例子给大家看一看。</p>
+<p>这个例子中的消息是先入库的，然后生产者从DB里面拿到数据包装成消息发给MQ，经过消费者消费之后对DB数据的状态进行更改，然后重新入库。</p>
+<p>这中间有任何步骤失败，数据的状态都是没有更新的，这时通过一个定时任务不停的去刷库，找到有问题的数据将它重新扔到生产者那里进行重新投递。</p>
+<p>这个方案其实和网上的很多方案大同小异，基础的可靠性保证之后，定时任务做一个兜底进行不断的扫描，力图100%可靠性。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2022/09/29/RabbitMQ%E4%BB%8E%E6%96%B0%E6%89%8B%E5%88%B0%E7%86%9F%E6%82%89%EF%BC%88%E5%9B%9B%EF%BC%89RabbitMQ%E9%AB%98%E7%BA%A7%E4%B9%8B%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E6%B6%88%E6%81%AF%E5%8F%AF%E9%9D%A0%E6%80%A7%EF%BC%9F/" data-id="cl9pgenwd00w4ycv18icpf4ag" data-title="RabbitMQ从新手到熟悉（四）RabbitMQ高级之如何保证消息可靠性？" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/SpringBoot/" rel="tag">SpringBoot</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" rel="tag">消息队列</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2022/09/29/RabbitMQ%E4%BB%8E%E6%96%B0%E6%89%8B%E5%88%B0%E7%86%9F%E6%82%89%EF%BC%88%E4%BA%94%EF%BC%89RabbitMQ%E9%AB%98%E7%BA%A7%E4%B9%8B%E6%B6%88%E6%81%AF%E9%99%90%E6%B5%81%E4%B8%8E%E5%BB%B6%E6%97%B6%E9%98%9F%E5%88%97/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          RabbitMQ从新手到熟悉（五）RabbitMQ高级之消息限流与延时队列
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2022/09/29/RabbitMQ%E4%BB%8E%E6%96%B0%E6%89%8B%E5%88%B0%E7%86%9F%E6%82%89%EF%BC%88%E4%B8%89%EF%BC%89%E4%B8%8A%E6%89%8B%E4%BA%86RabbitMQ%EF%BC%9F%E5%86%8D%E6%9D%A5%E7%9C%8B%E7%9C%8B%E5%AE%83%E7%9A%84%E4%BA%A4%E6%8D%A2%E6%9C%BA-Exchange-%E5%90%A7/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">RabbitMQ从新手到熟悉（三）上手了RabbitMQ？再来看看它的交换机(Exchange)吧</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

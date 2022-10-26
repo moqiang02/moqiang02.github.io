@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Python回测神器Backtrader (下） | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="在上一篇的基础上，本篇主要讲讲如何在Backtrader中进行回测、选股、优化及可视化，并给出例子中的源码。  10.使用Backtrader回测 选择量化研究中的Hello World策略进行介绍，即经典但不实用的 双均线策略。  双均线策略双均线策略，顾名思义，就是两根均线：短期均线和长期均线。当短线均线上穿长期均线（金叉）时买入，当短期均线下穿长期均线（死叉）时卖出，这就是双均线策略的核心">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Python回测神器Backtrader (下）">
+<meta property="og:url" content="http://moqiang02.github.io/2020/10/18/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader-%E4%B8%8B/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="在上一篇的基础上，本篇主要讲讲如何在Backtrader中进行回测、选股、优化及可视化，并给出例子中的源码。  10.使用Backtrader回测 选择量化研究中的Hello World策略进行介绍，即经典但不实用的 双均线策略。  双均线策略双均线策略，顾名思义，就是两根均线：短期均线和长期均线。当短线均线上穿长期均线（金叉）时买入，当短期均线下穿长期均线（死叉）时卖出，这就是双均线策略的核心">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader/11.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader/12.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader/13.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader/14.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader/15.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader/16.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader/17.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader/18.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader/19.png">
+<meta property="article:published_time" content="2020-10-18T14:23:40.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.866Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader/11.jpg">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Python回测神器Backtrader-下" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2020/10/18/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader-%E4%B8%8B/" class="article-date">
+  <time class="dt-published" datetime="2020-10-18T14:23:40.000Z" itemprop="datePublished">2020-10-18</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Python回测神器Backtrader (下）
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#10-%E4%BD%BF%E7%94%A8Backtrader%E5%9B%9E%E6%B5%8B"><span class="toc-number">1.</span> <span class="toc-text">10.使用Backtrader回测</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8F%8C%E5%9D%87%E7%BA%BF%E7%AD%96%E7%95%A5"><span class="toc-number">1.1.</span> <span class="toc-text">双均线策略</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E5%88%92%E5%88%86"><span class="toc-number">1.2.</span> <span class="toc-text">数据划分</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8F%8C%E5%9D%87%E7%BA%BF%E7%AD%96%E7%95%A5%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="toc-number">1.3.</span> <span class="toc-text">双均线策略的实现</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%AE%A2%E5%8D%95%E7%9B%B8%E5%85%B3"><span class="toc-number">1.4.</span> <span class="toc-text">订单相关</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BA%A4%E6%98%93%E9%80%BB%E8%BE%91"><span class="toc-number">1.5.</span> <span class="toc-text">交易逻辑</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%E5%86%85%E7%BD%AE%E7%9A%84%E4%BA%A4%E5%8F%89%E6%8F%90%E7%A4%BA%E5%B7%A5%E5%85%B7"><span class="toc-number">1.6.</span> <span class="toc-text">如何使用内置的交叉提示工具</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#11-%E4%BD%BF%E7%94%A8Backtrader%E4%BC%98%E5%8C%96%E7%AD%96%E7%95%A5"><span class="toc-number">2.</span> <span class="toc-text">11.使用Backtrader优化策略</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#12-%E4%BD%BF%E7%94%A8Backtrader%E9%80%89%E8%82%A1"><span class="toc-number">3.</span> <span class="toc-text">12.使用Backtrader选股</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Analyzer%E7%B1%BB"><span class="toc-number">3.1.</span> <span class="toc-text">Analyzer类</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#13-%E5%9C%A8Backtrader%E4%B8%AD%E7%BC%96%E5%86%99%E6%8A%80%E6%9C%AF%E6%8C%87%E6%A0%87"><span class="toc-number">4.</span> <span class="toc-text">13.在Backtrader中编写技术指标</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#14-%E5%9C%A8Backtrader%E4%B8%AD%E7%BB%98%E5%9B%BE"><span class="toc-number">5.</span> <span class="toc-text">14.在Backtrader中绘图</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AF%B9%E5%8D%95%E5%8F%AA%E8%82%A1%E7%A5%A8%E6%95%B0%E6%8D%AE%E8%BF%9B%E8%A1%8C%E5%8F%AF%E8%A7%86%E5%8C%96"><span class="toc-number">5.1.</span> <span class="toc-text">对单只股票数据进行可视化</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AF%B9%E5%A4%9A%E5%8F%AA%E8%82%A1%E7%A5%A8%E6%95%B0%E6%8D%AE%E8%BF%9B%E8%A1%8C%E5%8F%AF%E8%A7%86%E5%8C%96"><span class="toc-number">5.2.</span> <span class="toc-text">对多只股票数据进行可视化</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%B0%86%E6%8A%80%E6%9C%AF%E6%8C%87%E6%A0%87%E6%B7%BB%E5%8A%A0%E5%88%B0%E5%9B%BE%E4%B8%AD"><span class="toc-number">5.3.</span> <span class="toc-text">将技术指标添加到图中</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#15-%E4%BD%BF%E7%94%A8%E5%8F%A6%E7%B1%BB%E6%95%B0%E6%8D%AE"><span class="toc-number">6.</span> <span class="toc-text">15.使用另类数据</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#16-%E5%85%B6%E4%BB%96%E8%A1%A5%E5%85%85%E7%9A%84"><span class="toc-number">7.</span> <span class="toc-text">16.其他补充的</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#17-%E6%BA%90%E7%A0%81%E4%B8%8B%E8%BD%BD"><span class="toc-number">8.</span> <span class="toc-text">17.源码下载</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <blockquote>
+<p>在上一篇的基础上，本篇主要讲讲如何在Backtrader中进行回测、选股、优化及可视化，并给出例子中的源码。</p>
+</blockquote>
+<h3 id="10-使用Backtrader回测"><a href="#10-使用Backtrader回测" class="headerlink" title="10.使用Backtrader回测"></a>10.使用Backtrader回测</h3><blockquote>
+<p>选择量化研究中的<em><strong>Hello World策略</strong></em>进行介绍，即经典但不实用的 <em><strong>双均线策略</strong></em>。</p>
+</blockquote>
+<h4 id="双均线策略"><a href="#双均线策略" class="headerlink" title="双均线策略"></a>双均线策略</h4><p>双均线策略，顾名思义，就是两根均线：短期均线和长期均线。当短线均线上穿长期均线（金叉）时买入，当短期均线下穿长期均线（死叉）时卖出，这就是双均线策略的核心思想。<span id="more"></span></p>
+<p><img src="/images/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader/11.jpg"></p>
+<p>在深入研究该策略前，首先专门写一个strategies.py文件容纳自己的策略。目的是将策略与主脚本分开，保证代码结构清晰。基本上，所有与Cerebro引擎有关的脚本在整个教程中只有微小的变化，大部分变化发生在与策略相关的strategies.py文件中。</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">PrintClose</span>(bt.Strategy):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="comment">##引用data[0]中的收盘价格数据</span></span><br><span class="line">        self.dataclose = self.datas[<span class="number">0</span>].close</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">log</span>(<span class="params">self, txt, dt=<span class="literal">None</span></span>):     </span><br><span class="line">        dt = dt <span class="keyword">or</span> self.datas[<span class="number">0</span>].datetime.date(<span class="number">0</span>)     </span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&#x27;%s, %s&#x27;</span> % (dt.isoformat(), txt)) <span class="comment">#Print date and close</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">next</span>(<span class="params">self</span>):     </span><br><span class="line">        <span class="comment">#将收盘价保留两位小数再输出    </span></span><br><span class="line">        self.log(<span class="string">&#x27;Close: %.2f&#x27;</span> % self.dataclose[<span class="number">0</span>])</span><br></pre></td></tr></table></figure>
+
+<h4 id="数据划分"><a href="#数据划分" class="headerlink" title="数据划分"></a>数据划分</h4><p>在进行测试时，需将数据分为“<strong>样本内数据</strong>”或“<strong>样本外数据</strong>”。程序可以针对样本内数据进行回测，策略优化（参数调整），最终在样本外数据上分析采用优化后的参数的策略的有效性。</p>
+<p>对样本内外的数据，程序设置了不同的起始日期。日期的设置采用了DateTime模块。更新后的主脚本btmain.py如下所示：</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> datetime</span><br><span class="line"><span class="keyword">import</span> backtrader <span class="keyword">as</span> bt</span><br><span class="line"><span class="keyword">from</span> strategies <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">cerebro = bt.Cerebro()</span><br><span class="line"></span><br><span class="line"><span class="comment">#给原始数据设置起止时间参数，并添加给Cerebro引擎</span></span><br><span class="line">data = bt.feeds.YahooFinanceCSVData(</span><br><span class="line">        dataname=<span class="string">&#x27;TSLA.csv&#x27;</span>,</span><br><span class="line">        fromdate=datetime.datetime(<span class="number">2016</span>, <span class="number">1</span>, <span class="number">1</span>),</span><br><span class="line">        todate=datetime.datetime(<span class="number">2017</span>, <span class="number">12</span>, <span class="number">25</span>))</span><br><span class="line">        <span class="comment">#样本外数据的参数设置如下</span></span><br><span class="line">        <span class="comment">#fromdate=datetime.datetime(2018, 1, 1),</span></span><br><span class="line">        <span class="comment">#todate=datetime.datetime(2019, 12, 25))</span></span><br><span class="line"></span><br><span class="line">cerebro.adddata(data)</span><br><span class="line"></span><br><span class="line"><span class="comment">#给Cerebro引擎添加策略</span></span><br><span class="line">cerebro.addstrategy(MAcrossover)</span><br><span class="line"></span><br><span class="line"><span class="comment">#默认头寸大小</span></span><br><span class="line">cerebro.addsizer(bt.sizers.SizerFix, stake=<span class="number">3</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    <span class="comment">#运行Cerebro引擎</span></span><br><span class="line">    start_portfolio_value = cerebro.broker.getvalue()</span><br><span class="line"></span><br><span class="line">    cerebro.run() </span><br><span class="line"></span><br><span class="line">    end_portfolio_value = cerebro.broker.getvalue()</span><br><span class="line">    pnl = end_portfolio_value - start_portfolio_value </span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;Starting Portfolio Value: %.2f&#x27;</span> % start_portfolio_value) </span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;Final Portfolio Value: %.2f&#x27;</span> % end_portfolio_value) </span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;PnL: %.2f&#x27;</span> % pnl) </span><br></pre></td></tr></table></figure>
+
+<p>从Strategies.py文件中<code>import *</code>，这便于调用该文件中的所有类。addsizer设置了默认头寸大小为3股。</p>
+<p>Cerebro.broker.getvalue()命令可获取投资组合的当前金额。在运行Cerebro之前调用该函数获取初始本金，在策略运行完毕后获得投资组合的最终金额。终值扣除起始值即可得到损益。</p>
+<h4 id="双均线策略的实现"><a href="#双均线策略的实现" class="headerlink" title="双均线策略的实现"></a>双均线策略的实现</h4><p>接下来定义Strategy的子类MACrossover类，代表双均线策略。</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">MAcrossover</span>(bt.Strategy): </span><br><span class="line"><span class="comment">#移动平均参数</span></span><br><span class="line">params = ((<span class="string">&#x27;pfast&#x27;</span>,<span class="number">20</span>),(<span class="string">&#x27;pslow&#x27;</span>,<span class="number">50</span>),)</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">log</span>(<span class="params">self, txt, dt=<span class="literal">None</span></span>):     </span><br><span class="line">    dt = dt <span class="keyword">or</span> self.datas[<span class="number">0</span>].datetime.date(<span class="number">0</span>)     </span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;%s, %s&#x27;</span> % (dt.isoformat(), txt))  <span class="comment"># 执行策略优化时 可注释掉此行</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):     </span><br><span class="line">    self.dataclose = self.datas[<span class="number">0</span>].close     </span><br><span class="line">    <span class="comment"># Order变量包含持仓数据与状态</span></span><br><span class="line">    self.order = <span class="literal">None</span>     </span><br><span class="line">    <span class="comment"># 初始化移动平均数据     </span></span><br><span class="line">    self.slow_sma = bt.indicators.MovingAverageSimple(self.datas[<span class="number">0</span>],                                       </span><br><span class="line">                    period=self.params.pslow)     </span><br><span class="line">    self.fast_sma = bt.indicators.MovingAverageSimple(self.datas[<span class="number">0</span>], </span><br><span class="line">                    period=self.params.pfast)</span><br></pre></td></tr></table></figure>
+
+<p>这里将快慢周期设置为参数pfast和pslow而不是硬编码（固定值），以便后续对策略参数的优化。</p>
+<p><code>__init__()</code>函数下有一些新的变量，self.order变量存储正在执行的订单详细信息和订单状态，以便确定当前是否存在交易或是否有待处理的订单。</p>
+<p>基于Backtrader内置的MovingAverageSimple命令计算了两个周期的简单移动平均价格。</p>
+<p>需要指出的是，在Backtrader中，为了避免look-ahead偏差，当程序发出买入或卖出信号引导程序创建订单时，无论价格如何，该订单要到下一个k线被调用时才会执行。同时，在回测过程中，只有在指标值计算完毕后，才会开始寻找订单。</p>
+<p>两个移动平均值中较大的时间周期采用最近50个收盘价的平均值。这意味着前50个数据点的移动平均值为NaN。在拥有有效的移动平均数据之前，Backtrader不会尝试创建订单。</p>
+<h4 id="订单相关"><a href="#订单相关" class="headerlink" title="订单相关"></a>订单相关</h4><p>与交易相关的所有内容都发生在<code>notify_order()</code>函数中。</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">notify_order</span>(<span class="params">self, order</span>):</span><br><span class="line">    <span class="keyword">if</span> order.status <span class="keyword">in</span> [order.Submitted, order.Accepted]:</span><br><span class="line">        <span class="comment">#主动买卖的订单提交或接受时  - 不触发</span></span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    <span class="comment">#验证订单是否完成</span></span><br><span class="line">    <span class="comment">#注意: 当现金不足时，券商可以拒绝订单</span></span><br><span class="line">    <span class="keyword">if</span> order.status <span class="keyword">in</span> [order.Completed]:</span><br><span class="line">        <span class="keyword">if</span> order.isbuy():             </span><br><span class="line">            self.log(<span class="string">&#x27;BUY EXECUTED, %.2f&#x27;</span> % order.executed.price)         </span><br><span class="line">        <span class="keyword">elif</span> order.issell():             </span><br><span class="line">            self.log(<span class="string">&#x27;SELL EXECUTED, %.2f&#x27;</span> % order.executed.price)</span><br><span class="line">        self.bar_executed = <span class="built_in">len</span>(self)</span><br><span class="line">    <span class="keyword">elif</span> order.status <span class="keyword">in</span> [order.Canceled, order.Margin, order.Rejected]:</span><br><span class="line">        self.log(<span class="string">&#x27;Order Canceled/Margin/Rejected&#x27;</span>)     </span><br><span class="line">    <span class="comment">#重置订单</span></span><br><span class="line">    self.order = <span class="literal">None</span></span><br></pre></td></tr></table></figure>
+
+<p>上述代码记录了执行订单的时间和价格。若订单未成交，此部分还将提供通知。</p>
+<h4 id="交易逻辑"><a href="#交易逻辑" class="headerlink" title="交易逻辑"></a>交易逻辑</h4><p>Strategy类中的next()函数包含所有的交易逻辑。</p>
+<p>这里，首先检查目前是否有持仓,有则不开仓。如果没有持仓，则可以在市场中寻找开仓信号，检查对于上一根K线SMA20移动平均线是否在SMA50移动平均线以下，但对于当前K线，SMA20移动平均线位于SMA50移动平均线以上，如果是则说明快线突破了慢线（金叉）。反之则快线跌破了慢线（死叉）。在获得开仓信号前，程序会不断确认是否存在开仓信号。如果持仓，则择机平仓。这里采用的退出策略为持仓5日。</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">next</span>(<span class="params">self</span>):</span><br><span class="line">    <span class="comment"># 检测是否有未完成订单</span></span><br><span class="line">    <span class="keyword">if</span> self.order:</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    <span class="comment">#验证是否有持仓</span></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> self.position:</span><br><span class="line">    <span class="comment">#如果没有持仓，寻找开仓信号</span></span><br><span class="line">        <span class="comment">#SMA快线突破SMA慢线</span></span><br><span class="line">        <span class="keyword">if</span> self.fast_sma[<span class="number">0</span>] &gt; self.slow_sma[<span class="number">0</span>] <span class="keyword">and</span> self.fast_sma[-<span class="number">1</span>] &lt; self.slow_sma[-<span class="number">1</span>]:</span><br><span class="line">           self.log(<span class="string">&#x27;BUY CREATE, %.2f&#x27;</span> % self.dataclose[<span class="number">0</span>])</span><br><span class="line">           <span class="comment">#继续追踪已经创建的订单，避免重复开仓</span></span><br><span class="line">           self.order = self.buy()</span><br><span class="line">        <span class="comment">#如果SMA快线跌破SMA慢线</span></span><br><span class="line">        <span class="keyword">elif</span> self.fast_sma[<span class="number">0</span>] &lt; self.slow_sma[<span class="number">0</span>] <span class="keyword">and</span> self.fast_sma[-<span class="number">1</span>] &gt; self.slow_sma[-<span class="number">1</span>]:</span><br><span class="line">            self.log(<span class="string">&#x27;SELL CREATE, %.2f&#x27;</span> % self.dataclose[<span class="number">0</span>])</span><br><span class="line">            <span class="comment">#继续追踪已经创建的订单，避免重复开仓</span></span><br><span class="line">            self.order = self.sell()</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="comment"># 如果已有持仓，寻找平仓信号</span></span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">len</span>(self) &gt;= (self.bar_executed + <span class="number">5</span>):</span><br><span class="line">            self.log(<span class="string">&#x27;CLOSE CREATE, %.2f&#x27;</span> % self.dataclose[<span class="number">0</span>])</span><br><span class="line">            self.order = self.close()</span><br></pre></td></tr></table></figure>
+
+<p>代码运行过程中会输出所有交易，并打印最终盈亏数据。在这种情况下，该策略获得了79美元的利润。</p>
+<p>测试策略时要记住的一件事是，<strong>回测结束时有可能还存在持仓</strong>。检查是否有未平仓交易的一种方法是确保打印投资组合值之前的倒数第二行打印了“CLOSE CREATE”。否则，未平仓交易可能会扭曲盈亏表现。</p>
+<h4 id="如何使用内置的交叉提示工具"><a href="#如何使用内置的交叉提示工具" class="headerlink" title="如何使用内置的交叉提示工具"></a>如何使用内置的交叉提示工具</h4><p>在双均线策略中，next()函数实现了对均线交叉的判断。Backtrader自带的CrossOver()函数可以简化这一过程，使用该功能时需在<code>_init_()</code>函数中将其初始化，如下所示：</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">self.crossover = bt.indicators.CrossOver（self.slow_sma，self.fast_sma）</span><br></pre></td></tr></table></figure>
+
+<p>然后，程序会自动确认是否有开平仓信号发出:</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> self.crossover &gt; <span class="number">0</span>: <span class="comment"># Fast ma crosses above slow ma</span></span><br><span class="line">   <span class="keyword">pass</span> <span class="comment"># 开仓信号</span></span><br><span class="line"><span class="keyword">elif</span> self.crossover &lt; <span class="number">0</span>: <span class="comment"># Fast ma crosses below slow ma</span></span><br><span class="line">   <span class="keyword">pass</span> <span class="comment"># 平仓信号</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="11-使用Backtrader优化策略"><a href="#11-使用Backtrader优化策略" class="headerlink" title="11.使用Backtrader优化策略"></a>11.使用Backtrader优化策略</h3><blockquote>
+<p>尝试通过优化策略的参数（快慢线周期）来改善策略的某项指标（夏普比率）。</p>
+</blockquote>
+<p>由于策略优化涉及大量的参数组合，并且保留所有交易记录对策略优化意义不大，因此在log()函数中注释掉打印语句。这里以夏普比率来判断策略的优劣，修改后的主程序如下：</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> datetime</span><br><span class="line"><span class="keyword">import</span> backtrader <span class="keyword">as</span> bt</span><br><span class="line"><span class="keyword">from</span> strategies <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">cerebro = bt.Cerebro(optreturn=<span class="literal">False</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">#设置数据的参数</span></span><br><span class="line">data = bt.feeds.YahooFinanceCSVData(</span><br><span class="line">    dataname=<span class="string">&#x27;TSLA.csv&#x27;</span>,</span><br><span class="line">    fromdate=datetime.datetime(<span class="number">2016</span>, <span class="number">1</span>, <span class="number">1</span>),</span><br><span class="line">    todate=datetime.datetime(<span class="number">2017</span>, <span class="number">12</span>, <span class="number">25</span>))</span><br><span class="line">    <span class="comment">#样本外数据的设置</span></span><br><span class="line">    <span class="comment">#fromdate=datetime.datetime(2018, 1, 1),</span></span><br><span class="line">    <span class="comment">#todate=datetime.datetime(2019, 12, 25))</span></span><br><span class="line"></span><br><span class="line">cerebro.adddata(data)</span><br><span class="line"></span><br><span class="line"><span class="comment">#向Cerebro引擎添加数据</span></span><br><span class="line">cerebro.addanalyzer(bt.analyzers.SharpeRatio, _name=<span class="string">&#x27;sharpe_ratio&#x27;</span>)</span><br><span class="line">cerebro.optstrategy(MAcrossover, pfast=<span class="built_in">range</span>(<span class="number">5</span>, <span class="number">20</span>), pslow=<span class="built_in">range</span>(<span class="number">50</span>, <span class="number">100</span>))  </span><br><span class="line"></span><br><span class="line"><span class="comment">#设置头寸参数</span></span><br><span class="line">cerebro.addsizer(bt.sizers.SizerFix, stake=<span class="number">3</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    optimized_runs = cerebro.run()</span><br><span class="line"></span><br><span class="line">    final_results_list = []</span><br><span class="line">    <span class="keyword">for</span> run <span class="keyword">in</span> optimized_runs:</span><br><span class="line">        <span class="keyword">for</span> strategy <span class="keyword">in</span> run:</span><br><span class="line">            PnL = <span class="built_in">round</span>(strategy.broker.get_value() - <span class="number">10000</span>,<span class="number">2</span>)</span><br><span class="line">            sharpe = strategy.analyzers.sharpe_ratio.get_analysis()</span><br><span class="line">            final_results_list.append([strategy.params.pfast, </span><br><span class="line">                strategy.params.pslow, PnL, sharpe[<span class="string">&#x27;sharperatio&#x27;</span>]])</span><br><span class="line"></span><br><span class="line">    sort_by_sharpe = <span class="built_in">sorted</span>(final_results_list, key=<span class="keyword">lambda</span> x: x[<span class="number">3</span>], </span><br><span class="line">                             reverse=<span class="literal">True</span>)</span><br><span class="line">    <span class="keyword">for</span> line <span class="keyword">in</span> sort_by_sharpe[:<span class="number">5</span>]:</span><br><span class="line">        <span class="built_in">print</span>(line)</span><br></pre></td></tr></table></figure>
+
+<p>代码的主要变化如下：</p>
+<ol>
+<li><p> 当初始化Cerebro引擎时，将optreturn参数设置为False，即只要求输出策略的参数以及analyzer对策略运行结果的统计，来提高运行速度。</p>
+</li>
+<li><p> 添加了一个analyzer类的对象分析不同参数组合策略的夏普比率。</p>
+</li>
+<li><p> 移除了cerebro.addstrategy()，取而代之的是cerebro.optstrategy()，表明要对该策略进行优化，并限制了待优化参数的取值范围。</p>
+</li>
+</ol>
+<p>最终，优化结果存储在多个列表构成的列表对象optimized_runs中。遍历该列表并将快慢线的周期数据及相应夏普比率汇总并排序，得到最终结果为</p>
+<p><img src="/images/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader/12.png"></p>
+<p>当快线周期取7，慢线周期取92时，结果最优。现在开始对样本外数据进行分析，此时需要修改数据的起止日期。</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">fromdate=datetime.datetime(<span class="number">2018</span>, <span class="number">1</span>, <span class="number">1</span>),</span><br><span class="line">todate=datetime.datetime(<span class="number">2019</span>, <span class="number">12</span>, <span class="number">25</span>))</span><br></pre></td></tr></table></figure>
+
+<p>对于样本外数据，采用优化前和优化后的策略参数的盈亏分别为亏损63.42美元和170.22美元，这一结果并不令人意外，这是因为：</p>
+<ul>
+<li><p>  均线策略过于简单，是个难以盈利的策略。反而是第一次运行产生了利润让人比较意外；</p>
+</li>
+<li><p>  对样本内的数据进行优化导致了过拟合，故而在样本内数据取得了优异的结果，但在样本外数据上表现较差。</p>
+</li>
+</ul>
+<h3 id="12-使用Backtrader选股"><a href="#12-使用Backtrader选股" class="headerlink" title="12.使用Backtrader选股"></a>12.使用Backtrader选股</h3><blockquote>
+<p>Backtrader可在给定的时期，按用户提出的准则选股。</p>
+</blockquote>
+<p>这里将依据布林带准则选股，即选出交易价格比前20日均价低于两个标准差的股票。</p>
+<h4 id="Analyzer类"><a href="#Analyzer类" class="headerlink" title="Analyzer类"></a>Analyzer类</h4><p>选股从创建Backtrader的子类Analyzer类开始，该类是选股的关键工具。</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Screener_SMA</span>(bt.Analyzer):</span><br><span class="line">    params = ((<span class="string">&#x27;period&#x27;</span>,<span class="number">20</span>), (<span class="string">&#x27;devfactor&#x27;</span>,<span class="number">2</span>),)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">start</span>(<span class="params">self</span>):</span><br><span class="line">        self.bband = &#123;data: bt.indicators.BollingerBands(data,</span><br><span class="line">                period=self.params.period, devfactor=self.params.devfactor)</span><br><span class="line">                <span class="keyword">for</span> data <span class="keyword">in</span> self.datas&#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">stop</span>(<span class="params">self</span>):</span><br><span class="line">        self.rets[<span class="string">&#x27;over&#x27;</span>] = <span class="built_in">list</span>()</span><br><span class="line">        self.rets[<span class="string">&#x27;under&#x27;</span>] = <span class="built_in">list</span>()</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> data, band <span class="keyword">in</span> self.bband.items():</span><br><span class="line">            node = data._name, data.close[<span class="number">0</span>], <span class="built_in">round</span>(band.lines.bot[<span class="number">0</span>], <span class="number">2</span>)</span><br><span class="line">            <span class="keyword">if</span> data &gt; band.lines.bot:</span><br><span class="line">                self.rets[<span class="string">&#x27;over&#x27;</span>].append(node)</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                self.rets[<span class="string">&#x27;under&#x27;</span>].append(node)</span><br></pre></td></tr></table></figure>
+
+<p>start()函数中针对多个数据Feed计算了布林带参数，包括对应的上中下轨值。stop()函数实现了选股逻辑：遍历所有数据Feed，根据价格与布林带下轨的关系将股票分类。</p>
+<p>所有的Analyzer类具有一个内置字典rets，这里使用rets的key over和under分别存储交易价格在布林带下轨上方和下方的标的。</p>
+<p>主函数中instruments列表包含了待筛选的股票池，通过循环将相应股票的CSV数据文件添加到Cerebro引擎。</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> datetime</span><br><span class="line"><span class="keyword">import</span> backtrader <span class="keyword">as</span> bt</span><br><span class="line"><span class="keyword">from</span> strategies <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"><span class="comment"># 初始化Cerebro引擎</span></span><br><span class="line">cerebro = bt.Cerebro()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 建立股票池并将所有数据添加至Cerebro引擎</span></span><br><span class="line">instruments = [<span class="string">&#x27;TSLA&#x27;</span>, <span class="string">&#x27;AAPL&#x27;</span>, <span class="string">&#x27;GE&#x27;</span>, <span class="string">&#x27;GRPN&#x27;</span>]</span><br><span class="line"><span class="keyword">for</span> ticker <span class="keyword">in</span> instruments:</span><br><span class="line">    data = bt.feeds.YahooFinanceCSVData(</span><br><span class="line">        dataname=<span class="string">&#x27;&#123;&#125;.csv&#x27;</span>.<span class="built_in">format</span>(ticker),</span><br><span class="line">        fromdate=datetime.datetime(<span class="number">2016</span>, <span class="number">1</span>, <span class="number">1</span>),</span><br><span class="line">        todate=datetime.datetime(<span class="number">2017</span>, <span class="number">10</span>, <span class="number">30</span>))</span><br><span class="line">    cerebro.adddata(data) </span><br><span class="line"></span><br><span class="line"><span class="comment"># 添加基于布林带的选股器</span></span><br><span class="line">cerebro.addanalyzer(Screener_SMA)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    <span class="comment"># 运行Cerebro引擎</span></span><br><span class="line">    cerebro.run(runonce=<span class="literal">False</span>, stdstats=<span class="literal">False</span>, writer=<span class="literal">True</span>)</span><br></pre></td></tr></table></figure>
+
+<p>接下来将新创建的screener类添加到Cerebro引擎作为分析器(Analyzer)，并附加一些参数来调用<code>Cerebro.run()</code>命令。其中 <code>writer = True</code>参数调用内置的输出显示功能。<code>stdstats = False</code>会删除一些标准输出（见后绘图部分）。最后，<code>runonce = False</code>确保了数据的同步性。最终打印结果如下：</p>
+<p><img src="/images/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader/13.png"></p>
+<p>布林带策略的选股结果</p>
+<h3 id="13-在Backtrader中编写技术指标"><a href="#13-在Backtrader中编写技术指标" class="headerlink" title="13.在Backtrader中编写技术指标"></a>13.在Backtrader中编写技术指标</h3><p>有三种方法可以在Backtrader中编写指标。</p>
+<ul>
+<li><p>  <strong>自行编写技术指标;</strong></p>
+</li>
+<li><p>  <strong>使用内置技术指标;</strong></p>
+</li>
+<li><p>  <strong>使用第三方库。</strong></p>
+</li>
+</ul>
+<p>下面是自定义指标的一个例子，可理解成简化版的ATR（偷个懒）。在Backtrader中,通过使用负索引遍历最后14个数据点，取每个周期的高点并减去低点，然后将其平均，从而计算了给定时期内，股价的平均日内波动幅度。</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">MyIndicator</span>(bt.Strategy):</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">log</span>(<span class="params">self, txt, dt=<span class="literal">None</span></span>):</span><br><span class="line">        dt = dt <span class="keyword">or</span> self.datas[<span class="number">0</span>].datetime.date(<span class="number">0</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&#x27;%s, %s&#x27;</span> % (dt.isoformat(), txt)) <span class="comment">#打印收盘价格和日期</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="comment">#引用data[0]中的收盘价格数据</span></span><br><span class="line">        self.dataclose = self.datas[<span class="number">0</span>].close</span><br><span class="line">        self.datahigh = self.datas[<span class="number">0</span>].high</span><br><span class="line">        self.datalow = self.datas[<span class="number">0</span>].low</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">next</span>(<span class="params">self</span>):</span><br><span class="line">        day_range_total = <span class="number">0</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(-<span class="number">13</span>, <span class="number">1</span>):</span><br><span class="line">            day_range = self.datahigh[i] - self.datalow[i]</span><br><span class="line">            day_range_total += day_range</span><br><span class="line">        M_Indicator = day_range_total / <span class="number">14</span></span><br><span class="line"></span><br><span class="line">        self.log(<span class="string">&#x27;Close: %.2f, M_Indicator: %.4f&#x27;</span> % (self.dataclose[<span class="number">0</span>], M_Indicator))</span><br></pre></td></tr></table></figure>
+
+<p>下图是程序运行时输出的技术指标值</p>
+<p><img src="/images/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader/14.png"></p>
+<h3 id="14-在Backtrader中绘图"><a href="#14-在Backtrader中绘图" class="headerlink" title="14.在Backtrader中绘图"></a>14.在Backtrader中绘图</h3><blockquote>
+<p>尽管回测是一种基于数学计算的自动化过程，但人们往往希望通过可视化来了解到底发生了什么。有时人们可能对回测过程中的具体算法或者技术指标到底传达了什么信息感兴趣。</p>
+</blockquote>
+<p>通过可视化绘制数据表，指标，操作，现金和投资组合价值的变化情况可以帮助人们:</p>
+<ol>
+<li><p> 更好地了解正在发生的事情;</p>
+</li>
+<li><p> 否定/修改/创建想法;</p>
+</li>
+<li><p> 以及人们在看到可视化结果后可能会做出的任何其他决策。</p>
+</li>
+</ol>
+<h4 id="对单只股票数据进行可视化"><a href="#对单只股票数据进行可视化" class="headerlink" title="对单只股票数据进行可视化"></a>对单只股票数据进行可视化</h4><p>在Backtrader中绘图非常简单，只需要在cerebro.run()之后接上一句cerebro.plot()。</p>
+<p>这是一个图表示例，其中包含在示例中一直使用的TSLA数据。</p>
+<p><img src="/images/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader/15.png"></p>
+<p>该图由上中下三个区域构成，分别对应三个观察者CashValue Observer, Trade Observer和BuySell Observer：</p>
+<ul>
+<li><p><strong>CashValue Observer</strong><br>  在回测运行期间跟踪现金和投资组合总价值（包括现金）的变化情况。</p>
+</li>
+<li><p><strong>Observer Observer</strong><br>  在交易结束时显示实际的损益,交易被定义为开仓及平仓这一对完整动作。</p>
+</li>
+<li><p><strong>BuySell Observer</strong><br>  在价格上方绘制买卖操作点</p>
+</li>
+</ul>
+<p>这3个观察者由cerebro自动添加，并由stdstats参数控制（默认值：True）。 如果需要，可通过以下命令禁用它们：</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cerebro = bt.Cerebro(stdstats=<span class="literal">False</span>)</span><br></pre></td></tr></table></figure>
+
+<p>或者</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">cerebro = bt.Cerebro()</span><br><span class="line">......</span><br><span class="line">cerebro.run(stdstats=<span class="literal">False</span>)</span><br></pre></td></tr></table></figure>
+
+<h4 id="对多只股票数据进行可视化"><a href="#对多只股票数据进行可视化" class="headerlink" title="对多只股票数据进行可视化"></a>对多只股票数据进行可视化</h4><p>Backtrader可以同时将多个股票轻松地显示在一张图表上。如果需要可视化两个资产之间的相关性，这将很有用。</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> datetime</span><br><span class="line"><span class="keyword">import</span> backtrader <span class="keyword">as</span> bt</span><br><span class="line"></span><br><span class="line"><span class="comment">#初始化Cerebro引擎</span></span><br><span class="line">cerebro = bt.Cerebro(stdstats=<span class="literal">False</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">#设置数据参数并添加至Cerebro引擎</span></span><br><span class="line">data1 = bt.feeds.YahooFinanceCSVData(</span><br><span class="line">    dataname=<span class="string">&#x27;TSLA.csv&#x27;</span>,</span><br><span class="line">    fromdate=datetime.datetime(<span class="number">2018</span>, <span class="number">1</span>, <span class="number">1</span>),</span><br><span class="line">    todate=datetime.datetime(<span class="number">2020</span>, <span class="number">1</span>, <span class="number">1</span>))</span><br><span class="line">cerebro.adddata(data1)</span><br><span class="line"></span><br><span class="line">data2 = bt.feeds.YahooFinanceCSVData(</span><br><span class="line">    dataname=<span class="string">&#x27;AAPL.csv&#x27;</span>,</span><br><span class="line">    fromdate=datetime.datetime(<span class="number">2018</span>, <span class="number">1</span>, <span class="number">1</span>),</span><br><span class="line">    todate=datetime.datetime(<span class="number">2020</span>, <span class="number">1</span>, <span class="number">1</span>))</span><br><span class="line"></span><br><span class="line">data2.compensate(data1)  </span><br><span class="line">data2.plotinfo.plotmaster = data1</span><br><span class="line">data2.plotinfo.sameaxis = <span class="literal">True</span></span><br><span class="line">cerebro.adddata(data2)</span><br><span class="line"></span><br><span class="line"><span class="comment">#运行Cerebro引擎</span></span><br><span class="line">cerebro.run()</span><br><span class="line">cerebro.plot()</span><br></pre></td></tr></table></figure>
+
+<p>运行结果如下图所示：</p>
+<p><img src="/images/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader/16.png"></p>
+<h4 id="将技术指标添加到图中"><a href="#将技术指标添加到图中" class="headerlink" title="将技术指标添加到图中"></a>将技术指标添加到图中</h4><p>下面的代码给出如何给TSLA添加均线图。</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> datetime</span><br><span class="line"><span class="keyword">import</span> backtrader <span class="keyword">as</span> bt</span><br><span class="line"></span><br><span class="line"><span class="comment">#简单移动平均</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">SimpleMA</span>(bt.Strategy):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):</span><br><span class="line">        self.sma = bt.indicators.SimpleMovingAverage(self.data, period=<span class="number">20</span>, plotname=<span class="string">&quot;20 SMA&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 初始化Cerebro引擎, 禁用数据监测</span></span><br><span class="line">cerebro = bt.Cerebro(stdstats=<span class="literal">False</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 设置日期参数并添加至Cerebro引擎</span></span><br><span class="line">data1 = bt.feeds.YahooFinanceCSVData(</span><br><span class="line">    dataname=<span class="string">&#x27;TSLA.csv&#x27;</span>,</span><br><span class="line">    fromdate=datetime.datetime(<span class="number">2018</span>, <span class="number">1</span>, <span class="number">1</span>),</span><br><span class="line">    todate=datetime.datetime(<span class="number">2020</span>, <span class="number">10</span>, <span class="number">5</span>))</span><br><span class="line"></span><br><span class="line">cerebro.adddata(data1)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 在图标上添加简单移动均线</span></span><br><span class="line">cerebro.addstrategy(SimpleMA)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 运行Cerebro引擎</span></span><br><span class="line">cerebro.run()</span><br><span class="line">cerebro.plot()</span><br></pre></td></tr></table></figure>
+
+<p>通过plotname可以指定技术指标对应的图例名，运行结果如下图所示：</p>
+<p><img src="/images/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader/17.png"></p>
+<h3 id="15-使用另类数据"><a href="#15-使用另类数据" class="headerlink" title="15.使用另类数据"></a>15.使用另类数据</h3><p>这里尝试根据Google搜索数据来评估情绪，并根据搜索量的任何明显变化进行交易。</p>
+<p>首先从Google趋势下载比特币每周历史搜索数据并从Yahoo Finance获得价格数据。</p>
+<p><img src="/images/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader/18.png"></p>
+<p>由于2017年末波动很大，因此从2018年开始测试该策略。此后，搜索结果数据和价格均稳定了很长时间。Google趋势数据与Yahoo Finance数据采用的OHLC格式不同。因此，使用Backtrader提供的通用CSV模板添加数据。代码如下：</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">data2 = bt.feeds.GenericCSVData(</span><br><span class="line">    dataname=<span class="string">&#x27;BTC_Gtrends.csv&#x27;</span>,</span><br><span class="line">    fromdate=datetime.datetime(<span class="number">2018</span>, <span class="number">1</span>, <span class="number">1</span>),</span><br><span class="line">    todate=datetime.datetime(<span class="number">2020</span>, <span class="number">1</span>, <span class="number">1</span>),</span><br><span class="line">    nullvalue=<span class="number">0.0</span>,</span><br><span class="line">    dtformat=(<span class="string">&#x27;%Y-%m-%d&#x27;</span>),</span><br><span class="line">    datetime=<span class="number">0</span>,</span><br><span class="line">    time=-<span class="number">1</span>,</span><br><span class="line">    high=-<span class="number">1</span>,</span><br><span class="line">    low=-<span class="number">1</span>,</span><br><span class="line">    <span class="built_in">open</span>=-<span class="number">1</span>,</span><br><span class="line">    close=<span class="number">1</span>,</span><br><span class="line">    volume=-<span class="number">1</span>,</span><br><span class="line">    openinterest=-<span class="number">1</span>,</span><br><span class="line">    timeframe=bt.TimeFrame.Weeks)</span><br><span class="line">cerebro.adddata(data2)</span><br></pre></td></tr></table></figure>
+
+<p>对于非OHLC数据，必须定义哪些列存在，哪些不存在。对数据中不存在的列分配值-1，并为可用的列分配递增的整数值。除此之外，其他代码和之前没有很大的变化。这是现在的Strategy类：</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">BtcSentiment</span>(bt.Strategy):</span><br><span class="line">    params = ((<span class="string">&#x27;period&#x27;</span>, <span class="number">10</span>), (<span class="string">&#x27;devfactor&#x27;</span>, <span class="number">1</span>),)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">log</span>(<span class="params">self, txt, dt=<span class="literal">None</span></span>):</span><br><span class="line">        dt = dt <span class="keyword">or</span> self.datas[<span class="number">0</span>].datetime.date(<span class="number">0</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&#x27;%s, %s&#x27;</span> % (dt.isoformat(), txt))</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):</span><br><span class="line">        self.btc_price = self.datas[<span class="number">0</span>].close</span><br><span class="line">        self.google_sentiment = self.datas[<span class="number">1</span>].close</span><br><span class="line">        self.bbands = bt.indicators.BollingerBands(self.google_sentiment, period=self.params.period, devfactor=self.params.devfactor)</span><br><span class="line"></span><br><span class="line">        self.order = <span class="literal">None</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">notify_order</span>(<span class="params">self, order</span>):</span><br><span class="line">        <span class="keyword">if</span> order.status <span class="keyword">in</span> [order.Submitted, order.Accepted]:</span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> order.status <span class="keyword">in</span> [order.Completed]:</span><br><span class="line">            <span class="keyword">if</span> order.isbuy():</span><br><span class="line">                self.log(<span class="string">&#x27;BUY EXECUTED, %.2f&#x27;</span> % order.executed.price)</span><br><span class="line">            <span class="keyword">elif</span> order.issell():</span><br><span class="line">                self.log(<span class="string">&#x27;SELL EXECUTED, %.2f&#x27;</span> % order.executed.price)</span><br><span class="line">            self.bar_executed = <span class="built_in">len</span>(self)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">elif</span> order.status <span class="keyword">in</span> [order.Canceled, order.Margin, order.Rejected]:</span><br><span class="line">            self.log(<span class="string">&#x27;Order Canceled/Margin/Rejected&#x27;</span>)</span><br><span class="line"></span><br><span class="line">        self.order = <span class="literal">None</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">next</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="comment"># 检查是否有正在执行的订单</span></span><br><span class="line">        <span class="keyword">if</span> self.order:</span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># 看多信号</span></span><br><span class="line">        <span class="keyword">if</span> self.google_sentiment &gt; self.bbands.lines.top[<span class="number">0</span>]:</span><br><span class="line">            <span class="comment"># 检查是否有持仓</span></span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> self.position:</span><br><span class="line">                self.log(<span class="string">&#x27;Google Sentiment Value: %.2f&#x27;</span> % self.google_sentiment[<span class="number">0</span>])</span><br><span class="line">                self.log(<span class="string">&#x27;Top band: %.2f&#x27;</span> % self.bbands.lines.top[<span class="number">0</span>])</span><br><span class="line">                <span class="comment"># 没有持仓则开仓多头</span></span><br><span class="line">                self.log(<span class="string">&#x27;***BUY CREATE, %.2f&#x27;</span> % self.btc_price[<span class="number">0</span>])</span><br><span class="line">                <span class="comment"># 追踪订单避免重复开仓</span></span><br><span class="line">                self.order = self.buy()       </span><br><span class="line"></span><br><span class="line">        <span class="comment"># 看空信号</span></span><br><span class="line">        <span class="keyword">elif</span> self.google_sentiment &lt; self.bbands.lines.bot[<span class="number">0</span>]:</span><br><span class="line">            <span class="comment"># 检查是否有持仓</span></span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> self.position:</span><br><span class="line">                self.log(<span class="string">&#x27;Google Sentiment Value: %.2f&#x27;</span> % self.google_sentiment[<span class="number">0</span>])</span><br><span class="line">                self.log(<span class="string">&#x27;Bottom band: %.2f&#x27;</span> % self.bbands.lines.bot[<span class="number">0</span>])</span><br><span class="line">                <span class="comment"># 没有持仓则开仓空头</span></span><br><span class="line">                self.log(<span class="string">&#x27;***SELL CREATE, %.2f&#x27;</span> % self.btc_price[<span class="number">0</span>])</span><br><span class="line">                <span class="comment"># 追踪订单避免重复开仓</span></span><br><span class="line">                self.order = self.sell()</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 中性信号，对既有仓位平仓</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="keyword">if</span> self.position:</span><br><span class="line">                <span class="comment"># 如果有仓位，则平仓</span></span><br><span class="line">                self.log(<span class="string">&#x27;Google Sentiment Value: %.2f&#x27;</span> % self.google_sentiment[<span class="number">0</span>])</span><br><span class="line">                self.log(<span class="string">&#x27;Bottom band: %.2f&#x27;</span> % self.bbands.lines.bot[<span class="number">0</span>])</span><br><span class="line">                self.log(<span class="string">&#x27;Top band: %.2f&#x27;</span> % self.bbands.lines.top[<span class="number">0</span>])</span><br><span class="line">                self.log(<span class="string">&#x27;CLOSE CREATE, %.2f&#x27;</span> % self.btc_price[<span class="number">0</span>])</span><br><span class="line">                self.order = self.close()</span><br></pre></td></tr></table></figure>
+
+<p>这里再次使用布林带策略，当搜索数量超过10日布林带上轨时开仓多头，少于10日布林带下轨时开仓空头。当搜索量介于上下轨之间时，若存在仓位则平仓，否则不采取任何行动。</p>
+<p>运行回测后的结果如下：</p>
+<p><img src="/images/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader/19.png"></p>
+<h3 id="16-其他补充的"><a href="#16-其他补充的" class="headerlink" title="16.其他补充的"></a>16.其他补充的</h3><blockquote>
+<p>Backtrader包含了许多功能，能够满足一般用户的绝大多数需求。<br>Backtrader有潜质成为商业解决方案，十分感激原作者将其保持开源。</p>
+</blockquote>
+<p>在阅读完这两篇连载后，相信大家可在Backtrader中进行策略初探了。但在回测时，还需要注意一下几点:</p>
+<ul>
+<li><p><strong>佣金</strong><br>  交易费和佣金加起来，这些不容忽视。 Backtrader可以考虑固定金额和固定百分比两种情形的佣金。</p>
+</li>
+<li><p><strong>风险管理</strong><br>  本教程主要突出了Backtrader的潜力，并为使用该平台的用户提供一个简明的教程，并没有怎么涉及风险管理。</p>
+</li>
+</ul>
+<p>依据不同类型的风险管理，实际的回测结果可能会有很大不同。<strong>量化的目标是在可接受的风险水平下优化策略获取最大的收益，而不是尝试以承担巨大风险为代价来最大化利润</strong>。</p>
+<p>最后，策略开发的重点应该是<strong>找到一个良好的基础策略，然后采用优化进行微小的调整。有时量化研究者陷入了完全相反的怪圈，即选择一个不太好的策略，试图通过数值优化使结果变得好看，这是难以盈利的</strong>。</p>
+<h3 id="17-源码下载"><a href="#17-源码下载" class="headerlink" title="17.源码下载"></a>17.源码下载</h3><p>百度网盘搜索【Python回测神器Backtrader源码】或 <a target="_blank" rel="noopener" href="https://gitee.com/raydonovan/backtrader_example/tree/master/">gitee下载地址</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2020/10/18/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader-%E4%B8%8B/" data-id="cl9pgenw300v2ycv12745fivb" data-title="Python回测神器Backtrader (下）" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2020/10/31/conda%E7%8E%AF%E5%A2%83%E7%AE%A1%E7%90%86%E5%91%BD%E4%BB%A4/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          conda环境管理命令
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2020/10/18/Python%E5%9B%9E%E6%B5%8B%E7%A5%9E%E5%99%A8Backtrader-%E4%B8%8A/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">Python回测神器Backtrader (上）</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

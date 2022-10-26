@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>后台任务和PHP-Resque的使用 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="介绍什么是后台任务？ 后台任务就是运行在程序流程以外的任务，毕竟PHP作为网站后台语言是需要在执行后立即返回数据的，而且一般服务器都有设置执行的超时时间，所以使用PHP去完成一些比较耗时的后台操作就有些问题了。 通常在做一些比较耗时的操作时都会想到使用一个后台任务以及任务队列，在流程外执行这些操作，并立即返回给前台一个正在执行的提示。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="后台任务和PHP-Resque的使用">
+<meta property="og:url" content="http://moqiang02.github.io/2015/04/18/%E5%90%8E%E5%8F%B0%E4%BB%BB%E5%8A%A1%E5%92%8CPHP-Resque%E7%9A%84%E4%BD%BF%E7%94%A8/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="介绍什么是后台任务？ 后台任务就是运行在程序流程以外的任务，毕竟PHP作为网站后台语言是需要在执行后立即返回数据的，而且一般服务器都有设置执行的超时时间，所以使用PHP去完成一些比较耗时的后台操作就有些问题了。 通常在做一些比较耗时的操作时都会想到使用一个后台任务以及任务队列，在流程外执行这些操作，并立即返回给前台一个正在执行的提示。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E5%90%8E%E5%8F%B0%E4%BB%BB%E5%8A%A1%E5%92%8CPHP-Resque%E7%9A%84%E4%BD%BF%E7%94%A8/1.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E5%90%8E%E5%8F%B0%E4%BB%BB%E5%8A%A1%E5%92%8CPHP-Resque%E7%9A%84%E4%BD%BF%E7%94%A8/2.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E5%90%8E%E5%8F%B0%E4%BB%BB%E5%8A%A1%E5%92%8CPHP-Resque%E7%9A%84%E4%BD%BF%E7%94%A8/3.jpg">
+<meta property="article:published_time" content="2015-04-18T15:40:10.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:54.098Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="消息队列">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/%E5%90%8E%E5%8F%B0%E4%BB%BB%E5%8A%A1%E5%92%8CPHP-Resque%E7%9A%84%E4%BD%BF%E7%94%A8/1.jpg">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-后台任务和PHP-Resque的使用" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2015/04/18/%E5%90%8E%E5%8F%B0%E4%BB%BB%E5%8A%A1%E5%92%8CPHP-Resque%E7%9A%84%E4%BD%BF%E7%94%A8/" class="article-date">
+  <time class="dt-published" datetime="2015-04-18T15:40:10.000Z" itemprop="datePublished">2015-04-18</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      后台任务和PHP-Resque的使用
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.</span> <span class="toc-text">介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%98%9F%E5%88%97%E7%B3%BB%E7%BB%9F"><span class="toc-number">2.</span> <span class="toc-text">队列系统</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%89%E8%A3%85"><span class="toc-number">3.</span> <span class="toc-text">安装</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8Worker"><span class="toc-number">4.</span> <span class="toc-text">使用Worker</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E4%BB%BB%E5%8A%A1"><span class="toc-number">5.</span> <span class="toc-text">创建任务</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <h3 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h3><p><strong>什么是后台任务？</strong></p>
+<p>后台任务就是运行在程序流程以外的任务，毕竟PHP作为网站后台语言是需要在执行后立即返回数据的，而且一般服务器都有设置执行的超时时间，所以使用PHP去完成一些比较耗时的后台操作就有些问题了。</p>
+<p>通常在做一些比较耗时的操作时都会想到使用一个后台任务以及任务队列，在流程外执行这些操作，并立即返回给前台一个正在执行的提示。<span id="more"></span></p>
+<p>我们来看一个实例：一个社交网站，某用户修改了他的的个人资料中的所在地。</p>
+<p>一般的流程是这样的：</p>
+<p><img src="/images/%E5%90%8E%E5%8F%B0%E4%BB%BB%E5%8A%A1%E5%92%8CPHP-Resque%E7%9A%84%E4%BD%BF%E7%94%A8/1.jpg" alt="workflow1"></p>
+<p>PHP并不是多线程的，所以所有任务必须在前一个任务完成后再能开始，这就会致使用户等待较长的时间。上面例子中，大约3.7秒后用户才能获取到来自服务器的反馈，用户体验较差。</p>
+<p>需要注意的是在整个流程中最重要的仅仅是第一个步骤：Update Database（更新数据库）。如果这个过程失败了，其它的流程都不会被执行；如果成功就可以发送一条执行成功的消息给用户，如：“您的所在地信息已经更新成功”，因为最终的结果是要反馈信息给用户，在失败时同样会返回一条“未能成功更新所在地”的信息。</p>
+<p>其它流程（如刷新缓存、发送邮件等）对于返回给用户的页面来说并不是必须的，那么为什么要让用户等待这些时间去得到非必需的结果？如果仅仅响应用户请求的操作并且立即返回结果，让那些不重要的流程稍后再去进行岂不是更好？</p>
+<p><strong>理想的工作流程</strong><br><img src="/images/%E5%90%8E%E5%8F%B0%E4%BB%BB%E5%8A%A1%E5%92%8CPHP-Resque%E7%9A%84%E4%BD%BF%E7%94%A8/2.jpg" alt="workflow2"></p>
+<p>这样会大大提升用户体验，因为用户仅需0.3秒的等待便可以得到响应。那些不重要的流程全部交给主流程之外的后台任务去执行。</p>
+<p><strong>一个简单的类比</strong></p>
+<p>如果你仍不明白究竟发生了什么：<br>1.用户Lambda告诉Mr.Server（服务器）更新他的所在地信息<br>2.Mr.PHP是为Mr.Server工作的，现在他接收了这个任务<br>3.Mr.PHP为Lambda更新了数据库<br>4.Mr.PHP在公司便签上留言：“我已经更新了Lambda的所在地信息，请更新缓存、发送通知邮件，并为他推荐些好友”<br>5.Mr.PHP告诉用户Lambda：“已经给您更新好了！”<br>6.Mr.PHP现在空闲下来了，准备接收下一个任务</p>
+<p>但是Mr.PHP在便签上留言之后发生了什么？<br>1.Mr.PHP#2，另一个给Mr.Server打工的小伙子取下了这张便签<br>2.他回到自己的办公桌上并按照便签上的内容开始工作<br>3.当他完成工作后休息一会儿并去取走下一个便签，周而复始</p>
+<p>在上面的例子中，Mr.PHP#2就是worker，一张张便签就是queue（队列）。便签纸上的任务就是jobs。</p>
+<p>Mr.PHP以及和他做同样工作的人都可以往墙上贴便签，即往队列中添加任务。Worker的主要工作就是每隔一段时间去查看墙上有没有便签，并取下便签去执行上面所写的工作。</p>
+<p>这些任务（jobs）就是后台任务，“前台任务”是指被直接处理的流程（即Mr.PHP的工作）。而后者并不知道（或者说不需要知道）这些任务是由如何、由谁以及何时被执行的。</p>
+<p>一旦添加了Jobs，只有Worker可以操作这Jobs，而“前台任务”只知道这些Jobs等会儿会执行。</p>
+<p>Worker和Queue不一定是一个。多个Worker也可以执行同一个Queue，一个Worker也可以执行多个Queue。Worker在队列中轮循的间隔时间也不固定，可以是5秒，也可以是15秒、1分钟，等。</p>
+<p>一个Queue System（队列系统）被用来管理所有的Jobs，包括保存、排序（优先级）等。</p>
+<p><strong>后台任务的重要性</strong></p>
+<p>后台任务在生活中随处可见。例如你打电话购买一台虚拟主机：<br>1.接线员在电话里向你询问信用卡信息<br>2.他向银行核对信息，银行批准交易<br>3.他为你创建账户，并给你一个登录口令<br>4.他让你等15分钟，15分钟后主机将可用</p>
+<p><strong>优点</strong></p>
+<p>如果没有后台任务，你可能需要等很长时间。因为银行需要付款给主机供应商，在这里使用后台任务只需要告诉银行付款给主机供应商，接线员只需要确认你的信用卡是有效的，同时主机供应商确信银行会付款给他们，并为你创建账户。</p>
+<p>同样，你可能需要继续等待15分钟，因为接线员那边需要让技术人员为你开通主机并等待开通成功。这样不仅浪费了你的时间，也浪费了接线员的时间。</p>
+<p>从编程的角度想，后台任务由另一个进程启动，这就意味着无论后台任务发生了什么都不会影响到主流程，无论是异常还是错误。</p>
+<p><strong>缺点</strong></p>
+<p>后台任务虽然节省了大量时间，但你却失去了对这些任务的控制。一旦你把任务发送到队列，也许只有上帝知道它们怎么样了~你还有Worker在工作吗？它们有没有被释放？它们在执行正确的Queue吗？（不知道）</p>
+<p>确信你发送到队列的Jobs有被Worker正确的执行将会是你的责任。经常会出现的错误如：<br>1.发送Jobs到一个名为“achievement”的Queue，而Worker执行的是名为“achivement”的Queue<br>2.重新启动了服务，却忘了重新启动Worker<br>3.没有监视你的Worker工作状态，致使一个致命错误发生并终止了Worker的运行</p>
+<p>以前面虚拟主机的例子，接线员告诉你主机将会在15分钟内上线。他怎么会知道？因为手册上是这么写的，他也不能保证主机就一定会在15分钟内上线。</p>
+<p>Worker执行自己的工作（技术人员为主机安装软件）不与外面的环境沟通，如果他现在有大量的工作，你的应该会在工作（Queue）的最下面。</p>
+<p>为了获取Worker的工作状态，你不得不让Worker发送大量的报告，如何时开始工作、发送邮件/通知给管理员等，Worker一旦开始你将不能再命令它们做什么，但它们可以告诉你它们在做什么。</p>
+<p>但仍然有些错误是不能获取到的，如致命错误（出现致命错误时程序会终止，也就不会发送任何信息出去了）。唯一能发现它们的方法就是监视服务器的PHP错误日志。这个相当重要，一旦没有任何Worker在处理工作，这将是一件麻烦事。</p>
+<h3 id="队列系统"><a href="#队列系统" class="headerlink" title="队列系统"></a>队列系统</h3><p>接着第一部分，Queue需要保存Jobs，Worker需要按照指定的时间间隔在Queue中轮循并执行Jobs。<br><img src="/images/%E5%90%8E%E5%8F%B0%E4%BB%BB%E5%8A%A1%E5%92%8CPHP-Resque%E7%9A%84%E4%BD%BF%E7%94%A8/3.jpg" alt="queue-system1"><br>这个系统包含以下三个部分：<br>1.推送者：推送任务到Queue，可以是任何过程，甚至是Worker；<br>2.Queue：按顺序保存Jobs；<br>3.Worker：从Queue中拉取Jobs并执行。</p>
+<p>注意，这里使用了推送（Push）和拉取（Pull）来代替添加（Add）和获取（Get）。</p>
+<blockquote>
+<p>Push: 把数据添加到栈的尾部的操作。<br>Pull(or Pop): 拉取（或弹出）。弹出并删除栈顶部的数据。 </p>
+</blockquote>
+<p>Push操作通常会把数据添加到栈的尾部。这种数据类型会保证先添加到队列的项目总是先被读取和删除，即“先进先出”（FIFO, First-in-first-out）的队列。</p>
+<p>如果Jobs按照1，2，3这样的顺序被加入到Queue，那么它也会按照同样的顺序被执行。</p>
+<p><strong>什么是Job</strong></p>
+<p>Job就是准备被执行的任务，它告诉Worker应该做什么。Worker在执行前并不会知道Job是什么，如果Job是发送Email，它也不会知道需要发给谁、为什么要发、发送时的上下文环境是什么等。</p>
+<p>如果你从你程序的主流程中执行发送邮件的函数，发送者就是登录的用户。你还需要额外为发送邮件提供更多信息，如收件人、邮件内容等。</p>
+<p>就像你需要在家里安装电话线，电信公司就会来给你安装，而他们不需要知道你为什么需要安装电话线，他们要做的仅仅是你要求的（安装电话线）。</p>
+<p><strong>保存Jobs</strong></p>
+<p>任务必须被保存在队列中，这个队列：<br>1.必须有一个队列类型的数据结构（支持推送和拉取任务）<br>2.必须非常快<br>3.可以在多个服务端共享<br>4.is persistent（不知如何翻译了~）</p>
+<p>你可以选择满足以上条件的队列系统，或使用第三方的程序，像RabbitMQ、Gearman、Redis等。我们将会使用Redis存储队列，并且使用PHP-Resque作为队列系统。</p>
+<p>PHP-Resque算是Resque的PHP版本，Resque是开源在Github上的一个使用Ruby编写的队列系统。下一节将会讲如何安装PHP-Resque。</p>
+<h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><p>在第二部分我们使用php-resque作为队列系统，这一节讲如何安装php-resque。</p>
+<p>PHP-Resque是依赖Redis的，所以需要先安装Redis及PHP的Redis扩展。以下是所有需要安装的组件：</p>
+<ul>
+<li>Redis</li>
+<li>PHP的Redis扩展（php-redis）</li>
+<li>php-resque</li>
+<li>PHP的PCNTL扩展</li>
+</ul>
+<p><strong>Redis</strong></p>
+<p>Redis是一个开源的KV数据库，数据是保存在电脑RAM中的，速度非常快，所以通常可以使用Redis来做缓存，或保存Session等。可以在Redis的<a target="_blank" rel="noopener" href="http://redis.io/">官方网站</a>下载最新稳定版本。Redis的安装方法本文不再赘述，安装完成后不要忘记启动。</p>
+<p><strong>PHP-Resque</strong></p>
+<p><a target="_blank" rel="noopener" href="https://github.com/chrisboulton/php-resque">php-resque</a>是resque的PHP版本，很多特性都和原版相似或相同。</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/chrisboulton/php-resque/zipball/master">下载</a>最新版本的zip压缩包，或克隆它的仓库：<br><code>git clone git://github.com/chrisboulton/php-resque.git</code></p>
+<p>以上下载的只是php-resque的库，只需要把文件夹放在任何你项目需要的位置即可。<br>也可以使用Composer安装php-resque。</p>
+<p><strong>PHPredis</strong></p>
+<p><a target="_blank" rel="noopener" href="https://github.com/nicolasff/phpredis">PHPredis</a>扩展相当于是Redis的PHP API，但它不是PHP使用Redis的唯一接口，类似的库还有<a target="_blank" rel="noopener" href="https://github.com/jdp/redisent">redisent</a>、<a target="_blank" rel="noopener" href="http://rediska.geometria-lab.net/">rediska</a>、<a target="_blank" rel="noopener" href="https://github.com/nrk/predis">predis</a>、redisentwrap等。但phpredis是其中最快也是最流行的。关于phpredis扩展的安装方法网上也有很多，也就不再赘述了。</p>
+<p><strong>PHP PCNTL扩展</strong></p>
+<p>PCNTL（进程控制扩展）依赖于Unix系列系统的进程管理，所以php-resque只能运行在UNIX架构的电脑上，如Linux。</p>
+<p>一般可以通过编译安装PHP的时候启用PCNTL扩展，如果没有安装也可以：<br><a target="_blank" rel="noopener" href="http://www.php.net/downloads.php">下载</a>对应版本的PHP源码<br>解压文件<br><code>tar -zxvf php-x.x.x.tar.gz</code><br>进入ext/pcntl目录<br><code>cd php-x.x.x/ext/pcntl/</code><br>配置、编译、安装<br><code>sudo phpize &amp;&amp; ./configure &amp;&amp; make install</code><br>添加extension=pcntl.so到php.ini<br>重新启动Apache/Nginx</p>
+<h3 id="使用Worker"><a href="#使用Worker" class="headerlink" title="使用Worker"></a>使用Worker</h3><p>注意，这篇教程仅适用于Linux和OS X的系统，Windows并不适用。</p>
+<p><strong>理解Worker的本质</strong></p>
+<p>技术上讲一个Worker就是一个不断运行的PHP进程，并且不断监视新的任务并运行。</p>
+<p>一个简单的Worker的代码如下：</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> (true) &#123;</span><br><span class="line">    <span class="variable">$jobs</span> = pullData(); <span class="regexp">//</span> 从队列中拉取任务</span><br><span class="line">       </span><br><span class="line">    foreach (<span class="variable">$jobs</span> as <span class="variable">$class</span> =&gt; <span class="variable">$args</span>) &#123; <span class="regexp">//</span> 循环每个找到的任务</span><br><span class="line">        <span class="variable">$job</span> = new <span class="variable">$class</span>();</span><br><span class="line">        <span class="variable">$job</span>-&gt;perform(<span class="variable">$args</span>); <span class="regexp">//</span> 执行任务</span><br><span class="line">    &#125;</span><br><span class="line">    sleep(<span class="number">300</span>); <span class="regexp">//</span> 等待<span class="number">5</span>分钟后再次尝试拉取任务</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>以上这些代码的具体实现都可以交给php-resque。创建一个Worker，php-resque需要以下参数：</p>
+<ul>
+<li>QUEUE: 需要执行的队列的名字</li>
+<li>INTERVAL：在队列中循环的间隔时间，即完成一个任务后的等待时间，默认是5秒</li>
+<li>APP_INCLUDE：需要自动载入PHP文件路径，Worker需要知道你的Job的位置并载入Job</li>
+<li>COUNT：需要创建的Worker的数量。所有的Worker都具有相同的属性。默认是创建1个Worker</li>
+<li>REDIS_BACKEND：Redis服务器的地址，使用 hostname:port 的格式，如127.0.0.1:6379，或localhost:6379。默认是localhost:6379</li>
+<li>REDIS_BACKEND_DB：使用的Redis数据库的名称，默认是0</li>
+<li>VERBOSE：啰嗦模式，设置“1”为启用，会输出基本的调试信息</li>
+<li>VVERBOSE：设置“1”启用更啰嗦模式，会输出详细的调试信息</li>
+<li>PREFIX：前缀。在Redis数据库中为队列的KEY添加前缀，以方便多个Worker运行在同一个Redis数据库中方便区分。默认为空</li>
+<li>PIDFILE：手动指定PID文件的位置，适用于单Worker运行方式</li>
+</ul>
+<p>以上参数中只有QUEUE是必须的。如果让Worker监视执行多个队列，可以用逗号隔开多个队列的名称，如：”queue1,queue2,queue3″，队列执行是有顺序的，如上queue2和queue3总是会在queue1后面被执行。</p>
+<p>也可以设置QUEUE为<code>*</code>让Worker以字母顺序执行所有的队列。</p>
+<p>Worker 必须以CLI方式启动。你不可以从浏览器启动Worker，因为：<br>1.你无法从浏览器执行后台任务<br>2.PCNTL扩展只能运行在CLI模式</p>
+<p><strong>启动Worker</strong></p>
+<p>可以从resque.php启动Worker，这个位置位于php-resque/bin目录下（也可能不带.php后缀）。</p>
+<p>在终端中执行：<br><code>cd /path/to/php-resque/bin/</code><br><code>php resque.php</code></p>
+<blockquote>
+<p>如果报错：Could not open input file: resque.php<br>则直接执行php resque，不要带.php后缀。</p>
+</blockquote>
+<p>很显然Worker不会被启动，因为缺少必须的参数QUEUE，程序将会返回如下错误：<br><code>Set QUEUE env var containing the list of queues to work.</code></p>
+<p>php-resque通过getenv获取参数，所以在启动Worker的时候应该传递环境变量过去。所以应该以下面的方式启动Worker：<br><code>QUEUE=notification php resque.php</code></p>
+<p>如果启用VVERBOSE模式：<br><code>QUEUE=notification VVERBOSE=1 php resque.php</code></p>
+<p>终端将会输出：</p>
+<figure class="highlight subunit"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">*** Starting worker KAMISAMA-MAC.local:84499:notification</span><br><span class="line">** [23:48:18 2012<span class="string">-10</span><span class="string">-11</span>] Registered signals</span><br><span class="line">** [23:48:18 2012<span class="string">-10</span><span class="string">-11</span>] Checking achievement</span><br><span class="line">** [23:48:18 2012<span class="string">-10</span><span class="string">-11</span>] Checking notification</span><br><span class="line">** [23:48:18 2012<span class="string">-10</span><span class="string">-11</span>] Sleeping for 5</span><br><span class="line">** [23:48:23 2012<span class="string">-10</span><span class="string">-11</span>] Checking achievement</span><br><span class="line">** [23:48:23 2012<span class="string">-10</span><span class="string">-11</span>] Checking notification</span><br><span class="line">** [23:48:23 2012<span class="string">-10</span><span class="string">-11</span>] Sleeping for 5</span><br><span class="line">... etc ...</span><br></pre></td></tr></table></figure>
+<p>Worker会自动被命名为<code>KAMISAMA-MAC.local:84499:notification</code>，命名的规则是<code>hostname:process-id:queue-names</code>。</p>
+<p>如果觉得这种启动方式太麻烦且难记，可以自己手动写一个bash脚本来帮助你启动Resque，如：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">EXPORT</span> <span class="attribute">QUEUE</span>=notifacation</span><br><span class="line"><span class="built_in">EXPORT</span> <span class="attribute">VERBOSE</span>=1</span><br><span class="line"></span><br><span class="line">php resque.php</span><br></pre></td></tr></table></figure>
+<p><strong>后台运行Worker</strong></p>
+<p>通过上面的方法成功启动了Worker，但只有在终端开启的状态下，关闭终端或按下Ctrl+C时Worker就会停止运行。我们可以在命令后面添加一个<code>&amp;</code>来使其后台运行。<br><code>QUEUE=notification php resque.php &amp;</code></p>
+<p>这样就可以让resque在后台运行。但如果你开启了VERBOSE模式，所有的输出信息将会丢失。所以我们需要在resque后台运行时把输出的信息保存起来。</p>
+<p>我们可以使用nohup来保持resque后台运行，即使是在用户登出后。<br><code>nohup QUEUE=notification php resque.php &amp;</code></p>
+<p><strong>记录下Worker的输出</strong></p>
+<p>可以使用管道操作的方式重定向输出到文件：<br><code>nohup QUEUE=notification php resque.php &gt;&gt; /path/to/your/logfile.log 2&gt;&amp;1 &amp;</code></p>
+<p>这样一来所有的标准及错误输出都会被写入到logfile.log文件中。如果需要监视这个文件的内容：<br><code>tail -F /path/to/your/logfile.log</code></p>
+<p><strong>Worker的执行权限</strong></p>
+<p>无论何时你在终端中执行命令都是以当前登录用户的权限来执行。如果你登录的jerry的账户，php-resque将会运行于jerry的权限下。以root用户登录时也一样。</p>
+<p>如果需要避开当前登录账户以其它用户的权限运行，如Apache通常运行在www-data用户下，让php-resque运行于www-data账户：<br><code>nohup sudo -u www-data QUEUE=notification php resque.php &gt;&gt; /path/to/your/logfile.log 2&gt;&amp;1 &amp;</code></p>
+<p>操作执行权限时需要注意：<br>1.通过Worker生成的文件无法被其它用户的php代码读取<br>2.Worker没有权限创建或编辑其它用户的文件</p>
+<p><strong>Let’s play</strong></p>
+<p>前面已经讲了如何启动、如何后台运行、以及记录运行日志，下面就用一些例子结束本节的内容。</p>
+<p>创建一个执行default队列的Worker，并且每隔10秒检索一次任务：<br><code>INTERVAL=10 QUEUE=default php resque.php</code></p>
+<p>创建5个执行default队列的Worker，每隔5秒检索一次任务：<br><code>QUEUE=default COUNT=5 php resque.php</code></p>
+<p>INTERVAL参数没有被指定，因为默认值是5秒。</p>
+<p>创建一个执行achievement和notification队列的Worker（需要注意队列名的顺序）：<br><code>QUEUE=achievement,notification php resque.php</code></p>
+<p>创建一个执行所有队列的Worker：<br><code>QUEUE=* php resque.php</code></p>
+<p>如果你的Redis服务器在别的地址：<br><code>QUEUE=default REDIS_BACKENT=192.168.1.56:6380 php resque.php</code></p>
+<p>使用自动载入php文件：<br><code>QUEUE=default APP_INCLUDE=/path/to/autoloader.php php resque.php</code></p>
+<p><strong>确认你的Worker成功运行了</strong></p>
+<p>通过管道操作无法知道Worker是否成功启动，当前通过查看log文件中有没有输出<code>*** Starting worker .....</code>的内容也可以知道是否启动。</p>
+<p>也可以通过查看系统进程的方法确认Worker是否正在运行。<br><code>ps -ef|grep resque.php</code></p>
+<p>将会输出名称中包含resque.php的进程，其中第二列是进程的PID。</p>
+<p>使用这个方法可以很好的知道Worker是否正在运行，以及有没有意外终止。</p>
+<p><strong>暂停和停止Worker</strong></p>
+<p>要停止一个Worker，直接kill掉它的进程就行了。可以通过<code>ps -ef|grep resque.php</code>查看Worker进程的PID。当然通过这个命令你无法知道哪个PID代码的哪个Worker。</p>
+<p>如果要结束一个PID是86681的进程：<br><code>kill 86681</code></p>
+<p>这个命令将会立即结束掉PID为86681的进程及子进程。如果Worker正在执行一个任务也不会等待任务执行完成（未完成的部分将会丢失）。</p>
+<p>有一个可以平滑的停止Worker的方法，可以通过给kill命令发送一个SIGSPEC信号来告诉kill应该怎么做，这需要PCNTL扩展的支持。</p>
+<p>当然下面所讲述的所有命令都需要PCNTL扩展支持。</p>
+<p>通过PCNTL扩展，Worker可以支持以下信号：</p>
+<ul>
+<li>QUIT – 等待子进程结束后再结束</li>
+<li>TERM / INT – 立即结束子进程并退出</li>
+<li>USR1 – 立即结束子进程，但不退出</li>
+<li>USR2 – 暂停Worker，不会再执行新任务</li>
+<li>CONT – 继续运行Worker</li>
+</ul>
+<p>当没有信号发出时默认是TERM / INT信号。</p>
+<p>如果想在所有当前正在运行的任务都完成后再停止，使用QUIT信号：<br><code>kill -QUIT YOUR-WORKER-PID</code></p>
+<p>结束所有子进程，但保留Worker：<br><code>kill -USR1 YOUR-WORKER-PID</code></p>
+<p>暂停和继续执行Worker：<br><code>kill -USR2 YOUR-WORKER-PID</code><br><code>kill -CONT YOUR-WORKER-PID</code></p>
+<h3 id="创建任务"><a href="#创建任务" class="headerlink" title="创建任务"></a>创建任务</h3><p>到目前为止已经让Worker运行了，我们需要创建并添加任务。这一节主要了解什么是任务（Job），以及如何使用任务。</p>
+<p>简单的说，任务就是传递给Worker要执行的内容。我们需要把Job依次添加到Queue来执行。</p>
+<p>要把任务添加到队列，程序必须要包含php-resque库以及Redis。</p>
+<p>使用<code>require_once &#39;/path/to/php-resque/lib/Resque.php&#39;;</code>包含php-resque的库文件，它会自动连接到Redis服务器，如果你的Redis服务器不是默认的<code>localhost:6379</code>，你需要使用<code>Resque::setBackent(&#39;192.168.1.56:3680&#39;);</code>这样的格式来设置你的Redis服务器的地址，同样setBackent支持可选的第二个参数为使用的Redis数据库名，默认为0。</p>
+<p>现在php-resque已经准备好了，使用以下代码添加一个任务到队列：<br><code>Resque::enqueue(&#39;default&#39;, &#39;Mail&#39;, array(&#39;dest@mail.com&#39;, &#39;hi!&#39;, &#39;this is a test content&#39;));</code></p>
+<ul>
+<li>第一个参数，’default’是指队列的名字，示例中将会把任务推送到名为default的队列中</li>
+<li>第二个参数是Job的类名，表示要执行哪个Job</li>
+<li>第三个参数是要发送给Job的参数也可以使用关联数组的形式<br>传递给Job的参数（上面第三个参数）可以是普通数组、关联数组的形式，也可以是一个字符串，但使用数组可以很方便的传递更多的信息给Job。所有的参数在推送到队列前都会经过json_encode处理。</li>
+</ul>
+<p><strong>创建一个Job</strong></p>
+<p>如上面的例子中，第一个参数是队列的名字（还记得上一节里面启动php resque.php时传递的QUEUE环境变量吗？），第二个参数是Job的类名，即要执行的Job。Mail类就是一个Job类。</p>
+<p>所有的Job类都应该包含一个perform()方法，使用<code>Resque::enqueue()</code>传递的第三个参数可以在perform()方法中使用<code>$this-&gt;args</code>来得到。一个典型的Job类如下所示：</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> Mail&#123;</span><br><span class="line">    <span class="built_in">public</span> <span class="keyword">function</span> <span class="keyword">perform</span>()&#123;</span><br><span class="line">        var_dump($this-&gt;args);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Job类也可以包含setUp()和tearDown()方法，可选的这两个方法分别会在perform()方法之前和之后运行。</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> Mail&#123;</span><br><span class="line">    <span class="built_in">public</span> <span class="keyword">function</span> setUp()&#123;</span><br><span class="line">        # 这个方法会在<span class="keyword">perform</span>()之前运行，可以用来做一些初始化工作</span><br><span class="line">        # 如连接数据库、处理参数等</span><br><span class="line">    &#125;</span><br><span class="line">       </span><br><span class="line">    <span class="built_in">public</span> <span class="keyword">function</span> <span class="keyword">perform</span>()&#123;</span><br><span class="line">        # 执行Job</span><br><span class="line">    &#125;</span><br><span class="line">       </span><br><span class="line">    <span class="built_in">public</span> <span class="keyword">function</span> tearDown()&#123;</span><br><span class="line">        # 会在<span class="keyword">perform</span>()之后运行，可以用来做一些清理工作</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>包含Job类</strong></p>
+<p>在实例化Job类之前，必须让Worker找到并包含这个类。有很多种方法可以做到。</p>
+<p>1.使用include_path</p>
+<p>当PHP运行于Apache model方式的时候可以使用.htaccess设置包含：<br><code>php_value include_path &quot;.:/already/existing/path:/path/to/job-classes&quot;</code></p>
+<p>或者通过php.ini<br><code>include_path = &quot;.:/php/includes:/path/to/job-classes&quot;</code></p>
+<p>2.使用APP_INCLUDE包含</p>
+<p>上一节说了使用APP_INCLUDE指定Worker执行时要包含的PHP文件的路径，如：<br><code>QUEUE=default APP_INCLUDE=/path/to/loader.php php resque.php</code></p>
+<p>loader.php的内容可以是下面的那样：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">include</span> <span class="string">&#x27;/path/to/Mail.php&#x27;</span>;</span><br><span class="line"><span class="keyword">include</span> <span class="string">&#x27;/path/to/AnotherJobClass.php&#x27;</span>;</span><br><span class="line"><span class="keyword">include</span> <span class="string">&#x27;/path/to/somewhere/AnotherJobClass.php&#x27;</span>;</span><br><span class="line"><span class="keyword">include</span> <span class="string">&#x27;/JobClass.php&#x27;</span>;</span><br></pre></td></tr></table></figure>
+<p>当然也可以使用PHP的autoloader方法——sql_autoloader。</p>
+<p><strong>在你的项目中使用后台任务</strong></p>
+<p>以下面的代码为例，把耗时较多的工作交给后台任务来做。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">User</span></span>&#123;</span><br><span class="line">    <span class="comment"># functions()&#123;&#125;  // 其它函数</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">updateLocation</span>(<span class="params"><span class="variable">$location</span></span>) </span>&#123;</span><br><span class="line">        <span class="variable">$db</span>-&gt;<span class="title function_ invoke__">updateUserTable</span>(<span class="variable">$this</span>-&gt;userId, <span class="string">&#x27;location&#x27;</span>, <span class="variable">$location</span>);</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;<span class="title function_ invoke__">recomputeNewFriends</span>(); <span class="comment"># 此操作耗时较长</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">recomputeNewFriends</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="comment"># 查找新的朋友</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>把以上代码改成：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">User</span> </span>&#123;</span><br><span class="line">    <span class="comment"># functions()&#123;&#125;  // 其它函数</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">updateLocation</span>(<span class="params"><span class="variable">$location</span></span>) </span>&#123;</span><br><span class="line">        <span class="variable">$db</span>-&gt;<span class="title function_ invoke__">updateUserTable</span>(<span class="variable">$this</span>-&gt;userId, <span class="string">&#x27;location&#x27;</span>, <span class="variable">$location</span>);</span><br><span class="line">        <span class="comment"># 把任务添加到队列</span></span><br><span class="line">        <span class="comment"># 这里的队列名为 &#x27;queueName&#x27;</span></span><br><span class="line">        <span class="comment"># 任务名为 &#x27;FriendRecommendator&#x27;</span></span><br><span class="line">        <span class="title class_">Resque</span>::<span class="title function_ invoke__">enqueue</span>(<span class="string">&#x27;queueName&#x27;</span>, <span class="string">&#x27;FriendRecommendator&#x27;</span>, <span class="keyword">array</span>(<span class="string">&#x27;id&#x27;</span> =&gt; <span class="variable">$this</span>-&gt;userId));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>以下是任务FriendRecommendator类的实现代码：</p>
+<figure class="highlight haxe"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">FriendRecommendator</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">perform</span></span>() &#123;</span><br><span class="line">        <span class="meta"># 这里没有User类，需要创建一个User类对象</span></span><br><span class="line">        $user = <span class="keyword">new</span> <span class="type">User</span>($<span class="built_in">this</span>-&gt;args[<span class="string">&#x27;id&#x27;</span>]);</span><br><span class="line">        <span class="meta"># 查找新朋友的操作</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>简单的说，你只需要把你的执行任务的代码放到Job类中并改名为perform()即可，只要你愿意甚至可以将普通类改成Job类，但并不推荐这样做。</p>
+<p>perform()方法有个缺点，即一个Job类只能包含一个perform()方法，也就是说一个Job类只能执行一种后台任务。例如你有一个发送通知信息的后台任务，但又有发送给用户和发送给管理员两个不同的需求，一般来说就得需要两个Job类才能实现。不过这里有个小小的Hack可以使一个Job能执行多个类型的任务。</p>
+<p>首先就是给你的Job分类，把相似工作的Job放在同一个Job类中，因为完全不相关的Job即使放在同一个类中也没有任何意义。然后通过给<code>Resque::enqueue()</code>方法传递一个表示不同Job的参数过去。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Job类中的写法</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Notification</span></span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">function</span> <span class="title">sentToUser</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">		<span class="comment"># Code..</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">function</span> <span class="title">sentToAdmin</span></span>&#123;</span><br><span class="line">		<span class="comment"># code..</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">function</span> <span class="title">perform</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">		<span class="variable">$action</span> = <span class="variable language_">$this</span>-&gt;&#123;<span class="title function_ invoke__">array_shift</span>(<span class="variable">$this</span>-&gt;args)&#125;;</span><br><span class="line">		<span class="keyword">if</span>(<span class="title function_ invoke__">method_exists</span>(<span class="variable">$this</span>, <span class="variable">$action</span>))&#123;</span><br><span class="line">			<span class="variable language_">$this</span>-&gt;<span class="variable">$action</span>();</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 添加任务时的写法</span></span><br><span class="line"><span class="title class_">Resque</span>::<span class="title function_ invoke__">enqueue</span>(<span class="string">&#x27;default&#x27;</span>, <span class="string">&#x27;Notification&#x27;</span>, <span class="keyword">array</span>(<span class="string">&#x27;sendToAdmin&#x27;</span>, <span class="string">&#x27;this is content&#x27;</span>));</span><br></pre></td></tr></table></figure>
+
+<p>也可以使用其它类继承Job类以获取相同的perform()方法，但要注意必须同时包含这些类文件。</p>
+<p>另外需要注意的是使用这种Hack的方法<code>Resque::enqueue()</code>的第三个参数必须是一个数组，并且它的第一个元素是要执行的任务的方法名，并且这个元素会在执行时从<code>$args</code>数组中移除。</p>
+<p>必须在每次修改Job类后重新启动你的Worker。</p>
+<p>参考：<a target="_blank" rel="noopener" href="https://icewing.cc/post/background-jobs-and-phpresque-1.html">后台任务和PHP-Resque的使用</a><br><a target="_blank" rel="noopener" href="https://github.com/chrisboulton/php-resque">https://github.com/chrisboulton/php-resque</a><br><a target="_blank" rel="noopener" href="http://avnpc.com/pages/run-background-task-by-php-resque">用PHP实现守护进程任务后台运行与多线程（php-resque使用说明）</a><br><a target="_blank" rel="noopener" href="http://www.zrwm.com/?cat=139">基于Redis的background job系统:PHP Resque</a><br><a target="_blank" rel="noopener" href="http://www.vtcrm.cn/2013/10/11/%E4%BD%BF%E7%94%A8redisphp-resque%E5%AE%9E%E7%8E%B0%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/">使用Redis+php-resque实现消息队列</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2015/04/18/%E5%90%8E%E5%8F%B0%E4%BB%BB%E5%8A%A1%E5%92%8CPHP-Resque%E7%9A%84%E4%BD%BF%E7%94%A8/" data-id="cl9pgeo9201t5ycv17gga38q0" data-title="后台任务和PHP-Resque的使用" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" rel="tag">消息队列</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/05/22/ListViewListActivitysetListAdapter/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          Android：ListView、ListActivity、setListAdapter
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/04/15/yum%E6%9B%B4%E6%96%B0%E6%8A%A5%E9%94%99Check-that-the-correct-key-URLs-are-configured-for-this-repository/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">yum更新报错Check that the correct key URLs are configured for this repository</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

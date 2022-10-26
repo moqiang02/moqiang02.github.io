@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>PHP Memcached应用实现代码 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="在很多场合，我们都会听到 memcached 这个名字，但很多同学只是听过，并没有用过或实际了解过，只知道它是一个很不错的东东。这里简单介绍一下，memcached 是高效、快速的分布式内存对象缓存系统，主要用于加速 WEB 动态应用程序。 一、memcached 简介在很多场合，我们都会听到 memcached 这个名字，但很多同学只是听过，并没有用过或实际了解过，只知道它是一个很不错的东东。这">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PHP Memcached应用实现代码">
+<meta property="og:url" content="http://moqiang02.github.io/2014/04/01/PHP-Memcached%E5%BA%94%E7%94%A8%E5%AE%9E%E7%8E%B0%E4%BB%A3%E7%A0%81/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="在很多场合，我们都会听到 memcached 这个名字，但很多同学只是听过，并没有用过或实际了解过，只知道它是一个很不错的东东。这里简单介绍一下，memcached 是高效、快速的分布式内存对象缓存系统，主要用于加速 WEB 动态应用程序。 一、memcached 简介在很多场合，我们都会听到 memcached 这个名字，但很多同学只是听过，并没有用过或实际了解过，只知道它是一个很不错的东东。这">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/Memcached%E5%BA%94%E7%94%A8%E5%AE%9E%E7%8E%B0%E4%BB%A3%E7%A0%81/SouthEast.jpg">
+<meta property="article:published_time" content="2014-04-01T02:45:12.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.836Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/Memcached%E5%BA%94%E7%94%A8%E5%AE%9E%E7%8E%B0%E4%BB%A3%E7%A0%81/SouthEast.jpg">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-PHP-Memcached应用实现代码" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2014/04/01/PHP-Memcached%E5%BA%94%E7%94%A8%E5%AE%9E%E7%8E%B0%E4%BB%A3%E7%A0%81/" class="article-date">
+  <time class="dt-published" datetime="2014-04-01T02:45:12.000Z" itemprop="datePublished">2014-04-01</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/memcached/">memcached</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      PHP Memcached应用实现代码
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E3%80%81memcached-%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">一、memcached 简介</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8C%E3%80%81memcached-%E5%AE%89%E8%A3%85"><span class="toc-number">2.</span> <span class="toc-text">二、memcached 安装</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E8%BF%90%E8%A1%8C-memcached-%E5%AE%88%E6%8A%A4%E7%A8%8B%E5%BA%8F"><span class="toc-number">3.</span> <span class="toc-text">三、运行 memcached 守护程序</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9B%9B%E3%80%81memcached-%E7%9A%84%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86"><span class="toc-number">4.</span> <span class="toc-text">四、memcached 的工作原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%94%E3%80%81PHP-%E5%A6%82%E4%BD%95%E4%BD%9C%E4%B8%BA-memcached-%E5%AE%A2%E6%88%B7%E7%AB%AF"><span class="toc-number">5.</span> <span class="toc-text">五、PHP 如何作为 memcached 客户端</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%AD%E3%80%81PHP-memcached-%E5%BA%94%E7%94%A8%E7%A4%BA%E4%BE%8B"><span class="toc-number">6.</span> <span class="toc-text">六、PHP memcached 应用示例</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E7%9B%B8%E5%85%B3%E8%B5%84%E6%BA%90"><span class="toc-number">7.</span> <span class="toc-text">七、相关资源</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <p>在很多场合，我们都会听到 memcached 这个名字，但很多同学只是听过，并没有用过或实际了解过，只知道它是一个很不错的东东。这里简单介绍一下，memcached 是高效、快速的分布式内存对象缓存系统，主要用于加速 WEB 动态应用程序。</p>
+<h3 id="一、memcached-简介"><a href="#一、memcached-简介" class="headerlink" title="一、memcached 简介"></a>一、memcached 简介</h3><p>在很多场合，我们都会听到 <a target="_blank" rel="noopener" href="http://www.danga.com/memcached/">memcached</a> 这个名字，但很多同学只是听过，并没有用过或实际了解过，只知道它是一个很不错的东东。这里简单介绍一下，memcached 是高效、快速的分布式内存对象缓存系统，主要用于加速 WEB 动态应用程序。</p>
+<span id="more"></span>
+<h3 id="二、memcached-安装"><a href="#二、memcached-安装" class="headerlink" title="二、memcached 安装"></a>二、memcached 安装</h3><p>首先是下载 memcached 了，目前最新版本是 1.1.12，直接从官方网站即可下载到 <a target="_blank" rel="noopener" href="http://www.danga.com/memcached/dist/memcached-1.1.12.tar.gz">memcached-1.1.12.tar.gz</a>。除此之外，memcached 用到了 <a target="_blank" rel="noopener" href="http://monkey.org/~provos/libevent/">libevent</a>，我下载的是 <a target="_blank" rel="noopener" href="http://monkey.org/~provos/libevent-1.1a.tar.gz">libevent-1.1a.tar.gz</a>。</p>
+<p>接下来是分别将 libevent-1.1a.tar.gz 和 memcached-1.1.12.tar.gz 解开包、编译、安装：<br>代码如下:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar -xzf libevent-1.1a.tar.gz</span> </span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash"><span class="built_in">cd</span> libevent-1.1a</span> </span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">./configure --prefix=/usr</span> </span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">make</span> </span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">make install</span> </span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash"><span class="built_in">cd</span> ..</span> </span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar -xzf memcached-1.1.12.tar.gz</span> </span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash"><span class="built_in">cd</span> memcached-1.1.12</span> </span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">./configure --prefix=/usr</span> </span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">make</span> </span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">make install</span> </span><br></pre></td></tr></table></figure>
+<p>安装完成之后，memcached 应该在 <code>/usr/bin/memcached</code>。 </p>
+<h3 id="三、运行-memcached-守护程序"><a href="#三、运行-memcached-守护程序" class="headerlink" title="三、运行 memcached 守护程序"></a>三、运行 memcached 守护程序</h3><p>运行 memcached 守护程序很简单，只需一个命令行即可，不需要修改任何配置文件（也没有配置文件给你修改 ）： </p>
+<p><code>/usr/bin/memcached -d -m 128 -l 192.168.1.1 -p 11211 -u httpd</code>参数解释： </p>
+<p>-d 以守护程序（daemon）方式运行 memcached；<br>-m 设置 memcached 可以使用的内存大小，单位为 M；<br>-l 设置监听的 IP 地址，如果是本机的话，通常可以不设置此参数；<br>-p 设置监听的端口，默认为 11211，所以也可以不设置此参数；<br>-u 指定用户，如果当前为 root 的话，需要使用此参数指定用户。<br>当然，还有其它参数可以用，man memcached 一下就可以看到了。 </p>
+<h3 id="四、memcached-的工作原理"><a href="#四、memcached-的工作原理" class="headerlink" title="四、memcached 的工作原理"></a>四、memcached 的工作原理</h3><p>首先 memcached 是以守护程序方式运行于一个或多个服务器中，随时接受客户端的连接操作，客户端可以由各种语言编写，目前已知的客户端 API 包括 Perl/PHP/Python/Ruby/Java/C#/C 等等。PHP 等客户端在与 memcached 服务建立连接之后，接下来的事情就是存取对象了，每个被存取的对象都有一个唯一的标识符 key，存取操作均通过这个 key 进行，保存到 memcached 中的对象实际上是放置内存中的，并不是保存在 cache 文件中的，这也是为什么 memcached 能够如此高效快速的原因。注意，这些对象并不是持久的，服务停止之后，里边的数据就会丢失。<br><img src="/images/Memcached%E5%BA%94%E7%94%A8%E5%AE%9E%E7%8E%B0%E4%BB%A3%E7%A0%81/SouthEast.jpg"></p>
+<h3 id="五、PHP-如何作为-memcached-客户端"><a href="#五、PHP-如何作为-memcached-客户端" class="headerlink" title="五、PHP 如何作为 memcached 客户端"></a>五、PHP 如何作为 memcached 客户端</h3><p>有两种方法可以使 PHP 作为 memcached 客户端，调用 memcached 的服务进行对象存取操作。</p>
+<p>第一种，PHP 有一个叫做 <a target="_blank" rel="noopener" href="http://www.php.net/manual/en/ref.memcache.php">memcache 的扩展</a>，Linux 下编译时需要带上 –enable-memcache[=DIR] 选项，Window 下则在 php.ini 中去掉 php_memcache.dll 前边的注释符，使其可用。</p>
+<p>除此之外，还有一种方法，可以避开扩展、重新编译所带来的麻烦，那就是直接使用 <a target="_blank" rel="noopener" href="http://wikipedia.sourceforge.net/doc/memcached-client/_includes_memcached-client_php.html">php-memcached-client</a>。</p>
+<p>本文选用第二种方式，虽然效率会比扩展库稍差一些，但问题不大。</p>
+<h3 id="六、PHP-memcached-应用示例"><a href="#六、PHP-memcached-应用示例" class="headerlink" title="六、PHP memcached 应用示例"></a>六、PHP memcached 应用示例</h3><p>首先 <a target="_blank" rel="noopener" href="http://www.nioxiao.com/wp-content/uploads/2006/04/memcached-client.zip">下载 memcached-client.php</a>，在下载了 memcached-client.php 之后，就可以通过这个文件中的类“memcached”对 memcached 服务进行操作了。其实代码调用非常简单，主要会用到的方法有 add()、get()、replace() 和 delete()，方法说明如下：</p>
+<p><code>add ($key, $val, $exp = 0)</code><br>往 memcached 中写入对象，$key 是对象的唯一标识符，$val 是写入的对象数据，$exp 为过期时间，单位为秒，默认为不限时间；</p>
+<p><code>get ($key)</code><br>从 memcached 中获取对象数据，通过对象的唯一标识符 $key 获取；</p>
+<p><code>replace ($key, $value, $exp=0)</code><br>使用 $value 替换 memcached 中标识符为 $key 的对象内容，参数与 add() 方法一样，只有 $key 对象存在的情况下才会起作用；</p>
+<p><code>delete ($key, $time = 0)</code><br>删除 memcached 中标识符为 $key 的对象，$time 为可选参数，表示删除之前需要等待多长时间。</p>
+<p>下面是一段简单的测试代码，代码中对标识符为 ‘mykey’ 的对象数据进行存取操作：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span> </span><br><span class="line"><span class="comment">// 包含 memcached 类文件 </span></span><br><span class="line"><span class="keyword">require_once</span>(<span class="string">&#x27;memcached-client.php&#x27;</span>); </span><br><span class="line"><span class="comment">// 选项设置 </span></span><br><span class="line"><span class="variable">$options</span> = <span class="keyword">array</span>( </span><br><span class="line">    <span class="string">&#x27;servers&#x27;</span> =&gt; <span class="keyword">array</span>(<span class="string">&#x27;192.168.1.1:11211&#x27;</span>), <span class="comment">//memcached 服务的地址、端口，可用多个数组元素表示多个 memcached 服务 </span></span><br><span class="line">    <span class="string">&#x27;debug&#x27;</span> =&gt; <span class="literal">true</span>, <span class="comment">//是否打开 debug </span></span><br><span class="line">    <span class="string">&#x27;compress_threshold&#x27;</span> =&gt; <span class="number">10240</span>, <span class="comment">//超过多少字节的数据时进行压缩 </span></span><br><span class="line">    <span class="string">&#x27;persistant&#x27;</span> =&gt; <span class="literal">false</span> <span class="comment">//是否使用持久连接 </span></span><br><span class="line">); </span><br><span class="line"><span class="comment">// 创建 memcached 对象实例 </span></span><br><span class="line"><span class="variable">$mc</span> = <span class="keyword">new</span> <span class="title function_ invoke__">memcached</span>(<span class="variable">$options</span>); </span><br><span class="line"><span class="comment">// 设置此脚本使用的唯一标识符 </span></span><br><span class="line"><span class="variable">$key</span> = <span class="string">&#x27;mykey&#x27;</span>; </span><br><span class="line"><span class="comment">// 往 memcached 中写入对象 </span></span><br><span class="line"><span class="variable">$mc</span>-&gt;<span class="title function_ invoke__">add</span>(<span class="variable">$key</span>, <span class="string">&#x27;some random strings&#x27;</span>); </span><br><span class="line"><span class="variable">$val</span> = <span class="variable">$mc</span>-&gt;<span class="title function_ invoke__">get</span>(<span class="variable">$key</span>); </span><br><span class="line"><span class="keyword">echo</span> <span class="string">&quot;n&quot;</span>.<span class="title function_ invoke__">str_pad</span>(<span class="string">&#x27;$mc-&gt;add() &#x27;</span>, <span class="number">60</span>, <span class="string">&#x27;_&#x27;</span>).<span class="string">&quot;n&quot;</span>; </span><br><span class="line"><span class="title function_ invoke__">var_dump</span>(<span class="variable">$val</span>); </span><br><span class="line"><span class="comment">// 替换已写入的对象数据值 </span></span><br><span class="line"><span class="variable">$mc</span>-&gt;<span class="title function_ invoke__">replace</span>(<span class="variable">$key</span>, <span class="keyword">array</span>(<span class="string">&#x27;some&#x27;</span>=&gt;<span class="string">&#x27;haha&#x27;</span>, <span class="string">&#x27;array&#x27;</span>=&gt;<span class="string">&#x27;xxx&#x27;</span>)); </span><br><span class="line"><span class="variable">$val</span> = <span class="variable">$mc</span>-&gt;<span class="title function_ invoke__">get</span>(<span class="variable">$key</span>); </span><br><span class="line"><span class="keyword">echo</span> <span class="string">&quot;n&quot;</span>.<span class="title function_ invoke__">str_pad</span>(<span class="string">&#x27;$mc-&gt;replace() &#x27;</span>, <span class="number">60</span>, <span class="string">&#x27;_&#x27;</span>).<span class="string">&quot;n&quot;</span>; </span><br><span class="line"><span class="title function_ invoke__">var_dump</span>(<span class="variable">$val</span>); </span><br><span class="line"><span class="comment">// 删除 memcached 中的对象 </span></span><br><span class="line"><span class="variable">$mc</span>-&gt;<span class="title function_ invoke__">delete</span>(<span class="variable">$key</span>); </span><br><span class="line"><span class="variable">$val</span> = <span class="variable">$mc</span>-&gt;<span class="title function_ invoke__">get</span>(<span class="variable">$key</span>); </span><br><span class="line"><span class="keyword">echo</span> <span class="string">&quot;n&quot;</span>.<span class="title function_ invoke__">str_pad</span>(<span class="string">&#x27;$mc-&gt;delete() &#x27;</span>, <span class="number">60</span>, <span class="string">&#x27;_&#x27;</span>).<span class="string">&quot;n&quot;</span>; </span><br><span class="line"><span class="title function_ invoke__">var_dump</span>(<span class="variable">$val</span>); </span><br><span class="line"><span class="meta">?&gt;</span> </span><br></pre></td></tr></table></figure>
+<p>是不是很简单，在实际应用中，通常会把数据库查询的结果集保存到 memcached 中，下次访问时直接从 memcached 中获取，而不再做数据库查询操作，这样可以在很大程度上减轻数据库的负担。通常会将 SQL 语句 md5() 之后的值作为唯一标识符 key。下边是一个利用 memcached 来缓存数据库查询结果集的示例（此代码片段紧接上边的示例代码）： </p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span> </span><br><span class="line"><span class="variable">$sql</span> = <span class="string">&#x27;SELECT * FROM users&#x27;</span>; </span><br><span class="line"><span class="variable">$key</span> = <span class="title function_ invoke__">md5</span>(<span class="variable">$sql</span>); <span class="comment">//memcached 对象标识符 </span></span><br><span class="line"><span class="keyword">if</span> ( !(<span class="variable">$datas</span> = <span class="variable">$mc</span>-&gt;<span class="title function_ invoke__">get</span>(<span class="variable">$key</span>)) ) &#123; </span><br><span class="line">    <span class="comment">// 在 memcached 中未获取到缓存数据，则使用数据库查询获取记录集。 </span></span><br><span class="line">    <span class="keyword">echo</span> <span class="string">&quot;n&quot;</span>.<span class="title function_ invoke__">str_pad</span>(<span class="string">&#x27;Read datas from MySQL.&#x27;</span>, <span class="number">60</span>, <span class="string">&#x27;_&#x27;</span>).<span class="string">&quot;n&quot;</span>; </span><br><span class="line">    <span class="variable">$conn</span> = <span class="title function_ invoke__">mysql_connect</span>(<span class="string">&#x27;localhost&#x27;</span>, <span class="string">&#x27;test&#x27;</span>, <span class="string">&#x27;test&#x27;</span>); </span><br><span class="line">    <span class="title function_ invoke__">mysql_select_db</span>(<span class="string">&#x27;test&#x27;</span>); </span><br><span class="line">    <span class="variable">$result</span> = <span class="title function_ invoke__">mysql_query</span>(<span class="variable">$sql</span>); </span><br><span class="line">    <span class="keyword">while</span> (<span class="variable">$row</span> = <span class="title function_ invoke__">mysql_fetch_object</span>(<span class="variable">$result</span>)) </span><br><span class="line">    <span class="variable">$datas</span>[] = <span class="variable">$row</span>; </span><br><span class="line">    <span class="comment">// 将数据库中获取到的结果集数据保存到 memcached 中，以供下次访问时使用。 </span></span><br><span class="line">    <span class="variable">$mc</span>-&gt;<span class="title function_ invoke__">add</span>(<span class="variable">$key</span>, <span class="variable">$datas</span>); </span><br><span class="line">&#125; <span class="keyword">else</span> &#123; </span><br><span class="line">    <span class="keyword">echo</span> <span class="string">&quot;n&quot;</span>.<span class="title function_ invoke__">str_pad</span>(<span class="string">&#x27;Read datas from memcached.&#x27;</span>, <span class="number">60</span>, <span class="string">&#x27;_&#x27;</span>).<span class="string">&quot;n&quot;</span>; </span><br><span class="line">&#125; </span><br><span class="line"><span class="title function_ invoke__">var_dump</span>(<span class="variable">$datas</span>); </span><br><span class="line"><span class="meta">?&gt;</span> </span><br></pre></td></tr></table></figure>
+<p>可以看出，使用 memcached 之后，可以减少数据库连接、查询操作，数据库负载下来了，脚本的运行速度也提高了。</p>
+<p>之前我曾经写过一篇名为<a target="_blank" rel="noopener" href="http://blog.csdn.net/moqiang02/article/details/23260503">《PHP 实现多服务器共享 SESSION 数据》</a>文章，文中的 SESSION 是使用数据库保存的，在并发访问量大的时候，服务器的负载会很大，经常会超出 MySQL 最大连接数，利用 memcached，我们可以很好地解决这个问题，工作原理如下：</p>
+<p>用户访问网页时，查看 memcached 中是否有当前用户的 SESSION 数据，使用 session_id() 作为唯一标识符；如果数据存在，则直接返回，如果不存在，再进行数据库连接，获取 SESSION 数据，并将此数据保存到 memcached 中，供下次使用；<br>当前的 PHP 运行结束（或使用了 <a target="_blank" rel="noopener" href="http://php.liukang.com/manual/en/function.session-write-close.php">session_write_close()</a>）时，会调用 <code>My_Sess::write()</code> 方法，将数据写入数据库，这样的话，每次仍然会有数据库操作，对于这个方法，也需要进行优化。使用一个全局变量，记录用户进入页面时的 SESSION 数据，然后在 write() 方法内比较此数据与想要写入的 SESSION 数据是否相同，不同才进行数据库连接、写入数据库，同时将 memcached 中对应的对象删除，如果相同的话，则表示 SESSION 数据未改变，那么就可以不做任何操作，直接返回了；<br>那么用户 SESSION 过期时间怎么解决呢？记得 memcached 的 add() 方法有个过期时间参数 $exp 吗？把这个参数值设置成小于 SESSION 最大存活时间即可。另外别忘了给那些一直在线的用户延续 SESSION 时长，这个可以在 write() 方法中解决，通过判断时间，符合条件则更新数据库数据。</p>
+<h3 id="七、相关资源"><a href="#七、相关资源" class="headerlink" title="七、相关资源"></a>七、相关资源</h3><p><a target="_blank" rel="noopener" href="http://www.danga.com/memcached/">memcached 官方网站</a><br><a target="_blank" rel="noopener" href="http://download.csdn.net/detail/moqiang02/7165747">下载 memcached-client.php</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/04/01/PHP-Memcached%E5%BA%94%E7%94%A8%E5%AE%9E%E7%8E%B0%E4%BB%A3%E7%A0%81/" data-id="cl9pgeny2011oycv1a8yy0m40" data-title="PHP Memcached应用实现代码" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/04/01/CSS-display-none%E5%92%8Cvisibility-hidden%E5%8C%BA%E5%88%AB/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          CSS display:none和visibility:hidden区别
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/03/22/linux-centos%E7%B3%BB%E7%BB%9F%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8yum%E5%AE%89%E8%A3%85vi-vim/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">linux/centos系统如何使用yum安装vi/vim?</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

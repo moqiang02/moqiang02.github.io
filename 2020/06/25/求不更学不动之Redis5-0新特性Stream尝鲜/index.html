@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>求不更学不动之Redis5.0新特性Stream尝鲜 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="Redis5.0最近被作者突然放出来了，增加了很多新的特色功能。而Redis5.0最大的新特性就是多出了一个数据结构Stream，它是一个新的强大的支持多播的可持久化的消息队列，作者坦言Redis Stream狠狠地借鉴了Kafka的设计。 Redis Stream的结构如上图所示，它有一个消息链表，将所有加入的消息都串起来，每个消息都有一个唯一的ID和对应的内容。消息是持久化的，Redis重启后">
+<meta property="og:type" content="article">
+<meta property="og:title" content="求不更学不动之Redis5.0新特性Stream尝鲜">
+<meta property="og:url" content="http://moqiang02.github.io/2020/06/25/%E6%B1%82%E4%B8%8D%E6%9B%B4%E5%AD%A6%E4%B8%8D%E5%8A%A8%E4%B9%8BRedis5-0%E6%96%B0%E7%89%B9%E6%80%A7Stream%E5%B0%9D%E9%B2%9C/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="Redis5.0最近被作者突然放出来了，增加了很多新的特色功能。而Redis5.0最大的新特性就是多出了一个数据结构Stream，它是一个新的强大的支持多播的可持久化的消息队列，作者坦言Redis Stream狠狠地借鉴了Kafka的设计。 Redis Stream的结构如上图所示，它有一个消息链表，将所有加入的消息都串起来，每个消息都有一个唯一的ID和对应的内容。消息是持久化的，Redis重启后">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E6%B1%82%E4%B8%8D%E6%9B%B4%E5%AD%A6%E4%B8%8D%E5%8A%A8%E4%B9%8BRedis5%E6%96%B0%E7%89%B9%E6%80%A7Stream%E5%B0%9D%E9%B2%9C/1.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E6%B1%82%E4%B8%8D%E6%9B%B4%E5%AD%A6%E4%B8%8D%E5%8A%A8%E4%B9%8BRedis5%E6%96%B0%E7%89%B9%E6%80%A7Stream%E5%B0%9D%E9%B2%9C/2.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E6%B1%82%E4%B8%8D%E6%9B%B4%E5%AD%A6%E4%B8%8D%E5%8A%A8%E4%B9%8BRedis5%E6%96%B0%E7%89%B9%E6%80%A7Stream%E5%B0%9D%E9%B2%9C/3.jpg">
+<meta property="article:published_time" content="2020-06-25T13:52:59.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:54.150Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="消息队列">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/%E6%B1%82%E4%B8%8D%E6%9B%B4%E5%AD%A6%E4%B8%8D%E5%8A%A8%E4%B9%8BRedis5%E6%96%B0%E7%89%B9%E6%80%A7Stream%E5%B0%9D%E9%B2%9C/1.jpg">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-求不更学不动之Redis5-0新特性Stream尝鲜" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2020/06/25/%E6%B1%82%E4%B8%8D%E6%9B%B4%E5%AD%A6%E4%B8%8D%E5%8A%A8%E4%B9%8BRedis5-0%E6%96%B0%E7%89%B9%E6%80%A7Stream%E5%B0%9D%E9%B2%9C/" class="article-date">
+  <time class="dt-published" datetime="2020-06-25T13:52:59.000Z" itemprop="datePublished">2020-06-25</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/redis/">redis</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      求不更学不动之Redis5.0新特性Stream尝鲜
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B6%88%E6%81%AFID"><span class="toc-number">1.</span> <span class="toc-text">消息ID</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B6%88%E6%81%AF%E5%86%85%E5%AE%B9"><span class="toc-number">2.</span> <span class="toc-text">消息内容</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A2%9E%E5%88%A0%E6%94%B9%E6%9F%A5"><span class="toc-number">3.</span> <span class="toc-text">增删改查</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%8B%AC%E7%AB%8B%E6%B6%88%E8%B4%B9"><span class="toc-number">4.</span> <span class="toc-text">独立消费</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E6%B6%88%E8%B4%B9%E7%BB%84"><span class="toc-number">5.</span> <span class="toc-text">创建消费组</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B6%88%E8%B4%B9"><span class="toc-number">6.</span> <span class="toc-text">消费</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Stream%E6%B6%88%E6%81%AF%E5%A4%AA%E5%A4%9A%E6%80%8E%E4%B9%88%E5%8A%9E"><span class="toc-number">7.</span> <span class="toc-text">Stream消息太多怎么办</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B6%88%E6%81%AF%E5%A6%82%E6%9E%9C%E5%BF%98%E8%AE%B0ACK%E4%BC%9A%E6%80%8E%E6%A0%B7"><span class="toc-number">8.</span> <span class="toc-text">消息如果忘记ACK会怎样</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#PEL%E5%A6%82%E4%BD%95%E9%81%BF%E5%85%8D%E6%B6%88%E6%81%AF%E4%B8%A2%E5%A4%B1"><span class="toc-number">9.</span> <span class="toc-text">PEL如何避免消息丢失</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%93%E8%AE%BA"><span class="toc-number">10.</span> <span class="toc-text">结论</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <p>Redis5.0最近被作者突然放出来了，增加了很多新的特色功能。而Redis5.0最大的新特性就是多出了一个数据结构Stream，它是一个新的强大的支持多播的可持久化的消息队列，作者坦言Redis Stream狠狠地借鉴了Kafka的设计。</p>
+<p>Redis Stream的结构如上图所示，它有一个消息链表，将所有加入的消息都串起来，每个消息都有一个唯一的ID和对应的内容。消息是持久化的，Redis重启后，内容还在。<span id="more"></span></p>
+<p><img src="/images/%E6%B1%82%E4%B8%8D%E6%9B%B4%E5%AD%A6%E4%B8%8D%E5%8A%A8%E4%B9%8BRedis5%E6%96%B0%E7%89%B9%E6%80%A7Stream%E5%B0%9D%E9%B2%9C/1.jpg"></p>
+<p>每个Stream都有唯一的名称，它就是Redis的key，在我们首次使用<code>xadd</code>指令追加消息时自动创建。</p>
+<p>每个Stream都可以挂多个消费组，每个消费组会有个游标<code>last_delivered_id</code>在Stream数组之上往前移动，表示当前消费组已经消费到哪条消息了。每个消费组都有一个Stream内唯一的名称，消费组不会自动创建，它需要单独的指令<code>xgroup create</code>进行创建，需要指定从Stream的某个消息ID开始消费，这个ID用来初始化<code>last_delivered_id</code>变量。</p>
+<p>每个消费组(Consumer Group)的状态都是独立的，相互不受影响。也就是说同一份Stream内部的消息会被每个消费组都消费到。</p>
+<p>同一个消费组(Consumer Group)可以挂接多个消费者(Consumer)，这些消费者之间是竞争关系，任意一个消费者读取了消息都会使游标<code>last_delivered_id</code>往前移动。每个消费者者有一个组内唯一名称。</p>
+<p>消费者(Consumer)内部会有个状态变量<code>pending_ids</code>，它记录了当前已经被客户端读取的消息，但是还没有ack。如果客户端没有ack，这个变量里面的消息ID会越来越多，一旦某个消息被ack，它就开始减少。这个pending_ids变量在Redis官方被称之为<code>PEL</code>，也就是<code>Pending Entries List</code>，这是一个很核心的数据结构，它用来确保客户端至少消费了消息一次，而不会在网络传输的中途丢失了没处理。</p>
+<h2 id="消息ID"><a href="#消息ID" class="headerlink" title="消息ID"></a><strong>消息ID</strong></h2><p>消息ID的形式是<code>timestampInMillis-sequence</code>，例如<code>1527846880572-5</code>，它表示当前的消息在毫米时间戳<code>1527846880572</code>时产生，并且是该毫秒内产生的第5条消息。消息ID可以由服务器自动生成，也可以由客户端自己指定，但是形式必须是<code>整数-整数</code>，而且必须是后面加入的消息的ID要大于前面的消息ID。</p>
+<h2 id="消息内容"><a href="#消息内容" class="headerlink" title="消息内容"></a><strong>消息内容</strong></h2><p>消息内容就是键值对，形如hash结构的键值对，这没什么特别之处。</p>
+<h2 id="增删改查"><a href="#增删改查" class="headerlink" title="增删改查"></a><strong>增删改查</strong></h2><ol>
+<li> xadd 追加消息</li>
+<li> xdel 删除消息，这里的删除仅仅是设置了标志位，不影响消息总长度</li>
+<li> xrange 获取消息列表，会自动过滤已经删除的消息</li>
+<li> xlen 消息长度</li>
+<li> del 删除Stream</li>
+</ol>
+<blockquote>
+<p>注：实测xdel删除消息，不仅只是设置标志位，真的把消息删除了，stream总长度也变化了</p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># *号表示服务器自动生成ID，后面顺序跟着一堆key/value</span></span><br><span class="line"><span class="comment">#  名字叫laoqian，年龄30岁</span></span><br><span class="line">127.0.0.1:6379&gt; xadd codehole * name laoqian age 30</span><br><span class="line">1527849609889-0  <span class="comment"># 生成的消息ID</span></span><br><span class="line">127.0.0.1:6379&gt; xadd codehole * name xiaoyu age 29</span><br><span class="line">1527849629172-0</span><br><span class="line">127.0.0.1:6379&gt; xadd codehole * name xiaoqian age 1</span><br><span class="line">1527849637634-0</span><br><span class="line">127.0.0.1:6379&gt; xlen codehole</span><br><span class="line">(<span class="built_in">integer</span>) 3</span><br><span class="line"><span class="comment"># -表示最小值, +表示最大值</span></span><br><span class="line">127.0.0.1:6379&gt; xrange codehole - +</span><br><span class="line">127.0.0.1:6379&gt; xrange codehole - +</span><br><span class="line">1) 1) 1527849609889-0</span><br><span class="line">   2) 1) <span class="string">&quot;name&quot;</span></span><br><span class="line">      2) <span class="string">&quot;laoqian&quot;</span></span><br><span class="line">      3) <span class="string">&quot;age&quot;</span></span><br><span class="line">      4) <span class="string">&quot;30&quot;</span></span><br><span class="line">2) 1) 1527849629172-0</span><br><span class="line">   2) 1) <span class="string">&quot;name&quot;</span></span><br><span class="line">      2) <span class="string">&quot;xiaoyu&quot;</span></span><br><span class="line">      3) <span class="string">&quot;age&quot;</span></span><br><span class="line">      4) <span class="string">&quot;29&quot;</span></span><br><span class="line">3) 1) 1527849637634-0</span><br><span class="line">   2) 1) <span class="string">&quot;name&quot;</span></span><br><span class="line">      2) <span class="string">&quot;xiaoqian&quot;</span></span><br><span class="line">      3) <span class="string">&quot;age&quot;</span></span><br><span class="line">      4) <span class="string">&quot;1&quot;</span></span><br><span class="line"><span class="comment"># 指定最小消息ID的列表</span></span><br><span class="line">127.0.0.1:6379&gt; xrange codehole 1527849629172-0 +</span><br><span class="line">1) 1) 1527849629172-0</span><br><span class="line">   2) 1) <span class="string">&quot;name&quot;</span></span><br><span class="line">      2) <span class="string">&quot;xiaoyu&quot;</span></span><br><span class="line">      3) <span class="string">&quot;age&quot;</span></span><br><span class="line">      4) <span class="string">&quot;29&quot;</span></span><br><span class="line">2) 1) 1527849637634-0</span><br><span class="line">   2) 1) <span class="string">&quot;name&quot;</span></span><br><span class="line">      2) <span class="string">&quot;xiaoqian&quot;</span></span><br><span class="line">      3) <span class="string">&quot;age&quot;</span></span><br><span class="line">      4) <span class="string">&quot;1&quot;</span></span><br><span class="line"><span class="comment"># 指定最大消息ID的列表</span></span><br><span class="line">127.0.0.1:6379&gt; xrange codehole - 1527849629172-0</span><br><span class="line">1) 1) 1527849609889-0</span><br><span class="line">   2) 1) <span class="string">&quot;name&quot;</span></span><br><span class="line">      2) <span class="string">&quot;laoqian&quot;</span></span><br><span class="line">      3) <span class="string">&quot;age&quot;</span></span><br><span class="line">      4) <span class="string">&quot;30&quot;</span></span><br><span class="line">2) 1) 1527849629172-0</span><br><span class="line">   2) 1) <span class="string">&quot;name&quot;</span></span><br><span class="line">      2) <span class="string">&quot;xiaoyu&quot;</span></span><br><span class="line">      3) <span class="string">&quot;age&quot;</span></span><br><span class="line">      4) <span class="string">&quot;29&quot;</span></span><br><span class="line">127.0.0.1:6379&gt; xdel codehole 1527849609889-0</span><br><span class="line">(<span class="built_in">integer</span>) 1</span><br><span class="line"><span class="comment"># 长度不受影响</span></span><br><span class="line">127.0.0.1:6379&gt; xlen codehole</span><br><span class="line">(<span class="built_in">integer</span>) 3 <span class="comment"># 实测此处为2</span></span><br><span class="line"><span class="comment"># 被删除的消息没了</span></span><br><span class="line">127.0.0.1:6379&gt; xrange codehole - +</span><br><span class="line">1) 1) 1527849629172-0</span><br><span class="line">   2) 1) <span class="string">&quot;name&quot;</span></span><br><span class="line">      2) <span class="string">&quot;xiaoyu&quot;</span></span><br><span class="line">      3) <span class="string">&quot;age&quot;</span></span><br><span class="line">      4) <span class="string">&quot;29&quot;</span></span><br><span class="line">2) 1) 1527849637634-0</span><br><span class="line">   2) 1) <span class="string">&quot;name&quot;</span></span><br><span class="line">      2) <span class="string">&quot;xiaoqian&quot;</span></span><br><span class="line">      3) <span class="string">&quot;age&quot;</span></span><br><span class="line">      4) <span class="string">&quot;1&quot;</span></span><br><span class="line"><span class="comment"># 删除整个Stream</span></span><br><span class="line">127.0.0.1:6379&gt; del codehole</span><br><span class="line">(<span class="built_in">integer</span>) 1</span><br></pre></td></tr></table></figure>
+
+<h2 id="独立消费"><a href="#独立消费" class="headerlink" title="独立消费"></a><strong>独立消费</strong></h2><p>我们可以在不定义消费组的情况下进行Stream消息的独立消费，当Stream没有新消息时，甚至可以阻塞等待。Redis设计了一个单独的消费指令<code>xread</code>，可以将Stream当成普通的消息队列(list)来使用。使用xread时，我们可以完全忽略消费组(Consumer Group)的存在，就好比Stream就是一个普通的列表(list)。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 从Stream头部读取两条消息</span></span><br><span class="line">127.0.0.1:6379&gt; xread count 2 streams codehole 0-0</span><br><span class="line">1) 1) <span class="string">&quot;codehole&quot;</span></span><br><span class="line">   2) 1) 1) 1527851486781-0</span><br><span class="line">         2) 1) <span class="string">&quot;name&quot;</span></span><br><span class="line">            2) <span class="string">&quot;laoqian&quot;</span></span><br><span class="line">            3) <span class="string">&quot;age&quot;</span></span><br><span class="line">            4) <span class="string">&quot;30&quot;</span></span><br><span class="line">      2) 1) 1527851493405-0</span><br><span class="line">         2) 1) <span class="string">&quot;name&quot;</span></span><br><span class="line">            2) <span class="string">&quot;yurui&quot;</span></span><br><span class="line">            3) <span class="string">&quot;age&quot;</span></span><br><span class="line">            4) <span class="string">&quot;29&quot;</span></span><br><span class="line"><span class="comment"># 从Stream尾部读取一条消息，毫无疑问，这里不会返回任何消息</span></span><br><span class="line">127.0.0.1:6379&gt; xread count 1 streams codehole $</span><br><span class="line">(nil)</span><br><span class="line"><span class="comment"># 从尾部阻塞等待新消息到来，下面的指令会堵住，直到新消息到来</span></span><br><span class="line">127.0.0.1:6379&gt; xread block 0 count 1 streams codehole $</span><br><span class="line"><span class="comment"># 我们从新打开一个窗口，在这个窗口往Stream里塞消息</span></span><br><span class="line">127.0.0.1:6379&gt; xadd codehole * name youming age 60</span><br><span class="line">1527852774092-0</span><br><span class="line"><span class="comment"># 再切换到前面的窗口，我们可以看到阻塞解除了，返回了新的消息内容</span></span><br><span class="line"><span class="comment"># 而且还显示了一个等待时间，这里我们等待了93s</span></span><br><span class="line">127.0.0.1:6379&gt; xread block 0 count 1 streams codehole $</span><br><span class="line">1) 1) <span class="string">&quot;codehole&quot;</span></span><br><span class="line">   2) 1) 1) 1527852774092-0</span><br><span class="line">         2) 1) <span class="string">&quot;name&quot;</span></span><br><span class="line">            2) <span class="string">&quot;youming&quot;</span></span><br><span class="line">            3) <span class="string">&quot;age&quot;</span></span><br><span class="line">            4) <span class="string">&quot;60&quot;</span></span><br><span class="line">(93.11s)</span><br></pre></td></tr></table></figure>
+
+<p>客户端如果想要使用xread进行顺序消费，一定要记住当前消费到哪里了，也就是返回的消息ID。下次继续调用xread时，将上次返回的最后一个消息ID作为参数传递进去，就可以继续消费后续的消息。</p>
+<p>block 0表示永远阻塞，直到消息到来，block 1000表示阻塞1s，如果1s内没有任何消息到来，就返回nil</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; xread block 1000 count 1 streams codehole $</span><br><span class="line">(nil)</span><br><span class="line">(1.07s)</span><br></pre></td></tr></table></figure>
+
+<h2 id="创建消费组"><a href="#创建消费组" class="headerlink" title="创建消费组"></a><strong>创建消费组</strong></h2><p><img src="/images/%E6%B1%82%E4%B8%8D%E6%9B%B4%E5%AD%A6%E4%B8%8D%E5%8A%A8%E4%B9%8BRedis5%E6%96%B0%E7%89%B9%E6%80%A7Stream%E5%B0%9D%E9%B2%9C/2.jpg"></p>
+<p>Stream通过<code>xgroup create</code>指令创建消费组(Consumer Group)，需要传递起始消息ID参数用来初始化<code>last_delivered_id</code>变量。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#  表示从头开始消费</span></span><br><span class="line">127.0.0.1:6379&gt; xgroup create codehole cg1 0-0</span><br><span class="line">OK</span><br><span class="line"><span class="comment"># $表示从尾部开始消费，只接受新消息，当前Stream消息会全部忽略</span></span><br><span class="line">127.0.0.1:6379&gt; xgroup create codehole cg2 $</span><br><span class="line">OK</span><br><span class="line"><span class="comment"># 获取Stream信息</span></span><br><span class="line">127.0.0.1:6379&gt; xinfo codehole</span><br><span class="line"> 1) length</span><br><span class="line"> 2) (<span class="built_in">integer</span>) 3  <span class="comment"># 共3个消息</span></span><br><span class="line"> 3) radix-tree-keys</span><br><span class="line"> 4) (<span class="built_in">integer</span>) 1</span><br><span class="line"> 5) radix-tree-nodes</span><br><span class="line"> 6) (<span class="built_in">integer</span>) 2</span><br><span class="line"> 7) <span class="built_in">groups</span></span><br><span class="line"> 8) (<span class="built_in">integer</span>) 2  <span class="comment"># 两个消费组</span></span><br><span class="line"> 9) first-entry  <span class="comment"># 第一个消息</span></span><br><span class="line">10) 1) 1527851486781-0</span><br><span class="line">    2) 1) <span class="string">&quot;name&quot;</span></span><br><span class="line">       2) <span class="string">&quot;laoqian&quot;</span></span><br><span class="line">       3) <span class="string">&quot;age&quot;</span></span><br><span class="line">       4) <span class="string">&quot;30&quot;</span></span><br><span class="line">11) last-entry  <span class="comment"># 最后一个消息</span></span><br><span class="line">12) 1) 1527851498956-0</span><br><span class="line">    2) 1) <span class="string">&quot;name&quot;</span></span><br><span class="line">       2) <span class="string">&quot;xiaoqian&quot;</span></span><br><span class="line">       3) <span class="string">&quot;age&quot;</span></span><br><span class="line">       4) <span class="string">&quot;1&quot;</span></span><br><span class="line"><span class="comment"># 获取Stream的消费组信息</span></span><br><span class="line">127.0.0.1:6379&gt; xinfo <span class="built_in">groups</span> codehole</span><br><span class="line">1) 1) name</span><br><span class="line">   2) <span class="string">&quot;cg1&quot;</span></span><br><span class="line">   3) consumers</span><br><span class="line">   4) (<span class="built_in">integer</span>) 0  <span class="comment"># 该消费组还没有消费者</span></span><br><span class="line">   5) pending</span><br><span class="line">   6) (<span class="built_in">integer</span>) 0  <span class="comment"># 该消费组没有正在处理的消息</span></span><br><span class="line">2) 1) name</span><br><span class="line">   2) <span class="string">&quot;cg2&quot;</span></span><br><span class="line">   3) consumers  <span class="comment"># 该消费组还没有消费者</span></span><br><span class="line">   4) (<span class="built_in">integer</span>) 0</span><br><span class="line">   5) pending</span><br><span class="line">   6) (<span class="built_in">integer</span>) 0  <span class="comment"># 该消费组没有正在处理的消息</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="消费"><a href="#消费" class="headerlink" title="消费"></a><strong>消费</strong></h2><p>Stream提供了xreadgroup指令可以进行消费组的组内消费，需要提供消费组名称、消费者名称和起始消息ID。它同xread一样，也可以阻塞等待新消息。读到新消息后，对应的消息ID就会进入消费者的PEL(正在处理的消息)结构里，客户端处理完毕后使用xack指令通知服务器，本条消息已经处理完毕，该消息ID就会从PEL中移除。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># &gt;号表示从当前消费组的last_delivered_id后面开始读</span></span><br><span class="line"><span class="comment"># 每当消费者读取一条消息，last_delivered_id变量就会前进</span></span><br><span class="line">127.0.0.1:6379&gt; xreadgroup GROUP cg1 c1 count 1 streams codehole &gt;</span><br><span class="line">1) 1) <span class="string">&quot;codehole&quot;</span></span><br><span class="line">   2) 1) 1) 1527851486781-0</span><br><span class="line">         2) 1) <span class="string">&quot;name&quot;</span></span><br><span class="line">            2) <span class="string">&quot;laoqian&quot;</span></span><br><span class="line">            3) <span class="string">&quot;age&quot;</span></span><br><span class="line">            4) <span class="string">&quot;30&quot;</span></span><br><span class="line">127.0.0.1:6379&gt; xreadgroup GROUP cg1 c1 count 1 streams codehole &gt;</span><br><span class="line">1) 1) <span class="string">&quot;codehole&quot;</span></span><br><span class="line">   2) 1) 1) 1527851493405-0</span><br><span class="line">         2) 1) <span class="string">&quot;name&quot;</span></span><br><span class="line">            2) <span class="string">&quot;yurui&quot;</span></span><br><span class="line">            3) <span class="string">&quot;age&quot;</span></span><br><span class="line">            4) <span class="string">&quot;29&quot;</span></span><br><span class="line">127.0.0.1:6379&gt; xreadgroup GROUP cg1 c1 count 2 streams codehole &gt;</span><br><span class="line">1) 1) <span class="string">&quot;codehole&quot;</span></span><br><span class="line">   2) 1) 1) 1527851498956-0</span><br><span class="line">         2) 1) <span class="string">&quot;name&quot;</span></span><br><span class="line">            2) <span class="string">&quot;xiaoqian&quot;</span></span><br><span class="line">            3) <span class="string">&quot;age&quot;</span></span><br><span class="line">            4) <span class="string">&quot;1&quot;</span></span><br><span class="line">      2) 1) 1527852774092-0</span><br><span class="line">         2) 1) <span class="string">&quot;name&quot;</span></span><br><span class="line">            2) <span class="string">&quot;youming&quot;</span></span><br><span class="line">            3) <span class="string">&quot;age&quot;</span></span><br><span class="line">            4) <span class="string">&quot;60&quot;</span></span><br><span class="line"><span class="comment"># 再继续读取，就没有新消息了</span></span><br><span class="line">127.0.0.1:6379&gt; xreadgroup GROUP cg1 c1 count 1 streams codehole &gt;</span><br><span class="line">(nil)</span><br><span class="line"><span class="comment"># 那就阻塞等待吧</span></span><br><span class="line">127.0.0.1:6379&gt; xreadgroup GROUP cg1 c1 block 0 count 1 streams codehole &gt;</span><br><span class="line"><span class="comment"># 开启另一个窗口，往里塞消息</span></span><br><span class="line">127.0.0.1:6379&gt; xadd codehole * name lanying age 61</span><br><span class="line">1527854062442-0</span><br><span class="line"><span class="comment"># 回到前一个窗口，发现阻塞解除，收到新消息了</span></span><br><span class="line">127.0.0.1:6379&gt; xreadgroup GROUP cg1 c1 block 0 count 1 streams codehole &gt;</span><br><span class="line">1) 1) <span class="string">&quot;codehole&quot;</span></span><br><span class="line">   2) 1) 1) 1527854062442-0</span><br><span class="line">         2) 1) <span class="string">&quot;name&quot;</span></span><br><span class="line">            2) <span class="string">&quot;lanying&quot;</span></span><br><span class="line">            3) <span class="string">&quot;age&quot;</span></span><br><span class="line">            4) <span class="string">&quot;61&quot;</span></span><br><span class="line">(36.54s)</span><br><span class="line"><span class="comment"># 观察消费组信息</span></span><br><span class="line">127.0.0.1:6379&gt; xinfo <span class="built_in">groups</span> codehole</span><br><span class="line">1) 1) name</span><br><span class="line">   2) <span class="string">&quot;cg1&quot;</span></span><br><span class="line">   3) consumers</span><br><span class="line">   4) (<span class="built_in">integer</span>) 1  <span class="comment"># 一个消费者</span></span><br><span class="line">   5) pending</span><br><span class="line">   6) (<span class="built_in">integer</span>) 5  <span class="comment"># 共5条正在处理的信息还有没有ack</span></span><br><span class="line">2) 1) name</span><br><span class="line">   2) <span class="string">&quot;cg2&quot;</span></span><br><span class="line">   3) consumers</span><br><span class="line">   4) (<span class="built_in">integer</span>) 0  <span class="comment"># 消费组cg2没有任何变化，因为前面我们一直在操纵cg1</span></span><br><span class="line">   5) pending</span><br><span class="line">   6) (<span class="built_in">integer</span>) 0</span><br><span class="line"><span class="comment"># 如果同一个消费组有多个消费者，我们可以通过xinfo consumers指令观察每个消费者的状态</span></span><br><span class="line">127.0.0.1:6379&gt; xinfo consumers codehole cg1  <span class="comment"># 目前还有1个消费者</span></span><br><span class="line">1) 1) name</span><br><span class="line">   2) <span class="string">&quot;c1&quot;</span></span><br><span class="line">   3) pending</span><br><span class="line">   4) (<span class="built_in">integer</span>) 5  <span class="comment"># 共5条待处理消息</span></span><br><span class="line">   5) idle</span><br><span class="line">   6) (<span class="built_in">integer</span>) 418715  <span class="comment"># 空闲了多长时间ms没有读取消息了</span></span><br><span class="line"><span class="comment"># 接下来我们ack一条消息</span></span><br><span class="line">127.0.0.1:6379&gt; xack codehole cg1 1527851486781-0</span><br><span class="line">(<span class="built_in">integer</span>) 1</span><br><span class="line">127.0.0.1:6379&gt; xinfo consumers codehole cg1</span><br><span class="line">1) 1) name</span><br><span class="line">   2) <span class="string">&quot;c1&quot;</span></span><br><span class="line">   3) pending</span><br><span class="line">   4) (<span class="built_in">integer</span>) 4  <span class="comment"># 变成了5条</span></span><br><span class="line">   5) idle</span><br><span class="line">   6) (<span class="built_in">integer</span>) 668504</span><br><span class="line"><span class="comment"># 下面ack所有消息</span></span><br><span class="line">127.0.0.1:6379&gt; xack codehole cg1 1527851493405-0 1527851498956-0 1527852774092-0 1527854062442-0</span><br><span class="line">(<span class="built_in">integer</span>) 4</span><br><span class="line">127.0.0.1:6379&gt; xinfo consumers codehole cg1</span><br><span class="line">1) 1) name</span><br><span class="line">   2) <span class="string">&quot;c1&quot;</span></span><br><span class="line">   3) pending</span><br><span class="line">   4) (<span class="built_in">integer</span>) 0  <span class="comment"># pel空了</span></span><br><span class="line">   5) idle</span><br><span class="line">   6) (<span class="built_in">integer</span>) 745505</span><br></pre></td></tr></table></figure>
+
+<h2 id="Stream消息太多怎么办"><a href="#Stream消息太多怎么办" class="headerlink" title="Stream消息太多怎么办"></a><strong>Stream消息太多怎么办</strong></h2><p>读者很容易想到，要是消息积累太多，Stream的链表岂不是很长，内容会不会爆掉就是个问题了。</p>
+<p>Redis自然考虑到了这一点，所以它提供了一个定长Stream功能。在xadd的指令提供一个定长长度maxlen，就可以将老的消息干掉，确保最多不超过指定长度。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; xlen codehole</span><br><span class="line">(<span class="built_in">integer</span>) 5</span><br><span class="line">127.0.0.1:6379&gt; xadd codehole maxlen 3 * name xiaorui age 1</span><br><span class="line">1527855160273-0</span><br><span class="line">127.0.0.1:6379&gt; xlen codehole</span><br><span class="line">(<span class="built_in">integer</span>) 3</span><br></pre></td></tr></table></figure>
+
+<p>我们看到Stream的长度被砍掉了。</p>
+<h2 id="消息如果忘记ACK会怎样"><a href="#消息如果忘记ACK会怎样" class="headerlink" title="消息如果忘记ACK会怎样"></a><strong>消息如果忘记ACK会怎样</strong></h2><p>Stream在每个消费者结构中保存了正在处理中的消息ID列表PEL，如果消费者收到了消息处理完了但是没有回复ack，就会导致PEL列表不断增长，如果有很多消费组的话，那么这个PEL占用的内存就会放大。</p>
+<p><img src="/images/%E6%B1%82%E4%B8%8D%E6%9B%B4%E5%AD%A6%E4%B8%8D%E5%8A%A8%E4%B9%8BRedis5%E6%96%B0%E7%89%B9%E6%80%A7Stream%E5%B0%9D%E9%B2%9C/3.jpg"></p>
+<h2 id="PEL如何避免消息丢失"><a href="#PEL如何避免消息丢失" class="headerlink" title="PEL如何避免消息丢失"></a><strong>PEL如何避免消息丢失</strong></h2><p>在客户端消费者读取Stream消息时，Redis服务器将消息回复给客户端的过程中，客户端突然断开了连接，消息就丢失了。但是PEL里已经保存了发出去的消息ID。待客户端重新连上之后，可以再次收到PEL中的消息ID列表。不过此时xreadgroup的起始消息ID不能为参数<code>&gt;</code>，而必须是任意有效的消息ID，一般将参数设为0-0，表示读取所有的PEL消息以及自<code>last_delivered_id</code>之后的新消息。</p>
+<h2 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h2><p>Stream的消费模型借鉴了kafka的消费分组的概念，它弥补了Redis Pub/Sub不能持久化消息的缺陷。但是它又不同于kafka，kafka的消息可以分partition，而Stream不行。如果非要分parition的话，得在客户端做，提供不同的Stream名称，对消息进行hash取模来选择往哪个Stream里塞。如果读者稍微研究过Redis作者的另一个开源项目Disque的话，这极可能是作者意识到Disque项目的活跃程度不够，所以将Disque的内容移植到了Redis里面。这只是本人的猜测，未必是作者的初衷。如果读者有什么不同的想法，可以在评论区一起参与讨论。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2020/06/25/%E6%B1%82%E4%B8%8D%E6%9B%B4%E5%AD%A6%E4%B8%8D%E5%8A%A8%E4%B9%8BRedis5-0%E6%96%B0%E7%89%B9%E6%80%A7Stream%E5%B0%9D%E9%B2%9C/" data-id="cl9pgeoc8020eycv1fqgz7jlz" data-title="求不更学不动之Redis5.0新特性Stream尝鲜" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" rel="tag">消息队列</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2020/06/30/Puppeteer-%E5%85%A5%E9%97%A8%E6%95%99%E7%A8%8B/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          Puppeteer 入门教程
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2020/06/11/Mysql-DATETIME-%E7%B1%BB%E5%9E%8B%E7%9A%84%E5%AD%97%E6%AE%B5%E8%AE%BE%E7%BD%AE%E9%BB%98%E8%AE%A4%E5%80%BC%E4%B8%BA%E5%BD%93%E5%89%8D%E6%97%B6%E9%97%B4%E7%9A%84%E6%96%B9%E6%B3%95/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">Mysql DATETIME 类型的字段设置默认值为当前时间的方法</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

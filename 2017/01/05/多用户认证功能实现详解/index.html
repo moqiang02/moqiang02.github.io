@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>多用户认证功能实现详解 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="Laravel 5.2新增多用户认证支持，即同时允许不同数据表用户（如前台用户、后台用户）登录认证。下面我们就来简单介绍多用户登录及注册功能实现。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="多用户认证功能实现详解">
+<meta property="og:url" content="http://moqiang02.github.io/2017/01/05/%E5%A4%9A%E7%94%A8%E6%88%B7%E8%AE%A4%E8%AF%81%E5%8A%9F%E8%83%BD%E5%AE%9E%E7%8E%B0%E8%AF%A6%E8%A7%A3/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="Laravel 5.2新增多用户认证支持，即同时允许不同数据表用户（如前台用户、后台用户）登录认证。下面我们就来简单介绍多用户登录及注册功能实现。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E5%A4%9A%E7%94%A8%E6%88%B7%E8%AE%A4%E8%AF%81%E5%8A%9F%E8%83%BD%E5%AE%9E%E7%8E%B0%E8%AF%A6%E8%A7%A3/1.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E5%A4%9A%E7%94%A8%E6%88%B7%E8%AE%A4%E8%AF%81%E5%8A%9F%E8%83%BD%E5%AE%9E%E7%8E%B0%E8%AF%A6%E8%A7%A3/2.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E5%A4%9A%E7%94%A8%E6%88%B7%E8%AE%A4%E8%AF%81%E5%8A%9F%E8%83%BD%E5%AE%9E%E7%8E%B0%E8%AF%A6%E8%A7%A3/3.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E5%A4%9A%E7%94%A8%E6%88%B7%E8%AE%A4%E8%AF%81%E5%8A%9F%E8%83%BD%E5%AE%9E%E7%8E%B0%E8%AF%A6%E8%A7%A3/4.png">
+<meta property="article:published_time" content="2017-01-05T10:28:43.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:54.107Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="Laravel">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/%E5%A4%9A%E7%94%A8%E6%88%B7%E8%AE%A4%E8%AF%81%E5%8A%9F%E8%83%BD%E5%AE%9E%E7%8E%B0%E8%AF%A6%E8%A7%A3/1.png">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-多用户认证功能实现详解" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2017/01/05/%E5%A4%9A%E7%94%A8%E6%88%B7%E8%AE%A4%E8%AF%81%E5%8A%9F%E8%83%BD%E5%AE%9E%E7%8E%B0%E8%AF%A6%E8%A7%A3/" class="article-date">
+  <time class="dt-published" datetime="2017-01-05T10:28:43.000Z" itemprop="datePublished">2017-01-05</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/php/">php</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      多用户认证功能实现详解
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <p>Laravel 5.2新增多用户认证支持，即同时允许不同数据表用户（如前台用户、后台用户）登录认证。下面我们就来简单介绍多用户登录及注册功能实现。<span id="more"></span></p>
+<h3 id="1、生成认证脚手架"><a href="#1、生成认证脚手架" class="headerlink" title="1、生成认证脚手架"></a>1、生成认证脚手架</h3><p>首先我们使用Laravel 5.2提供的认证脚手架完成初始化工作：</p>
+<p><code>php artisan make:auth</code></p>
+<p>该Artisan命令会生成用户认证所需的路由、视图以及HomeController：<br><img src="/images/%E5%A4%9A%E7%94%A8%E6%88%B7%E8%AE%A4%E8%AF%81%E5%8A%9F%E8%83%BD%E5%AE%9E%E7%8E%B0%E8%AF%A6%E8%A7%A3/1.png"><br>去查看路由文件routes.php，会发现该文件已经被更新：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Route::<span class="built_in">group</span>([<span class="string">&#x27;middleware&#x27;</span> =&gt; <span class="string">&#x27;web&#x27;</span>], function () &#123;</span><br><span class="line">    Route::<span class="built_in">auth</span>();</span><br><span class="line">    Route::<span class="built_in">get</span>(<span class="string">&#x27;/home&#x27;</span>, <span class="string">&#x27;HomeController@index&#x27;</span>);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>其中 <code>Route::auth()</code> 定义了注册登录路由， <code>/home</code> 为认证通过后跳转路由。</p>
+<h3 id="2、实现前台用户登录"><a href="#2、实现前台用户登录" class="headerlink" title="2、实现前台用户登录"></a>2、实现前台用户登录</h3><p>接下来我们先实现前台用户登录，也就是Laravel自带的User用户登录。通过上面的脚手架，我们已经生成了认证所需的所有代码，剩下要做的就是使用迁移命令创建用户认证相关表：</p>
+<p><code>php artisan migrate</code></p>
+<p>该命令执行后生成 users 表和 password_resets 表，分别为用户主表和密码重置表。</p>
+<p>然后我们就可以在浏览器中输入 <code>http://laravel.app/register</code> 来注册新用户：<br><img src="/images/%E5%A4%9A%E7%94%A8%E6%88%B7%E8%AE%A4%E8%AF%81%E5%8A%9F%E8%83%BD%E5%AE%9E%E7%8E%B0%E8%AF%A6%E8%A7%A3/2.png"><br>我们创建一个用户名为 test 的用户，注册成功后，进入 <code>http://laravel.app/home</code> ，会发现已经登录：<br><img src="/images/%E5%A4%9A%E7%94%A8%E6%88%B7%E8%AE%A4%E8%AF%81%E5%8A%9F%E8%83%BD%E5%AE%9E%E7%8E%B0%E8%AF%A6%E8%A7%A3/3.png"></p>
+<h3 id="3、编辑认证配置文件"><a href="#3、编辑认证配置文件" class="headerlink" title="3、编辑认证配置文件"></a>3、编辑认证配置文件</h3><p>要实现多用户认证，首先要配置认证配置文件 auth.php ，这里我们实现的功能是前后台用户登录，所以对应配置如下：</p>
+<figure class="highlight livescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> [</span><br><span class="line"></span><br><span class="line">    <span class="string">&#x27;defaults&#x27;</span> =&gt; [</span><br><span class="line">        <span class="string">&#x27;guard&#x27;</span> =&gt; <span class="string">&#x27;web&#x27;</span>,</span><br><span class="line">        <span class="string">&#x27;passwords&#x27;</span> =&gt; <span class="string">&#x27;users&#x27;</span>,</span><br><span class="line">    ],</span><br><span class="line"></span><br><span class="line">    <span class="string">&#x27;guards&#x27;</span> =&gt; [</span><br><span class="line">        <span class="string">&#x27;web&#x27;</span> =&gt; [</span><br><span class="line">            <span class="string">&#x27;driver&#x27;</span> =&gt; <span class="string">&#x27;session&#x27;</span>,</span><br><span class="line">            <span class="string">&#x27;provider&#x27;</span> =&gt; <span class="string">&#x27;users&#x27;</span>,</span><br><span class="line">        ],</span><br><span class="line">        <span class="string">&#x27;admin&#x27;</span> =&gt; [</span><br><span class="line">            <span class="string">&#x27;driver&#x27;</span> =&gt; <span class="string">&#x27;session&#x27;</span>,</span><br><span class="line">            <span class="string">&#x27;provider&#x27;</span> =&gt; <span class="string">&#x27;admins&#x27;</span>,</span><br><span class="line">        ],</span><br><span class="line">        <span class="string">&#x27;api&#x27;</span> =&gt; [</span><br><span class="line">            <span class="string">&#x27;driver&#x27;</span> =&gt; <span class="string">&#x27;token&#x27;</span>,</span><br><span class="line">            <span class="string">&#x27;provider&#x27;</span> =&gt; <span class="string">&#x27;users&#x27;</span>,</span><br><span class="line">        ],</span><br><span class="line">    ],</span><br><span class="line"></span><br><span class="line">    <span class="string">&#x27;providers&#x27;</span> =&gt; [</span><br><span class="line">        <span class="string">&#x27;users&#x27;</span> =&gt; [</span><br><span class="line">            <span class="string">&#x27;driver&#x27;</span> =&gt; <span class="string">&#x27;eloquent&#x27;</span>,</span><br><span class="line">            <span class="string">&#x27;model&#x27;</span> =&gt; App<span class="string">\User::class,</span></span><br><span class="line">        ],</span><br><span class="line">        <span class="string">&#x27;admins&#x27;</span> =&gt; [</span><br><span class="line">            <span class="string">&#x27;driver&#x27;</span> =&gt; <span class="string">&#x27;eloquent&#x27;</span>,</span><br><span class="line">            <span class="string">&#x27;model&#x27;</span> =&gt; App<span class="string">\Admin::class,</span></span><br><span class="line">        ],</span><br><span class="line">    ],</span><br><span class="line"></span><br><span class="line">    <span class="string">&#x27;passwords&#x27;</span> =&gt; [</span><br><span class="line">        <span class="string">&#x27;users&#x27;</span> =&gt; [</span><br><span class="line">            <span class="string">&#x27;provider&#x27;</span> =&gt; <span class="string">&#x27;users&#x27;</span>,</span><br><span class="line">            <span class="string">&#x27;email&#x27;</span> =&gt; <span class="string">&#x27;auth.emails.password&#x27;</span>,</span><br><span class="line">            <span class="string">&#x27;table&#x27;</span> =&gt; <span class="string">&#x27;password_resets&#x27;</span>,</span><br><span class="line">           <span class="string">&#x27;expire&#x27;</span> =&gt; <span class="number">60</span>,</span><br><span class="line">        ],</span><br><span class="line">    ],</span><br><span class="line">];</span><br></pre></td></tr></table></figure>
+<p>认证是由 guard 和 provider 两部分构成的（参考用户认证文档），所以我们在这两个配置项中分别新增了 admin 和 admins 选项。</p>
+<h3 id="4、创建后台用户模型"><a href="#4、创建后台用户模型" class="headerlink" title="4、创建后台用户模型"></a>4、创建后台用户模型</h3><p>接下来我们来实现后台用户登录，首先使用如下Artisan命令生成后台用户模型：</p>
+<p><code>php artisan make:model Admin --migration</code></p>
+<p>带上 <code>--migration</code> 选项会生成对应用户表 admins ，我们定义该数据表字段和 users 一样：</p>
+<figure class="highlight xl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Schema::create(<span class="string">&#x27;admins&#x27;</span>, function (Blueprint $table) &#123;</span><br><span class="line">    $<span class="function"><span class="title">table</span>-&gt;</span>increments(<span class="string">&#x27;id&#x27;</span>);</span><br><span class="line">    $<span class="function"><span class="title">table</span>-&gt;</span>string(<span class="string">&#x27;name&#x27;</span>);</span><br><span class="line">    $<span class="function"><span class="title">table</span>-&gt;</span><span class="function"><span class="title">string</span>(&#x27;email&#x27;)-&gt;</span>unique();</span><br><span class="line">    $<span class="function"><span class="title">table</span>-&gt;</span>string(<span class="string">&#x27;password&#x27;</span>, <span class="number">60</span>);</span><br><span class="line">    $<span class="function"><span class="title">table</span>-&gt;</span>rememberToken();</span><br><span class="line">    $<span class="function"><span class="title">table</span>-&gt;</span>timestamps();</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>然后通过运行迁移命令生成该表：</p>
+<p><code>php artisan migrate</code></p>
+<p>然后更新 Admin 模型类如下：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">App</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">use</span> <span class="title">Illuminate</span>\<span class="title">Foundation</span>\<span class="title">Auth</span>\<span class="title">User</span> <span class="keyword">as</span> <span class="title">Authenticatable</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Admin</span> <span class="keyword">extends</span> <span class="title">Authenticatable</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * The attributes that are mass assignable.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@var</span> array</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="variable">$fillable</span> = [</span><br><span class="line">        <span class="string">&#x27;name&#x27;</span>, <span class="string">&#x27;email&#x27;</span>, <span class="string">&#x27;password&#x27;</span>,</span><br><span class="line">    ];</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * The attributes excluded from the model&#x27;s JSON form.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@var</span> array</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="variable">$hidden</span> = [</span><br><span class="line">        <span class="string">&#x27;password&#x27;</span>, <span class="string">&#x27;remember_token&#x27;</span>,</span><br><span class="line">    ];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="5、定义后台用户认证路由及控制器"><a href="#5、定义后台用户认证路由及控制器" class="headerlink" title="5、定义后台用户认证路由及控制器"></a>5、定义后台用户认证路由及控制器</h3><p>接下来我们来定义后台用户认证路由，修改 routes.php 代码如下：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">Route::<span class="built_in">group</span>([<span class="string">&#x27;middleware&#x27;</span> =&gt; [<span class="string">&#x27;web&#x27;</span>]], function () &#123;</span><br><span class="line"></span><br><span class="line">    Route::<span class="built_in">auth</span>();</span><br><span class="line">    Route::<span class="built_in">get</span>(<span class="string">&#x27;home&#x27;</span>, <span class="string">&#x27;HomeController@index&#x27;</span>);</span><br><span class="line"></span><br><span class="line">    Route::<span class="built_in">get</span>(<span class="string">&#x27;admin/login&#x27;</span>, <span class="string">&#x27;Admin\AuthController@getLogin&#x27;</span>);</span><br><span class="line">    Route::<span class="built_in">post</span>(<span class="string">&#x27;admin/login&#x27;</span>, <span class="string">&#x27;Admin\AuthController@postLogin&#x27;</span>);</span><br><span class="line">    Route::<span class="built_in">get</span>(<span class="string">&#x27;admin/register&#x27;</span>, <span class="string">&#x27;Admin\AuthController@getRegister&#x27;</span>);</span><br><span class="line">    Route::<span class="built_in">post</span>(<span class="string">&#x27;admin/register&#x27;</span>, <span class="string">&#x27;Admin\AuthController@postRegister&#x27;</span>);</span><br><span class="line">    Route::<span class="built_in">get</span>(<span class="string">&#x27;admin&#x27;</span>, <span class="string">&#x27;AdminController@index&#x27;</span>);</span><br><span class="line"></span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>然后使用Artisan命令创建对应控制器：</p>
+<figure class="highlight gauss"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">php artisan <span class="built_in">make</span>:controller Admin/AuthController</span><br><span class="line">php artisan <span class="built_in">make</span>:controller AdminController</span><br></pre></td></tr></table></figure>
+<p>编辑 Admin/AuthController.php 代码如下：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">App</span>\<span class="title class_">Http</span>\<span class="title class_">Controllers</span>\<span class="title class_">Admin</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">use</span> <span class="title">App</span>\<span class="title">Admin</span>;</span><br><span class="line"><span class="keyword">use</span> <span class="title">Validator</span>;</span><br><span class="line"><span class="keyword">use</span> <span class="title">App</span>\<span class="title">Http</span>\<span class="title">Controllers</span>\<span class="title">Controller</span>;</span><br><span class="line"><span class="keyword">use</span> <span class="title">Illuminate</span>\<span class="title">Foundation</span>\<span class="title">Auth</span>\<span class="title">ThrottlesLogins</span>;</span><br><span class="line"><span class="keyword">use</span> <span class="title">Illuminate</span>\<span class="title">Foundation</span>\<span class="title">Auth</span>\<span class="title">AuthenticatesAndRegistersUsers</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">AuthController</span> <span class="keyword">extends</span> <span class="title">Controller</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">use</span> <span class="title">AuthenticatesAndRegistersUsers</span>, <span class="title">ThrottlesLogins</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">protected</span> <span class="variable">$redirectTo</span> = <span class="string">&#x27;/admin&#x27;</span>;</span><br><span class="line">    <span class="keyword">protected</span> <span class="variable">$guard</span> = <span class="string">&#x27;admin&#x27;</span>;</span><br><span class="line">    <span class="keyword">protected</span> <span class="variable">$loginView</span> = <span class="string">&#x27;admin.login&#x27;</span>;</span><br><span class="line">    <span class="keyword">protected</span> <span class="variable">$registerView</span> = <span class="string">&#x27;admin.register&#x27;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;<span class="title function_ invoke__">middleware</span>(<span class="string">&#x27;guest:admin&#x27;</span>, [<span class="string">&#x27;except&#x27;</span> =&gt; <span class="string">&#x27;logout&#x27;</span>]);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">protected</span> <span class="function"><span class="keyword">function</span> <span class="title">validator</span>(<span class="params"><span class="keyword">array</span> <span class="variable">$data</span></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="title class_">Validator</span>::<span class="title function_ invoke__">make</span>(<span class="variable">$data</span>, [</span><br><span class="line">            <span class="string">&#x27;name&#x27;</span> =&gt; <span class="string">&#x27;required|max:255&#x27;</span>,</span><br><span class="line">            <span class="string">&#x27;email&#x27;</span> =&gt; <span class="string">&#x27;required|email|max:255|unique:admins&#x27;</span>,</span><br><span class="line">            <span class="string">&#x27;password&#x27;</span> =&gt; <span class="string">&#x27;required|confirmed|min:6&#x27;</span>,</span><br><span class="line">        ]);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">protected</span> <span class="function"><span class="keyword">function</span> <span class="title">create</span>(<span class="params"><span class="keyword">array</span> <span class="variable">$data</span></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="title class_">Admin</span>::<span class="title function_ invoke__">create</span>([</span><br><span class="line">            <span class="string">&#x27;name&#x27;</span> =&gt; <span class="variable">$data</span>[<span class="string">&#x27;name&#x27;</span>],</span><br><span class="line">            <span class="string">&#x27;email&#x27;</span> =&gt; <span class="variable">$data</span>[<span class="string">&#x27;email&#x27;</span>],</span><br><span class="line">            <span class="string">&#x27;password&#x27;</span> =&gt; <span class="title function_ invoke__">bcrypt</span>(<span class="variable">$data</span>[<span class="string">&#x27;password&#x27;</span>]),</span><br><span class="line">        ]);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>编辑 AdminController.php 代码如下：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">App</span>\<span class="title class_">Http</span>\<span class="title class_">Controllers</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">use</span> <span class="title">Illuminate</span>\<span class="title">Http</span>\<span class="title">Request</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">use</span> <span class="title">App</span>\<span class="title">Http</span>\<span class="title">Requests</span>;</span><br><span class="line"><span class="keyword">use</span> <span class="title">App</span>\<span class="title">Http</span>\<span class="title">Controllers</span>\<span class="title">Controller</span>;</span><br><span class="line"><span class="keyword">use</span> <span class="title">Auth</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">AdminController</span> <span class="keyword">extends</span> <span class="title">Controller</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;<span class="title function_ invoke__">middleware</span>(<span class="string">&#x27;auth:admin&#x27;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">index</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="variable">$admin</span> = <span class="title class_">Auth</span>::<span class="title function_ invoke__">guard</span>(<span class="string">&#x27;admin&#x27;</span>)-&gt;<span class="title function_ invoke__">user</span>();</span><br><span class="line">        <span class="keyword">return</span> <span class="variable">$admin</span>-&gt;name;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="6、视图文件创建及修改"><a href="#6、视图文件创建及修改" class="headerlink" title="6、视图文件创建及修改"></a>6、视图文件创建及修改</h3><p>最后我们要创建后台用户认证对应视图文件，这里我们简单拷贝前台用户视图模板并稍作修改即可：</p>
+<p><code>cp -r resources/views/auth resources/views/admin</code></p>
+<p>修改 <code>resources/views/admin</code> 目录下登录及注册表单提交地址：</p>
+<figure class="highlight arcade"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">/login -&gt; <span class="regexp">/admin/</span>login</span><br><span class="line">/register -&gt; <span class="regexp">/admin/</span>register</span><br></pre></td></tr></table></figure>
+<h3 id="7、实现后台用户认证"><a href="#7、实现后台用户认证" class="headerlink" title="7、实现后台用户认证"></a>7、实现后台用户认证</h3><p>在浏览器中访问 <code>http://laravel.app/admin/register</code> ，同样显示注册页面：<br><img src="/images/%E5%A4%9A%E7%94%A8%E6%88%B7%E8%AE%A4%E8%AF%81%E5%8A%9F%E8%83%BD%E5%AE%9E%E7%8E%B0%E8%AF%A6%E8%A7%A3/4.png"><br>注册一个用户名为 admin 的用户，注册成功后，页面跳转到 <code>http://laravel.app/admin</code> ，说明认证成功。</p>
+<p>好了，至此我们已经完成前后台用户同时登录认证功能。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2017/01/05/%E5%A4%9A%E7%94%A8%E6%88%B7%E8%AE%A4%E8%AF%81%E5%8A%9F%E8%83%BD%E5%AE%9E%E7%8E%B0%E8%AF%A6%E8%A7%A3/" data-id="cl9pgeo9p01ukycv17s6s8tiz" data-title="多用户认证功能实现详解" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Laravel/" rel="tag">Laravel</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2017/01/09/Vue%20%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81%E6%8F%92%E4%BB%B6%E7%9A%84%E5%86%99%E4%BD%9C%E8%BF%87%E7%A8%8B/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          Vue 表单验证插件的写作过程
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2017/01/05/Laravel%205.2%E8%87%AA%E5%B8%A6%E7%94%A8%E6%88%B7%E6%B3%A8%E5%86%8C%E5%92%8C%E7%99%BB%E5%BD%95%E8%AE%A4%E8%AF%81/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">Laravel 5.2自带用户注册和登录认证</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Nginx模块fastcgi_cache的几个注意点 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="在web项目中，大家都已经非常熟悉其架构流程了。都说Cache是万金油，哪里不舒服抹哪里。这些流程中，几乎每个环节都会进行cache。从浏览器到webserver，到cgi程序，到DB数据库，会进行浏览器cache，数据cache，SQL查询的cache等等。对于fastcgi这里的cache，很少被使用。去年年底，我对nginx的fastcgi_cache进行摸索使用。在我的测试过程中，发现一些">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Nginx模块fastcgi_cache的几个注意点">
+<meta property="og:url" content="http://moqiang02.github.io/2013/12/15/Nginx%E6%A8%A1%E5%9D%97fastcgi-cache%E7%9A%84%E5%87%A0%E4%B8%AA%E6%B3%A8%E6%84%8F%E7%82%B9/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="在web项目中，大家都已经非常熟悉其架构流程了。都说Cache是万金油，哪里不舒服抹哪里。这些流程中，几乎每个环节都会进行cache。从浏览器到webserver，到cgi程序，到DB数据库，会进行浏览器cache，数据cache，SQL查询的cache等等。对于fastcgi这里的cache，很少被使用。去年年底，我对nginx的fastcgi_cache进行摸索使用。在我的测试过程中，发现一些">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/Nginx%E6%A8%A1%E5%9D%97fastcgi_cache%E7%9A%84%E5%87%A0%E4%B8%AA%E6%B3%A8%E6%84%8F%E7%82%B9/1.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/Nginx%E6%A8%A1%E5%9D%97fastcgi_cache%E7%9A%84%E5%87%A0%E4%B8%AA%E6%B3%A8%E6%84%8F%E7%82%B9/2.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/Nginx%E6%A8%A1%E5%9D%97fastcgi_cache%E7%9A%84%E5%87%A0%E4%B8%AA%E6%B3%A8%E6%84%8F%E7%82%B9/3.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/Nginx%E6%A8%A1%E5%9D%97fastcgi_cache%E7%9A%84%E5%87%A0%E4%B8%AA%E6%B3%A8%E6%84%8F%E7%82%B9/4.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/Nginx%E6%A8%A1%E5%9D%97fastcgi_cache%E7%9A%84%E5%87%A0%E4%B8%AA%E6%B3%A8%E6%84%8F%E7%82%B9/5.jpg">
+<meta property="article:published_time" content="2013-12-15T15:48:37.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.832Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/Nginx%E6%A8%A1%E5%9D%97fastcgi_cache%E7%9A%84%E5%87%A0%E4%B8%AA%E6%B3%A8%E6%84%8F%E7%82%B9/1.jpg">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Nginx模块fastcgi-cache的几个注意点" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2013/12/15/Nginx%E6%A8%A1%E5%9D%97fastcgi-cache%E7%9A%84%E5%87%A0%E4%B8%AA%E6%B3%A8%E6%84%8F%E7%82%B9/" class="article-date">
+  <time class="dt-published" datetime="2013-12-15T15:48:37.000Z" itemprop="datePublished">2013-12-15</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/nginx/">nginx</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Nginx模块fastcgi_cache的几个注意点
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <p>在web项目中，大家都已经非常熟悉其架构流程了。都说Cache是万金油，哪里不舒服抹哪里。这些流程中，几乎每个环节都会进行cache。从浏览器到webserver，到cgi程序，到DB数据库，会进行浏览器cache，数据cache，SQL查询的cache等等。对于fastcgi这里的cache，很少被使用。去年年底，我对nginx的<a target="_blank" rel="noopener" href="http://wiki.nginx.org/HttpFastcgiModule">fastcgi_cache</a>进行摸索使用。在我的测试过程中，发现一些WIKI以及网络上没被提到的注意点，这里分享一下。</p>
+<span id="more"></span>
+<p><img src="/images/Nginx%E6%A8%A1%E5%9D%97fastcgi_cache%E7%9A%84%E5%87%A0%E4%B8%AA%E6%B3%A8%E6%84%8F%E7%82%B9/1.jpg"><br>从浏览器到数据库的流程图</p>
+<p>这里是我的NGinx配置信息</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#增加调试信息  </span></span><br><span class="line"><span class="attribute">add_header</span> X-Cache-CFC <span class="string">&quot;<span class="variable">$upstream_cache_status</span> - <span class="variable">$upstream_response_time</span>&quot;</span>;  </span><br><span class="line"><span class="attribute">fastcgi_temp_path</span> /dev/shm/nginx_tmp;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">#cache设置  </span></span><br><span class="line"><span class="attribute">fastcgi_cache_path</span>   /dev/shm/nginx_cache  levels=<span class="number">1</span>:<span class="number">2</span> keys_zone=cfcache:<span class="number">10m</span> inactive=<span class="number">50m</span>;  </span><br><span class="line"><span class="attribute">fastcgi_cache_key</span> <span class="string">&quot;<span class="variable">$request_method</span>://<span class="variable">$host</span><span class="variable">$request_uri</span>&quot;</span>;  </span><br><span class="line"><span class="attribute">fastcgi_cache_methods</span> GET HEAD;  </span><br><span class="line"><span class="attribute">fastcgi_cache</span>   cfcache;  </span><br><span class="line"><span class="attribute">fastcgi_cache_valid</span>   any <span class="number">1d</span>;  </span><br><span class="line"><span class="attribute">fastcgi_cache_min_uses</span>  <span class="number">1</span>;  </span><br><span class="line"><span class="attribute">fastcgi_cache_use_stale</span> <span class="literal">error</span>  timeout invalid_header http_500;  </span><br><span class="line"><span class="attribute">fastcgi_ignore_client_abort</span> <span class="literal">on</span>;  </span><br></pre></td></tr></table></figure>
+
+<p>配置这些参数时，注意每个参数的作用域，像fastcgi_cache_path参数，只能在http配置项里配置，而fastcgi_cache_min_uses这个参数，可以在http、server、location三个配置项里配置。这样更灵活的会每个域名、每个匹配的location进行选择性cache了。具体的参数作用域，参考<a target="_blank" rel="noopener" href="http://wiki.nginx.org/HttpFastcgiModule">FASTCGI模块的官方WIKI</a>。我为了调试方便，添加了一个『X-Cache-CFC』的http响应头，<a target="_blank" rel="noopener" href="http://wiki.nginx.org/HttpUpstreamModule">$upstream_cache_status</a> 变量表示此请求响应来自cache的状态，分别为：</p>
+<ul>
+<li>MISS 未命中</li>
+<li>EXPIRED – expired, request was passed to backend Cache已过期</li>
+<li>UPDATING – expired, stale response was used due to proxy/fastcgi_cache_use_stale updating Cache已过期，(被其他nginx子进程)更新中</li>
+<li>STALE – expired, stale response was used due to proxy/fastcgi_cache_use_stale Cache已过期，响应数据不合法，被污染</li>
+<li>HIT 命中cache<br><img src="/images/Nginx%E6%A8%A1%E5%9D%97fastcgi_cache%E7%9A%84%E5%87%A0%E4%B8%AA%E6%B3%A8%E6%84%8F%E7%82%B9/2.jpg"></li>
+</ul>
+<p>FASTCGI_CACHE $upstream_cache_status 结果为miss，一次也没命中</p>
+<p>程序代码是Discuz!论坛， 随便开启测试了几下，发现/dev/shm/nginx_cache/下没有任何目录建立，也没有文件创建。调试的http header响应头里的X-Cache-CFC 结果一直是MISS。从服务器进程上来看，Nginx cache manager process 跟Nginx cache loader process 进程也正常运行：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">root</span>      <span class="number">3100</span>     <span class="number">1</span>  <span class="number">0</span> <span class="number">14</span>:<span class="number">52</span> ?        <span class="number">00</span>:<span class="number">00</span>:<span class="number">00</span> nginx: master process /usr/sbin/nginx  </span><br><span class="line"><span class="attribute">www</span>-data  <span class="number">3101</span>  <span class="number">3100</span>  <span class="number">0</span> <span class="number">14</span>:<span class="number">52</span> ?        <span class="number">00</span>:<span class="number">00</span>:<span class="number">00</span> nginx: worker process  </span><br><span class="line"><span class="attribute">www</span>-data  <span class="number">3102</span>  <span class="number">3100</span>  <span class="number">0</span> <span class="number">14</span>:<span class="number">52</span> ?        <span class="number">00</span>:<span class="number">00</span>:<span class="number">00</span> nginx: cache manager process  </span><br><span class="line"><span class="attribute">www</span>-data  <span class="number">3103</span>  <span class="number">3100</span>  <span class="number">0</span> <span class="number">14</span>:<span class="number">52</span> ?        <span class="number">00</span>:<span class="number">00</span>:<span class="number">00</span> nginx: cache loader process  </span><br></pre></td></tr></table></figure>
+
+<p>不知道为何会这样，为何没有cache成功，我以为我配置参数有问题，只好阅读WIKI。发现fastcgi_ignore_headers 参数下解释有这么一段</p>
+<blockquote>
+<p>fastcgi_ignore_headers<br>Syntax: fastcgi_ignore_headers field …<br>Default:<br>Context: http<br>server<br>location<br>Reference: fastcgi_ignore_headers<br>This directive forbids processing of the named headers from the FastCGI-server reply. It is possible to specify headers like “X-Accel-Redirect”, “X-Accel-Expires”, “Expires” or “Cache-Control”.</p>
+</blockquote>
+<p>也就是说这个参数的值，将会被忽略掉，同样被忽略掉的响应头比如”X-Accel-Redirect”, “X-Accel-Expires”, “Expires” or “Cache-Control”，而nginx配置中并没有fastcgi_ignore_headers参数的设定，那么问题会不会出现在FASTCGI响应结果里包含了类似”X-Accel-Redirect”, “X-Accel-Expires”, “Expires” or “Cache-Control”这几个响应头呢？用strace抓包，看了下nginx与fpm进程通讯的数据</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">####为了确保准确抓到处理该http请求的进程，我把nginx <span class="operator">、</span>fpm都只开启了一个进程处理<span class="operator">。</span>  </span><br><span class="line"><span class="comment">//strace -ff -tt -s 1000 -o xxx.log -p PHPFPM-PID  </span></span><br><span class="line"><span class="number">14</span>:<span class="number">52</span>:<span class="number">07.837334</span> write(<span class="number">3</span>, <span class="string">&quot;\1\6<span class="subst">\0</span>\1<span class="subst">\0</span>\343\5<span class="subst">\0</span>X-Powered-By: PHP/5.3.10-1ubuntu3.5<span class="subst">\r</span><span class="subst">\n</span>Expires: Thu, 19 Nov 1981 08:52:00 GMT<span class="subst">\r</span><span class="subst">\n</span>Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0<span class="subst">\r</span><span class="subst">\n</span>Pragma: no-cache<span class="subst">\r</span><span class="subst">\n</span>Content-type: text/html<span class="subst">\r</span><span class="subst">\n</span><span class="subst">\r</span><span class="subst">\n</span>Hello cfc4n1362034327<span class="subst">\0</span><span class="subst">\0</span><span class="subst">\0</span><span class="subst">\0</span><span class="subst">\0</span>\1\3<span class="subst">\0</span>\1<span class="subst">\0</span>\10<span class="subst">\0</span><span class="subst">\0</span><span class="subst">\0</span><span class="subst">\0</span><span class="subst">\0</span><span class="subst">\0</span><span class="subst">\0</span><span class="subst">\0</span><span class="subst">\0</span><span class="subst">\0</span>&quot;</span>, <span class="number">256</span>) <span class="operator">=</span> <span class="number">256</span>  </span><br><span class="line">  </span><br><span class="line"><span class="comment">//strace -ff -tt -s 1000 -o xxx.log -p Nginx-PID  </span></span><br><span class="line"><span class="number">15</span>:<span class="number">05</span>:<span class="number">13.265663</span> recvfrom(<span class="number">12</span>, <span class="string">&quot;\1\6<span class="subst">\0</span>\1<span class="subst">\0</span>\343\5<span class="subst">\0</span>X-Powered-By: PHP/5.3.10-1ubuntu3.5<span class="subst">\r</span><span class="subst">\n</span>Expires: Thu, 19 Nov 1981 08:52:00 GMT<span class="subst">\r</span><span class="subst">\n</span>Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0<span class="subst">\r</span><span class="subst">\n</span>Pragma: no-cache<span class="subst">\r</span><span class="subst">\n</span>Content-type: text/html<span class="subst">\r</span><span class="subst">\n</span><span class="subst">\r</span><span class="subst">\n</span>Hello cfc4n1362035113<span class="subst">\0</span><span class="subst">\0</span><span class="subst">\0</span><span class="subst">\0</span><span class="subst">\0</span>\1\3<span class="subst">\0</span>\1<span class="subst">\0</span>\10<span class="subst">\0</span><span class="subst">\0</span><span class="subst">\0</span><span class="subst">\0</span><span class="subst">\0</span><span class="subst">\0</span><span class="subst">\0</span><span class="subst">\0</span><span class="subst">\0</span><span class="subst">\0</span>&quot;</span>, <span class="number">4023</span>, <span class="number">0</span>, <span class="type">NULL</span>, <span class="type">NULL</span>) <span class="operator">=</span> <span class="number">256</span>  </span><br></pre></td></tr></table></figure>
+
+<p>从抓取的数据包里可以看到，fpm确实返回了包含“Expires”、“Cache-Control”头的http 响应头信息。那么疑问来了：</p>
+<ul>
+<li>nginx的fastcgi_cache没缓存这条http响应，是因为响应头里包含“Expires”、“Cache-Control”的原因吗？</li>
+<li>程序里并没有输出“Expires”、“Cache-Control” http header的代码，这是谁输出的呢？</li>
+<li>既然是fpm响应的时候，就已经有了，那么是php的core模块，还是其他拓展模块输出的？</li>
+<li>“Expires:”时间为何是“Thu, 19 Nov 1981 08:52:00 GMT”? </li>
+</ul>
+<p>疑问比较多，一个一个查起，先从Nginx的fastcgi_cache没缓存这条http响应查起。我根据测试环境nginx版本1.1.9(ubuntu 12.04默认的)，到nginx官方下了对应版本的源码，搜索了fastcgi参数使用的地方，在http\ngx_http_upstream.c找到了。虽然不能很流程的读懂nginx的代码，但粗略的了解，根据了解的情况加以猜测，再动手测试实验，也得出了结论，确定了nginx的fastcgi_cache的规则。</p>
+<figure class="highlight xl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//ngx_http_upstream.c  </span></span><br><span class="line"><span class="comment">//line 3136  当fastcgi响应包含set-cookie时，不缓存  </span></span><br><span class="line">static ngx_int_t  </span><br><span class="line">ngx_http_upstream_process_set_cookie(ngx_http_request_t *r, ngx_table_elt_t *h,  </span><br><span class="line">    ngx_uint_t offset)  </span><br><span class="line">&#123;  </span><br><span class="line">#<span class="keyword">if</span> (NGX_HTTP_CACHE)  </span><br><span class="line">    ngx_http_upstream_t  *u;  </span><br><span class="line">  </span><br><span class="line">    <span class="function"><span class="title">u</span> = r-&gt;</span>upstream;  </span><br><span class="line">  </span><br><span class="line">    <span class="function"><span class="title">if</span> (!(u-&gt;</span><span class="function"><span class="title">conf</span>-&gt;</span>ignore_headers &amp; NGX_HTTP_UPSTREAM_IGN_SET_COOKIE)) &#123;  </span><br><span class="line">        <span class="function"><span class="title">u</span>-&gt;</span>cacheable = <span class="number">0</span>;  </span><br><span class="line">    &#125;  </span><br><span class="line">#endif  </span><br><span class="line">  </span><br><span class="line">    return NGX_OK;  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">//line 3242 当响应头包含Expires时，如果过期时间大于当前服务器时间，则nginx_cache会缓存该响应，否则，则不缓存  </span></span><br><span class="line">static ngx_int_t  </span><br><span class="line">ngx_http_upstream_process_expires(ngx_http_request_t *r, ngx_table_elt_t *h,  </span><br><span class="line">    ngx_uint_t offset)  </span><br><span class="line">&#123;  </span><br><span class="line">    ngx_http_upstream_t  *u;  </span><br><span class="line">  </span><br><span class="line">    <span class="function"><span class="title">u</span> = r-&gt;</span>upstream;  </span><br><span class="line">    <span class="function"><span class="title">u</span>-&gt;</span>headers_in.expires = h;  </span><br><span class="line">  </span><br><span class="line">#<span class="keyword">if</span> (NGX_HTTP_CACHE)  </span><br><span class="line">    &#123;  </span><br><span class="line">    time_t  expires;  </span><br><span class="line">  </span><br><span class="line">    <span class="function"><span class="title">if</span> (u-&gt;</span><span class="function"><span class="title">conf</span>-&gt;</span>ignore_headers &amp; NGX_HTTP_UPSTREAM_IGN_EXPIRES) &#123;  </span><br><span class="line">        return NGX_OK;  </span><br><span class="line">    &#125;  </span><br><span class="line">  </span><br><span class="line">    <span class="function"><span class="title">if</span> (r-&gt;</span>cache == NULL) &#123;  </span><br><span class="line">        return NGX_OK;  </span><br><span class="line">    &#125;  </span><br><span class="line">  </span><br><span class="line">    <span class="function"><span class="title">if</span> (r-&gt;</span><span class="function"><span class="title">cache</span>-&gt;</span>valid_sec != <span class="number">0</span>) &#123;  </span><br><span class="line">        return NGX_OK;  </span><br><span class="line">    &#125;  </span><br><span class="line">  </span><br><span class="line">    <span class="function"><span class="title">expires</span> = ngx_http_parse_time(h-&gt;</span><span class="function"><span class="title">value</span>.<span class="keyword">data</span>, h-&gt;</span>value.len);  </span><br><span class="line">  </span><br><span class="line">    <span class="function"><span class="title">if</span> (expires == NGX_ERROR || expires &lt; ngx_time()) &#123;         u-&gt;</span>cacheable = <span class="number">0</span>;  </span><br><span class="line">        return NGX_OK;  </span><br><span class="line">    &#125;  </span><br><span class="line">  </span><br><span class="line">    <span class="function"><span class="title">r</span>-&gt;</span><span class="function"><span class="title">cache</span>-&gt;</span>valid_sec = expires;  </span><br><span class="line">    &#125;  </span><br><span class="line">#endif  </span><br><span class="line">  </span><br><span class="line">    return NGX_OK;  </span><br><span class="line">&#125;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">//line 3199  当响应头包含Cache-Control时，#####如果####这里有如果啊。。。  </span></span><br><span class="line"><span class="comment">//【注意】如果Cache-Control参数值为no-cache、no-store、private中任意一个时，则不缓存...不缓存...  </span></span><br><span class="line"><span class="comment">//【注意】如果Cache-Control参数值为max-age时，会被缓存，且nginx设置的cache的过期时间，就是系统当前时间 + mag-age的值  </span></span><br><span class="line">    <span class="keyword">if</span> (ngx_strlcasestrn(p, last, (u_char *) <span class="string">&quot;no-cache&quot;</span>, <span class="number">8</span> - <span class="number">1</span>) != NULL  </span><br><span class="line">        || ngx_strlcasestrn(p, last, (u_char *) <span class="string">&quot;no-store&quot;</span>, <span class="number">8</span> - <span class="number">1</span>) != NULL  </span><br><span class="line">        || ngx_strlcasestrn(p, last, (u_char *) <span class="string">&quot;private&quot;</span>, <span class="number">7</span> - <span class="number">1</span>) != NULL)  </span><br><span class="line">    &#123;  </span><br><span class="line">        <span class="function"><span class="title">u</span>-&gt;</span>cacheable = <span class="number">0</span>;  </span><br><span class="line">        return NGX_OK;  </span><br><span class="line">    &#125;  </span><br><span class="line">  </span><br><span class="line">    p = ngx_strlcasestrn(p, last, (u_char *) <span class="string">&quot;max-age=&quot;</span>, <span class="number">8</span> - <span class="number">1</span>);  </span><br><span class="line">  </span><br><span class="line">    <span class="keyword">if</span> (p == NULL) &#123;  </span><br><span class="line">        return NGX_OK;  </span><br><span class="line">    &#125;  </span><br><span class="line">    ...  </span><br><span class="line">    <span class="function"><span class="title">r</span>-&gt;</span><span class="function"><span class="title">cache</span>-&gt;</span>valid_sec = ngx_time() + n;  </span><br></pre></td></tr></table></figure>
+
+<p>也就是说，fastcgi响应http请求的结果中，响应头包括Expires、Cache-Control、Set-Cookie三个，都会可能不被cache，但不只有这些，别忘了nginx配置中fastcgi_ignore_headers参数设定的部分。以及ngxin的<a target="_blank" rel="noopener" href="http://wiki.nginx.org/X-accel">X-ACCEL</a> X-Accel-Redirect、X-Accel-Expires、X-Accel-Charset、X-Accel-Buffering等nginx自定义的响应头。由于这几个不常用，我也没深入研究。通过对nginx的ngx_http_upstream模块代码模糊理解，加猜测，以及写了脚本测试验证，可以得到结论是正确的。即Nginx fastcgi_cache在缓存后端fastcgi响应时，当响应里包含“set-cookie”时，不缓存;当响应头包含Expires时，如果过期时间大于当前服务器时间，则nginx_cache会缓存该响应，否则，则不缓存;当响应头包含Cache-Control时，如果Cache-Control参数值为no-cache、no-store、private中任意一个时，则不缓存，如果Cache-Control参数值为max-age时，会被缓存，且nginx设置的cache的过期时间，就是系统当前时间 + mag-age的值。<br><img src="/images/Nginx%E6%A8%A1%E5%9D%97fastcgi_cache%E7%9A%84%E5%87%A0%E4%B8%AA%E6%B3%A8%E6%84%8F%E7%82%B9/3.jpg"></p>
+<p>nginx fastcgi_cache 响应expired<br><img src="/images/Nginx%E6%A8%A1%E5%9D%97fastcgi_cache%E7%9A%84%E5%87%A0%E4%B8%AA%E6%B3%A8%E6%84%8F%E7%82%B9/4.jpg"></p>
+<p>nginx fastcgi_cache hit命中<br><img src="/images/Nginx%E6%A8%A1%E5%9D%97fastcgi_cache%E7%9A%84%E5%87%A0%E4%B8%AA%E6%B3%A8%E6%84%8F%E7%82%B9/5.jpg"></p>
+<p>FASTCGI_CACHE $upstream_cache_status 结果为miss，一次也没命中。</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">//逐个测试，测试时，注释其他的  </span><br><span class="line"><span class="keyword">header</span>(&quot;Expires: &quot;.gmdate(&quot;D, d M Y H:i:s&quot;, <span class="type">time</span>()+<span class="number">10000</span>).<span class="string">&#x27; GMT&#x27;</span>);  </span><br><span class="line"><span class="keyword">header</span>(&quot;Expires: &quot;.gmdate(&quot;D, d M Y H:i:s&quot;, <span class="type">time</span>()<span class="number">-99999</span>).<span class="string">&#x27; GMT&#x27;</span>);  </span><br><span class="line"><span class="keyword">header</span>(&quot;X-Accel-Expires:30&quot;);  </span><br><span class="line"><span class="keyword">header</span>(&quot;Cache-Control: no-cache&quot;);  </span><br><span class="line"><span class="keyword">header</span>(&quot;Cache-Control: no-store&quot;);  </span><br><span class="line"><span class="keyword">header</span>(&quot;Cache-Control: private&quot;);  </span><br><span class="line"><span class="keyword">header</span>(&quot;Cache-Control: max-age=10&quot;);  </span><br><span class="line">setcookie(<span class="string">&#x27;cfc4n&#x27;</span>,&quot;testaaaa&quot;);  </span><br><span class="line">echo <span class="string">&#x27;Hello cfc4n&#x27;</span>,<span class="type">time</span>();  </span><br></pre></td></tr></table></figure>
+
+<p>到了这里，疑问1解决了。那么疑问2、3呢？程序里并没有输出“Expires”、“Cache-Control” http header的代码，这是谁输出的呢？既然是fpm响应的时候，就已经有了，那么是php的core模块，还是其他拓展模块输出的？我精简了代码，只输出一个“hello world”，发现也确实被缓存了。显然，php脚本程序中并没输出http header 的“Expires”、“Cache-Control”，多次测试，最终定位到session_start函数，翻阅源码找到了这些代码：</p>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//ext/session/session.c  line:1190 左右  </span></span><br><span class="line"><span class="comment">// ...  </span></span><br><span class="line"><span class="constructor">CACHE_LIMITER_FUNC(<span class="params">private</span>)</span> <span class="comment">/* &#123; &#123; &#123; */</span>  </span><br><span class="line">&#123;  </span><br><span class="line">    <span class="constructor">ADD_HEADER(<span class="string">&quot;Expires: Thu, 19 Nov 1981 08:52:00 GMT&quot;</span>)</span>;  </span><br><span class="line">    <span class="constructor">CACHE_LIMITER(<span class="params">private_no_expire</span>)</span>(TSRMLS_C);  </span><br><span class="line">&#125;  </span><br><span class="line"><span class="comment">/* &#125; &#125; &#125; */</span>  </span><br><span class="line"><span class="comment">//再到这里3 或者上面几个 ##默认是nocache  </span></span><br><span class="line"><span class="constructor">CACHE_LIMITER_FUNC(<span class="params">nocache</span>)</span> <span class="comment">/* &#123; &#123; &#123; */</span>  </span><br><span class="line">&#123;  </span><br><span class="line">    <span class="constructor">ADD_HEADER(<span class="string">&quot;Expires: Thu, 19 Nov 1981 08:52:00 GMT&quot;</span>)</span>;  </span><br><span class="line">  </span><br><span class="line">    <span class="comment">/* For HTTP/1.1 conforming clients and the rest (MSIE 5) */</span>  </span><br><span class="line">    <span class="constructor">ADD_HEADER(<span class="string">&quot;Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0&quot;</span>)</span>;  </span><br><span class="line">  </span><br><span class="line">    <span class="comment">/* For HTTP/1.0 conforming clients */</span>  </span><br><span class="line">    <span class="constructor">ADD_HEADER(<span class="string">&quot;Pragma: no-cache&quot;</span>)</span>;  </span><br><span class="line">&#125;  </span><br><span class="line"><span class="comment">/* &#125; &#125; &#125; */</span>  </span><br><span class="line"><span class="comment">//这里2  </span></span><br><span class="line">static php_session_cache_limiter_t php_session_cache_limiters<span class="literal">[]</span> = &#123;  </span><br><span class="line">    <span class="constructor">CACHE_LIMITER_ENTRY(<span class="params">public</span>)</span>  </span><br><span class="line">    <span class="constructor">CACHE_LIMITER_ENTRY(<span class="params">private</span>)</span>  </span><br><span class="line">    <span class="constructor">CACHE_LIMITER_ENTRY(<span class="params">private_no_expire</span>)</span>  </span><br><span class="line">    <span class="constructor">CACHE_LIMITER_ENTRY(<span class="params">nocache</span>)</span>  </span><br><span class="line">    &#123;<span class="number">0</span>&#125;  </span><br><span class="line">&#125;;  </span><br><span class="line">  </span><br><span class="line">static <span class="built_in">int</span> php<span class="constructor">_session_cache_limiter(TSRMLS_D)</span> <span class="comment">/* &#123; &#123; &#123; */</span>  </span><br><span class="line">&#123;  </span><br><span class="line">    php_session_cache_limiter_t *lim;  </span><br><span class="line">  </span><br><span class="line">    <span class="keyword">if</span> (<span class="constructor">PS(<span class="params">cache_limiter</span>)</span><span class="literal">[<span class="number">0</span>]</span><span class="operator"> == </span><span class="character">&#x27;\0&#x27;</span>) return <span class="number">0</span>;  </span><br><span class="line">  </span><br><span class="line">    <span class="keyword">if</span> (<span class="constructor">SG(<span class="params">headers_sent</span>)</span>) &#123;  </span><br><span class="line">        const <span class="built_in">char</span> *output_start_filename = php<span class="constructor">_output_get_start_filename(TSRMLS_C)</span>;  </span><br><span class="line">        <span class="built_in">int</span> output_start_lineno = php<span class="constructor">_output_get_start_lineno(TSRMLS_C)</span>;  </span><br><span class="line">  </span><br><span class="line">        <span class="keyword">if</span> (output_start_filename) &#123;  </span><br><span class="line">            php<span class="constructor">_error_docref(NULL TSRMLS_CC, E_WARNING, <span class="string">&quot;Cannot send session cache limiter - headers already sent (output started at %s:%d)&quot;</span>, <span class="params">output_start_filename</span>, <span class="params">output_start_lineno</span>)</span>;  </span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;  </span><br><span class="line">            php<span class="constructor">_error_docref(NULL TSRMLS_CC, E_WARNING, <span class="string">&quot;Cannot send session cache limiter - headers already sent&quot;</span>)</span>;  </span><br><span class="line">        &#125;  </span><br><span class="line">        return -<span class="number">2</span>;  </span><br><span class="line">    &#125;  </span><br><span class="line">  </span><br><span class="line">    <span class="keyword">for</span> (lim = php_session_cache_limiters; lim-&gt;name; lim++) &#123;  </span><br><span class="line">        <span class="keyword">if</span> (!strcasecmp(lim-&gt;name, <span class="constructor">PS(<span class="params">cache_limiter</span>)</span>)) &#123;  </span><br><span class="line">            lim-&gt;func(TSRMLS_C);   <span class="comment">//这里1  </span></span><br><span class="line">            return <span class="number">0</span>;  </span><br><span class="line">        &#125;  </span><br><span class="line">    &#125;  </span><br><span class="line">  </span><br><span class="line">    return -<span class="number">1</span>;  </span><br><span class="line">&#125;  </span><br><span class="line"><span class="comment">// ...  </span></span><br></pre></td></tr></table></figure>
+
+<p>到了这里，知道原因了，是程序调用session_start时，php的session拓展自己输出的。session.cache_limit参数来决定输出包含哪种Expires的header，默认是nocache，修改php.ini的session.cache_limit参数为“none”即可让session模块不再输出这些http 响应头。或在调用session_start之前，使用session_cache_limiter函数来指定下该参数值。那为什么要在使用session时，发Expires、Cache-Control的http response header呢？我猜测了下，需要session时，基本上是用户跟服务器有交互，那么，既然有交互，就意味着用户的每次交互结果也可能不一样，就不能cache这个请求的结果，给返回给这个用户。同时，每个用户的交互结果都是不一样的，nginx也就不能把包含特殊Cache-Control的个人响应cache给其他人提供了。</p>
+<p>还有一个无聊的问题“Expires:时间为何是Thu, 19 Nov 1981 08:52:00 GMT”？我翻阅了session.c这段代码的添加时间，版本，作者信息，在php官方版本库中找到了<a target="_blank" rel="noopener" href="http://svn.php.net/viewvc/php/php-src/trunk/ext/session/session.c?view=log&log_pagestart=400">这次提交的信息</a>：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">Revision</span> <span class="number">17092</span> – (view) (download) (as text) (annotate) –<span class="meta"> [select for diffs]</span></span><br><span class="line"><span class="attribute">Modified</span> Sun Dec <span class="number">12</span> <span class="number">14</span>:<span class="number">16</span>:<span class="number">55</span> <span class="number">1999</span> UTC (<span class="number">13</span> years, <span class="number">2</span> months ago) by sas</span><br><span class="line"><span class="attribute">File</span> length: <span class="number">28327</span> byte(s)</span><br><span class="line"><span class="attribute">Diff</span> to previous <span class="number">16964</span></span><br><span class="line"><span class="attribute">Add</span> cache_limiter and cache_expire options. Rename extern_referer_check</span><br><span class="line"><span class="attribute">to</span> referer_check.</span><br></pre></td></tr></table></figure>
+<p>对比<a target="_blank" rel="noopener" href="http://svn.php.net/viewvc/php/php-src/trunk/ext/session/session.c?r1=16964&r2=17092">session.c两个版本</a>的变更，果然是这块代码。作者是sas，也就是Sascha Schumann， <a target="_blank" rel="noopener" href="http://php.net/credits.php">http://php.net/credits.php</a> 里可以看到他的大名。关于这个expires过期时间的问题，有人在stackoverflow也提问过，<a target="_blank" rel="noopener" href="http://stackoverflow.com/questions/8194481/why-is-expires-1981">Why is “Expires” 1981?</a>，别人说那天是他生日。这是真的么？如果那天是他生日的话，而他增加session.cache_limiter时是1999年，他才17岁，17岁呀。我17岁时在干嘛？还不知道电脑长啥样，正在玩『超级玛丽』呢。</p>
+<p>好奇的不是我一个人，还有个帖子是<a target="_blank" rel="noopener" href="http://bytes.com/topic/php/answers/540207-epoch-date-expires-thu-19-nov-1981-08-52-00-a">epoch date — Expires: Thu, 19 Nov 1981 08:52:00</a>也问了。另外两个地址虽然没问，也有人提到那天是他生日了。<a target="_blank" rel="noopener" href="http://boinc.berkeley.edu/dev/forum_thread.php?id=2514">http://boinc.berkeley.edu/dev/forum_thread.php?id=2514</a> 、<a target="_blank" rel="noopener" href="https://github.com/codeguy/Slim/issues/157">https://github.com/codeguy/Slim/issues/157</a> ，这些帖子都提到说原帖是<a target="_blank" rel="noopener" href="http://www.phpbuilder.com/lists/php3-list/199911/3159.php">http://www.phpbuilder.com/lists/php3-list/199911/3159.php</a> ，我无法访问，被跳转到首页了。用<a target="_blank" rel="noopener" href="http://web.archive.org/">http://web.archive.org</a> 找到了<a target="_blank" rel="noopener" href="http://web.archive.org/web/20120315000650/http://www.phpbuilder.com/lists/php3-list/199911/3159.php">历史快照</a>，发现上下文关系不大，也不能证明是他生日。 我更是好奇的发了两封邮件到他的不同邮箱里问他，不过，目前他还没回复。或许他没收到、没看到，或许懒得回了。N年后，“Expires:时间为何是Thu, 19 Nov 1981 08:52:00 GMT”这个日期，会不会又成了一段奇闻佳话了呢？</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2013/12/15/Nginx%E6%A8%A1%E5%9D%97fastcgi-cache%E7%9A%84%E5%87%A0%E4%B8%AA%E6%B3%A8%E6%84%8F%E7%82%B9/" data-id="cl9pgenuj00q7ycv1fy65hxrj" data-title="Nginx模块fastcgi_cache的几个注意点" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2013/12/15/%E4%B8%BA%E4%BB%80%E4%B9%88%E6%88%91%E4%BB%AC%E4%BD%BF%E7%94%A8Nginx%E8%80%8C%E4%B8%8D%E6%98%AFApache/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          为什么我们使用Nginx而不是Apache
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2013/12/15/%E5%88%A9%E7%94%A8nginx%E7%9A%84fastcgi-cache%E6%A8%A1%E5%9D%97%E6%9D%A5%E5%81%9A%E7%BC%93%E5%AD%98/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">利用nginx的fastcgi_cache模块来做缓存</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

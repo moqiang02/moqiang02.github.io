@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Scrapy使用技巧集锦 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="使用 response.follow不同于使用 scrapy Request，需要通过相对路径构造出绝对路径，response.follow 可以直接使用相对路径，因此就不需要调用 urljoin() 方法了；注意，response.follow 直接返回一个 Request 实例，可以直接通过 yield 进行返回；">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Scrapy使用技巧集锦">
+<meta property="og:url" content="http://moqiang02.github.io/2018/11/15/Scrapy%E4%BD%BF%E7%94%A8%E6%8A%80%E5%B7%A7%E9%9B%86%E9%94%A6/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="使用 response.follow不同于使用 scrapy Request，需要通过相对路径构造出绝对路径，response.follow 可以直接使用相对路径，因此就不需要调用 urljoin() 方法了；注意，response.follow 直接返回一个 Request 实例，可以直接通过 yield 进行返回；">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-11-15T14:22:36.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.884Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="scrapy">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Scrapy使用技巧集锦" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2018/11/15/Scrapy%E4%BD%BF%E7%94%A8%E6%8A%80%E5%B7%A7%E9%9B%86%E9%94%A6/" class="article-date">
+  <time class="dt-published" datetime="2018-11-15T14:22:36.000Z" itemprop="datePublished">2018-11-15</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/python/">python</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Scrapy使用技巧集锦
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8-response-follow"><span class="toc-number">1.</span> <span class="toc-text">使用 response.follow</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%80%9A%E8%BF%87%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F%E4%BD%BF%E7%94%A8-selectors-re"><span class="toc-number">2.</span> <span class="toc-text">通过正则表达式使用 selectors (.re())</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A6%82%E6%9E%9C%E6%98%AF%E9%80%9A%E8%BF%87-class-%E8%BF%9B%E8%A1%8C%E6%9F%A5%E8%AF%A2%EF%BC%8C%E4%BD%BF%E7%94%A8-CSS"><span class="toc-number">3.</span> <span class="toc-text">如果是通过 class 进行查询，使用 CSS</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E9%93%BE%E6%8E%A5%E6%8F%90%E5%8F%96%E5%99%A8%E8%BF%87%E6%BB%A4%E5%9B%BE%E7%89%87%E5%9C%B0%E5%9D%80"><span class="toc-number">4.</span> <span class="toc-text">使用链接提取器过滤图片地址</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <h3 id="使用-response-follow"><a href="#使用-response-follow" class="headerlink" title="使用 response.follow"></a>使用 response.follow</h3><p>不同于使用 scrapy Request，需要通过相对路径构造出绝对路径，<code>response.follow</code> 可以直接使用相对路径，因此就不需要调用 <code>urljoin()</code> 方法了；注意，<code>response.follow</code> 直接返回一个 Request 实例，可以直接通过 yield 进行返回；<span id="more"></span><br>所以，代码:</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> next_page <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">            next_page = response.urljoin(next_page)</span><br><span class="line">            <span class="keyword">yield</span> scrapy.Request(next_page, callback=self.parse)</span><br></pre></td></tr></table></figure>
+<p>这一部分可以简化为</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> scrapy</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">QuotesSpider</span>(scrapy.Spider):</span><br><span class="line">   name = <span class="string">&quot;quotes&quot;</span></span><br><span class="line">   start_urls = [</span><br><span class="line">       <span class="string">&#x27;http://quotes.toscrape.com/page/1/&#x27;</span>,</span><br><span class="line">   ]</span><br><span class="line">   <span class="keyword">def</span> <span class="title function_">parse</span>(<span class="params">self, response</span>):</span><br><span class="line">       <span class="keyword">for</span> quote <span class="keyword">in</span> response.css(<span class="string">&#x27;div.quote&#x27;</span>):</span><br><span class="line">           <span class="keyword">yield</span> &#123;</span><br><span class="line">               <span class="string">&#x27;text&#x27;</span>: quote.css(<span class="string">&#x27;span.text::text&#x27;</span>).extract_first(),</span><br><span class="line">               <span class="string">&#x27;author&#x27;</span>: quote.css(<span class="string">&#x27;span small::text&#x27;</span>).extract_first(),</span><br><span class="line">               <span class="string">&#x27;tags&#x27;</span>: quote.css(<span class="string">&#x27;div.tags a.tag::text&#x27;</span>).extract(),</span><br><span class="line">           &#125;</span><br><span class="line">       next_page = response.css(<span class="string">&#x27;li.next a::attr(href)&#x27;</span>).extract_first()</span><br><span class="line">       <span class="keyword">if</span> next_page <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">           <span class="keyword">yield</span> response.follow(next_page, callback=self.parse)</span><br></pre></td></tr></table></figure>
+<p>另外，<code>response.follow</code> 在处理 <code>&lt;a&gt;</code> 元素的时候，会直接使用它们的 href 属性；所以上述代码还可以简化为：</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">next_page = response.css(<span class="string">&#x27;li.next a&#x27;</span>).extract_first()</span><br><span class="line"><span class="keyword">if</span> next_page <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">   <span class="keyword">yield</span> response.follow(next_page, callback=self.parse)</span><br></pre></td></tr></table></figure>
+<p>因此匹配的时候不需要显示的声明 <code>&lt;a&gt;</code> 的属性值了；</p>
+<hr>
+<p>在爬取整个网站信息的时候，必然会有多个相同 Author 的名言，那么势必要爬取到许多的重复的 Author 的信息；这无疑是增加了爬取的压力同时也需要处理大量的冗余数据，基于此，Scrapy 默认实现了对重复的已经爬取过的链接在下次爬取的时候自动过滤掉了；不过，你也可以通过 DUPEFILTER_CLASS 来进行设置是否启用该默认行为。</p>
+<hr>
+<p>如果你只想去提取第一个相匹配的元素，你可以直接使用<code>extract_first()</code></p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; response.xpath(<span class="string">&#x27;//div[@id=&quot;images&quot;]/a/text()&#x27;</span>).extract_first()</span><br><span class="line">u<span class="string">&#x27;Name: My image 1 &#x27;</span></span><br></pre></td></tr></table></figure>
+<p>如果没有找到对应的元素，将会返回None</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; response.xpath(<span class="string">&#x27;//div[@id=&quot;not-exists&quot;]/text()&#x27;</span>).extract_first() is None</span><br><span class="line">True</span><br></pre></td></tr></table></figure>
+<p>可以设置一个 default value 来取代None</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; response.xpath(<span class="string">&#x27;//div[@id=&quot;not-exists&quot;]/text()&#x27;</span>).extract_first(default=<span class="string">&#x27;not-found&#x27;</span>)</span><br><span class="line"><span class="string">&#x27;not-found&#x27;</span></span><br></pre></td></tr></table></figure>
+<hr>
+<h3 id="通过正则表达式使用-selectors-re"><a href="#通过正则表达式使用-selectors-re" class="headerlink" title="通过正则表达式使用 selectors (.re())"></a>通过正则表达式使用 <code>selectors (.re())</code></h3><p>Selector 有一个<code>.re()</code>方法，通过该方法可以使用正则表达式来提取数据；但是，不同于<code>.xpath()</code>和<code>.css()</code>的是，<code>.re()</code>返回的是一个 unicode strings 的列表；所以，你不能像 Nesting selectors 那样构建.<code>re()</code>的嵌入式调用方式；<br>下面的这个例子将会演示如何从上面的 HTML 代码片段中获取 image names</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; response.xpath(<span class="string">&#x27;//a[contains(@href, &quot;image&quot;)]/text()&#x27;</span>).re(r<span class="string">&#x27;Name:\s*(.*)&#x27;</span>)</span><br><span class="line">[u<span class="string">&#x27;My image 1&#x27;</span>,</span><br><span class="line">u<span class="string">&#x27;My image 2&#x27;</span>,</span><br><span class="line">u<span class="string">&#x27;My image 3&#x27;</span>,</span><br><span class="line">u<span class="string">&#x27;My image 4&#x27;</span>,</span><br><span class="line">u<span class="string">&#x27;My image 5&#x27;</span>]</span><br></pre></td></tr></table></figure>
+<p>如果使用的是ItemLoader</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">item_loader.add_xpath(</span><br><span class="line">           <span class="string">&#x27;img&#x27;</span>, <span class="string">&#x27;./div[@class=&quot;mask-banner&quot;]/@style&#x27;</span>,re=<span class="string">&#x27;background-image:url\((.*)\);&#x27;</span>)</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="如果是通过-class-进行查询，使用-CSS"><a href="#如果是通过-class-进行查询，使用-CSS" class="headerlink" title="如果是通过 class 进行查询，使用 CSS"></a>如果是通过 class 进行查询，使用 CSS</h3><p>因为一个元素可以包含多个 CSS classes，这种情况下使用 XPath 将会显得非常的麻烦<br><code>*[contains(concat(&#39; &#39;, normalize-space(@class), &#39; &#39;), &#39; someclass &#39;)]</code><br>如果你使用<code>@class=&#39;someclass&#39;</code>，你将可能失去其它的 classes，如果你仅仅使用<code>contains(@class, &#39;someclass&#39;)</code>那么你可能会得到更多的但并不需要的元素；<br>不过，Scrapy selectors 允许你使用 selectors 所组成的链条 (chain)，所以大多数的时候，你可以先使用 CSS 检索 class 的方式，当需要的时候，再转换到使用 XPath 的方式；</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; from scrapy import Selector</span><br><span class="line">&gt;&gt;&gt; sel = Selector(text=<span class="string">&#x27;&lt;div class=&quot;hero shout&quot;&gt;&lt;time datetime=&quot;2014-07-23 19:00&quot;&gt;Special date&lt;/time&gt;&lt;/div&gt;&#x27;</span>)</span><br><span class="line">&gt;&gt;&gt; sel.css(<span class="string">&#x27;.shout&#x27;</span>).xpath(<span class="string">&#x27;./time/@datetime&#x27;</span>).extract()</span><br><span class="line">[u<span class="string">&#x27;2014-07-23 19:00&#x27;</span>]</span><br></pre></td></tr></table></figure>
+<p>这比使用 xpath 的方式要简单许多，但是要记住的是，在 XPath 表达式中使用<code>.</code>表示紧随上一个匹配的元素，这里指的就是<code>&lt;div class=&quot;hero shout/&gt;</code>。</p>
+<hr>
+<h3 id="使用链接提取器过滤图片地址"><a href="#使用链接提取器过滤图片地址" class="headerlink" title="使用链接提取器过滤图片地址"></a>使用链接提取器过滤图片地址</h3><figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">le = LinkExtractor(</span><br><span class="line">            restrict_xpaths=<span class="string">&#x27;//div[contains(@class, &quot;r_img&quot;)]&#x27;</span>,tags=(<span class="string">&#x27;a&#x27;</span>, <span class="string">&#x27;area&#x27;</span>, <span class="string">&#x27;img&#x27;</span>), attrs=(<span class="string">&#x27;href&#x27;</span>, <span class="string">&#x27;src&#x27;</span>), deny_extensions=<span class="string">&#x27;&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<p>注意，<code>deny_extensions</code>一定要加上，否则抓取不到图片</p>
+<blockquote>
+<p>摘自： <a target="_blank" rel="noopener" href="https://www.shangyang.me/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%A7%91%E5%AD%A6%E4%B8%8E%E6%8A%80%E6%9C%AF/Python/Scrapy/">爬虫 Scrapy 学习系列</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2018/11/15/Scrapy%E4%BD%BF%E7%94%A8%E6%8A%80%E5%B7%A7%E9%9B%86%E9%94%A6/" data-id="cl9pgenww00y3ycv15efc94x6" data-title="Scrapy使用技巧集锦" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/scrapy/" rel="tag">scrapy</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/12/18/SQL%E9%9B%86%E9%94%A6/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          SQL集锦
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/11/14/scrapy%E5%A4%9A%E4%B8%AAitems%E7%B1%BBpiplines%E5%A6%82%E4%BD%95%E5%88%86%E5%88%AB%E5%AD%98%E5%82%A8/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">scrapy多个items类piplines如何分别存储</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

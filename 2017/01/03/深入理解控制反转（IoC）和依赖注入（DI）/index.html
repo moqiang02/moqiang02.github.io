@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>深入理解控制反转（IoC）和依赖注入（DI） | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="容器，字面上理解就是装东西的东西。常见的变量、对象属性等都可以算是容器。一个容器能够装什么，全部取决于你对该容器的定义。当然，有这样一种容器，它存放的不是文本、数值，而是对象、对象的描述（类、接口）或者是提供对象的回调，通过这种容器，我们得以实现许多高级的功能，其中最常提到的，就是 “解耦” 、“依赖注入（DI）”。本文就从这里开始。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入理解控制反转（IoC）和依赖注入（DI）">
+<meta property="og:url" content="http://moqiang02.github.io/2017/01/03/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8E%A7%E5%88%B6%E5%8F%8D%E8%BD%AC%EF%BC%88IoC%EF%BC%89%E5%92%8C%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5%EF%BC%88DI%EF%BC%89/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="容器，字面上理解就是装东西的东西。常见的变量、对象属性等都可以算是容器。一个容器能够装什么，全部取决于你对该容器的定义。当然，有这样一种容器，它存放的不是文本、数值，而是对象、对象的描述（类、接口）或者是提供对象的回调，通过这种容器，我们得以实现许多高级的功能，其中最常提到的，就是 “解耦” 、“依赖注入（DI）”。本文就从这里开始。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-01-03T14:43:35.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:54.153Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="Laravel">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-深入理解控制反转（IoC）和依赖注入（DI）" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2017/01/03/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8E%A7%E5%88%B6%E5%8F%8D%E8%BD%AC%EF%BC%88IoC%EF%BC%89%E5%92%8C%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5%EF%BC%88DI%EF%BC%89/" class="article-date">
+  <time class="dt-published" datetime="2017-01-03T14:43:35.000Z" itemprop="datePublished">2017-01-03</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/php/">php</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      深入理解控制反转（IoC）和依赖注入（DI）
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#IoC-%E5%AE%B9%E5%99%A8%EF%BC%8C-laravel-%E7%9A%84%E6%A0%B8%E5%BF%83"><span class="toc-number">1.</span> <span class="toc-text">IoC 容器， laravel 的核心</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#IoC-%E5%AE%B9%E5%99%A8%E8%AF%9E%E7%94%9F%E7%9A%84%E6%95%85%E4%BA%8B"><span class="toc-number">2.</span> <span class="toc-text">IoC 容器诞生的故事</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%B6%85%E4%BA%BA%E5%92%8C%E8%B6%85%E8%83%BD%E5%8A%9B%EF%BC%8C%E4%BE%9D%E8%B5%96%E7%9A%84%E4%BA%A7%E7%94%9F%EF%BC%81"><span class="toc-number">2.1.</span> <span class="toc-text">超人和超能力，依赖的产生！</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E5%A0%86%E4%B9%B1%E9%BA%BB-%E2%80%94%E2%80%94-%E5%8F%AF%E6%80%95%E7%9A%84%E4%BE%9D%E8%B5%96"><span class="toc-number">2.2.</span> <span class="toc-text">一堆乱麻 —— 可怕的依赖</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B7%A5%E5%8E%82%E6%A8%A1%E5%BC%8F%EF%BC%8C%E4%BE%9D%E8%B5%96%E8%BD%AC%E7%A7%BB%EF%BC%81"><span class="toc-number">2.3.</span> <span class="toc-text">工厂模式，依赖转移！</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%8D%E8%BF%9B%E4%B8%80%E6%AD%A5%EF%BC%81IoC-%E5%AE%B9%E5%99%A8%E7%9A%84%E9%87%8D%E8%A6%81%E7%BB%84%E6%88%90-%E2%80%94%E2%80%94-%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5%EF%BC%81"><span class="toc-number">2.4.</span> <span class="toc-text">再进一步！IoC 容器的重要组成 —— 依赖注入！</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9B%B4%E4%B8%BA%E5%85%88%E8%BF%9B%E7%9A%84%E5%B7%A5%E5%8E%82-%E2%80%94%E2%80%94-IoC-%E5%AE%B9%E5%99%A8%EF%BC%81"><span class="toc-number">2.5.</span> <span class="toc-text">更为先进的工厂 —— IoC 容器！</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9E%E5%BD%92%E6%AD%A3%E5%B8%B8%E4%B8%96%E7%95%8C%E3%80%82%E6%88%91%E4%BB%AC%E5%BC%80%E5%A7%8B%E9%87%8D%E6%96%B0%E5%AE%A1%E8%A7%86-laravel-%E7%9A%84%E6%A0%B8%E5%BF%83%E3%80%82"><span class="toc-number">3.</span> <span class="toc-text">回归正常世界。我们开始重新审视 laravel 的核心。</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9C%8D%E5%8A%A1%E6%8F%90%E4%BE%9B%E8%80%85"><span class="toc-number">3.1.</span> <span class="toc-text">服务提供者</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Facade"><span class="toc-number">3.2.</span> <span class="toc-text">Facade</span></a></li></ol></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <p>容器，字面上理解就是装东西的东西。常见的变量、对象属性等都可以算是容器。一个容器能够装什么，全部取决于你对该容器的定义。当然，有这样一种容器，它存放的不是文本、数值，而是对象、对象的描述（类、接口）或者是提供对象的回调，通过这种容器，我们得以实现许多高级的功能，其中最常提到的，就是 “解耦” 、“依赖注入（DI）”。本文就从这里开始。<span id="more"></span></p>
+<h2 id="IoC-容器，-laravel-的核心"><a href="#IoC-容器，-laravel-的核心" class="headerlink" title="IoC 容器， laravel 的核心"></a>IoC 容器， laravel 的核心</h2><p>Laravel 的核心就是一个 <code>IoC 容器</code>，根据文档，称其为“<code>服务容器</code>”，顾名思义，该容器提供了整个框架中需要的一系列服务。作为初学者，很多人会在这一个概念上犯难，因此，我打算从一些基础的内容开始讲解，通过理解面向对象开发中依赖的产生和解决方法，来逐渐揭开“依赖注入”的面纱，逐渐理解这一神奇的设计理念。</p>
+<p><strong>本文一大半内容都是通过举例来让读者去理解什么是 <code>IoC（控制反转）</code> 和 <code>DI（依赖注入）</code>，通过理解这些概念，来更加深入。更多关于 laravel 服务容器的用法建议阅读文档即可。</strong></p>
+<h2 id="IoC-容器诞生的故事"><a href="#IoC-容器诞生的故事" class="headerlink" title="IoC 容器诞生的故事"></a>IoC 容器诞生的故事</h2><p>讲解 IoC 容器有很多的文章，我之前也写过。但现在我打算利用当下的灵感重新来过，那么开始吧。</p>
+<h3 id="超人和超能力，依赖的产生！"><a href="#超人和超能力，依赖的产生！" class="headerlink" title="超人和超能力，依赖的产生！"></a>超人和超能力，依赖的产生！</h3><p>面向对象编程，有以下几样东西无时不刻的接触：<code>接口</code>、<code>类</code>还有<code>对象</code>。这其中，接口是类的原型，一个类必须要遵守其实现的接口；对象则是一个类实例化后的产物，我们称其为一个实例。当然这样说肯定不利于理解，我们就实际的写点中看不中用的代码辅助学习。</p>
+<blockquote>
+<p>怪物横行的世界，总归需要点超级人物来摆平。</p>
+</blockquote>
+<p>我们把一个“超人”作为一个类，</p>
+<figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="symbol">Superman</span> &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们可以想象，一个超人诞生的时候肯定拥有至少一个超能力，这个超能力也可以抽象为一个对象，为这个对象定义一个描述他的类吧。一个超能力肯定有多种属性、（操作）方法，这个尽情的想象，但是目前我们先大致定义一个只有属性的“超能力”，至于能干啥，我们以后再丰富：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Power</span> </span>&#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 能力值</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="variable">$ability</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 能力范围或距离</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="variable">$range</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"><span class="variable">$ability</span>, <span class="variable">$range</span></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;ability = <span class="variable">$ability</span>;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;range = <span class="variable">$range</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这时候我们回过头，修改一下之前的“超人”类，让一个“超人”创建的时候被赋予一个超能力：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Superman</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">protected</span> <span class="variable">$power</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;power = <span class="keyword">new</span> <span class="title class_">Power</span>(<span class="number">999</span>, <span class="number">100</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这样的话，当我们创建一个“超人”实例的时候，同时也创建了一个“超能力”的实例，但是，我们看到了一点，“超人”和“超能力”之间不可避免的产生了一个依赖。</p>
+<blockquote>
+<p>所谓“依赖”，就是 “我若依赖你，我就不能离开你”。</p>
+</blockquote>
+<p>在一个贯彻面向对象编程的项目中，这样的依赖随处可见。少量的依赖并不会有太过直观的影响，我们随着这个例子逐渐铺开，让大家慢慢意识到，当依赖达到一个量级时，是怎样一番噩梦般的体验。当然，我也会自然而然的讲述如何解决问题。</p>
+<h3 id="一堆乱麻-——-可怕的依赖"><a href="#一堆乱麻-——-可怕的依赖" class="headerlink" title="一堆乱麻 —— 可怕的依赖"></a>一堆乱麻 —— 可怕的依赖</h3><p>之前的例子中，超能力类实例化后是一个具体的超能力，但是我们知道，超人的超能力是多元化的，每种超能力的方法、属性都有不小的差异，没法通过一种类描述完全。我们现在进行修改，我们假设超人可以有以下多种超能力：</p>
+<ul>
+<li>  飞行，属性有：飞行速度、持续飞行时间</li>
+<li>  蛮力，属性有：力量值</li>
+<li>  能量弹，属性有：伤害值、射击距离、同时射击个数</li>
+</ul>
+<p>我们创建了如下类：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Flight</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">protected</span> <span class="variable">$speed</span>;</span><br><span class="line">    <span class="keyword">protected</span> <span class="variable">$holdtime</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"><span class="variable">$speed</span>, <span class="variable">$holdtime</span></span>) </span>&#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Force</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">protected</span> <span class="variable">$force</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"><span class="variable">$force</span></span>) </span>&#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Shot</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">protected</span> <span class="variable">$atk</span>;</span><br><span class="line">    <span class="keyword">protected</span> <span class="variable">$range</span>;</span><br><span class="line">    <span class="keyword">protected</span> <span class="variable">$limit</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"><span class="variable">$atk</span>, <span class="variable">$range</span>, <span class="variable">$limit</span></span>) </span>&#123;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>为了省事儿我没有详细写出 <code>__construct()</code> 这个构造函数的全部，只写了需要传递的参数。</p>
+<p>好了，这下我们的超人有点“忙”了。在超人初始化的时候，我们会根据需要来实例化其拥有的超能力吗，大致如下：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Superman</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">protected</span> <span class="variable">$power</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;power = <span class="keyword">new</span> <span class="title class_">Fight</span>(<span class="number">9</span>, <span class="number">100</span>);</span><br><span class="line">        <span class="comment">// $this-&gt;power = new Force(45);</span></span><br><span class="line">        <span class="comment">// $this-&gt;power = new Shot(99, 50, 2);</span></span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">        $this-&gt;power = array(</span></span><br><span class="line"><span class="comment">            new Force(45),</span></span><br><span class="line"><span class="comment">            new Shot(99, 50, 2)</span></span><br><span class="line"><span class="comment">        );</span></span><br><span class="line"><span class="comment">        */</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们需要自己手动的在构造函数内（或者其他方法里）实例化一系列需要的类，这样并不好。可以想象，假如需求变更（不同的怪物横行地球），需要更多的有针对性的 <strong>新的</strong> 超能力，或者需要 <strong>变更</strong> 超能力的方法，我们必须 <code>重新改造</code> 超人。<strong>换句话说就是，改变超能力的同时，我还得重新制造个超人</strong>。效率太低了！新超人还没创造完成世界早已被毁灭。</p>
+<blockquote>
+<p>这时，灵机一动的人想到：为什么不可以这样呢？超人的能力可以被随时更换，只需要添加或者更新一个芯片或者其他装置啥的（想到钢铁侠没）。这样的话就不要整个重新来过了。</p>
+</blockquote>
+<p>对，就是这样的。</p>
+<p>我们不应该手动在 “超人” 类中固化了他的 “超能力” 初始化的行为，而转由外部负责，由外部创造超能力模组、装置或者芯片等（我们后面统一称为 “模组”），植入超人体内的某一个接口，这个接口是一个既定的，只要这个 “模组” 满足这个接口的装置都可以被超人所利用，可以提升、增加超人的某一种能力。这种由外部负责其依赖需求的行为，我们可以称其为 “<code>控制反转（IoC）</code>”。</p>
+<h3 id="工厂模式，依赖转移！"><a href="#工厂模式，依赖转移！" class="headerlink" title="工厂模式，依赖转移！"></a>工厂模式，依赖转移！</h3><p>当然，实现控制反转的方法有几种。在这之前，不如我们先了解一些好玩的东西。</p>
+<blockquote>
+<p>我们可以想到，组件、工具（或者超人的模组），是一种可被生产的玩意儿，生产的地方当然是 “工厂（Factory）”，于是有人就提出了这样一种模式： <code>工厂模式</code>。</p>
+</blockquote>
+<p>工厂模式，顾名思义，就是一个类所依赖的外部事物的实例，都可以被一个或多个 “工厂” 创建的这样一种开发模式，就是 “<code>工厂模式</code>”。</p>
+<p>我们为了给超人制造超能力模组，我们创建了一个工厂，它可以制造各种各样的模组，且仅需要通过一个方法：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">SuperModuleFactory</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">makeModule</span>(<span class="params"><span class="variable">$moduleName</span>, <span class="variable">$options</span></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">switch</span> (<span class="variable">$moduleName</span>) &#123;</span><br><span class="line">            <span class="keyword">case</span> <span class="string">&#x27;Fight&#x27;</span>:   <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Fight</span>(<span class="variable">$options</span>[<span class="number">0</span>], <span class="variable">$options</span>[<span class="number">1</span>]);</span><br><span class="line">            <span class="keyword">case</span> <span class="string">&#x27;Force&#x27;</span>:   <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Force</span>(<span class="variable">$options</span>[<span class="number">0</span>]);</span><br><span class="line">            <span class="keyword">case</span> <span class="string">&#x27;Shot&#x27;</span>:    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Shot</span>(<span class="variable">$options</span>[<span class="number">0</span>], <span class="variable">$options</span>[<span class="number">1</span>], <span class="variable">$options</span>[<span class="number">2</span>]);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这时候，超人 创建之初就可以使用这个工厂！</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Superman</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">protected</span> <span class="variable">$power</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="comment">// 初始化工厂</span></span><br><span class="line">        <span class="variable">$factory</span> = <span class="keyword">new</span> <span class="title class_">SuperModuleFactory</span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 通过工厂提供的方法制造需要的模块</span></span><br><span class="line">        <span class="variable language_">$this</span>-&gt;power = <span class="variable">$factory</span>-&gt;<span class="title function_ invoke__">makeModule</span>(<span class="string">&#x27;Fight&#x27;</span>, [<span class="number">9</span>, <span class="number">100</span>]);</span><br><span class="line">        <span class="comment">// $this-&gt;power = $factory-&gt;makeModule(&#x27;Force&#x27;, [45]);</span></span><br><span class="line">        <span class="comment">// $this-&gt;power = $factory-&gt;makeModule(&#x27;Shot&#x27;, [99, 50, 2]);</span></span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">        $this-&gt;power = array(</span></span><br><span class="line"><span class="comment">            $factory-&gt;makeModule(&#x27;Force&#x27;, [45]),</span></span><br><span class="line"><span class="comment">            $factory-&gt;makeModule(&#x27;Shot&#x27;, [99, 50, 2])</span></span><br><span class="line"><span class="comment">        );</span></span><br><span class="line"><span class="comment">        */</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看得出，我们不再需要在超人初始化之初，去初始化许多第三方类，只需初始化一个工厂类，即可满足需求。但这样似乎和以前区别不大，只是没有那么多 <code>new</code> 关键字。其实我们稍微改造一下这个类，你就明白，工厂类的真正意义和价值了。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Superman</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">protected</span> <span class="variable">$power</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"><span class="keyword">array</span> <span class="variable">$modules</span></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="comment">// 初始化工厂</span></span><br><span class="line">        <span class="variable">$factory</span> = <span class="keyword">new</span> <span class="title class_">SuperModuleFactory</span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 通过工厂提供的方法制造需要的模块</span></span><br><span class="line">        <span class="keyword">foreach</span> (<span class="variable">$modules</span> <span class="keyword">as</span> <span class="variable">$moduleName</span> =&gt; <span class="variable">$moduleOptions</span>) &#123;</span><br><span class="line">            <span class="variable language_">$this</span>-&gt;power[] = <span class="variable">$factory</span>-&gt;<span class="title function_ invoke__">makeModule</span>(<span class="variable">$moduleName</span>, <span class="variable">$moduleOptions</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 创建超人</span></span><br><span class="line"><span class="variable">$superman</span> = <span class="keyword">new</span> <span class="title class_">Superman</span>([</span><br><span class="line">    <span class="string">&#x27;Fight&#x27;</span> =&gt; [<span class="number">9</span>, <span class="number">100</span>],</span><br><span class="line">    <span class="string">&#x27;Shot&#x27;</span> =&gt; [<span class="number">99</span>, <span class="number">50</span>, <span class="number">2</span>]</span><br><span class="line">    ]);</span><br></pre></td></tr></table></figure>
+
+<p>现在修改的结果令人满意。现在，“超人” 的创建不再依赖任何一个 “超能力” 的类，我们如若修改了或者增加了新的超能力，只需要针对修改 <code>SuperModuleFactory</code> 即可。扩充超能力的同时不再需要重新编辑超人的类文件，使得我们变得很轻松。但是，这才刚刚开始。</p>
+<h3 id="再进一步！IoC-容器的重要组成-——-依赖注入！"><a href="#再进一步！IoC-容器的重要组成-——-依赖注入！" class="headerlink" title="再进一步！IoC 容器的重要组成 —— 依赖注入！"></a>再进一步！IoC 容器的重要组成 —— 依赖注入！</h3><p>由 “超人” 对 “超能力” 的依赖变成 “超人” 对 “超能力模组工厂” 的依赖后，对付小怪兽们变得更加得心应手。但这也正如你所看到的，依赖并未解除，只是由原来对多个外部的依赖变成了对一个 “工厂” 的依赖。假如工厂出了点麻烦，问题变得就很棘手。</p>
+<blockquote>
+<p>其实大多数情况下，工厂模式已经足够了。工厂模式的缺点就是：接口未知（即没有一个很好的契约模型，关于这个我马上会有解释）、产生对象类型单一。总之就是，还是不够灵活。虽然如此，工厂模式依旧十分优秀，并且适用于绝大多数情况。不过我们为了讲解后面的 <code>依赖注入</code> ，这里就先夸大一下工厂模式的缺陷咯。</p>
+</blockquote>
+<p>我们知道，超人依赖的模组，我们要求有统一的接口，这样才能和超人身上的注入接口对接，最终起到提升超能力的效果。</p>
+<p>事实上，我之前说谎了，不仅仅只有一堆小怪兽，还有更多的大怪兽。嘿嘿。额，这时候似乎工厂的生产能力显得有些不足 —— 由于工厂模式下，所有的模组都已经在工厂类中安排好了，如果有新的、高级的模组加入，我们必须修改工厂类（好比增加新的生产线）：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">SuperModuleFactory</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">makeModule</span>(<span class="params"><span class="variable">$moduleName</span>, <span class="variable">$options</span></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">switch</span> (<span class="variable">$moduleName</span>) &#123;</span><br><span class="line">            <span class="keyword">case</span> <span class="string">&#x27;Fight&#x27;</span>:   <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Fight</span>(<span class="variable">$options</span>[<span class="number">0</span>], <span class="variable">$options</span>[<span class="number">1</span>]);</span><br><span class="line">            <span class="keyword">case</span> <span class="string">&#x27;Force&#x27;</span>:   <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Force</span>(<span class="variable">$options</span>[<span class="number">0</span>]);</span><br><span class="line">            <span class="keyword">case</span> <span class="string">&#x27;Shot&#x27;</span>:    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Shot</span>(<span class="variable">$options</span>[<span class="number">0</span>], <span class="variable">$options</span>[<span class="number">1</span>], <span class="variable">$options</span>[<span class="number">2</span>]);</span><br><span class="line">            <span class="comment">// case &#x27;more&#x27;: .......</span></span><br><span class="line">            <span class="comment">// case &#x27;and more&#x27;: .......</span></span><br><span class="line">            <span class="comment">// case &#x27;and more&#x27;: .......</span></span><br><span class="line">            <span class="comment">// case &#x27;oh no! its too many!&#x27;: .......</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>看到没。。。噩梦般的感受！</p>
+<blockquote>
+<p>其实灵感就差一步！你可能会想到更为灵活的办法！对，下一步就是我们今天的主要配角 —— DI （依赖注入）</p>
+</blockquote>
+<p>由于对超能力模组的需求不断增大，我们需要集合整个世界的高智商人才，一起解决问题，不应该仅仅只有几个工厂垄断负责。不过高智商人才们都非常自负，认为自己的想法是对的，创造出的超能力模组没有统一的接口，自然而然无法被正常使用。这时我们需要提出一种契约，这样无论是谁创造出的模组，都符合这样的接口，自然就可被正常使用。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">interface</span> <span class="title">SuperModuleInterface</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 超能力激活方法</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * 任何一个超能力都得有该方法，并拥有一个参数</span></span><br><span class="line"><span class="comment">     *<span class="doctag">@param</span> array $target 针对目标，可以是一个或多个，自己或他人</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">activate</span>(<span class="params"><span class="keyword">array</span> <span class="variable">$target</span></span>)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>上文中，我们定下了一个接口 （超能力模组的规范、契约），所有被创造的模组必须遵守该规范，才能被生产。</p>
+<p>其实，这就是 php 中 <code>接口（ interface ）</code> 的用处和意义！很多人觉得，为什么 php 需要接口这种东西？难道不是 java 、 C# 之类的语言才有的吗？这么说，只要是一个正常的面向对象编程语言（虽然 php 可以面向过程），都应该具备这一特性。因为一个 <code>对象（object）</code> 本身是由他的模板或者原型 —— <code>类 （class）</code> ，经过实例化后产生的一个具体事物，而有时候，实现统一种方法且不同功能（或特性）的时候，会存在很多的类（class），这时候就需要有一个契约，让大家编写出可以被随时替换却不会产生影响的接口。这种由编程语言本身提出的硬性规范，会增加更多优秀的特性。</p>
+<p>虽然有些绕，但通过我们接下来的实例，大家会慢慢领会接口带来的好处。</p>
+</blockquote>
+<p>这时候，那些提出更好的超能力模组的高智商人才，遵循这个接口，创建了下述（模组）类：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * X-超能量</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">XPower</span> <span class="keyword">implements</span> <span class="title">SuperModuleInterface</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">activate</span>(<span class="params"><span class="keyword">array</span> <span class="variable">$target</span></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="comment">// 这只是个例子。。具体自行脑补</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 终极炸弹 （就这么俗）</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">UltraBomb</span> <span class="keyword">implements</span> <span class="title">SuperModuleInterface</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">activate</span>(<span class="params"><span class="keyword">array</span> <span class="variable">$target</span></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="comment">// 这只是个例子。。具体自行脑补</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>同时，为了防止有些 “砖家” 自作聪明，或者一些叛徒恶意捣蛋，不遵守契约胡乱制造模组，影响超人，我们对超人初始化的方法进行改造：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Superman</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">protected</span> <span class="variable">$module</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params">SuperModuleInterface <span class="variable">$module</span></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;module = <span class="variable">$module</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>改造完毕！现在，当我们初始化 “超人” 类的时候，提供的模组实例必须是一个 <code>SuperModuleInterface</code> 接口的实现。否则就会提示错误。</p>
+<p>正是由于超人的创造变得容易，一个超人也就不需要太多的超能力，我们可以创造多个超人，并分别注入需要的超能力模组即可。这样的话，虽然一个超人只有一个超能力，但超人更容易变多，我们也不怕怪兽啦！</p>
+<blockquote>
+<p>现在有人疑惑了，你要讲的 <code>依赖注入</code> 呢？</p>
+<p>其实，上面讲的内容，正是依赖注入。</p>
+</blockquote>
+<p>什么叫做 <code>依赖注入</code>？</p>
+<p>本文从开头到现在提到的一系列依赖，只要不是由内部生产（比如初始化、构造函数 <code>__construct</code> 中通过工厂方法、自行手动 new 的），而是由外部以参数或其他形式注入的，都属于 <code>依赖注入（DI）</code> 。是不是豁然开朗？事实上，就是这么简单。下面就是一个典型的依赖注入：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 超能力模组</span></span><br><span class="line"><span class="variable">$superModule</span> = <span class="keyword">new</span> <span class="title class_">XPower</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 初始化一个超人，并注入一个超能力模组依赖</span></span><br><span class="line"><span class="variable">$superMan</span> = <span class="keyword">new</span> <span class="title class_">Superman</span>(<span class="variable">$superModule</span>);</span><br></pre></td></tr></table></figure>
+
+<p>关于依赖注入这个本文的主要配角，也就这么多需要讲的。理解了依赖注入，我们就可以继续深入问题。慢慢走近今天的主角……</p>
+<h3 id="更为先进的工厂-——-IoC-容器！"><a href="#更为先进的工厂-——-IoC-容器！" class="headerlink" title="更为先进的工厂 —— IoC 容器！"></a>更为先进的工厂 —— IoC 容器！</h3><p>刚刚列了一段代码：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$superModule</span> = <span class="keyword">new</span> <span class="title class_">XPower</span>;</span><br><span class="line"></span><br><span class="line"><span class="variable">$superMan</span> = <span class="keyword">new</span> <span class="title class_">Superman</span>(<span class="variable">$superModule</span>);</span><br></pre></td></tr></table></figure>
+
+<p>读者应该看出来了，手动的创建了一个超能力模组、手动的创建超人并注入了刚刚创建超能力模组。呵呵，手动。</p>
+<blockquote>
+<p>现代社会，应该是高效率的生产，干净的车间，完美的自动化装配。</p>
+</blockquote>
+<p>一群怪兽来了，如此低效率产出超人是不现实，我们需要自动化 —— 最多一条指令，千军万马来相见。我们需要一种高级的生产车间，我们只需要向生产车间提交一个脚本，工厂便能够通过指令自动化生产。这种更为高级的工厂，就是工厂模式的升华 —— <code>IoC 容器</code>。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Container</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">    <span class="keyword">protected</span> <span class="variable">$binds</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">protected</span> <span class="variable">$instances</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">bind</span>(<span class="params"><span class="variable">$abstract</span>, <span class="variable">$concrete</span></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="variable">$concrete</span> <span class="keyword">instanceof</span> <span class="built_in">Closure</span>) &#123;</span><br><span class="line">            <span class="variable language_">$this</span>-&gt;binds[<span class="variable">$abstract</span>] = <span class="variable">$concrete</span>;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="variable language_">$this</span>-&gt;instances[<span class="variable">$abstract</span>] = <span class="variable">$concrete</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">make</span>(<span class="params"><span class="variable">$abstract</span>, <span class="variable">$parameters</span> = []</span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">isset</span>(<span class="variable language_">$this</span>-&gt;instances[<span class="variable">$abstract</span>])) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="variable language_">$this</span>-&gt;instances[<span class="variable">$abstract</span>];</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="title function_ invoke__">array_unshift</span>(<span class="variable">$parameters</span>, <span class="variable">$this</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="title function_ invoke__">call_user_func_array</span>(<span class="variable">$this</span>-&gt;binds[<span class="variable">$abstract</span>], <span class="variable">$parameters</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这时候，一个十分粗糙的容器就诞生了。现在的确很简陋，但不妨碍我们进一步提升他。先着眼现在，看看这个容器如何使用吧！</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 创建一个容器（后面称作超级工厂）</span></span><br><span class="line"><span class="variable">$container</span> = <span class="keyword">new</span> <span class="title class_">Container</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 向该 超级工厂 添加 超人 的生产脚本</span></span><br><span class="line"><span class="variable">$container</span>-&gt;<span class="title function_ invoke__">bind</span>(<span class="string">&#x27;superman&#x27;</span>, function(<span class="variable">$container</span>, <span class="variable">$moduleName</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Superman</span>(<span class="variable">$container</span>-&gt;<span class="title function_ invoke__">make</span>(<span class="variable">$moduleName</span>));</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 向该 超级工厂 添加 超能力模组 的生产脚本</span></span><br><span class="line"><span class="variable">$container</span>-&gt;<span class="title function_ invoke__">bind</span>(<span class="string">&#x27;xpower&#x27;</span>, function(<span class="variable">$container</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">XPower</span>;</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 同上</span></span><br><span class="line"><span class="variable">$container</span>-&gt;<span class="title function_ invoke__">bind</span>(<span class="string">&#x27;ultrabomb&#x27;</span>, function(<span class="variable">$container</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">UltraBomb</span>;</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">// ******************  华丽丽的分割线  **********************</span></span><br><span class="line"><span class="comment">// 开始启动生产</span></span><br><span class="line"><span class="variable">$superman_1</span> = <span class="variable">$container</span>-&gt;<span class="title function_ invoke__">make</span>(<span class="string">&#x27;superman&#x27;</span>, [<span class="string">&#x27;xpower&#x27;</span>]);</span><br><span class="line"><span class="variable">$superman_2</span> = <span class="variable">$container</span>-&gt;<span class="title function_ invoke__">make</span>(<span class="string">&#x27;superman&#x27;</span>, [<span class="string">&#x27;ultrabomb&#x27;</span>]);</span><br><span class="line"><span class="variable">$superman_3</span> = <span class="variable">$container</span>-&gt;<span class="title function_ invoke__">make</span>(<span class="string">&#x27;superman&#x27;</span>, [<span class="string">&#x27;xpower&#x27;</span>]);</span><br><span class="line"><span class="comment">// ...随意添加</span></span><br></pre></td></tr></table></figure>
+
+<p>看到没？通过最初的 <code>绑定（bind）</code> 操作，我们向 超级工厂 注册了一些生产脚本，这些生产脚本在生产指令下达之时便会执行。发现没有？我们彻底的解除了 超人 与 超能力模组 的依赖关系，更重要的是，容器类也丝毫没有和他们产生任何依赖！我们通过注册、绑定的方式向容器中添加一段可以被执行的回调（可以是匿名函数、非匿名函数、类的方法）作为生产一个类的实例的 <strong>脚本</strong> ，只有在真正的 <code>生产（make）</code> 操作被调用执行时，才会触发。</p>
+<p>这样一种方式，使得我们更容易在创建一个实例的同时解决其依赖关系，并且更加灵活。当有新的需求，只需另外绑定一个“生产脚本”即可。</p>
+<blockquote>
+<p>实际上，真正的 IoC 容器更为高级。我们现在的例子中，还是需要手动提供超人所需要的模组参数，但真正的 IoC 容器会根据类的依赖需求，自动在注册、绑定的一堆实例中搜寻符合的依赖需求，并自动注入到构造函数参数中去。Laravel 框架的服务容器正是这么做的。实现这种功能其实理论上并不麻烦，但我并不会在本文中写出，因为……我懒得写。</p>
+<p>不过我告诉大家，这种自动搜寻依赖需求的功能，是通过 <code>反射（Reflection）</code> 实现的，恰好的，php 完美的支持反射机制！关于反射，php 官方文档有详细的资料，并且中文翻译基本覆盖，足够学习和研究！</p>
+<p><a target="_blank" rel="noopener" href="http://php.net/manual/zh/book.reflection.php" title="http://php.net/manual/zh/book.reflection.php"></a><a target="_blank" rel="noopener" href="http://php.net/manual/zh/book.reflection.php">http://php.net/manual/zh/book.reflection.php</a></p>
+</blockquote>
+<p>现在，到目前为止，我们已经不再惧怕怪兽们了。高智商人才集思广益，井井有条，根据接口契约创造规范的超能力模组。超人开始批量产出。最终，人人都是超人，你也可以是哦 !</p>
+<h2 id="回归正常世界。我们开始重新审视-laravel-的核心。"><a href="#回归正常世界。我们开始重新审视-laravel-的核心。" class="headerlink" title="回归正常世界。我们开始重新审视 laravel 的核心。"></a>回归正常世界。我们开始重新审视 laravel 的核心。</h2><p>现在，我们开始慢慢解读 laravel 的核心。其实，laravel 的核心就是一个 IoC 容器，也恰好是我之前所说的高级的 IoC 容器。</p>
+<p>可以说，laravel 的核心本身十分轻量，并没有什么很神奇很实质性的应用功能。很多人用到的各种功能模块比如 <code>Route（路由）</code>、<code>Eloquent ORM（数据库 ORM 组件）</code>、<code>Request and Response（请求和响应）</code>等等等等，实际上都是与核心无关的类模块提供的，这些类从注册到实例化，最终被你所使用，其实都是 laravel 的服务容器负责的。</p>
+<p>我们以大家最常见的 <code>Route</code> 类作为例子。大家可能经常见到路由定义是这样的：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="title class_">Route</span>::<span class="title function_ invoke__">get</span>(<span class="string">&#x27;/&#x27;</span>, function() &#123;</span><br><span class="line">    <span class="comment">// bla bla bla...</span></span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>实际上， <code>Route</code> 类被定义在这个命名空间：<code>Illuminate\Routing\Router</code>，文件 <code>vendor/laravel/framework/src/Illuminate/Routing/Router.php</code>。</p>
+<p>我们通过打开发现，这个类的这一系列方法，如 <code>get</code>，<code>post</code>，<code>any</code> 等都不是静态（static）方法，这是怎么一回事儿？不要急，我们继续。</p>
+<h3 id="服务提供者"><a href="#服务提供者" class="headerlink" title="服务提供者"></a>服务提供者</h3><p>我们在前文介绍 IoC 容器的部分中，提到了，一个类需要绑定、注册至容器中，才能被“制造”。</p>
+<p>对，一个类要被容器所能够提取，必须要先注册至这个容器。既然 laravel 称这个容器叫做服务容器，那么我们需要某个服务，就得先注册、绑定这个服务到容器，那么提供服务并绑定服务至容器的东西，就是 <code>服务提供者（ServiceProvider）</code>。</p>
+<blockquote>
+<p>虽然，绑定一个类到容器不一定非要通过 <code>服务提供者（ServiceProvider）</code> 。</p>
+<p>但是，我们知道，有时候我们的类、模块会有需要其他类和组件的情况，为了保证初始化阶段不会出现所需要的模块和组件没有注册的情况，laravel 将注册和初始化行为进行拆分，注册的时候就只能注册，初始化的时候就是初始化。拆分后的产物就是现在的 <code>服务提供者</code>。</p>
+</blockquote>
+<p>服务提供者主要分为两个部分，<code>register（注册）</code> 和 <code>boot（引导、初始化）</code>，具体参考文档。<code>register</code> 负责进行向容器注册“脚本”，但要注意注册部分不要有对未知事物的依赖，如果有，就要移步至 <code>boot</code> 部分。</p>
+<h3 id="Facade"><a href="#Facade" class="headerlink" title="Facade"></a>Facade</h3><p>我们现在解答之前关于 <code>Route</code> 的方法为何能以静态方法访问的问题。实际上这个问题文档上有写，简单说来就是模拟一个类，提供一个静态魔术方法<code>__callStatic</code>，并将该静态方法映射到真正的方法上。</p>
+<p>我们使用的 <code>Route</code> 类实际上是 <code>Illuminate\Support\Facades\Route</code> 通过 <code>class_alias()</code> 函数创造的 <code>别名</code> 而已，这个类被定义在文件 <code>vendor/laravel/framework/src/Illuminate/Support/Facades/Route.php</code> 。</p>
+<p>我们打开文件一看……诶？怎么只有这么简单的一段代码呢？</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span> <span class="keyword">namespace</span> <span class="title class_">Illuminate</span>\<span class="title class_">Support</span>\<span class="title class_">Facades</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@see</span> \Illuminate\Routing\Router</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Route</span> <span class="keyword">extends</span> <span class="title">Facade</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Get the registered name of the component.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> string</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="built_in">static</span> <span class="function"><span class="keyword">function</span> <span class="title">getFacadeAccessor</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&#x27;router&#x27;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其实仔细看，会发现这个类继承了一个叫做 <code>Facade</code> 的类，到这里谜底差不多要解开了。</p>
+<p>上述简单的定义中，我们看到了 <code>getFacadeAccessor</code> 方法返回了一个 <code>route</code>，这是什么意思呢？事实上，这个值被一个 <code>ServiceProvider</code> 注册过，大家应该知道注册了个什么，当然是那个真正的路由类！</p>
+<blockquote>
+<p>有人会问，Facade 是怎么实现的。我并不想说得太细，一个是我懒，另一个原因就是，自己发现一些东西更容易理解，并不容易忘记。很多细节我已经说了，建议大家自行去研究。</p>
+</blockquote>
+<p>至此，我们已经讲的差不多了。</p>
+<blockquote>
+<p>本文整理自：<a target="_blank" rel="noopener" href="https://www.insp.top/article/learn-laravel-container">laravel 学习笔记 —— 神奇的服务容器</a></p>
+</blockquote>
+<hr>
+<p>我们来看下Laravel的服务容器， Laravel的心脏就是Service Container，翻译成中文技术服务容器，如果你知道IOC(控制反转), 那么将Service Container翻译成IOC容器，你会更好理解一点，事实上它就是一个IOC容器. 本节还是处于laravel使用层面，不去严谨的讨论设计模式，我们一会通过一个不严谨的列子来讲解下IOC容器的概念。</p>
+<p>我们先重新来跑一个名叫LaravelServices的项目，怎么跑，我们都很清楚了：<br><code>laravel new LaravelServices --5.2</code></p>
+<p>我们先来说下什么是容器？字面意思来看，容器就是用来装东西的，那对应到程序中，我们的变量可以装“值”，那么它是个容器，我们对象的一个属性，也能装“值”，也是一个容器，容器里什么都可以装，比如现在比较火的docker，那就是一个很大的容器.</p>
+<p>如果将这个容器的概念对应到laravel呢？我们来简单跑下laravel运行的第一步流程，laravel的入口文件是/public/index.php, 当我们访问: <a target="_blank" rel="noopener" href="http://localhost:8000/">http://localhost:8000</a> 时，首先运行的就是这个index.php文件，我们打开它，第一句代码和第2句代码如下：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 首先是导入composer的自动类加载，这样我们使用composer install安装的第三方包就能使用了</span></span><br><span class="line"><span class="keyword">require</span> <span class="keyword">__DIR__</span>.<span class="string">&#x27;/../bootstrap/autoload.php&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="variable">$app</span> = <span class="keyword">require_once</span> <span class="keyword">__DIR__</span>.<span class="string">&#x27;/../bootstrap/app.php&#x27;</span>;</span><br></pre></td></tr></table></figure>
+<p>然后看第2句话，我们打开/bootstrap/app.php看里面的第一句代码：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$app</span> = <span class="keyword">new</span> <span class="title class_">Illuminate\Foundation\Application</span>(</span><br><span class="line">    <span class="title function_ invoke__">realpath</span>(<span class="keyword">__DIR__</span>.<span class="string">&#x27;/../&#x27;</span>)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+<p>好了，到这里就差不多了，我们现在知道laravel运行的第一件事是先引入composer的自动加载文件，然后就是实例化一个Application类的对象$app， 这个$app就是一个容器，你可以把它想象成是装我们网站，装我们项目的容器。我们开发laravel项目，就是把东西塞进这个$app容器中。</p>
+<blockquote>
+<p>摘自：<a target="_blank" rel="noopener" href="http://blog.zhoujiping.com/scratch/service-container.html">15. 依赖注入和服务容器(IOC 容器) Service Container - 从零开始学Laravel </a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2017/01/03/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8E%A7%E5%88%B6%E5%8F%8D%E8%BD%AC%EF%BC%88IoC%EF%BC%89%E5%92%8C%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5%EF%BC%88DI%EF%BC%89/" data-id="cl9pgeocf020uycv1f4tvfild" data-title="深入理解控制反转（IoC）和依赖注入（DI）" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Laravel/" rel="tag">Laravel</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2017/01/04/%E5%88%9B%E5%BB%BA-Service-Provider-%E6%B5%8B%E8%AF%95%E5%AE%9E%E4%BE%8B/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          创建 Service Provider 测试实例
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/12/24/call,apply,bind%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">call,apply,bind使用笔记</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>nginx location 配置阐述优先级别使用说明 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="使用nginx 有大半年了，它的高性能，稳定性表现很好。 这里也得到很多人的认可。 其中它的配置，有点像写程序一样，每行命令结尾一个”;”号，语句块用”{}”括起来。 配制好，直接nginx -t 检查配制情况，配制成功，直接运行：service nginx reload .服务器没有任何宕机情况下，实现平稳修改配置。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="nginx location 配置阐述优先级别使用说明">
+<meta property="og:url" content="http://moqiang02.github.io/2013/12/29/nginx-location-%E9%85%8D%E7%BD%AE%E9%98%90%E8%BF%B0%E4%BC%98%E5%85%88%E7%BA%A7%E5%88%AB%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="使用nginx 有大半年了，它的高性能，稳定性表现很好。 这里也得到很多人的认可。 其中它的配置，有点像写程序一样，每行命令结尾一个”;”号，语句块用”{}”括起来。 配制好，直接nginx -t 检查配制情况，配制成功，直接运行：service nginx reload .服务器没有任何宕机情况下，实现平稳修改配置。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2013-12-29T03:12:46.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.991Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-nginx-location-配置阐述优先级别使用说明" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2013/12/29/nginx-location-%E9%85%8D%E7%BD%AE%E9%98%90%E8%BF%B0%E4%BC%98%E5%85%88%E7%BA%A7%E5%88%AB%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E/" class="article-date">
+  <time class="dt-published" datetime="2013-12-29T03:12:46.000Z" itemprop="datePublished">2013-12-29</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/nginx/">nginx</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      nginx location 配置阐述优先级别使用说明
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <p>使用nginx 有大半年了，它的高性能，稳定性表现很好。 这里也得到很多人的认可。 其中它的配置，有点像写程序一样，每行命令结尾一个”;”号，语句块用”{}”括起来。 配制好，直接nginx -t 检查配制情况，配制成功，直接运行：service nginx reload .服务器没有任何宕机情况下，实现平稳修改配置。</p>
+<span id="more"></span>
+<p>最近一直在做location 配制时候，遇到小麻烦，以下是个人学习一点体会。</p>
+<p>1.location 匹配的优先级(来自实践总结中)</p>
+<p>(location =) &gt; (location 完整路径 &gt;) &gt; (location ^~ 路径) &gt; (location ~* 正则) &gt; (location 路径)<br>只要匹配到，其它的都会忽略，然后返回到改匹配。</p>
+<p>用以下例子来测试：</p>
+<figure class="highlight crmsh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#1    </span></span><br><span class="line">     <span class="keyword">location</span> <span class="title">/ &#123;</span></span><br><span class="line"><span class="title">        return</span> <span class="number">500</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"> <span class="comment">#2</span></span><br><span class="line">     <span class="keyword">location</span> <span class="title">/a</span>/ &#123;</span><br><span class="line">        return <span class="number">404</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"> <span class="comment">#3</span></span><br><span class="line">     <span class="keyword">location</span> <span class="title">~* \.jpg</span>$ &#123;</span><br><span class="line">        return <span class="number">403</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"> <span class="comment">#4</span></span><br><span class="line">     <span class="keyword">location</span> <span class="title">^~ /a</span>/ &#123;</span><br><span class="line">        return <span class="number">402</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"> <span class="comment">#5</span></span><br><span class="line">     <span class="keyword">location</span>  <span class="title">/a</span>/<span class="number">1</span>.jpg &#123;</span><br><span class="line">        return <span class="number">401</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"> <span class="comment">#6</span></span><br><span class="line">     <span class="keyword">location</span> <span class="title">= /a</span>/<span class="number">1</span>.jpg &#123;</span><br><span class="line">        return <span class="number">400</span>;</span><br><span class="line">     &#125;</span><br></pre></td></tr></table></figure>
+<p>说明测试时候：先要将#2全部注释掉，不然会认为#2 与#4 完全一样。会提示:重复配制</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">D</span>:\nginx-<span class="number">0</span>.<span class="number">8</span>.<span class="number">7</span>&gt;nginx -s reload<span class="meta"> [emerg]: duplicate location &quot;/a/&quot; in D:\nginx-0.8.7/conf/nginx.conf:53</span></span><br></pre></td></tr></table></figure>
+<p>首先测试：每次都是访问：<a target="_blank" rel="noopener" href="http://localhost:9999/a/1.jpg">http://localhost:9999/a/1.jpg</a> （在windows 安装测试，然后端口是9999) 文件a/1.jpg 根本不存在。关键是测试看页面返回情况。</p>
+<p>a.</p>
+<figure class="highlight ada"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">400</span> Bad Request </span><br><span class="line"><span class="comment">---------------------------------------------- </span></span><br><span class="line">nginx/<span class="number">0.8</span>.<span class="number">7</span></span><br></pre></td></tr></table></figure>
+<p>（图一）</p>
+<p>从测试中可以看到，优先级最高的是：= 号。 它会最先匹配到。</p>
+<p>b.接下来我们 屏蔽掉 #6 如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">#</span><span class="language-bash">6</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">   location = /a/1.jpg &#123;</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">       <span class="built_in">return</span> 400;</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">   &#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>然后在：D:\nginx-0.8.7&gt; nginx -s reload  访问：<a target="_blank" rel="noopener" href="http://localhost:9999/a/1.jpg">http://localhost:9999/a/1.jpg</a> </p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">401</span> <span class="keyword">Authorization</span> Required </span><br><span class="line"><span class="comment">------------------------------------- </span></span><br><span class="line">nginx<span class="operator">/</span><span class="number">0.8</span><span class="number">.7</span></span><br></pre></td></tr></table></figure>
+<p>图（2-2）</p>
+<p>注意：从这个测试 发现 :没有“=”情况下，location 后面直接接完整路径是优先匹配。 通过测试发现，如果将：location  /a/1.jpg   改成：location /a/1.jpg</p>
+<p>会出现意外情况，直接出现是：return 402.  从这一点，可以推测到nginx 匹配优先是：网站路径，并且不带正则表达式的优先。</p>
+<p>以上是本人通过测试，推测得到，如有问题，欢迎指正。</p>
+<p>c.同理测试 屏蔽掉 #5 如下：注释及重新加载同上.</p>
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">#5</span><br><span class="line"># location /a/1.jpg &#123;</span><br><span class="line"># return 401;</span><br><span class="line"># &#125;</span><br><span class="line"></span><br><span class="line">访问：http://localhost:9999/a/1.jpg 返回如下结果。</span><br><span class="line"></span><br><span class="line"><span class="section">402 Payment Required</span></span><br><span class="line"><span class="section">-------------------------------------------------</span></span><br><span class="line">nginx/0.8.7</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>通过这个测试可以得出：location ^~ 优先级 高于 location <del>* 优先级 ，其中：^</del> 主要后面接路径。</p>
+<p>c.同理测试 屏蔽掉 #4 如下：注释及重新加载同上.</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#4</span></span><br><span class="line"><span class="comment">#    location ^~ /a/ &#123;</span></span><br><span class="line"><span class="comment">#        return 402;</span></span><br><span class="line"><span class="comment">#    &#125;</span></span><br><span class="line"></span><br><span class="line">访问：http:<span class="regexp">//</span>localhost:<span class="number">9999</span><span class="regexp">/a/</span><span class="number">1</span>.jpg 返回如下结果。</span><br><span class="line"><span class="number">403</span> Forbidden </span><br><span class="line">------------------- </span><br><span class="line">nginx/<span class="number">0.8</span>.<span class="number">7</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>从以上比较得到：正则优先 未带任何批评符 的路径匹配</p>
+<p>d.同理测试 屏蔽掉 #3 如下：注释及重新加载同上. 并且去掉#2 的注释“#”</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#2</span></span><br><span class="line">    location <span class="regexp">/a/</span> &#123;</span><br><span class="line">        return <span class="number">404</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">访问：http:<span class="regexp">//</span>localhost:<span class="number">9999</span><span class="regexp">/a/</span><span class="number">1</span>.jpg 返回如下结果。</span><br><span class="line"><span class="number">404</span> Not Found </span><br><span class="line">-------------------- </span><br><span class="line">nginx/<span class="number">0.8</span>.<span class="number">7</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>比较有意思是：/a/ 与 /  应该是 同种类型的匹配表达式， 可以从中得到，该匹配顺序是，将路径从右匹配， 可以推测形如逐个字符，那个先匹配到，就是那个优先。 因此得到是：/a/ 优先于 / .</p>
+<p>以上测试，是我测试结果，优先级别以以上规律。 在实际我们书写中，经常会犯错误。 还记得前段时间：80后安全团队曝nginx漏洞 其实，个人认为不能算是nginx 漏洞，只是，我们不了解nginx 配制规则，而出现一个配置上面致命漏洞而已。 其实，通过上面优先级，我们在配置时候可能也一样经常犯一个致命错误。</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">#以下是随便写例子，个人可能各不相同</span><br><span class="line">#假设站点在：<span class="regexp">/home/</span>www<span class="regexp">/html/</span>目录下，所有的php 及上传文件都在这个目录下面。</span><br><span class="line">location ~* \.php$ &#123;</span><br><span class="line">    proxy_pass http:<span class="comment">//www.a.com; </span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">location  <span class="regexp">/upload/</span> &#123;</span><br><span class="line">    alias   <span class="regexp">/home/</span>www<span class="regexp">/html/u</span>pload/;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>而且，这个upload 目录，是静态目录，我们想法是下面所有文件是不能够执行的，包括php文件。</p>
+<p>如果有用户访问：<a target="_blank" rel="noopener" href="http://www.a.com/upload/1.css">http://www.a.com/upload/1.css</a> , 会直接显示该css, 但是，如果有用户访问：<a target="_blank" rel="noopener" href="http://www.a.com/upload/1.php">http://www.a.com/upload/1.php</a>  类似文件，正如上面所说，实际匹配到：~* .php$  了。 upload 下面是执行了。</p>
+<p>从这个里面，我们发现一个问题，实际没有达到我们要求。 静态目录下面的文件一样执行了。 这下比较麻烦了。 一旦出现个什么上存漏洞的，别人上存了一个php，我们还以为，我们配置是ok的。 觉得很安全，缺在不知不觉中被别人打开一扇门。</p>
+<p>那么我们怎么样修改呢？</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">location ~* \.php$ &#123;</span><br><span class="line">    proxy_pass http:<span class="regexp">//</span>www.a.com; </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">location ^~ <span class="regexp">/upload/</span> &#123;</span><br><span class="line">    alias   <span class="regexp">/home/</span>www<span class="regexp">/html/u</span>pload/;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>对，就是必须用：”^~” ，这样是不是就已经安全了呢。 如果你再访问下：<a target="_blank" rel="noopener" href="http://www.a.com/upload/1.php">http://www.a.com/upload/1.php</a>  你会发现，这段代码源码显示出来了。 这个其实对于我们而言也是不想见到了。 一段显示源码，在各个搜索引擎，很容易通过所有特殊关键字，搜索到改文件的。</p>
+<p>那么我们该怎么样配置安全的上存目录呢？ 对，你想到了：限制允许的特殊文件类型。</p>
+<p>改造如下：</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">location</span> <span class="regexp">~* \.php$</span> &#123;</span><br><span class="line"><span class="attribute">proxy_pass</span> http://www.a.com;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="section">location</span><span class="regexp"> ^~</span> /upload/ &#123;</span><br><span class="line">　　<span class="attribute">if</span> (<span class="variable">$request_filename</span> ! <span class="regexp">~* \.(jpg|jpeg|gif|png|swf|zip|rar|txt)$)</span> &#123;</span><br><span class="line">　　<span class="attribute">return</span> <span class="number">403</span>;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="attribute">alias</span> /home/www/html/upload/;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p> 只要不是满足上面扩展名文件，就自动提示：403 不能访问，有可以避免源代码显示。</p>
+<p>刚才从匹配结果已经知道了，同级不带任何匹配符的，是以右为准匹配。 那么，如果都用正则表达式，以什么方式匹配呢？</p>
+<p>测试如下：(新建配置文件，server 包含)</p>
+<figure class="highlight crmsh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">location</span> <span class="title">~* \.jpg</span>$ &#123;</span><br><span class="line">        return <span class="number">402</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">location</span> <span class="title">~* 1</span>\.jpg$ &#123;</span><br><span class="line">        return <span class="number">403</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>结果如下：</p>
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">402 Payment Required </span></span><br><span class="line"><span class="section">---------------------------------</span></span><br><span class="line"><span class="code"> nginx/0.8.7</span></span><br></pre></td></tr></table></figure>
+<p>看来是返回的是：402 上面一个呢。 按理论说，1.jpg 配置 比 .jpg 更准确，看来跟上面说的顺序不同，那它会不会是那个在前以那个匹配呢？ 我们再测试下：</p>
+<figure class="highlight crmsh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">location</span> <span class="title">~* 1</span>\.jpg$ &#123;</span><br><span class="line">        return <span class="number">403</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">location</span> <span class="title">~* \.jpg</span>$ &#123;</span><br><span class="line">        return <span class="number">402</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>返回结果是： </p>
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">403 Forbidden </span></span><br><span class="line"><span class="section">---------------------------------</span></span><br><span class="line">nginx/0.8.7</span><br></pre></td></tr></table></figure>
+<p>哈哈，恰好相反，看来我的推断是正确的，如果都是正则，都能够匹配，以配置文件出现顺序来，谁在前谁优先。 一气说了，不知道朋友你，明白我的思路吗？这样比较会很多很多，大家可以逐一测试。 熟悉location 配置，对于熟练运用，nginx 是一个必备基数。 因为，nginx 太灵活，也太流行了。上面的问题，也许朋友你，会遇到。希望对你有帮助。</p>
+<p>===================================================================</p>
+<p>沉默：沉心思考，默默学习！</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2013/12/29/nginx-location-%E9%85%8D%E7%BD%AE%E9%98%90%E8%BF%B0%E4%BC%98%E5%85%88%E7%BA%A7%E5%88%AB%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E/" data-id="cl9pgeo2k01dqycv12gj64ipp" data-title="nginx location 配置阐述优先级别使用说明" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2013/12/29/%E7%94%A8NginX-keepalived%E5%AE%9E%E7%8E%B0%E9%AB%98%E5%8F%AF%E7%94%A8%E7%9A%84%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          用NginX+keepalived实现高可用的负载均衡
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2013/12/28/%E4%BD%BF%E7%94%A8Nginx%E3%80%81Keepalived%E6%9E%84%E5%BB%BA%E6%96%87%E8%89%BA%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">使用Nginx、Keepalived构建文艺负载均衡</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

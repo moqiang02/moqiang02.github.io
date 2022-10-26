@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>MySQL主主同步配置步骤 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="创建同步用户、修改 &#x2F;etc&#x2F;my.cnf 配置文件，为其添加以下内容、分别重启服务器ODD EVEN 上的mysql服务。 MySQL 主主同步配置    服务器名 IP 系统 MySQL    odd.example.com 192.168.1.116 rhel-5.8 5.5.16   even.example.com 192.168.1.115 rhel-5.8 5.5.16   假设要同">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL主主同步配置步骤">
+<meta property="og:url" content="http://moqiang02.github.io/2014/02/23/MySQL%E4%B8%BB%E4%B8%BB%E5%90%8C%E6%AD%A5%E9%85%8D%E7%BD%AE%E6%AD%A5%E9%AA%A4/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="创建同步用户、修改 &#x2F;etc&#x2F;my.cnf 配置文件，为其添加以下内容、分别重启服务器ODD EVEN 上的mysql服务。 MySQL 主主同步配置    服务器名 IP 系统 MySQL    odd.example.com 192.168.1.116 rhel-5.8 5.5.16   even.example.com 192.168.1.115 rhel-5.8 5.5.16   假设要同">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2014-02-23T02:40:32.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.818Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-MySQL主主同步配置步骤" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2014/02/23/MySQL%E4%B8%BB%E4%B8%BB%E5%90%8C%E6%AD%A5%E9%85%8D%E7%BD%AE%E6%AD%A5%E9%AA%A4/" class="article-date">
+  <time class="dt-published" datetime="2014-02-23T02:40:32.000Z" itemprop="datePublished">2014-02-23</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/mysql/">mysql</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      MySQL主主同步配置步骤
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80-%E5%88%9B%E5%BB%BA%E5%90%8C%E6%AD%A5%E7%94%A8%E6%88%B7"><span class="toc-number">1.</span> <span class="toc-text">一 创建同步用户</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8C-%E4%BF%AE%E6%94%B9-etc-my-cnf-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%EF%BC%8C%E4%B8%BA%E5%85%B6%E6%B7%BB%E5%8A%A0%E4%BB%A5%E4%B8%8B%E5%86%85%E5%AE%B9"><span class="toc-number">2.</span> <span class="toc-text">二 修改 &#x2F;etc&#x2F;my.cnf 配置文件，为其添加以下内容:</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%89-%E5%88%86%E5%88%AB%E9%87%8D%E5%90%AF%E6%9C%8D%E5%8A%A1%E5%99%A8ODD-EVEN-%E4%B8%8A%E7%9A%84mysql%E6%9C%8D%E5%8A%A1"><span class="toc-number">3.</span> <span class="toc-text">三 分别重启服务器ODD EVEN 上的mysql服务</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9B%9B-%E5%88%86%E5%88%AB%E5%9C%A8%E6%9C%8D%E5%8A%A1%E5%99%A8ODD%E3%80%81EVEN-%E4%B8%8A%E6%9F%A5%E7%9C%8B%E5%81%9A%E4%B8%BA%E4%B8%BB%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%8A%B6%E6%80%81"><span class="toc-number">4.</span> <span class="toc-text">四 分别在服务器ODD、EVEN 上查看做为主服务器状态</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%94-%E5%88%86%E5%88%AB%E5%9C%A8%E6%9C%8D%E5%8A%A1%E5%99%A8ODD%E3%80%81EVEN%E4%B8%8A%E7%94%A8change-master%E8%AF%AD%E5%8F%A5%E6%8C%87%E5%AE%9A%E5%90%8C%E6%AD%A5%E4%BD%8D%E7%BD%AE"><span class="toc-number">5.</span> <span class="toc-text">五 分别在服务器ODD、EVEN上用change master语句指定同步位置:</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%AD-%E5%88%86%E5%88%AB%E5%9C%A8%E6%9C%8D%E5%8A%A1%E5%99%A8ODD%E3%80%81EVEN%E4%B8%8A%E5%90%AF%E5%8A%A8%E4%BB%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%BA%BF%E7%A8%8B"><span class="toc-number">6.</span> <span class="toc-text">六 分别在服务器ODD、EVEN上启动从服务器线程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%83-%E6%B5%8B%E8%AF%95"><span class="toc-number">7.</span> <span class="toc-text">七 测试</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <p>创建同步用户、修改 /etc/my.cnf 配置文件，为其添加以下内容、分别重启服务器ODD EVEN 上的mysql服务。</p>
+<p>MySQL 主主同步配置</p>
+<table>
+<thead>
+<tr>
+<th>服务器名</th>
+<th>IP</th>
+<th>系统</th>
+<th>MySQL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>odd.example.com</td>
+<td>192.168.1.116</td>
+<td>rhel-5.8</td>
+<td>5.5.16</td>
+</tr>
+<tr>
+<td>even.example.com</td>
+<td>192.168.1.115</td>
+<td>rhel-5.8</td>
+<td>5.5.16</td>
+</tr>
+</tbody></table>
+<p>假设要同步的库是 db_rocky</p>
+<span id="more"></span>
+
+<h3 id="一-创建同步用户"><a href="#一-创建同步用户" class="headerlink" title="一 创建同步用户"></a>一 创建同步用户</h3><p>在 ODD上</p>
+<figure class="highlight ps"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; grant replication slave on *.* to <span class="string">&#x27;water&#x27;</span><span class="string">@&#x27;192.168.1.115&#x27; identified by &#x27;cdio2010&#x27;;   </span></span><br><span class="line"><span class="string">Query OK, 0 rows affected (0.00 sec)   </span></span><br><span class="line"><span class="string">mysql&gt; flush privileges;   </span></span><br><span class="line"><span class="string">Query OK, 0 rows affected (0.00 sec)   </span></span><br></pre></td></tr></table></figure>
+<p>在 EVEN 上</p>
+<figure class="highlight ps"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; grant replication slave on *.* to <span class="string">&#x27;water&#x27;</span><span class="string">@&#x27;192.168.1.116&#x27; identified by &#x27;cdio2010&#x27;;  </span></span><br><span class="line"><span class="string">Query OK, 0 rows affected (0.11 sec)  </span></span><br><span class="line"><span class="string">mysql&gt; flush privileges;  </span></span><br><span class="line"><span class="string">Query OK, 0 rows affected (0.00 sec)  </span></span><br></pre></td></tr></table></figure>
+<h3 id="二-修改-etc-my-cnf-配置文件，为其添加以下内容"><a href="#二-修改-etc-my-cnf-配置文件，为其添加以下内容" class="headerlink" title="二 修改 /etc/my.cnf 配置文件，为其添加以下内容:"></a>二 修改 /etc/my.cnf 配置文件，为其添加以下内容:</h3><p>在 ODD 上</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[mysqld]</span>  </span><br><span class="line"><span class="attr">binlog-do-db</span>=db_rocky <span class="comment">#需要记录进制日志的数据库.如果有多个数据库可用逗号分隔,或者使用多个binlog-do-db选项  </span></span><br><span class="line"><span class="attr">binlog-ignore-db</span>=mysql <span class="comment">#不需要记录进制日志的数据库.如果有多个数据库可用逗号分隔,或者使用多个binlog-do-db选项  </span></span><br><span class="line"><span class="attr">replicate-do-db</span>=db_rocky <span class="comment">#需要进行同步的数据库.如果有多个数据库可用逗号分隔,或者使用多个replicate-do-db选项  </span></span><br><span class="line"><span class="attr">replicate-ignore-db</span>=mysql,information_schema <span class="comment">#不需要同步的数据库.如果有多个数据库可用逗号分隔,或者使用多个replicate-ignore-db选项  </span></span><br><span class="line"><span class="comment">#同步参数:  </span></span><br><span class="line"><span class="comment">#保证slave挂在任何一台master上都会接收到另一个master的写入信息  </span></span><br><span class="line">log-slave-updates  </span><br><span class="line"><span class="attr">sync_binlog</span>=<span class="number">1</span>  </span><br><span class="line"><span class="attr">auto_increment_offset</span>=<span class="number">1</span>   <span class="comment">#设置自动增长的字段的偏移量，即初始值为1  </span></span><br><span class="line"><span class="attr">auto_increment_increment</span>=<span class="number">2</span>  <span class="comment">#每次增长2  </span></span><br><span class="line"><span class="attr">slave-skip-errors</span>=all <span class="comment">#过滤掉一些没啥大问题的错误  </span></span><br></pre></td></tr></table></figure>
+<p>在 EVEN 上</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[mysqld]</span>  </span><br><span class="line"><span class="attr">server-id</span>=<span class="number">2</span> <span class="comment">#设置一个不同的id、注意这里在my.cnf里面有个默认值是 1 、把默认值改掉、而不能新增一个server-id  </span></span><br><span class="line"><span class="attr">binlog-do-db</span>=db_rocky <span class="comment">#需要记录二进制日志的数据库.如果有多个数据库可用逗号分隔,或者使用多个binlog-do-db选项  </span></span><br><span class="line"><span class="attr">binlog-ignore-db</span>=mysql <span class="comment">#不需要记录进制日志的数据库.如果有多个数据库可用逗号分隔,或者使用多个binlog-ignore-db选项  </span></span><br><span class="line"><span class="comment">#需要同步的数据库  </span></span><br><span class="line"><span class="attr">replicate-do-db</span>=db_rocky <span class="comment">#需要进行同步的数据库.如果有多个数据库可用逗号分隔,或者使用多个binlog-do-db选项  </span></span><br><span class="line"><span class="attr">replicate-ignore-db</span>=mysql,information_schema <span class="comment">#不需要同步的数据库.如果有多个数据库可用逗号分隔,或者使用多个binlog-do-db选项  </span></span><br><span class="line"><span class="comment">#同步参数:  </span></span><br><span class="line"><span class="comment">#保证slave挂在任何一台master上都会接收到另一个master的写入信息  </span></span><br><span class="line">log-slave-updates  </span><br><span class="line"><span class="attr">sync_binlog</span>=<span class="number">1</span>  </span><br><span class="line"><span class="attr">auto_increment_offset</span>=<span class="number">2</span>  </span><br><span class="line"><span class="attr">auto_increment_increment</span>=<span class="number">2</span>  </span><br><span class="line"><span class="attr">slave-skip-errors</span>=all <span class="comment">#过滤掉一些没啥大问题的错误  </span></span><br></pre></td></tr></table></figure>
+<p>注：二都只有server-id不同和 auto-increment- offset不同auto-increment-increment的值应设为整个结构中服务器的总数，本案例用到两 台服务器，所以值设为2。</p>
+<h3 id="三-分别重启服务器ODD-EVEN-上的mysql服务"><a href="#三-分别重启服务器ODD-EVEN-上的mysql服务" class="headerlink" title="三 分别重启服务器ODD EVEN 上的mysql服务"></a>三 分别重启服务器ODD EVEN 上的mysql服务</h3><h3 id="四-分别在服务器ODD、EVEN-上查看做为主服务器状态"><a href="#四-分别在服务器ODD、EVEN-上查看做为主服务器状态" class="headerlink" title="四 分别在服务器ODD、EVEN 上查看做为主服务器状态"></a>四 分别在服务器ODD、EVEN 上查看做为主服务器状态</h3><p>在ODD</p>
+<figure class="highlight ps"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; flush tables with read lock;<span class="comment">#防止进入新的数据  </span></span><br><span class="line">Query OK, <span class="number">0</span> rows affected (<span class="number">0.00</span> sec)  </span><br><span class="line">mysql&gt; show master status\G;  </span><br><span class="line">*************************** <span class="number">1</span>. row ***************************  </span><br><span class="line">File: mysql<span class="literal">-bin</span>.<span class="number">000007</span>  </span><br><span class="line">Position: <span class="number">438</span>  </span><br><span class="line">Binlog_Do_DB: db_rocky  </span><br><span class="line">Binlog_Ignore_DB: mysql  </span><br><span class="line"><span class="number">1</span> row <span class="keyword">in</span> <span class="built_in">set</span> (<span class="number">0.00</span> sec)  </span><br></pre></td></tr></table></figure>
+<p>在EVEN</p>
+<figure class="highlight ps"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; flush tables with read lock;  </span><br><span class="line">Query OK, <span class="number">0</span> rows affected (<span class="number">0.00</span> sec)  </span><br><span class="line">mysql&gt; show master status\G;  </span><br><span class="line">*************************** <span class="number">1</span>. row ***************************  </span><br><span class="line">File: mysql<span class="literal">-bin</span>.<span class="number">000008</span>  </span><br><span class="line">Position: <span class="number">107</span>  </span><br><span class="line">Binlog_Do_DB: db_rocky  </span><br><span class="line">Binlog_Ignore_DB: mysql  </span><br><span class="line"><span class="number">1</span> row <span class="keyword">in</span> <span class="built_in">set</span> (<span class="number">0.01</span> sec)  </span><br></pre></td></tr></table></figure>
+<h3 id="五-分别在服务器ODD、EVEN上用change-master语句指定同步位置"><a href="#五-分别在服务器ODD、EVEN上用change-master语句指定同步位置" class="headerlink" title="五 分别在服务器ODD、EVEN上用change master语句指定同步位置:"></a>五 分别在服务器ODD、EVEN上用change master语句指定同步位置:</h3><p>在ODD</p>
+<figure class="highlight ps"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; change master to master_host=<span class="string">&#x27;192.168.1.115&#x27;</span>,master_user=<span class="string">&#x27;water&#x27;</span>,master_password=<span class="string">&#x27;cdio2010&#x27;</span>,  </span><br><span class="line">-&gt; master_log_file=<span class="string">&#x27;mysql-bin.000008&#x27;</span>,master_log_pos=<span class="number">107</span>;  </span><br><span class="line">Query OK, <span class="number">0</span> rows affected (<span class="number">0.05</span> sec)  </span><br></pre></td></tr></table></figure>
+<p>在EVEN</p>
+<figure class="highlight ps"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; change master to master_host=<span class="string">&#x27;192.168.1.116&#x27;</span>,master_user=<span class="string">&#x27;water&#x27;</span>,master_password=<span class="string">&#x27;cdio2010&#x27;</span>,  </span><br><span class="line">-&gt; master_log_file=<span class="string">&#x27;mysql-bin.000007&#x27;</span>,master_log_pos=<span class="number">438</span>;  </span><br><span class="line">Query OK, <span class="number">0</span> rows affected (<span class="number">0.15</span> sec)  </span><br></pre></td></tr></table></figure>
+<p>注：master_log_file，master_log_pos由上面主服务器查出的状态值中确定<br>master_log_file对应File，master_log_pos对应Position<br>在ODD EVEN上</p>
+<figure class="highlight ps"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; unlock tables;  </span><br><span class="line">Query OK, <span class="number">0</span> rows affected (<span class="number">0.00</span> sec)  </span><br></pre></td></tr></table></figure>
+<h3 id="六-分别在服务器ODD、EVEN上启动从服务器线程"><a href="#六-分别在服务器ODD、EVEN上启动从服务器线程" class="headerlink" title="六 分别在服务器ODD、EVEN上启动从服务器线程"></a>六 分别在服务器ODD、EVEN上启动从服务器线程</h3><figure class="highlight ps"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; <span class="built_in">start</span> slave;  </span><br><span class="line">Query OK, <span class="number">0</span> rows affected (<span class="number">0.00</span> sec)  </span><br></pre></td></tr></table></figure>
+<p>分别在服务器ODD、EVEN上查看从服务器状态 :</p>
+<figure class="highlight ps"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">ODD上   </span><br><span class="line">mysql&gt; show slave status\G;   </span><br><span class="line">*************************** <span class="number">1</span>. row ***************************   </span><br><span class="line">主要关注以下 <span class="number">2</span> 个参数：   </span><br><span class="line">...   </span><br><span class="line">...   </span><br><span class="line">Slave_IO_Running: Yes   </span><br><span class="line">Slave_SQL_Running: Yes   </span><br><span class="line">...   </span><br><span class="line">...   </span><br><span class="line">EVEN上：   </span><br><span class="line">mysql&gt; show slave status\G;   </span><br><span class="line">*************************** <span class="number">1</span>. row ***************************   </span><br><span class="line">主要关注以下 <span class="number">2</span> 个参数：   </span><br><span class="line">...   </span><br><span class="line">...   </span><br><span class="line">Slave_IO_Running: Yes   </span><br><span class="line">Slave_SQL_Running: Yes   </span><br><span class="line">...   </span><br><span class="line">...   </span><br></pre></td></tr></table></figure>
+<h3 id="七-测试"><a href="#七-测试" class="headerlink" title="七 测试"></a>七 测试</h3><figure class="highlight ps"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">EVEN 上  </span><br><span class="line">mysql&gt; show databases;  </span><br><span class="line">+<span class="literal">--------------------</span>+  </span><br><span class="line">| Database |  </span><br><span class="line">+<span class="literal">--------------------</span>+  </span><br><span class="line">| information_schema |  </span><br><span class="line">| db_rocky |  </span><br><span class="line">| mysql |  </span><br><span class="line">| performance_schema |  </span><br><span class="line">| test |  </span><br><span class="line">+<span class="literal">--------------------</span>+  </span><br><span class="line"><span class="number">5</span> rows <span class="keyword">in</span> <span class="built_in">set</span> (<span class="number">0.00</span> sec)  </span><br><span class="line">mysql&gt; use db_rocky;  </span><br><span class="line">Database changed  </span><br><span class="line">mysql&gt; show tables;  </span><br><span class="line">Empty <span class="built_in">set</span> (<span class="number">0.00</span> sec)  </span><br><span class="line">mysql&gt; create table water (id int);  </span><br><span class="line">Query OK, <span class="number">0</span> rows affected (<span class="number">0.04</span> sec)  </span><br><span class="line">mysql&gt; insert into water values(<span class="number">1</span>);  </span><br><span class="line">Query OK, <span class="number">1</span> row affected (<span class="number">0.01</span> sec)  </span><br><span class="line">mysql&gt; commit;  </span><br><span class="line">Query OK, <span class="number">0</span> rows affected (<span class="number">0.00</span> sec)  </span><br><span class="line">在 ODD 上  </span><br><span class="line">mysql&gt; show tables;  </span><br><span class="line">+<span class="literal">--------------------</span>+  </span><br><span class="line">| Tables_in_db_rocky |  </span><br><span class="line">+<span class="literal">--------------------</span>+  </span><br><span class="line">| t_rocky |  </span><br><span class="line">| water |  </span><br><span class="line">+<span class="literal">--------------------</span>+  </span><br><span class="line"><span class="number">2</span> rows <span class="keyword">in</span> <span class="built_in">set</span> (<span class="number">0.00</span> sec)  </span><br><span class="line">mysql&gt; <span class="built_in">select</span> * from water;  </span><br><span class="line">+<span class="literal">------</span>+  </span><br><span class="line">| id |  </span><br><span class="line">+<span class="literal">------</span>+  </span><br><span class="line">| <span class="number">1</span> |  </span><br><span class="line">+<span class="literal">------</span>+  </span><br><span class="line"><span class="number">1</span> row <span class="keyword">in</span> <span class="built_in">set</span> (<span class="number">0.00</span> sec) </span><br></pre></td></tr></table></figure>
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/02/23/MySQL%E4%B8%BB%E4%B8%BB%E5%90%8C%E6%AD%A5%E9%85%8D%E7%BD%AE%E6%AD%A5%E9%AA%A4/" data-id="cl9pgentv00ogycv180wwfq2v" data-title="MySQL主主同步配置步骤" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/02/23/%E8%A7%A3%E6%9E%90su-su-sudo%E7%9A%84%E5%8C%BA%E5%88%AB/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          解析su,su-,sudo的区别
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/02/22/jquery%E4%B8%ADhtml-%E3%80%81text-%E3%80%81val-%E7%9A%84%E5%8C%BA%E5%88%AB/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">jquery中html()、text()、val()的区别</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>linux高负载下mysql数据库彻底优化 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="同时在线访问量继续增大 对于1G内存的服务器明显感觉到吃力严重时甚至每天都会死机 或者时不时的服务器卡一下 这个问题曾经困扰了我半个多月MySQL使用是很具伸缩性的算法，因此你通常能用很少的内存运行或给MySQL更多的被存以得到更好的性能。安 装好mysql后，配制文件应该在&#x2F;usr&#x2F;local&#x2F;mysql&#x2F;share&#x2F;mysql目录中，配制文件有几个，有my-huge.cnf my-medium">
+<meta property="og:type" content="article">
+<meta property="og:title" content="linux高负载下mysql数据库彻底优化">
+<meta property="og:url" content="http://moqiang02.github.io/2013/06/12/linux%E9%AB%98%E8%B4%9F%E8%BD%BD%E4%B8%8Bmysql%E6%95%B0%E6%8D%AE%E5%BA%93%E5%BD%BB%E5%BA%95%E4%BC%98%E5%8C%96/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="同时在线访问量继续增大 对于1G内存的服务器明显感觉到吃力严重时甚至每天都会死机 或者时不时的服务器卡一下 这个问题曾经困扰了我半个多月MySQL使用是很具伸缩性的算法，因此你通常能用很少的内存运行或给MySQL更多的被存以得到更好的性能。安 装好mysql后，配制文件应该在&#x2F;usr&#x2F;local&#x2F;mysql&#x2F;share&#x2F;mysql目录中，配制文件有几个，有my-huge.cnf my-medium">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2013-06-12T11:23:05.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.979Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-linux高负载下mysql数据库彻底优化" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2013/06/12/linux%E9%AB%98%E8%B4%9F%E8%BD%BD%E4%B8%8Bmysql%E6%95%B0%E6%8D%AE%E5%BA%93%E5%BD%BB%E5%BA%95%E4%BC%98%E5%8C%96/" class="article-date">
+  <time class="dt-published" datetime="2013-06-12T11:23:05.000Z" itemprop="datePublished">2013-06-12</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/mysql/">mysql</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      linux高负载下mysql数据库彻底优化
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E3%80%81key-buffer-size"><span class="toc-number">1.</span> <span class="toc-text">一、key_buffer_size</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8C%E3%80%81query-cache-size"><span class="toc-number">2.</span> <span class="toc-text">二、query_cache_size</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%89%E3%80%81table-cache"><span class="toc-number">3.</span> <span class="toc-text">三、table_cache</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9B%9B%E3%80%81Log-bin"><span class="toc-number">4.</span> <span class="toc-text">四、Log-bin</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E5%BC%80%E5%90%AF%E6%85%A2%E6%9F%A5%E8%AF%A2%E6%97%A5%E5%BF%97"><span class="toc-number">5.</span> <span class="toc-text">五、开启慢查询日志</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E5%85%B6%E4%BB%96%E4%B8%80%E4%BA%9B%E9%87%8D%E8%A6%81%E5%8F%82%E6%95%B0"><span class="toc-number">6.</span> <span class="toc-text">六、其他一些重要参数</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <p>同时在线访问量继续增大 对于1G内存的服务器明显感觉到吃力严重时甚至每天都会死机 或者时不时的服务器卡一下 这个问题曾经困扰了我半个多月MySQL使用是很具伸缩性的算法，因此你通常能用很少的内存运行或给MySQL更多的被存以得到更好的性能。安 装好mysql后，配制文件应该在/usr/local/mysql/share/mysql目录中，配制文件有几个，有my-huge.cnf my-medium.cnf my-large.cnf my-small.cnf,不同的流量的网站和不同配制的服务器环境，当然需要有不同的配制文件了。<br>一般的情况下，my-medium.cnf这 个配制文件就能满足我们的大多需要；一般我们会把配置文件拷贝到/etc/my.cnf 只需要修改这个配置文件就可以了，使用mysqladmin variables extended-status –u root –p 可以看到目前的参数，有３个配置参数是最重要的，即key_buffer_size,query_cache_size,table_cache。</p>
+<span id="more"></span>
+<h3 id="一、key-buffer-size"><a href="#一、key-buffer-size" class="headerlink" title="一、key_buffer_size"></a>一、key_buffer_size</h3><p>key_buffer_size只对MyISAM表起作用，<br>key_buffer_size 指定索引缓冲区的大小，它决定索引处理的速度，尤其是索引读的速度。一般我们设为16M,实际上稍微大一点的站点　这个数字是远远不够的，通过检查状态值 Key_read_requests和Key_reads,可以知道key_buffer_size设置是否合理。比例key_reads / key_read_requests应该尽可能的低，至少是1:100，1:1000更好（上述状态值可以使用SHOW STATUS LIKE ‘key_read%’获得）。 或者如果你装了phpmyadmin 可以通过服务器运行状态看到,笔者推荐用phpmyadmin管理mysql，以下的状态值都是本人通过phpmyadmin获得的实例分析:<br>这个服务器已经运行了20天<br>key_buffer_size - 128M<br>key_read_requests - 650759289<br>key_reads - 79112<br>比例接近1:8000 健康状况非常好<br>另外一个估计key_buffer_size的办法　把你网站数据库的每个表的索引所占空间大小加起来看看以此服务器为例:比较大的几个表索引加起来大概125M 这个数字会随着表变大而变大。</p>
+<h3 id="二、query-cache-size"><a href="#二、query-cache-size" class="headerlink" title="二、query_cache_size"></a>二、query_cache_size</h3><p>从4.0.1开始，MySQL提供了查询缓冲机制。使用查询缓冲，MySQL将SELECT语句和查询结果存放在缓冲区中，今后对于同样的SELECT语句（区分大小写），将直接从缓冲区中读取结果。根据MySQL用户手册，使用查询缓冲最多可以达到238%的效率。<br>通过调节以下几个参数可以知道query_cache_size设置得是否合理<br>Qcache inserts<br>Qcache hits<br>Qcache lowmem prunes<br>Qcache free blocks<br>Qcache total blocks<br>Qcache_lowmem_prunes 的值非常大，则表明经常出现缓冲不够的情况,同时Qcache_hits的值非常大，则表明查询缓冲使用非常频繁，此时需要增加缓冲大小 Qcache_hits的值不大，则表明你的查询重复率很低，这种情况下使用查询缓冲反而会影响效率，那么可以考虑不用查询缓冲。此外，在SELECT语 句中加入SQL_NO_CACHE可以明确表示不使用查询缓冲。<br>Qcache_free_blocks，如果该值非常大，则表明缓冲区中碎片很多query_cache_type指定是否使用查询缓冲<br>我设置:<br>query_cache_size = 32M<br>query_cache_type= 1<br>得到如下状态值:<br>Qcache queries in cache 12737 表明目前缓存的条数<br>Qcache inserts 20649006<br>Qcache hits 79060095 　看来重复查询率还挺高的<br>Qcache lowmem prunes 617913　有这么多次出现缓存过低的情况<br>Qcache not cached 189896 　　<br>Qcache free memory 18573912　　目前剩余缓存空间<br>Qcache free blocks 5328 这个数字似乎有点大　碎片不少<br>Qcache total blocks 30953<br>如果内存允许32M应该要往上加点</p>
+<h3 id="三、table-cache"><a href="#三、table-cache" class="headerlink" title="三、table_cache"></a>三、table_cache</h3><p>table_cache 指定表高速缓存的大小。每当MySQL访问一个表时，如果在表缓冲区中还有空间，该表就被打开并放入其中，这样可以更快地访问表内容。通过检查峰值时间的 状态值Open_tables和Opened_tables，可以决定是否需要增加table_cache的值。如果你发现open_tables等于 table_cache，并且opened_tables在不断增长，那么你就需要增加table_cache的值了（上述状态值可以使用SHOW STATUS LIKE ‘Open%tables’获得）。注意，不能盲目地把table_cache设置成很大的值。如果设置得太高，可能会造成文件描述符不足，从而造成性能 不稳定或者连接失败。<br>对于有1G内存的机器，推荐值是128－256。<br>笔者设置table_cache = 256<br>得到以下状态:<br>Open tables 256<br>Opened tables 9046<br>虽 然open_tables已经等于table_cache，但是相对于服务器运行时间来说,已经运行了20天，opened_tables的值也非常低。 因此，增加table_cache的值应该用处不大。如果运行了6个小时就出现上述值 那就要考虑增大table_cache。</p>
+<h3 id="四、Log-bin"><a href="#四、Log-bin" class="headerlink" title="四、Log-bin"></a>四、Log-bin</h3><p>如 果你不需要记录2进制log 就把这个功能关掉，注意关掉以后就不能恢复出问题前的数据了，需要您手动备份，二进制日志包含所有更新数据的语句，其目的是在恢复数据库时用它来把数据尽 可能恢复到最后的状态。另外，如果做同步复制( Replication )的话，也需要使用二进制日志传送修改情况。<br>log_bin指定日志文 件，如果不提供文件名，MySQL将自己产生缺省文件名。MySQL会在文件名后面自动添加数字引，每次启动服务时，都会重新生成一个新的二进制文件。此 外，使用log-bin-index可以指定索引文件；使用binlog-do-db可以指定记录的数据库；使用binlog-ignore-db可以指 定不记录的数据库。注意的是：binlog-do-db和binlog-ignore-db一次只指定一个数据库，指定多个数据库需要多个语句。而 且，MySQL会将所有的数据库名称改成小写，在指定数据库时必须全部使用小写名字，否则不会起作用。<br>关掉这个功能只需要在他前面加上＃号<br>＃log-bin</p>
+<h3 id="五、开启慢查询日志"><a href="#五、开启慢查询日志" class="headerlink" title="五、开启慢查询日志"></a>五、开启慢查询日志</h3><p>开启慢查询日志( slow query log )<br>慢查询日志对于跟踪有问题的查询非常有用。它记录所有查过long_query_time的查询，如果需要，还可以记录不使用索引的记录。下面是一个慢查询日志的例子：<br>开启慢查询日志，需要设置参数log_slow_queries、long_query_times、log-queries-not-using-indexes。<br>log_slow_queries 指定日志文件，如果不提供文件名，MySQL将自己产生缺省文件名。long_query_times指定慢查询的阈值，缺省是10秒。log- queries-not-using-indexes是4.1.0以后引入的参数，它指示记录不使用索引的查询。笔者设置 long_query_time=10</p>
+<h3 id="六、其他一些重要参数"><a href="#六、其他一些重要参数" class="headerlink" title="六、其他一些重要参数"></a>六、其他一些重要参数</h3><p>笔者设置:<br>sort_buffer_size = 1M<br>max_connections=120<br>wait_timeout =120<br>back_log=100<br>read_buffer_size = 1M<br>thread_cache=32<br>interactive_timeout=120<br>thread_concurrency = 4<br>参数说明:<br>back_log<br>要 求MySQL能有的连接数量。当主要MySQL线程在一个很短时间内得到非常多的连接请求，这就起作用，然后主线程花些时间(尽管很短)检查连接并且启动 一个新线程。back_log值指出在MySQL暂时停止回答新请求之前的短时间内多少个请求可以被存在堆栈中。只有如果期望在一个短时间内有很多连接， 你需要增加它，换句话说，这值对到来的TCP/IP连接的侦听队列的大小。你的操作系统在这个队列大小上有它自己的限制。 Unix listen(2)系统调用的手册页应该有更多的细节。检查你的OS文档找出这个变量的最大值。试图设定back_log高于你的操作系统的限制将是无效 的。<br>max_connections<br>并发连接数目最大，120 超过这个值就会自动恢复，出了问题能自动解决<br>thread_cache<br>没找到具体说明，不过设置为32后 20天才创建了400多个线程 而以前一天就创建了上千个线程 所以还是有用的<br>thread_concurrency<br>＃设置为你的cpu数目x2,例如，只有一个cpu,那么thread_concurrency=2<br>＃有2个cpu,那么thread_concurrency=4<br>skip-innodb<br>＃去掉innodb支持</p>
+<p>附my.cnf全部文件</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Example MySQL config file for medium systems.</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># This is for a system with little memory (32M - 64M) where MySQL plays</span></span><br><span class="line"><span class="comment"># an important part, or systems up to 128M where MySQL is used together with</span></span><br><span class="line"><span class="comment"># other programs (such as a web server)</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># You can copy this file to</span></span><br><span class="line"><span class="comment"># /etc/my.cnf to set global options,</span></span><br><span class="line"><span class="comment"># mysql-data-dir/my.cnf to set server-specific options (in this</span></span><br><span class="line"><span class="comment"># installation this directory is /var/lib/mysql) or</span></span><br><span class="line"><span class="comment"># ~/.my.cnf to set user-specific options.</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># In this file, you can use all long options that a program supports.</span></span><br><span class="line"><span class="comment"># If you want to know which options a program supports, run the program</span></span><br><span class="line"><span class="comment"># with the &quot;--help&quot; option.</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># The following options will be passed to all MySQL clients</span></span><br><span class="line"><span class="section">[client]</span></span><br><span class="line"><span class="comment">#password = your_password</span></span><br><span class="line"><span class="attr">port</span> = <span class="number">3306</span></span><br><span class="line"><span class="attr">socket</span> = /tmp/mysql.sock</span><br><span class="line"><span class="comment">#socket = /var/lib/mysql/mysql.sock</span></span><br><span class="line"><span class="comment"># Here follows entries for some specific programs</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># The MySQL server</span></span><br><span class="line"><span class="section">[mysqld]</span></span><br><span class="line"><span class="attr">port</span> = <span class="number">3306</span></span><br><span class="line"><span class="attr">socket</span> = /tmp/mysql.sock</span><br><span class="line"><span class="comment">#socket = /var/lib/mysql/mysql.sock</span></span><br><span class="line">skip-locking</span><br><span class="line"><span class="attr">key_buffer</span> = <span class="number">128</span>M</span><br><span class="line"><span class="attr">max_allowed_packet</span> = <span class="number">1</span>M</span><br><span class="line"><span class="attr">table_cache</span> = <span class="number">256</span></span><br><span class="line"><span class="attr">sort_buffer_size</span> = <span class="number">1</span>M</span><br><span class="line"><span class="attr">net_buffer_length</span> = <span class="number">16</span>K</span><br><span class="line"><span class="attr">myisam_sort_buffer_size</span> = <span class="number">1</span>M</span><br><span class="line"><span class="attr">max_connections</span>=<span class="number">120</span></span><br><span class="line"><span class="comment">#addnew config</span></span><br><span class="line"><span class="attr">wait_timeout</span> =<span class="number">120</span></span><br><span class="line"><span class="attr">back_log</span>=<span class="number">100</span></span><br><span class="line"><span class="attr">read_buffer_size</span> = <span class="number">1</span>M</span><br><span class="line"><span class="attr">thread_cache</span>=<span class="number">32</span></span><br><span class="line">skip-innodb</span><br><span class="line">skip-bdb</span><br><span class="line">skip-name-resolve</span><br><span class="line"><span class="attr">join_buffer_size</span>=<span class="number">512</span>k</span><br><span class="line"><span class="attr">query_cache_size</span> = <span class="number">32</span>M</span><br><span class="line"><span class="attr">interactive_timeout</span>=<span class="number">120</span></span><br><span class="line"><span class="attr">long_query_time</span>=<span class="number">10</span></span><br><span class="line"><span class="attr">log_slow_queries</span>= /usr/local/mysql4/logs/slow_query.log</span><br><span class="line"><span class="attr">query_cache_type</span>= <span class="number">1</span></span><br><span class="line"><span class="comment"># Try number of CPU&#x27;s*2 for thread_concurrency</span></span><br><span class="line"><span class="attr">thread_concurrency</span> = <span class="number">4</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#end new config</span></span><br><span class="line"><span class="comment"># Don&#x27;t listen on a TCP/IP port at all. This can be a security enhancement,</span></span><br><span class="line"><span class="comment"># if all processes that need to connect to mysqld run on the same host.</span></span><br><span class="line"><span class="comment"># All interaction with mysqld must be made via Unix sockets or named pipes.</span></span><br><span class="line"><span class="comment"># Note that using this option without enabling named pipes on Windows</span></span><br><span class="line"><span class="comment"># (via the &quot;enable-named-pipe&quot; option) will render mysqld useless!</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment">#skip-networking</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Replication Master Server (default)</span></span><br><span class="line"><span class="comment"># binary logging is required for replication</span></span><br><span class="line"><span class="comment">#log-bin</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># required unique id between 1 and 2^32 - 1</span></span><br><span class="line"><span class="comment"># defaults to 1 if master-host is not set</span></span><br><span class="line"><span class="comment"># but will not function as a master if omitted</span></span><br><span class="line"><span class="attr">server-id</span> = <span class="number">1</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Replication Slave (comment out master section to use this)</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># To configure this host as a replication slave, you can choose between</span></span><br><span class="line"><span class="comment"># two methods :</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># 1) Use the CHANGE MASTER TO command (fully described in our manual) -</span></span><br><span class="line"><span class="comment"># the syntax is:</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># CHANGE MASTER TO MASTER_HOST=, MASTER_PORT=,</span></span><br><span class="line"><span class="comment"># MASTER_USER=, MASTER_PASSWORD= ;</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># where you replace , , by quoted strings and</span></span><br><span class="line"><span class="comment"># by the master&#x27;s port number (3306 by default).</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># Example:</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># CHANGE MASTER TO MASTER_HOST=&#x27;125.564.12.1&#x27;, MASTER_PORT=3306,</span></span><br><span class="line"><span class="comment"># MASTER_USER=&#x27;joe&#x27;, MASTER_PASSWORD=&#x27;secret&#x27;;</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># OR</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># 2) Set the variables below. However, in case you choose this method, then</span></span><br><span class="line"><span class="comment"># start replication for the first time (even unsuccessfully, for example</span></span><br><span class="line"><span class="comment"># if you mistyped the password in master-password and the slave fails to</span></span><br><span class="line"><span class="comment"># connect), the slave will create a master.info file, and any later</span></span><br><span class="line"><span class="comment"># change in this file to the variables&#x27; values below will be ignored and</span></span><br><span class="line"><span class="comment"># overridden by the content of the master.info file, unless you shutdown</span></span><br><span class="line"><span class="comment"># the slave server, delete master.info and restart the slaver server.</span></span><br><span class="line"><span class="comment"># For that reason, you may want to leave the lines below untouched</span></span><br><span class="line"><span class="comment"># (commented) and instead use CHANGE MASTER TO (see above)</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># required unique id between 2 and 2^32 - 1</span></span><br><span class="line"><span class="comment"># (and different from the master)</span></span><br><span class="line"><span class="comment"># defaults to 2 if master-host is set</span></span><br><span class="line"><span class="comment"># but will not function as a slave if omitted</span></span><br><span class="line"><span class="comment">#server-id = 2</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># The replication master for this slave - required</span></span><br><span class="line"><span class="comment">#master-host =</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># The username the slave will use for authentication when connecting</span></span><br><span class="line"><span class="comment"># to the master - required</span></span><br><span class="line"><span class="comment">#master-user =</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># The password the slave will authenticate with when connecting to</span></span><br><span class="line"><span class="comment"># the master - required</span></span><br><span class="line"><span class="comment">#master-password =</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># The port the master is listening on.</span></span><br><span class="line"><span class="comment"># optional - defaults to 3306</span></span><br><span class="line"><span class="comment">#master-port =</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># binary logging - not required for slaves, but recommended</span></span><br><span class="line"><span class="comment">#log-bin</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Point the following paths to different dedicated disks</span></span><br><span class="line"><span class="comment">#tmpdir = /tmp/</span></span><br><span class="line"><span class="comment">#log-update = /path-to-dedicated-directory/hostname</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Uncomment the following if you are using BDB tables</span></span><br><span class="line"><span class="comment">#bdb_cache_size = 4M</span></span><br><span class="line"><span class="comment">#bdb_max_lock = 10000</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Uncomment the following if you are using InnoDB tables</span></span><br><span class="line"><span class="comment">#innodb_data_home_dir = /var/lib/mysql/</span></span><br><span class="line"><span class="comment">#innodb_data_file_path = ibdata1:10M:autoextend</span></span><br><span class="line"><span class="comment">#innodb_log_group_home_dir = /var/lib/mysql/</span></span><br><span class="line"><span class="comment">#innodb_log_arch_dir = /var/lib/mysql/</span></span><br><span class="line"><span class="comment"># You can set .._buffer_pool_size up to 50 - 80 %</span></span><br><span class="line"><span class="comment"># of RAM but beware of setting memory usage too high</span></span><br><span class="line"><span class="comment">#innodb_buffer_pool_size = 16M</span></span><br><span class="line"><span class="comment">#innodb_additional_mem_pool_size = 2M</span></span><br><span class="line"><span class="comment"># Set .._log_file_size to 25 % of buffer pool size</span></span><br><span class="line"><span class="comment">#innodb_log_file_size = 5M</span></span><br><span class="line"><span class="comment">#innodb_log_buffer_size = 8M</span></span><br><span class="line"><span class="comment">#innodb_flush_log_at_trx_commit = 1</span></span><br><span class="line"><span class="comment">#innodb_lock_wait_timeout = 50</span></span><br><span class="line"></span><br><span class="line"><span class="section">[mysqldump]</span></span><br><span class="line">quick</span><br><span class="line"><span class="attr">max_allowed_packet</span> = <span class="number">16</span>M</span><br><span class="line"></span><br><span class="line"><span class="section">[mysql]</span></span><br><span class="line">no-auto-rehash</span><br><span class="line"><span class="comment"># Remove the next comment character if you are not familiar with SQL</span></span><br><span class="line"><span class="comment">#safe-updates</span></span><br><span class="line"></span><br><span class="line"><span class="section">[isamchk]</span></span><br><span class="line"><span class="attr">key_buffer</span> = <span class="number">20</span>M</span><br><span class="line"><span class="attr">sort_buffer_size</span> = <span class="number">20</span>M</span><br><span class="line"><span class="attr">read_buffer</span> = <span class="number">2</span>M</span><br><span class="line"><span class="attr">write_buffer</span> = <span class="number">2</span>M</span><br><span class="line"></span><br><span class="line"><span class="section">[myisamchk]</span></span><br><span class="line"><span class="attr">key_buffer</span> = <span class="number">20</span>M</span><br><span class="line"><span class="attr">sort_buffer_size</span> = <span class="number">20</span>M</span><br><span class="line"><span class="attr">read_buffer</span> = <span class="number">2</span>M</span><br><span class="line"><span class="attr">write_buffer</span> = <span class="number">2</span>M</span><br><span class="line"></span><br><span class="line"><span class="section">[mysqlhotcopy]</span></span><br><span class="line">interactive-timeout </span><br></pre></td></tr></table></figure>
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2013/06/12/linux%E9%AB%98%E8%B4%9F%E8%BD%BD%E4%B8%8Bmysql%E6%95%B0%E6%8D%AE%E5%BA%93%E5%BD%BB%E5%BA%95%E4%BC%98%E5%8C%96/" data-id="cl9pgeo1r01c0ycv10h970xw7" data-title="linux高负载下mysql数据库彻底优化" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2013/06/12/Apache%E7%A6%81%E6%AD%A2%E8%AE%BF%E9%97%AE%E7%BD%91%E7%AB%99%E5%AD%90%E7%9B%AE%E5%BD%95%E7%9A%84%E6%96%B9%E6%B3%95/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          Apache禁止访问网站子目录的方法
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2013/05/30/Mysql%E4%BC%98%E5%8C%96%E9%85%8D%E7%BD%AE/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">Mysql优化配置</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

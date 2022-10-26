@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Nginx + Keepalived 实例（测试可行） | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="Nginx_Master: 192.168.1.103 提供负载均衡Nginx_BackUp: 192.168.1.104 负载均衡备机Nginx_VIP_TP: 192.168.1.108 网站的 VIP 地址(虚拟 IP) 原理：VIP 是外网访问的IP地址，通过 keepalived 设置，以及 VRRP 将 VIP 绑定到主机和备机上，通过权重实现控制。当主机挂掉后，keepalived">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Nginx + Keepalived 实例（测试可行）">
+<meta property="og:url" content="http://moqiang02.github.io/2013/12/14/Nginx-Keepalived-%E5%AE%9E%E4%BE%8B%EF%BC%88%E6%B5%8B%E8%AF%95%E5%8F%AF%E8%A1%8C%EF%BC%89/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="Nginx_Master: 192.168.1.103 提供负载均衡Nginx_BackUp: 192.168.1.104 负载均衡备机Nginx_VIP_TP: 192.168.1.108 网站的 VIP 地址(虚拟 IP) 原理：VIP 是外网访问的IP地址，通过 keepalived 设置，以及 VRRP 将 VIP 绑定到主机和备机上，通过权重实现控制。当主机挂掉后，keepalived">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2013-12-14T14:50:11.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.829Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Nginx-Keepalived-实例（测试可行）" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2013/12/14/Nginx-Keepalived-%E5%AE%9E%E4%BE%8B%EF%BC%88%E6%B5%8B%E8%AF%95%E5%8F%AF%E8%A1%8C%EF%BC%89/" class="article-date">
+  <time class="dt-published" datetime="2013-12-14T14:50:11.000Z" itemprop="datePublished">2013-12-14</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/nginx/">nginx</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Nginx + Keepalived 实例（测试可行）
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <p>Nginx_Master: 192.168.1.103 提供负载均衡<br>Nginx_BackUp: 192.168.1.104 负载均衡备机<br>Nginx_VIP_TP: 192.168.1.108 网站的 VIP 地址(虚拟 IP)</p>
+<p>原理：<br>VIP 是外网访问的IP地址，通过 keepalived 设置，以及 VRRP 将 VIP 绑定到主机和备机上，通过权重实现控制。当主机挂掉后，keepalived 释放对主机的控制，备机接管VIP。（VIP地址直接在keepalived.conf文件内填写即可，不需要使用ifconfig命令增加）</p>
+<p>扩展：<br>主机和备机可进一步延伸，它们只通过 Nginx 提供负载均衡。再让其它的机器提供真实的 web 服务。  </p>
+<span id="more"></span>
+
+<h3 id="安装-Nginx-省略"><a href="#安装-Nginx-省略" class="headerlink" title="安装 Nginx (省略)"></a>安装 Nginx (省略)</h3><p><a target="_blank" rel="noopener" href="http://blog.sina.com.cn/s/blog_5f54f0be0100yqm7.html">Linux–nginx源码安装/配置</a></p>
+<h3 id="Keepalived-安装"><a href="#Keepalived-安装" class="headerlink" title="Keepalived 安装"></a>Keepalived 安装</h3><p>下载地址: <a target="_blank" rel="noopener" href="http://www.keepalived.org/download.html">http://www.keepalived.org/download.html</a></p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">wget http:<span class="regexp">//</span>www.keepalived.org<span class="regexp">/software/</span>keepalived-<span class="number">1.2</span>.<span class="number">7</span>.tar.gz</span><br><span class="line">tar -zxf keepalived-<span class="number">1.2</span>.<span class="number">7</span>.tar.gz</span><br><span class="line">cd keepalived-<span class="number">1.2</span>.<span class="number">7</span></span><br><span class="line"></span><br><span class="line"><span class="number">64</span> 位系统：</span><br><span class="line">.<span class="regexp">/configure --sysconf=/</span>etc --prefix=<span class="regexp">/usr/</span>local<span class="regexp">/keepalived --with-kernel-dir=/u</span>sr<span class="regexp">/src/</span>kernels<span class="regexp">/2.6.32-358.2.1.el6.x86_64/</span></span><br><span class="line">或 <span class="number">32</span> 位系统:</span><br><span class="line">.<span class="regexp">/configure --sysconf=/</span>etc --prefix=<span class="regexp">/usr/</span>local<span class="regexp">/keepalived --with-kernel-dir=/u</span>sr<span class="regexp">/src/</span>kernels<span class="regexp">/2.6.32-358.6.2.el6.i686/</span></span><br></pre></td></tr></table></figure>
+<p>可通过 getconf LONG_BIT 得到系统位数。</p>
+<p>参数解释:<br><code>--sysconf</code> 指定了配置文件的地址.即：/etc/keepalived/keepalived.conf<br><code>--prefix</code> 指定了安装目录<br><code>--with-kernel-dir</code> 指定使用内核源码中的头文件,即 include 目录。只有使用 LVS 时才需要这个参数，其它的时候不需要。</p>
+<blockquote>
+<p>如果报错:<br>configure: error: Popt libraries is required<br>解决:<br><code>yum install popt-devel</code>  </p>
+</blockquote>
+<p>再<code>configue .</code>成功后提示：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">Keepalived</span> <span class="string">configuration</span></span><br><span class="line"><span class="string">------------------------</span></span><br><span class="line"><span class="attr">Keepalived version       :</span> <span class="number">1.2</span><span class="number">.7</span></span><br><span class="line"><span class="attr">Compiler                 :</span> <span class="string">gcc</span></span><br><span class="line"><span class="attr">Compiler flags           :</span> <span class="string">-g</span> <span class="string">-O2</span></span><br><span class="line"><span class="attr">Extra Lib                :</span> <span class="string">-lpopt</span> <span class="string">-lssl</span> <span class="string">-lcrypto</span> </span><br><span class="line"><span class="attr">Use IPVS Framework       :</span> <span class="literal">Yes</span></span><br><span class="line"><span class="attr">IPVS sync daemon support :</span> <span class="literal">Yes</span></span><br><span class="line"><span class="attr">IPVS use libnl           :</span> <span class="literal">No</span></span><br><span class="line"><span class="attr">Use VRRP Framework       :</span> <span class="literal">Yes</span></span><br><span class="line"><span class="attr">Use VRRP VMAC            :</span> <span class="literal">Yes</span></span><br><span class="line"><span class="attr">SNMP support             :</span> <span class="literal">No</span></span><br><span class="line"><span class="attr">Use Debug flags          :</span> <span class="literal">No</span></span><br><span class="line"></span><br><span class="line"><span class="string">安装：</span></span><br><span class="line"><span class="string">make</span></span><br><span class="line"><span class="string">make</span> <span class="string">install</span></span><br></pre></td></tr></table></figure>
+<h3 id="设置成为服务并开机启动"><a href="#设置成为服务并开机启动" class="headerlink" title="设置成为服务并开机启动:"></a>设置成为服务并开机启动:</h3><figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">cp <span class="regexp">/usr/</span>local<span class="regexp">/keepalived/</span>sbin<span class="regexp">/keepalived /u</span>sr<span class="regexp">/sbin/</span></span><br><span class="line"></span><br><span class="line"><span class="regexp">/etc/</span>rc.d<span class="regexp">/init.d/</span>keepalived status</span><br><span class="line">chkconfig --add keepalived</span><br><span class="line">chkconfig keepalived on</span><br></pre></td></tr></table></figure>
+<p>（注：也可使用yum命令安装：<code>yum -y install keepalived</code>）</p>
+<h3 id="设置主机上的配置文件内容："><a href="#设置主机上的配置文件内容：" class="headerlink" title="设置主机上的配置文件内容："></a>设置主机上的配置文件内容：</h3><figure class="highlight pf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/keepalived/keepalived.conf</span><br><span class="line"></span><br><span class="line">! Configuration File <span class="keyword">for</span> keepalived</span><br><span class="line"></span><br><span class="line">global_defs &#123;</span><br><span class="line">   notification_email &#123;</span><br><span class="line">     sunyu@easymobi.cn    <span class="comment">#设置报警邮件地址，可以设置多个，每行一个。需要开启sendmail服务。</span></span><br><span class="line">     wuxuegang.<span class="number">123</span>@<span class="number">163</span>.com</span><br><span class="line">   &#125;</span><br><span class="line">   notification_email_from pub@easymobi.cn      <span class="comment">#设置邮件的发送地址</span></span><br><span class="line">   smtp_server <span class="number">127.0</span>.<span class="number">0.1</span>        <span class="comment">#设置SMTP Server地址</span></span><br><span class="line">   smtp_connect_timeout <span class="number">30</span>       <span class="comment">#设置SMTP Server的超时时间</span></span><br><span class="line">   router_id LVS_DEVEL       <span class="comment">#表示运行Keepalived服务器的一个标识。发邮件时显示大邮件主题中的信息</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">vrrp_instance VI_1 &#123;</span><br><span class="line">    <span class="keyword">state</span> MASTER      <span class="comment">#指定节点为主节点 备用节点上设置为BACKUP即可</span></span><br><span class="line">    interface eth0      <span class="comment">#绑定虚拟IP的网络接口</span></span><br><span class="line">    virtual_router_id <span class="number">51</span>      <span class="comment">#虚拟路由标识，这个标识是一个数字，同一个vrrp实例使用唯一的标识，两个节点必须一致</span></span><br><span class="line">    <span class="comment"># 此处是主 Nginx 的 IP 地址.</span></span><br><span class="line">    mcast_src_ip <span class="number">192.168</span>.<span class="number">1.103</span></span><br><span class="line">    <span class="comment"># 该机的 priority(优先) 为 100</span></span><br><span class="line">    priority <span class="number">100</span>        <span class="comment">#主节点的优先级（1-254之间），备用节点必须比主节点优先级低</span></span><br><span class="line">    advert_int <span class="number">1</span>        <span class="comment">#组播信息发送间隔，两个节点设置必须一样 </span></span><br><span class="line">    authentication &#123;     <span class="comment">#设置验证信息，两个节点必须一致 </span></span><br><span class="line">        auth_type PASS</span><br><span class="line">        auth_pass <span class="number">1111222</span></span><br><span class="line">    &#125;</span><br><span class="line">    virtual_ipaddress &#123;       <span class="comment">#指定虚拟IP, 两个节点设置必须一样 </span></span><br><span class="line">        <span class="number">192.168</span>.<span class="number">1.108</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>前面的结构那里已经规定好了 VIP 和 主备机的 IP, 所以这里按上面的填。</p>
+<h3 id="备机的配置文件"><a href="#备机的配置文件" class="headerlink" title="备机的配置文件:"></a>备机的配置文件:</h3><figure class="highlight pf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">! Configuration File <span class="keyword">for</span> keepalived</span><br><span class="line"></span><br><span class="line">global_defs &#123;</span><br><span class="line">   notification_email &#123;</span><br><span class="line">     sunyu@easymobi.cn</span><br><span class="line">     wuxuegang.<span class="number">123</span>@<span class="number">163</span>.com</span><br><span class="line">   &#125;</span><br><span class="line">   notification_email_from pub@easymobi.cn</span><br><span class="line">   smtp_server <span class="number">127.0</span>.<span class="number">0.1</span></span><br><span class="line">   smtp_connect_timeout <span class="number">30</span></span><br><span class="line">   router_id LVS_DEVEL</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">vrrp_instance VI_1 &#123;</span><br><span class="line">    <span class="keyword">state</span> SLAVER</span><br><span class="line">    interface eth0</span><br><span class="line">    virtual_router_id <span class="number">51</span></span><br><span class="line">    <span class="comment"># 此处是备 Nginx 的 IP 地址.</span></span><br><span class="line">    mcast_src_ip <span class="number">192.168</span>.<span class="number">1.104</span></span><br><span class="line">    <span class="comment"># 该机的 priority(优先) 为 99</span></span><br><span class="line">    priority <span class="number">99</span></span><br><span class="line">    advert_int <span class="number">1</span></span><br><span class="line">    authentication &#123;</span><br><span class="line">        auth_type PASS</span><br><span class="line">        auth_pass <span class="number">1111222</span></span><br><span class="line">    &#125;</span><br><span class="line">    virtual_ipaddress &#123;</span><br><span class="line">        <span class="number">192.168</span>.<span class="number">1.108</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这时候 ping 192.168.1.108 是不通的。（看到这句话我才知道是不需要ifconfig命令添加虚拟ip的，如果自己添加了VIP，那么即使没有启动keepalived服务，也能ping通）</p>
+<p>然后在两台机器上分别启动 keepalived 服务</p>
+<p>这时候再<code>ping 192.168.1.108</code>通了。<br>实际上这时候 108 是被绑到主机上的。在主机上查看系统日志:</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">tailf</span> /var/log/messages</span><br><span class="line"><span class="attribute">May</span> <span class="number">29</span> <span class="number">18</span>:<span class="number">32</span>:<span class="number">16</span> localhost Keepalived_vrrp[<span class="number">27731</span>]: Opening file &#x27;/etc/keepalived/keepalived.conf&#x27;.</span><br><span class="line"><span class="attribute">May</span> <span class="number">29</span> <span class="number">18</span>:<span class="number">32</span>:<span class="number">16</span> localhost Keepalived_vrrp[<span class="number">27731</span>]: Configuration is using : <span class="number">62906</span> Bytes</span><br><span class="line"><span class="attribute">May</span> <span class="number">29</span> <span class="number">18</span>:<span class="number">32</span>:<span class="number">16</span> localhost Keepalived_vrrp[<span class="number">27731</span>]: Using LinkWatch kernel netlink reflector...</span><br><span class="line"><span class="attribute">May</span> <span class="number">29</span> <span class="number">18</span>:<span class="number">32</span>:<span class="number">16</span> localhost Keepalived_healthcheckers[<span class="number">27729</span>]: Using LinkWatch kernel netlink reflector...</span><br><span class="line"><span class="attribute">May</span> <span class="number">29</span> <span class="number">18</span>:<span class="number">32</span>:<span class="number">16</span> localhost Keepalived_vrrp[<span class="number">27731</span>]: VRRP sockpool:<span class="meta"> [ifindex(2), proto(112), fd(11,12)]</span></span><br><span class="line"><span class="attribute">May</span> <span class="number">29</span> <span class="number">18</span>:<span class="number">32</span>:<span class="number">17</span> localhost Keepalived_vrrp[<span class="number">27731</span>]: VRRP_Instance(VI_1) Transition to MASTER STATE</span><br><span class="line"><span class="attribute">May</span> <span class="number">29</span> <span class="number">18</span>:<span class="number">32</span>:<span class="number">18</span> localhost Keepalived_vrrp[<span class="number">27731</span>]: VRRP_Instance(VI_1) Entering MASTER STATE</span><br><span class="line"><span class="attribute">May</span> <span class="number">29</span> <span class="number">18</span>:<span class="number">32</span>:<span class="number">18</span> localhost Keepalived_vrrp[<span class="number">27731</span>]: VRRP_Instance(VI_1) setting protocol VIPs.</span><br><span class="line"><span class="attribute">May</span> <span class="number">29</span> <span class="number">18</span>:<span class="number">32</span>:<span class="number">18</span> localhost Keepalived_vrrp[<span class="number">27731</span>]: VRRP_Instance(VI_1) Sending gratuitous ARPs <span class="literal">on</span> eth0 for <span class="number">192.168.1.108</span></span><br><span class="line"><span class="attribute">May</span> <span class="number">29</span> <span class="number">18</span>:<span class="number">32</span>:<span class="number">18</span> localhost Keepalived_healthcheckers[<span class="number">27729</span>]: Netlink reflector reports IP <span class="number">192.168.1.108</span> added</span><br></pre></td></tr></table></figure>
+<p>可以看到.VRRP(虚拟路由冗余协议)已经启动.我们可以通过命令 ip addr 来检查主 Nginx 上的 IP 分配情况.</p>
+<figure class="highlight pf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost ~]<span class="comment"># ip addr</span></span><br><span class="line"><span class="number">1</span>: lo: mtu <span class="number">16436</span> qdisc noqueue <span class="keyword">state</span> UNKNOWN </span><br><span class="line">    link/loopback <span class="number">00</span>:<span class="number">00</span>:<span class="number">00</span>:<span class="number">00</span>:<span class="number">00</span>:<span class="number">00</span> brd <span class="number">00</span>:<span class="number">00</span>:<span class="number">00</span>:<span class="number">00</span>:<span class="number">00</span>:<span class="number">00</span></span><br><span class="line">    <span class="keyword">inet</span> <span class="number">127.0</span>.<span class="number">0.1</span>/<span class="number">8</span> scope host lo</span><br><span class="line">    <span class="keyword">inet6</span> ::<span class="number">1</span>/<span class="number">128</span> scope host </span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line"><span class="number">2</span>: eth0: mtu <span class="number">1500</span> qdisc mq <span class="keyword">state</span> UP qlen <span class="number">1000</span></span><br><span class="line">    link/ether <span class="number">00</span>:<span class="number">15</span>:c5:ef:<span class="number">53</span>:<span class="number">8</span>c brd ff:ff:ff:ff:ff:ff</span><br><span class="line">    <span class="keyword">inet</span> <span class="number">192.168</span>.<span class="number">1.103</span>/<span class="number">25</span> brd <span class="number">192.168</span>.<span class="number">1.255</span> scope <span class="keyword">global</span> eth0</span><br><span class="line">    <span class="keyword">inet</span> <span class="number">192.168</span>.<span class="number">1.108</span>/<span class="number">32</span> scope <span class="keyword">global</span> eth0</span><br><span class="line">    <span class="keyword">inet6</span> fe80::<span class="number">215</span>:c5ff:feef:<span class="number">538</span>c/<span class="number">64</span> scope link </span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line"><span class="number">3</span>: eth1: mtu <span class="number">1500</span> qdisc noop <span class="keyword">state</span> DOWN qlen <span class="number">1000</span></span><br><span class="line">    link/ether <span class="number">00</span>:<span class="number">15</span>:c5:ef:<span class="number">53</span>:<span class="number">8</span>e brd ff:ff:ff:ff:ff:ff</span><br></pre></td></tr></table></figure>
+<p>可以看到 VIP 地址已经绑定到主 Nginx 机器上: inet 192.168.1.108/32 scope global eth0</p>
+<p>我们通过 tcpdump 抓包：</p>
+<figure class="highlight elm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost ~]# tcpdump vrrp</span><br><span class="line"><span class="title">tcpdump</span>: verbose output suppressed, use -v or -vv for full protocol decode</span><br><span class="line"><span class="title">listening</span> on eth0, link-<span class="keyword">type</span> <span class="type">EN10MB</span> (<span class="type">Ethernet</span>), capture size 65535 bytes</span><br><span class="line"><span class="number">13</span>:<span class="number">38</span>:<span class="number">27.797982</span> <span class="type">IP</span> htuidc.bgp.ip &gt; vrrp.mcast.net: <span class="type">VRRPv2</span>, <span class="type">Advertisement</span>, vrid <span class="number">51</span>, prio <span class="number">100</span>, auth<span class="keyword">type</span> simple, intvl 1s, length 20</span><br><span class="line"><span class="number">13</span>:<span class="number">38</span>:<span class="number">28.794693</span> <span class="type">IP</span> htuidc.bgp.ip &gt; vrrp.mcast.net: <span class="type">VRRPv2</span>, <span class="type">Advertisement</span>, vrid <span class="number">51</span>, prio <span class="number">100</span>, auth<span class="keyword">type</span> simple, intvl 1s, length 20</span><br><span class="line"><span class="number">13</span>:<span class="number">38</span>:<span class="number">29.794518</span> <span class="type">IP</span> htuidc.bgp.ip &gt; vrrp.mcast.net: <span class="type">VRRPv2</span>, <span class="type">Advertisement</span>, vrid <span class="number">51</span>, prio <span class="number">100</span>, auth<span class="keyword">type</span> simple, intvl 1s, length 20</span><br><span class="line"><span class="number">13</span>:<span class="number">38</span>:<span class="number">30.798581</span> <span class="type">IP</span> htuidc.bgp.ip &gt; vrrp.mcast.net: <span class="type">VRRPv2</span>, <span class="type">Advertisement</span>, vrid <span class="number">51</span>, prio <span class="number">100</span>, auth<span class="keyword">type</span> simple, intvl 1s, length 20</span><br><span class="line"><span class="number">13</span>:<span class="number">38</span>:<span class="number">31.795902</span> <span class="type">IP</span> htuidc.bgp.ip &gt; vrrp.mcast.net: <span class="type">VRRPv2</span>, <span class="type">Advertisement</span>, vrid <span class="number">51</span>, prio <span class="number">100</span>, auth<span class="keyword">type</span> simple, intvl 1s, length 20</span><br><span class="line"><span class="number">13</span>:<span class="number">38</span>:<span class="number">32.804050</span> <span class="type">IP</span> htuidc.bgp.ip &gt; vrrp.mcast.net: <span class="type">VRRPv2</span>, <span class="type">Advertisement</span>, vrid <span class="number">51</span>, prio <span class="number">100</span>, auth<span class="keyword">type</span> simple, intvl 1s, length 20</span><br><span class="line"><span class="number">13</span>:<span class="number">38</span>:<span class="number">33.801191</span> <span class="type">IP</span> htuidc.bgp.ip &gt; vrrp.mcast.net: <span class="type">VRRPv2</span>, <span class="type">Advertisement</span>, vrid <span class="number">51</span>, prio <span class="number">100</span>, auth<span class="keyword">type</span> simple, intvl 1s, length 20</span><br><span class="line"><span class="number">13</span>:<span class="number">38</span>:<span class="number">34.798793</span> <span class="type">IP</span> htuidc.bgp.ip &gt; vrrp.mcast.net: <span class="type">VRRPv2</span>, <span class="type">Advertisement</span>, vrid <span class="number">51</span>, prio <span class="number">100</span>, auth<span class="keyword">type</span> simple, intvl 1s, length 20</span><br></pre></td></tr></table></figure>
+<p>这样，一个 Nginx + Keepalived 的架构就完成了。</p>
+<h3 id="监控和主备切换"><a href="#监控和主备切换" class="headerlink" title="监控和主备切换"></a>监控和主备切换</h3><p>接下来可以完善一下，加上实时监控，如果发现负载均衡的 Nginx 出现问题，就将该机器上的 Keepalived 服务停掉。<br>nginx_check.sh:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash </span></span><br><span class="line"><span class="keyword">while</span> : </span><br><span class="line"><span class="keyword">do</span> </span><br><span class="line">nginxpid=`ps -C nginx --no-header | <span class="built_in">wc</span> -l` </span><br><span class="line"><span class="keyword">if</span> [ <span class="variable">$nginxpid</span> -eq 0 ];<span class="keyword">then</span> </span><br><span class="line">service nginx start             <span class="comment">###Nginx服务stop之后，脚本会尝试重新启动Nginx服务</span></span><br><span class="line"><span class="built_in">sleep</span> 3 </span><br><span class="line">nginxpid=`ps -C nginx --no-header | <span class="built_in">wc</span> -l` </span><br><span class="line"><span class="built_in">echo</span> <span class="variable">$nginxpid</span> </span><br><span class="line"><span class="keyword">if</span> [ <span class="variable">$nginxpid</span> -eq 0 ];<span class="keyword">then</span> </span><br><span class="line">service keepalived stop </span><br><span class="line"><span class="keyword">fi</span> </span><br><span class="line"><span class="keyword">fi</span> </span><br><span class="line"><span class="built_in">sleep</span> 3 </span><br><span class="line"><span class="keyword">done</span></span><br></pre></td></tr></table></figure>
+<p>然后让该脚本一直在后台运行:<br><code>nohup /etc/nginx_check.sh</code><br>或者将它添加成服务，让它开机自启动:<br><a target="_blank" rel="noopener" href="http://blog.sina.com.cn/s/blog_5f54f0be0101b3bs.html">CentOS 开机自启动脚本</a></p>
+<h3 id="测试"><a href="#测试" class="headerlink" title="测试:"></a>测试:</h3><p>在两台机器的 web 服务器上分别放一个 index.html, 里面内容分别是自己机器的IP.<br>通过VIP访问：<br><a target="_blank" rel="noopener" href="http://192.168.1.108/index.html">http://192.168.1.108/index.html</a> 发现显示的是主机的IP.<br>此时，关掉主机的 nginx, 这时候由于上面的监控脚本。主机的 keepalived 也会关闭。这时候再访问上面地址，发现显示的是备机的IP。可见，切换成功。</p>
+<h3 id="负载均衡"><a href="#负载均衡" class="headerlink" title="负载均衡"></a>负载均衡</h3><p><a target="_blank" rel="noopener" href="http://blog.sina.com.cn/s/blog_5f54f0be0100zvf5.html">Linux – Nginx 负载均衡和反向代理</a><br>通过 ip_hash 实现会话保持</p>
+<hr>
+<p>如果Keepalived故障转移会失效，尝试禁用iptables</p>
+<p>执行<code>service iptables stop</code>关闭iptables服务</p>
+<p>执行<code>chkconfig iptables off</code>取消iptables服务自动启动</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2013/12/14/Nginx-Keepalived-%E5%AE%9E%E4%BE%8B%EF%BC%88%E6%B5%8B%E8%AF%95%E5%8F%AF%E8%A1%8C%EF%BC%89/" data-id="cl9pgenug00ptycv1bew1b4tj" data-title="Nginx + Keepalived 实例（测试可行）" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2013/12/14/Nginx%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E4%B8%8E%E5%8F%8D%E5%90%91%E4%BB%A3%E7%90%86%E7%9A%84%E9%85%8D%E7%BD%AE%E5%AE%9E%E4%BE%8B/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          Nginx负载均衡与反向代理的配置实例
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2013/12/14/nginx%E5%9B%BE%E7%89%87%E7%BC%93%E5%AD%98%E6%9C%8D%E5%8A%A1%E5%99%A8%E9%85%8D%E7%BD%AE%E5%AE%9E%E6%88%98/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">nginx图片缓存服务器配置实战</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

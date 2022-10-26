@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>mysql处理高并发的两种方式——悲观锁和乐观锁 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="为什么需要锁（并发控制）？在多用户环境中，在同一时间可能会有多个用户更新相同的记录，这会产生冲突。这就是著名的并发性问题。  典型的冲突有：1、丢失更新：一个事务的更新覆盖了其它事务的更新结果，就是所谓的更新丢失。例如：用户A把值从6改为2，用户B把值从2改为6，则用户A丢失了他的更新。2、脏读：当一个事务读取其它完成一半事务的记录时，就会发生脏读取。例如：用户A,B看到的值都是6，用户B把值改为">
+<meta property="og:type" content="article">
+<meta property="og:title" content="mysql处理高并发的两种方式——悲观锁和乐观锁">
+<meta property="og:url" content="http://moqiang02.github.io/2018/04/24/mysql%E5%A4%84%E7%90%86%E9%AB%98%E5%B9%B6%E5%8F%91%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%96%B9%E5%BC%8F%E2%80%94%E2%80%94%E6%82%B2%E8%A7%82%E9%94%81%E5%92%8C%E4%B9%90%E8%A7%82%E9%94%81/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="为什么需要锁（并发控制）？在多用户环境中，在同一时间可能会有多个用户更新相同的记录，这会产生冲突。这就是著名的并发性问题。  典型的冲突有：1、丢失更新：一个事务的更新覆盖了其它事务的更新结果，就是所谓的更新丢失。例如：用户A把值从6改为2，用户B把值从2改为6，则用户A丢失了他的更新。2、脏读：当一个事务读取其它完成一半事务的记录时，就会发生脏读取。例如：用户A,B看到的值都是6，用户B把值改为">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/mysql%E5%A4%84%E7%90%86%E9%AB%98%E5%B9%B6%E5%8F%91%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%96%B9%E5%BC%8F/1.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/mysql%E5%A4%84%E7%90%86%E9%AB%98%E5%B9%B6%E5%8F%91%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%96%B9%E5%BC%8F/2.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/mysql%E5%A4%84%E7%90%86%E9%AB%98%E5%B9%B6%E5%8F%91%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%96%B9%E5%BC%8F/3.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/mysql%E5%A4%84%E7%90%86%E9%AB%98%E5%B9%B6%E5%8F%91%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%96%B9%E5%BC%8F/4.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/mysql%E5%A4%84%E7%90%86%E9%AB%98%E5%B9%B6%E5%8F%91%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%96%B9%E5%BC%8F/5.png">
+<meta property="article:published_time" content="2018-04-23T16:46:56.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.986Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/mysql%E5%A4%84%E7%90%86%E9%AB%98%E5%B9%B6%E5%8F%91%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%96%B9%E5%BC%8F/1.png">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-mysql处理高并发的两种方式——悲观锁和乐观锁" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2018/04/24/mysql%E5%A4%84%E7%90%86%E9%AB%98%E5%B9%B6%E5%8F%91%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%96%B9%E5%BC%8F%E2%80%94%E2%80%94%E6%82%B2%E8%A7%82%E9%94%81%E5%92%8C%E4%B9%90%E8%A7%82%E9%94%81/" class="article-date">
+  <time class="dt-published" datetime="2018-04-23T16:46:56.000Z" itemprop="datePublished">2018-04-24</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/mysql/">mysql</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      mysql处理高并发的两种方式——悲观锁和乐观锁
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E9%94%81%EF%BC%88%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6%EF%BC%89%EF%BC%9F"><span class="toc-number">1.</span> <span class="toc-text">为什么需要锁（并发控制）？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6%E6%9C%BA%E5%88%B6"><span class="toc-number">2.</span> <span class="toc-text">并发控制机制</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%82%B2%E8%A7%82%E9%94%81%E4%BB%8B%E7%BB%8D"><span class="toc-number">3.</span> <span class="toc-text">悲观锁介绍</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF%E4%B8%BE%E4%BE%8B"><span class="toc-number">3.1.</span> <span class="toc-text">使用场景举例</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E6%82%B2%E8%A7%82%E9%94%81%E6%9D%A5%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.2.</span> <span class="toc-text">使用悲观锁来实现</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B9%90%E8%A7%82%E9%94%81%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="toc-number">4.</span> <span class="toc-text">乐观锁的实现</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%95%E8%B0%93%E6%95%B0%E6%8D%AE%E7%89%88%E6%9C%AC%EF%BC%9F"><span class="toc-number">4.1.</span> <span class="toc-text">何谓数据版本？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1%E3%80%81%E6%95%B0%E6%8D%AE%E5%BA%93%E8%A1%A8%E8%AE%BE%E8%AE%A1"><span class="toc-number">4.2.</span> <span class="toc-text">1、数据库表设计</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2%E3%80%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">4.3.</span> <span class="toc-text">2、实现</span></a></li></ol></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <h2 id="为什么需要锁（并发控制）？"><a href="#为什么需要锁（并发控制）？" class="headerlink" title="为什么需要锁（并发控制）？"></a>为什么需要锁（并发控制）？</h2><p>在多用户环境中，在同一时间可能会有多个用户更新相同的记录，这会产生冲突。这就是著名的并发性问题。 </p>
+<p>典型的冲突有：<br>1、丢失更新：一个事务的更新覆盖了其它事务的更新结果，就是所谓的更新丢失。例如：用户A把值从6改为2，用户B把值从2改为6，则用户A丢失了他的更新。<br>2、脏读：当一个事务读取其它完成一半事务的记录时，就会发生脏读取。例如：用户A,B看到的值都是6，用户B把值改为2，用户A读到的值仍为6。</p>
+<p>为了解决这些并发带来的问题。 我们需要引入并发控制机制。<span id="more"></span></p>
+<h2 id="并发控制机制"><a href="#并发控制机制" class="headerlink" title="并发控制机制"></a>并发控制机制</h2><p>锁，即给我们选定的目标数据上锁，使其无法被其他程序修改。</p>
+<p>1、悲观锁：指的是对数据被外界（包括本系统当前的其他事务，以及来自外部系统的事务处理）修改持保守态度，因此，在整个数据处理过程中，将数据处于锁定状态；</p>
+<p>2、乐观锁：假设不会发生并发冲突，只在提交操作时检查是否违反数据完整性。乐观锁不能解决脏读的问题。</p>
+<h2 id="悲观锁介绍"><a href="#悲观锁介绍" class="headerlink" title="悲观锁介绍"></a>悲观锁介绍</h2><p>悲观锁是对数据被的修改持悲观态度（认为数据在被修改的时候一定会存在并发问题），因此在整个数据处理过程中将数据锁定。悲观锁的实现，往往依靠数据库提供的锁机制（也只有数据库层提供的锁机制才能真正保证数据访问的排他性，否则，即使在应用层中实现了加锁机制，也无法保证外部系统不会修改数据）。</p>
+<h3 id="使用场景举例"><a href="#使用场景举例" class="headerlink" title="使用场景举例"></a>使用场景举例</h3><p>商品goods表中有一个字段status，status为1代表商品未被下单，status为2代表商品已经被下单，那么我们对某个商品下单时必须确保该商品status为1。假设商品的id为1。如果不采用锁，那么操作方法如下：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">/</span><span class="operator">/</span><span class="number">1.</span>查询出商品信息</span><br><span class="line"><span class="keyword">select</span> status <span class="keyword">from</span> t_goods <span class="keyword">where</span> id<span class="operator">=</span><span class="number">1</span>;</span><br><span class="line"><span class="operator">/</span><span class="operator">/</span><span class="number">2.</span>根据商品信息生成订单</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t_orders (id,goods_id) <span class="keyword">values</span> (<span class="keyword">null</span>,<span class="number">1</span>);</span><br><span class="line"><span class="operator">/</span><span class="operator">/</span><span class="number">3.</span>修改商品status为<span class="number">2</span></span><br><span class="line"><span class="keyword">update</span> t_goods <span class="keyword">set</span> status<span class="operator">=</span><span class="number">2</span>;</span><br></pre></td></tr></table></figure>
+<p>上面这种场景在高并发访问的情况下很可能会出现问题。前面已经提到，只有当goods status为1时才能对该商品下单，上面第一步操作中，查询出来的商品status为1。但是当我们执行第三步Update操作的时候，有可能出现其他人先一步对商品下单把goods status修改为2了，但是我们并不知道数据已经被修改了，这样就可能造成同一个商品被下单2次，使得数据不一致。所以说这种方式是不安全的。</p>
+<h3 id="使用悲观锁来实现"><a href="#使用悲观锁来实现" class="headerlink" title="使用悲观锁来实现"></a>使用悲观锁来实现</h3><p>在上面的场景中，商品信息从查询出来到修改，中间有一个处理订单的过程，使用悲观锁的原理就是，当我们在查询出goods信息后就把当前的数据锁定，直到我们修改完毕后再解锁。那么在这个过程中，因为goods被锁定了，就不会出现有第三者来对其进行修改了。要使用悲观锁，我们必须关闭mysql数据库的自动提交属性。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">set</span> autocommit<span class="operator">=</span><span class="number">0</span>;　　</span><br><span class="line"><span class="operator">/</span><span class="operator">/</span>设置完autocommit后，我们就可以执行我们的正常业务了。具体如下：</span><br><span class="line"><span class="operator">/</span><span class="operator">/</span><span class="number">0.</span>开始事务</span><br><span class="line"><span class="keyword">begin</span>;<span class="operator">/</span><span class="keyword">begin</span> work;<span class="operator">/</span><span class="keyword">start</span> transaction; (三者选一就可以)</span><br><span class="line"><span class="operator">/</span><span class="operator">/</span><span class="number">1.</span>查询出商品信息</span><br><span class="line"><span class="keyword">select</span> status <span class="keyword">from</span> t_goods <span class="keyword">where</span> id<span class="operator">=</span><span class="number">1</span> <span class="keyword">for</span> <span class="keyword">update</span>;</span><br><span class="line"><span class="operator">/</span><span class="operator">/</span><span class="number">2.</span>根据商品信息生成订单</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t_orders (id,goods_id) <span class="keyword">values</span> (<span class="keyword">null</span>,<span class="number">1</span>);</span><br><span class="line"><span class="operator">/</span><span class="operator">/</span><span class="number">3.</span>修改商品status为<span class="number">2</span></span><br><span class="line"><span class="keyword">update</span> t_goods <span class="keyword">set</span> status<span class="operator">=</span><span class="number">2</span>;</span><br><span class="line"><span class="operator">/</span><span class="operator">/</span><span class="number">4.</span>提交事务</span><br><span class="line"><span class="keyword">commit</span>;<span class="operator">/</span><span class="keyword">commit</span> work;</span><br></pre></td></tr></table></figure>
+<p>注：上面的begin/commit为事务的开始和结束，因为在前一步我们关闭了mysql的autocommit，所以需要手动控制事务的提交，在这里就不细表了。</p>
+<p>上面的第一步我们执行了一次查询操作：<code>select status from t_goods where id=1 for update;</code>与普通查询不一样的是，我们使用了<code>select…for update</code>的方式，这样就通过数据库实现了悲观锁。此时在t_goods表中，id为1的那条数据就被我们锁定了，其它的事务必须等本次事务提交之后才能执行。这样我们可以保证当前的数据不会被其它事务修改。</p>
+<p>注：需要注意的是，在事务中，只有<code>SELECT ... FOR UPDATE</code>或<code>LOCK IN SHARE MODE</code>相同数据时会等待其它事务结束后才执行，一般<code>SELECT ...</code>则不受此影响。拿上面的实例来说，当我执行<code>select status from t_goods where id=1 for update;</code>后。我在另外的事务中如果再次执行<code>select status from t_goods where id=1 for update;</code>则第二个事务会一直等待第一个事务的提交，此时第二个查询处于阻塞的状态，但是如果我是在第二个事务中执行<code>select status from t_goods where id=1;</code>则能正常查询出数据，不会受第一个事务的影响。</p>
+<p>补充：<code>MySQL select…for update</code>的<code>Row Lock</code>与<code>Table Lock</code><br>上面我们提到，使用<code>select…for update</code>会把数据给锁住，不过我们需要注意一些锁的级别，MySQL InnoDB默认Row-Level Lock，所以只有「明确」地指定主键，MySQL 才会执行Row lock (只锁住被选取的数据) ，否则MySQL 将会执行Table Lock (将整个数据表单给锁住)。</p>
+<p>举例说明：</p>
+<p>数据库表t_goods，包括id,status,name三个字段，id为主键，数据库中记录如下<br><img src="/images/mysql%E5%A4%84%E7%90%86%E9%AB%98%E5%B9%B6%E5%8F%91%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%96%B9%E5%BC%8F/1.png"><br>　<br>注：为了测试数据库锁，我使用两个console来模拟不同的事务操作，分别用console1、console2来表示。</p>
+<p><strong>例1:</strong> (明确指定主键，并且有此数据，row lock)<br>console1：查询出结果，但是把该条数据锁定了</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">set</span> autocommit<span class="operator">=</span><span class="number">0</span>;</span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">from</span> t_goods <span class="keyword">where</span> id<span class="operator">=</span><span class="number">1</span> <span class="keyword">for</span> <span class="keyword">update</span>;</span><br></pre></td></tr></table></figure>
+<p><img src="/images/mysql%E5%A4%84%E7%90%86%E9%AB%98%E5%B9%B6%E5%8F%91%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%96%B9%E5%BC%8F/2.png"><br>console2：查询被阻塞</p>
+<p>console2：如果console1长时间未提交，则会报错<br><img src="/images/mysql%E5%A4%84%E7%90%86%E9%AB%98%E5%B9%B6%E5%8F%91%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%96%B9%E5%BC%8F/3.png"></p>
+<p><strong>例2:</strong> (明确指定主键，若查无此数据，无lock)<br>console1：查询结果为空</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">set</span> autocommit<span class="operator">=</span><span class="number">0</span>;</span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">from</span> t_goods <span class="keyword">where</span> id<span class="operator">=</span><span class="number">4</span> <span class="keyword">for</span> <span class="keyword">update</span>;</span><br></pre></td></tr></table></figure>
+<p>console2：查询结果为空，查询无阻塞，说明console1没有对数据执行锁定</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">set</span> autocommit<span class="operator">=</span><span class="number">0</span>;</span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">from</span> t_goods <span class="keyword">where</span> id<span class="operator">=</span><span class="number">4</span> <span class="keyword">for</span> <span class="keyword">update</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>例3:</strong> (无主键，table lock)<br>console1：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">set</span> autocommit<span class="operator">=</span><span class="number">0</span>;</span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">from</span> t_goods <span class="keyword">where</span> status<span class="operator">=</span><span class="number">1</span> <span class="keyword">for</span> <span class="keyword">update</span>;</span><br></pre></td></tr></table></figure>
+<p><img src="/images/mysql%E5%A4%84%E7%90%86%E9%AB%98%E5%B9%B6%E5%8F%91%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%96%B9%E5%BC%8F/4.png"><br>console2：<br><code>select * from person where state=2 for UPDATE</code>　<br>查询阻塞，说明console1把表给锁住了.若console1长时间未提交，则返回锁超时。<br><img src="/images/mysql%E5%A4%84%E7%90%86%E9%AB%98%E5%B9%B6%E5%8F%91%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%96%B9%E5%BC%8F/5.png"></p>
+<p><strong>例4:</strong> (主键不明确，table lock)<br>console1：查询正常</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">set</span> autocommit<span class="operator">=</span><span class="number">0</span>;</span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">from</span> t_goods <span class="keyword">where</span> id<span class="operator">&gt;</span><span class="number">1</span> <span class="keyword">for</span> <span class="keyword">update</span>;</span><br></pre></td></tr></table></figure>
+<p>console2：查询被阻塞，说明console1把表给锁住了。<br><code>select * from person where id&gt;=2 for UPDATE</code><br>以上就是关于数据库主键对MySQL锁级别的影响实例，需要注意的是，除了主键外，使用索引也会影响数据库的锁定级别。</p>
+<p>举例：我们修改t_goods表，给status字段创建一个索引。</p>
+<p><strong>例5:</strong> (明确指定索引，并且有此数据，row lock)<br>console1：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">set</span> autocommit<span class="operator">=</span><span class="number">0</span>;</span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">from</span> t_goods <span class="keyword">where</span> status<span class="operator">=</span><span class="number">1</span> <span class="keyword">for</span> <span class="keyword">update</span>;</span><br></pre></td></tr></table></figure>
+<p>console2：查询status=1的数据时阻塞，超时后返回为空，说明数据被console1锁定了</p>
+<p><strong>例6:</strong> (明确指定索引，若查无此数据，无lock)<br>console1：查询status=3的数据，返回空数据</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">set</span> autocommit<span class="operator">=</span><span class="number">0</span>;</span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">from</span> t_goods <span class="keyword">where</span> status<span class="operator">=</span><span class="number">3</span> <span class="keyword">for</span> <span class="keyword">update</span>;</span><br></pre></td></tr></table></figure>
+<p>console2：查询status=3的数据，返回空数据<br><code>SELECT * from t_goods where status=3 for update;</code></p>
+<h2 id="乐观锁的实现"><a href="#乐观锁的实现" class="headerlink" title="乐观锁的实现"></a>乐观锁的实现</h2><p>使用数据版本（Version）记录机制实现，这是乐观锁最常用的一种实现方式。 </p>
+<h3 id="何谓数据版本？"><a href="#何谓数据版本？" class="headerlink" title="何谓数据版本？"></a>何谓数据版本？</h3><p>即为数据增加一个版本标识，一般是通过为数据库表增加一个数字类型的 “version” 字段来实现。当读取数据时，将version字段的值一同读出，数据每更新一次，对此version值加一。当我们提交更新的时候，判断数据库表对应记录的当前版本信息与第一次取出来的version值进行比对，如果数据库表当前版本号与第一次取出来的version值相等，则予以更新，否则认为是过期数据；</p>
+<h3 id="1、数据库表设计"><a href="#1、数据库表设计" class="headerlink" title="1、数据库表设计"></a>1、数据库表设计</h3><p>task有三个字段，分别是id,value、version</p>
+<h3 id="2、实现"><a href="#2、实现" class="headerlink" title="2、实现"></a>2、实现</h3><p>1）先读task表的数据（实际上这个表只有一条记录），得到version的值为versionValue<br>2）每次更新task表中的value字段时，为了防止发生冲突，需要这样操作</p>
+<p><code>update task set value = newValue,version = versionValue + 1 where version = versionValue;</code><br>只有这条语句执行了，才表明本次更新value字段的值成功</p>
+<p>如假设有两个节点A和B都要更新task表中的value字段值，差不多在同一时刻，A节点和B节点从task表中读到的version值为2，那么A节点和B节点在更新value字段值的时候，都操作：<br><code>update task set value = newValue,version = 3 where version = 2;</code> </p>
+<p>实际上只有1个节点执行该SQL语句成功，假设A节点执行成功，那么此时task表的version字段的值是3，B节点再操作：<br><code>update task set value = newValue,version = 3 where version = 2;</code><br>这条SQL语句是不执行的，这样就保证了更新task表时不发生冲突！</p>
+<blockquote>
+<p>扩展阅读：<a href="/2021/12/21/MySQL-share-mode%E5%92%8Cfor-update%E8%AF%BB%E9%94%81%E7%9A%84%E5%8C%BA%E5%88%AB%E5%92%8C%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF%E5%88%86%E6%9E%90/">MySQL share mode和for update读锁的区别和应用场景分析</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2018/04/24/mysql%E5%A4%84%E7%90%86%E9%AB%98%E5%B9%B6%E5%8F%91%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%96%B9%E5%BC%8F%E2%80%94%E2%80%94%E6%82%B2%E8%A7%82%E9%94%81%E5%92%8C%E4%B9%90%E8%A7%82%E9%94%81/" data-id="cl9pgeo2a01d3ycv1gaa89r51" data-title="mysql处理高并发的两种方式——悲观锁和乐观锁" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/07/24/windows%E4%B8%8BPHP-Nginx-curl%E8%AE%BF%E9%97%AE%E6%9C%AC%E5%9C%B0%E5%9C%B0%E5%9D%80%E8%B6%85%E6%97%B6%E5%8D%A1%E6%AD%BB%E9%97%AE%E9%A2%98%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          windows下PHP + Nginx curl访问本地地址超时卡死问题的解决方案
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/04/03/APP%E6%8E%A5%E5%8F%A3%E8%AE%BE%E8%AE%A1-%E7%94%A8%E6%88%B7%E8%AE%A4%E8%AF%81-JWT/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">APP接口设计-用户认证(JWT)</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

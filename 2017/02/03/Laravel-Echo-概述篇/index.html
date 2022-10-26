@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Laravel Echo 概述篇 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="Laravel Echo 是 5.3 版推出來的新功能。廣播必需透過佇列(queue)的功能，所以在 Window 系統就直接 GG了。這邊我改用 Cloud9 開出 liunx PHP 環境來實驗，如果你有 cloud9 的帳號，可以從這邊直接clone一份自行研究。Cloud9 的使用可以參考先前文章Cloud9 with Laravel 5.3，這次實驗參考了 Introducing Lar">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Laravel Echo 概述篇">
+<meta property="og:url" content="http://moqiang02.github.io/2017/02/03/Laravel-Echo-%E6%A6%82%E8%BF%B0%E7%AF%87/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="Laravel Echo 是 5.3 版推出來的新功能。廣播必需透過佇列(queue)的功能，所以在 Window 系統就直接 GG了。這邊我改用 Cloud9 開出 liunx PHP 環境來實驗，如果你有 cloud9 的帳號，可以從這邊直接clone一份自行研究。Cloud9 的使用可以參考先前文章Cloud9 with Laravel 5.3，這次實驗參考了 Introducing Lar">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/Laravel_Echo_%E6%A6%82%E8%BF%B0%E7%AF%87/1.png">
+<meta property="article:published_time" content="2017-02-03T14:47:50.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.787Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="Laravel">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/Laravel_Echo_%E6%A6%82%E8%BF%B0%E7%AF%87/1.png">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Laravel-Echo-概述篇" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2017/02/03/Laravel-Echo-%E6%A6%82%E8%BF%B0%E7%AF%87/" class="article-date">
+  <time class="dt-published" datetime="2017-02-03T14:47:50.000Z" itemprop="datePublished">2017-02-03</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/php/">php</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Laravel Echo 概述篇
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A9%85%E5%8B%95"><span class="toc-number">1.</span> <span class="toc-text">驅動</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#pusher-%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.1.</span> <span class="toc-text">pusher 模式</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#redis-%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.2.</span> <span class="toc-text">redis 模式</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#log-%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.3.</span> <span class="toc-text">log 模式</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#null-%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.4.</span> <span class="toc-text">null 模式</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8B%E4%BB%B6"><span class="toc-number">2.</span> <span class="toc-text">事件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A0%BB%E9%81%93"><span class="toc-number">3.</span> <span class="toc-text">頻道</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%85%AC%E9%96%8B%E9%A0%BB%E9%81%93"><span class="toc-number">3.1.</span> <span class="toc-text">公開頻道</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%A7%81%E6%9C%89%E9%A0%BB%E9%81%93"><span class="toc-number">3.2.</span> <span class="toc-text">私有頻道</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%97%A2%E5%AD%98%E9%A0%BB%E9%81%93"><span class="toc-number">3.3.</span> <span class="toc-text">既存頻道</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A9%97%E8%AD%89"><span class="toc-number">4.</span> <span class="toc-text">驗證</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <p>Laravel Echo 是 5.3 版推出來的新功能。廣播必需透過佇列(queue)的功能，所以在 Window 系統就直接 GG了。這邊我改用 Cloud9 開出 liunx PHP 環境來實驗，如果你有 cloud9 的帳號，可以從這邊<a target="_blank" rel="noopener" href="https://ide.c9.io/liaosankai/laravel-echo-example">直接clone一份</a>自行研究。Cloud9 的使用可以參考先前文章<a target="_blank" rel="noopener" href="http://blog.liaosankai.com/2016/09/05/Cloud9%20with%20Laravel%205.3">Cloud9 with Laravel 5.3</a>，這次實驗參考了 <a target="_blank" rel="noopener" href="https://mattstauffer.co/blog/introducing-laravel-echo">Introducing Laravel Echo: An In-Depth Walk-Through</a> 文章來跟著作，並記錄一些概念上筆記。<span id="more"></span></p>
+<h3 id="驅動"><a href="#驅動" class="headerlink" title="驅動"></a>驅動</h3><p>Laravel Echo 目前支援 pusher, redis, log, null 驅動模式，可以從<code>config/broadcasting.php</code> 去設定，但不建議這樣做，改由定義<code>.env</code>中的<code>BROADCAST_DRIVER</code>等相關的環境變數是會比較好的作法。<br>Laravel 大部分設定檔，都應該先從<code>.env</code>環境變數去設定</p>
+<p>這次使用 pusher 的方式，但下面還是會說明一下各驅動差異：</p>
+<h4 id="pusher-模式"><a href="#pusher-模式" class="headerlink" title="pusher 模式"></a>pusher 模式</h4><p>如果使用的是 pusher 模式，Laravel 會將事件包內容先發送第三方推播服務平台 pusher.com 上，透過 pusher 後台的 Debug Console 可以看見下圖：<br><img src="/images/Laravel_Echo_%E6%A6%82%E8%BF%B0%E7%AF%87/1.png" alt="圖片為同一個事件包發送至四個不同的頻道"></p>
+<p>而客端程式則透過 laravel-echo 設定 pusher app key 來連線平台，取得平台所發送的事件。(必需先在 pusher.com 申請一個帳號並建立一個 APP)</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> <span class="title class_">Echo</span> = <span class="built_in">require</span>(<span class="string">&#x27;laravel-echo&#x27;</span>);</span><br><span class="line"><span class="variable language_">window</span>.<span class="property">Echo</span> = <span class="keyword">new</span> <span class="title class_">Echo</span>(&#123;</span><br><span class="line">    <span class="attr">broadcaster</span>: <span class="string">&#x27;pusher&#x27;</span>,</span><br><span class="line">    <span class="attr">key</span>: <span class="string">&#x27;244083293b984a086228&#x27;</span></span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<h4 id="redis-模式"><a href="#redis-模式" class="headerlink" title="redis 模式"></a>redis 模式</h4><p>在使用 redis 模式之前，必需先<a target="_blank" rel="noopener" href="http://blog.fens.me/linux-redis-install/">安裝 redis-server</a>並啟動，如果使用的是 cloud9 參考<a target="_blank" rel="noopener" href="https://community.c9.io/t/setting-up-redis/1719">Setting Up Redis</a> 。Laravel 將事件包內容寫入至 redis 資料庫，透過 node.js 的 ioredis 捕捉 redis 的 Pub/Sub 事件，然後再用 WebSocket 或 Socket.io 再轉發一次事件至客端。</p>
+<p>範例程式：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// socket.js</span></span><br><span class="line"><span class="keyword">var</span> io = <span class="built_in">require</span>(<span class="string">&#x27;socket.io&#x27;</span>)(<span class="number">3000</span>);</span><br><span class="line"><span class="keyword">var</span> <span class="title class_">Redis</span> = <span class="built_in">require</span>(<span class="string">&#x27;ioredis&#x27;</span>);</span><br><span class="line"><span class="keyword">var</span> redis = <span class="keyword">new</span> <span class="title class_">Redis</span>();</span><br><span class="line">redis.<span class="title function_">subscribe</span>(<span class="string">&#x27;chat-room.9453&#x27;</span>, <span class="keyword">function</span>(<span class="params">err, count</span>) &#123;</span><br><span class="line">  <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;redis connect!&#x27;</span>);</span><br><span class="line">&#125;);</span><br><span class="line">redis.<span class="title function_">on</span>(<span class="string">&#x27;message&#x27;</span>, <span class="keyword">function</span>(<span class="params">channel, msg</span>) &#123;</span><br><span class="line">    <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;頻道名稱:&#x27;</span>, channel);<span class="comment">// chat-room.9453</span></span><br><span class="line">    <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;資料內容&#x27;</span>, msg);</span><br><span class="line">    <span class="comment">//   資料內容</span></span><br><span class="line">    <span class="comment">//   &#123;</span></span><br><span class="line">    <span class="comment">//     &quot;event&quot;: &quot;App\\Events\\ChatMessageWasReceived&quot;,</span></span><br><span class="line">    <span class="comment">//     &quot;data&quot;: &#123;</span></span><br><span class="line">    <span class="comment">//         &quot;chatMessage&quot;: &#123;</span></span><br><span class="line">    <span class="comment">//             &quot;id&quot;: 33,</span></span><br><span class="line">    <span class="comment">//             &quot;message&quot;: &quot;1111&quot;,</span></span><br><span class="line">    <span class="comment">//             &quot;user_id&quot;: &quot;1&quot;,</span></span><br><span class="line">    <span class="comment">//             &quot;created_at&quot;: &quot;2016-09-06 07:54:10&quot;,</span></span><br><span class="line">    <span class="comment">//             &quot;updated_at&quot;: &quot;2016-09-06 07:54:10&quot;</span></span><br><span class="line">    <span class="comment">//         &#125;,</span></span><br><span class="line">    <span class="comment">//         &quot;user&quot;: &#123;</span></span><br><span class="line">    <span class="comment">//             &quot;id&quot;: 1,</span></span><br><span class="line">    <span class="comment">//             &quot;name&quot;: &quot;\u5927\u91e3\u54e5&quot;,</span></span><br><span class="line">    <span class="comment">//             &quot;email&quot;: &quot;big.hook.brother@gmail.com&quot;,</span></span><br><span class="line">    <span class="comment">//             &quot;created_at&quot;: &quot;2016-09-02 04:31:32&quot;,</span></span><br><span class="line">    <span class="comment">//             &quot;updated_at&quot;: &quot;2016-09-02 04:31:32&quot;</span></span><br><span class="line">    <span class="comment">//         &#125;</span></span><br><span class="line">    <span class="comment">//     &#125;,</span></span><br><span class="line">    <span class="comment">//     &quot;socket&quot;: null</span></span><br><span class="line">    <span class="comment">//   &#125;</span></span><br><span class="line">    <span class="comment">// 將訊息再透過 socket.io 轉發事件</span></span><br><span class="line">    io.<span class="title function_">emit</span>(msg.<span class="property">event</span>, msg.<span class="property">data</span>);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>不過這種自刻的簡單 Server，是沒辦法使用下列官方的這個作法</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> <span class="title class_">EchoSocket</span> = <span class="built_in">require</span>(<span class="string">&#x27;laravel-echo&#x27;</span>);</span><br><span class="line"><span class="variable language_">window</span>.<span class="property">EchoSocket</span> = <span class="keyword">new</span> <span class="title class_">Echo</span>(&#123;</span><br><span class="line">    <span class="attr">broadcaster</span>: <span class="string">&#x27;socket.io&#x27;</span>,</span><br><span class="line">    <span class="attr">host</span>: <span class="string">&#x27;http://127.0.0.1:3000&#x27;</span></span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>因為並沒有實作對應的 laravel-echo 的函式的處理部分，若要使用的話，可以使用官方建議的 laravel-echo-server 來做 Node.js 的 Echo Server。換句話說，你可以想成<a target="_blank" rel="noopener" href="https://github.com/tlaverdure/laravel-echo-server">laravel-echo-server</a> 就是自架 pusher server 的感覺。</p>
+<h4 id="log-模式"><a href="#log-模式" class="headerlink" title="log 模式"></a>log 模式</h4><p>如果使用 log 的話，Laravel 僅是將事件包的資料寫入至記錄檔<code>storage/logs/laravel.log</code> 中，內容如下：</p>
+<figure class="highlight gml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">[<span class="number">2016</span><span class="number">-09</span><span class="number">-06</span> <span class="number">03</span>:<span class="number">32</span>:<span class="number">14</span>] <span class="symbol">local</span>.INFO: Broadcasting [App\Events\ChatMessageWasReceived]</span><br><span class="line">  on channels [pub-<span class="variable language_">room</span><span class="number">.9453</span>, pri-<span class="variable language_">room</span><span class="number">.1</span>, pri-<span class="variable language_">room</span><span class="number">.2</span>, pre-<span class="variable language_">room</span><span class="number">.1</span>] <span class="keyword">with</span> payload:</span><br><span class="line">&#123;</span><br><span class="line">    <span class="string">&quot;chatMessage&quot;</span>: &#123;</span><br><span class="line">        <span class="string">&quot;id&quot;</span>: <span class="number">25</span>,</span><br><span class="line">        <span class="string">&quot;message&quot;</span>: <span class="string">&quot;ABC&quot;</span>,</span><br><span class="line">        <span class="string">&quot;user_id&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="string">&quot;user&quot;</span>: &#123;</span><br><span class="line">        <span class="string">&quot;id&quot;</span>: <span class="number">1</span>,</span><br><span class="line">        <span class="string">&quot;name&quot;</span>: <span class="string">&quot;Patrick Stewart&quot;</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="string">&quot;socket&quot;</span>: null</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>這樣方式通常用於 debug 的時候，檢查伺服發送事件包頻道以及內容是否正確</p>
+<h4 id="null-模式"><a href="#null-模式" class="headerlink" title="null 模式"></a>null 模式</h4><p>當驅動模式為 null 時，表示關閉廣播功能</p>
+<h3 id="事件"><a href="#事件" class="headerlink" title="事件"></a>事件</h3><p>在這邊我稱它為事件包(封包)，是整個廣播系統的主角。發送到頻道的事件包類別，都必需實作 ShouldBroadcast 介面才行，通常會放至<code>app/Events</code>資料夾(在 v5.3 此資料夾已被移除了，相對的原本在 5.2 中抽象類別 Event 也不存在，若需要再自行建立並繼承)</p>
+<figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// app/Events/ChatMessageWasReceived.php</span></span><br><span class="line"><span class="keyword">class</span> <span class="symbol">ChatMessageWasReceived</span> <span class="symbol">implements</span> <span class="symbol">ShouldBroadcast</span>&#123;</span><br><span class="line">    use InteractsWithSockets, SerializesModels;</span><br><span class="line">    <span class="keyword">public</span> $user; <span class="comment">// Eloquent ORM Model</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>所有事件包中的公開屬性，在傳送時將會自動序列化成資料如下</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;user&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;id&quot;</span><span class="punctuation">:</span> <span class="number">1</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Patrick Stewart&quot;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+<p>但假設你希望的資料是這樣子</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;id&quot;</span><span class="punctuation">:</span> <span class="number">1</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;created_at&quot;</span><span class="punctuation">:</span> <span class="string">&quot;2016-09-05 12:11:10&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+<p>可以透過追加定義 broadcastWith 重新組合的資料格式或追加其它所需資料</p>
+<figure class="highlight zephir"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">broadcastWith</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> [</span><br><span class="line">        <span class="string">&#x27;id&#x27;</span> =&gt; $this-&gt;user-&gt;name,</span><br><span class="line">        <span class="string">&#x27;created_at&#x27;</span> =&gt; date(<span class="string">&#x27;Y-m-d H:i:s&#x27;</span>)</span><br><span class="line">    ];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>而 broadcastOn 定義了當事件被送出時，會發送至哪些頻道上，如果打算一次發送至不同的頻道，可以使用陣列方式回傳如下：</p>
+<figure class="highlight haxe"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">broadcastOn</span></span>()</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> [</span><br><span class="line">        <span class="string">&quot;pub-room.9453&quot;</span>, <span class="comment">// 公開頻道</span></span><br><span class="line">        <span class="keyword">new</span> <span class="type">PrivateChannel</span>(<span class="string">&quot;pri-room.1&quot;</span>), <span class="comment">// 私有頻道</span></span><br><span class="line">        <span class="keyword">new</span> <span class="type">PrivateChannel</span>(<span class="string">&quot;pri-room.2&quot;</span>), <span class="comment">// 私有頻道</span></span><br><span class="line">        <span class="keyword">new</span> <span class="type">PresenceChannel</span>(<span class="string">&quot;pre-room.1&quot;</span>), <span class="comment">// 既存頻道</span></span><br><span class="line">    ];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>除了事件包外，也可以發送 通知(Notifications) 至頻道中</p>
+<h3 id="頻道"><a href="#頻道" class="headerlink" title="頻道"></a>頻道</h3><p>Laravel Echo 的頻道有「公開頻道」、「私有頻道」、「既存頻道」三種</p>
+<h4 id="公開頻道"><a href="#公開頻道" class="headerlink" title="公開頻道"></a>公開頻道</h4><ul>
+<li>所有使用者(包含未登入訪客)，都可以接收此頻道事件</li>
+</ul>
+<p>客端範例程式：</p>
+<figure class="highlight arcade"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Echo.channel(<span class="string">&#x27;chat-room.9453&#x27;</span>)</span><br><span class="line">    .listen(<span class="string">&#x27;ChatMessageWasReceived&#x27;</span>, <span class="keyword">function</span>(<span class="params">data</span>) &#123;</span><br><span class="line">        <span class="built_in">console</span>.<span class="built_in">log</span>(<span class="string">&#x27;收到 ChatMessageWasReceived 事件包&#x27;</span>);</span><br><span class="line">    &#125;)</span><br><span class="line">    .notification(<span class="keyword">function</span>(<span class="params">notification</span>) &#123;</span><br><span class="line">        <span class="comment">// 如果 Laravel 發送的不是 event，而是 notifications</span></span><br><span class="line">        <span class="comment">// 會在這邊收到事件</span></span><br><span class="line">        <span class="built_in">console</span>.<span class="built_in">log</span>(<span class="string">&#x27;通知事件&#x27;</span>, notification.type);</span><br><span class="line">    &#125;);</span><br></pre></td></tr></table></figure>
+<h4 id="私有頻道"><a href="#私有頻道" class="headerlink" title="私有頻道"></a>私有頻道</h4><ul>
+<li>接收頻道事件的使用者，需要先驗證(要求登入)</li>
+<li>此頻道的使用者不會知道有其它使用者的存在</li>
+</ul>
+<p>客端範例程式：</p>
+<figure class="highlight arcade"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">Echo.private(<span class="string">&#x27;live-room.999&#x27;</span>)</span><br><span class="line">    .listen(<span class="string">&#x27;ChatMessageWasReceived&#x27;</span>, <span class="keyword">function</span>(<span class="params">data</span>) &#123;</span><br><span class="line">            <span class="built_in">console</span>.<span class="built_in">log</span>(<span class="string">&#x27;收到 ChatMessageWasReceived 事件包&#x27;</span>);</span><br><span class="line">            <span class="built_in">console</span>.<span class="built_in">log</span>( data.user, data.chatMessage);</span><br><span class="line">    &#125;)</span><br><span class="line">    .notification(<span class="keyword">function</span>(<span class="params">notification</span>) &#123;</span><br><span class="line">        <span class="comment">// 如果 Laravel 發送的不是 event，而是 notifications</span></span><br><span class="line">        <span class="comment">// 會在這邊收到事件</span></span><br><span class="line">        <span class="built_in">console</span>.<span class="built_in">log</span>(<span class="string">&#x27;通知事件&#x27;</span>, notification.type);</span><br><span class="line">    &#125;);</span><br></pre></td></tr></table></figure>
+
+<h4 id="既存頻道"><a href="#既存頻道" class="headerlink" title="既存頻道"></a>既存頻道</h4><ul>
+<li>接收頻道事件的使用者，需要先驗證(要求登入)</li>
+<li>當使用者加入或離開此頻道時，會先觸發 here, joining, leaving 等事件，所以使用者會知道其它使用者的存在</li>
+</ul>
+<p>客端範例程式：</p>
+<figure class="highlight arcade"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">Echo.join(<span class="string">&#x27;chat-room.1&#x27;</span>)</span><br><span class="line">    .here(<span class="keyword">function</span> (<span class="params">members</span>) &#123;</span><br><span class="line">        <span class="built_in">console</span>.<span class="built_in">log</span>(<span class="string">&#x27;目前此頻道所有使用者有：&#x27;</span>);</span><br><span class="line">        <span class="built_in">console</span>.table(members);</span><br><span class="line">    &#125;)</span><br><span class="line">    .joining(<span class="keyword">function</span> (<span class="params">joiningMember, members</span>) &#123;</span><br><span class="line">        <span class="built_in">console</span>.<span class="built_in">log</span>(<span class="string">&#x27;有一位使用者加入了頻道&#x27;</span>)</span><br><span class="line">        <span class="built_in">console</span>.table(joiningMember);</span><br><span class="line">    &#125;)</span><br><span class="line">    .leaving(<span class="keyword">function</span> (<span class="params">leavingMember, members</span>) &#123;</span><br><span class="line">        <span class="built_in">console</span>.<span class="built_in">log</span>(<span class="string">&#x27;有一位使用者離開了頻道&#x27;</span>)</span><br><span class="line">        <span class="built_in">console</span>.table(leavingMember);</span><br><span class="line">    &#125;)</span><br><span class="line">    .listen(<span class="string">&#x27;ChatMessageWasReceived&#x27;</span>, <span class="keyword">function</span>(<span class="params">data</span>) &#123;</span><br><span class="line">        <span class="built_in">console</span>.<span class="built_in">log</span>(<span class="string">&#x27;收到 ChatMessageWasReceived 事件包&#x27;</span>);</span><br><span class="line">        <span class="built_in">console</span>.<span class="built_in">log</span>( data.user, data.chatMessage);</span><br><span class="line">    &#125;)</span><br><span class="line">    .notification(<span class="keyword">function</span>(<span class="params">notification</span>) &#123;</span><br><span class="line">        <span class="comment">// 如果 Laravel 發送的不是 event，而是 notifications</span></span><br><span class="line">        <span class="comment">// 會在這邊收到事件</span></span><br><span class="line">        <span class="built_in">console</span>.<span class="built_in">log</span>(<span class="string">&#x27;通知事件&#x27;</span>, notification.type);</span><br><span class="line">    &#125;);</span><br></pre></td></tr></table></figure>
+
+<h3 id="驗證"><a href="#驗證" class="headerlink" title="驗證"></a>驗證</h3><p>「私有頻道」和「既存頻道」基本都會先檢查使用者是否已經登入，接著若需要進階驗證判斷權限之類(例如某個使用者是否能進入某個聊天室)的，則需要在<code>app/Providers/BroadcastServiceProvider.php</code> 自行定義，記得要先到 config/app.php 啟用(把<code>App\Providers\BroadcastServiceProvider::class</code>, 的註解拿掉)。在這邊不會去定義公開頻道(因為不需要驗證)</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">public <span class="keyword">function</span> boot()</span><br><span class="line">&#123;</span><br><span class="line">    <span class="regexp">//</span> 函式實作了 <span class="regexp">/broadcasting/</span>auth 的驗證路由</span><br><span class="line">    Broadcast::routes();</span><br><span class="line">    <span class="regexp">//</span> ---- 個人私有頻道 ----</span><br><span class="line">    Broadcast::channel(<span class="string">&#x27;App.User.*&#x27;</span>, <span class="keyword">function</span> (<span class="variable">$user</span>, <span class="variable">$userId</span>) &#123;</span><br><span class="line">        return (int) <span class="variable">$user</span>-&gt;id === (int) <span class="variable">$userId</span>;</span><br><span class="line">    &#125;);</span><br><span class="line">    <span class="regexp">//</span> 當客端使用 Echo.private(<span class="string">&#x27;App.User.123&#x27;</span>) 時，若這邊卻沒有設定對應的</span><br><span class="line">    <span class="regexp">//</span> Broadcast::channel(<span class="string">&#x27;App.User.*&#x27;</span>)。即便使用者已經登入，客端那邊也會</span><br><span class="line">    <span class="regexp">//</span> 噴 <span class="number">403</span> (Forbidden) 錯誤，視同 return false</span><br><span class="line">    <span class="regexp">//</span> ---- 既存頻道 - 聊天室 ----</span><br><span class="line">    Broadcast::channel(<span class="string">&#x27;chat-room.*&#x27;</span>, <span class="keyword">function</span> (<span class="variable">$user</span>, <span class="variable">$chatroomId</span>) &#123;</span><br><span class="line">        <span class="variable">$userCanEntry</span> = <span class="variable">$user</span>-&gt;checkCanEntry(<span class="variable">$chatroomId</span>);<span class="regexp">//</span> 是否能進入此聊天室</span><br><span class="line">        <span class="keyword">if</span> (userCanEntry) &#123;</span><br><span class="line">            return [</span><br><span class="line">                <span class="string">&#x27;id&#x27;</span> =&gt; <span class="variable">$user</span>-&gt;id,</span><br><span class="line">                <span class="string">&#x27;name&#x27;</span> =&gt; <span class="variable">$user</span>-&gt;name,</span><br><span class="line">                <span class="string">&#x27;age&#x27;</span> =&gt; <span class="variable">$user</span>-&gt;age</span><br><span class="line">            ];</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            return false</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2017/02/03/Laravel-Echo-%E6%A6%82%E8%BF%B0%E7%AF%87/" data-id="cl9pgensn00k1ycv15mon44iy" data-title="Laravel Echo 概述篇" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Laravel/" rel="tag">Laravel</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2017/02/03/Laravel-5-3-%E6%96%B0%E7%89%B9%E6%80%A7%E7%B3%BB%E5%88%97-%E2%80%94%E2%80%94-%E6%B7%B1%E5%85%A5%E6%8E%A2%E8%AE%A8-Laravel-Echo-%E4%BD%BF%E7%94%A8%EF%BC%9A%E5%AE%9E%E6%97%B6%E8%81%8A%E5%A4%A9%E5%AE%A4/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          Laravel 5.3 新特性系列 —— 深入探讨 Laravel Echo 使用：实时聊天室
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2017/02/03/%E5%9C%A8laravel5%E5%AF%A6%E4%BD%9C%E7%80%8F%E8%A6%BD%E5%99%A8%E6%8E%A8%E6%92%AD%E9%80%9A%E7%9F%A5/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">在laravel5實作瀏覽器推播通知</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

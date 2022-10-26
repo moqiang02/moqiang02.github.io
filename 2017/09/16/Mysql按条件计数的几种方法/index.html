@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Mysql按条件计数的几种方法 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="问题描述为使讨论简单易懂，我将问题稍作简化，去掉诸多的背景。 从前有一个皇帝，他有50个妃子，这些妃子很没有天理的给他生了100,000个儿子，于是，皇帝很苦恼，海量的儿子很难管理，而且，他想知道每个妃子给他生了多少个儿子，从而论功行赏，这很难办。于是，皇帝请了一个程序员帮他编了一个程序，用数据库来存储所有的儿子的信息，这样就可以用程序来统计和管理啦。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Mysql按条件计数的几种方法">
+<meta property="og:url" content="http://moqiang02.github.io/2017/09/16/Mysql%E6%8C%89%E6%9D%A1%E4%BB%B6%E8%AE%A1%E6%95%B0%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E6%B3%95/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="问题描述为使讨论简单易懂，我将问题稍作简化，去掉诸多的背景。 从前有一个皇帝，他有50个妃子，这些妃子很没有天理的给他生了100,000个儿子，于是，皇帝很苦恼，海量的儿子很难管理，而且，他想知道每个妃子给他生了多少个儿子，从而论功行赏，这很难办。于是，皇帝请了一个程序员帮他编了一个程序，用数据库来存储所有的儿子的信息，这样就可以用程序来统计和管理啦。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-09-16T13:05:43.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.826Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Mysql按条件计数的几种方法" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2017/09/16/Mysql%E6%8C%89%E6%9D%A1%E4%BB%B6%E8%AE%A1%E6%95%B0%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E6%B3%95/" class="article-date">
+  <time class="dt-published" datetime="2017-09-16T13:05:43.000Z" itemprop="datePublished">2017-09-16</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/mysql/">mysql</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Mysql按条件计数的几种方法
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>为使讨论简单易懂，我将问题稍作简化，去掉诸多的背景。</p>
+<p>从前有一个皇帝，他有50个妃子，这些妃子很没有天理的给他生了100,000个儿子，于是，皇帝很苦恼，海量的儿子很难管理，而且，他想知道每个妃子给他生了多少个儿子，从而论功行赏，这很难办。于是，皇帝请了一个程序员帮他编了一个程序，用数据库来存储所有的儿子的信息，这样就可以用程序来统计和管理啦。<span id="more"></span></p>
+<p>数据库的结构如下：</p>
+<figure class="highlight applescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">id</span>	皇子的唯一编号</span><br><span class="line">mother	皇子母亲的唯一编号</span><br></pre></td></tr></table></figure>
+<p>皇帝把妃子分成了两个等级，天宫娘娘(编号小于25)和地宫娘娘(编号大于等于25)，他想知道天宫娘娘们和地宫娘娘们的生育能力孰强孰弱。于是，程序员开始写SQL Query了。</p>
+<h3 id="方法1：使用GROUP-BY"><a href="#方法1：使用GROUP-BY" class="headerlink" title="方法1：使用GROUP BY"></a>方法1：使用GROUP BY</h3><p><strong>SQL Query</strong><br><code>SELECT COUNT(*) FROM prince GROUP BY mother &gt; 24;</code></p>
+<p><strong>执行结果</strong></p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="title">count</span><span class="params">(*)</span></span></span><br><span class="line"><span class="number">50029</span></span><br><span class="line"><span class="number">49971</span></span><br></pre></td></tr></table></figure>
+<p>在100,000行数据上的运行时间：0.0335 秒</p>
+<p><strong>分析</strong><br>这种GROUP BY方法的最大问题在于：无法区分所得到的结果。这两个数字哪一个是天宫娘娘们所生的皇子数，哪一个是地宫娘娘们所生的皇子数呢？不知道。所以，尽管它统计出了总数，但是没有什么意义。</p>
+<p>因此，为了区分统计结果，必须要把条件<code>mother &gt; 24</code> 也作为一个字段在结果集中作为一个字段体现出来，修改后的sql如下：<br><code>SELECT COUNT(*) AS number, mother &gt; 24 AS type FROM prince GROUP BY mother &gt; 24;</code></p>
+<p><strong>执行结果</strong></p>
+<figure class="highlight ada"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">number  <span class="keyword">type</span></span><br><span class="line"><span class="type">50029   </span><span class="number">0</span></span><br><span class="line"><span class="number">49971</span>   <span class="number">1</span></span><br></pre></td></tr></table></figure>
+<p>条件表达式作为字段时，该字段的值就是该条件表达式的值，因此，对应我们的例子，<code>type = 1</code> 也就是表示<code>mother &gt; 24</code>的值为1，因此，第二行中的数字代表地宫娘娘们所生的皇子数。</p>
+<p>经过修改后，我们看出，天宫娘娘们略胜一筹。</p>
+<p><strong>优缺点</strong><br>缺点是显而易见的，由于使用了条件表达式作为分组依据，它只能做二元的划分，对于要分成多类进行统计的情况不能够胜任。比如要分别统计1<del>10号、11</del>24号，25号~50号妃子的产子数，就无法实现了。</p>
+<p>另外，由于使用了<code>GROUP BY</code>，因此涉及到排序，执行时间上要更长。</p>
+<p>我暂时没有发现这种方法的优点。</p>
+<h3 id="方法2：使用嵌套的SELECT"><a href="#方法2：使用嵌套的SELECT" class="headerlink" title="方法2：使用嵌套的SELECT"></a>方法2：使用嵌套的SELECT</h3><p>使用嵌套的SELECT也可以达到目的，在每个SELECT子句中统计一个条件下的数据，然后用一个主SELECT把这些统计数据整合起来。<br><strong>SQL Query</strong></p>
+<figure class="highlight n1ql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    ( <span class="keyword">SELECT</span> <span class="built_in">COUNT</span>( * ) <span class="keyword">FROM</span> prince <span class="keyword">WHERE</span> mother &gt;<span class="number">24</span> ) <span class="keyword">AS</span> digong, </span><br><span class="line">    ( <span class="keyword">SELECT</span> <span class="built_in">COUNT</span>( * ) <span class="keyword">FROM</span> prince <span class="keyword">WHERE</span> mother &lt;=<span class="number">24</span> ) <span class="keyword">AS</span> tiangong</span><br></pre></td></tr></table></figure>
+
+<p><strong>执行结果</strong></p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">digong</span>  tiangong</span><br><span class="line"><span class="attribute">49971</span>   <span class="number">50029</span></span><br></pre></td></tr></table></figure>
+<p>在100,000行数据上的运行时间：0.0216 秒</p>
+<p><strong>分析</strong><br>这种嵌套SELECT的方法非常直观，就是分别统计各个条件下的数值，最后进行汇总，通俗易懂，跟自然语言没啥区别了。</p>
+<p><strong>优缺点</strong><br>优点就是直观，而且速度也比GROUP BY要快。虽然是3条SELECT语句，看起来比<code>GROUP BY</code>的方案多了2条语句，但是它不涉及到排序，这就节省了很多时间。</p>
+<p>缺点可能就是语句稍多，对语句数量有洁癖的同学可能会比较不舒服。</p>
+<h3 id="方法3：使用CASE-WHEN"><a href="#方法3：使用CASE-WHEN" class="headerlink" title="方法3：使用CASE WHEN"></a>方法3：使用CASE WHEN</h3><p>CASE WHEN语句的功能很强大，可以定义灵活的查询条件，很适合进行分类统计。<br><strong>SQL Query</strong></p>
+<figure class="highlight n1ql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    <span class="built_in">COUNT</span>( <span class="keyword">CASE</span> <span class="keyword">WHEN</span> mother &gt;<span class="number">24</span> <span class="keyword">THEN</span> <span class="number">1</span> <span class="keyword">ELSE</span> <span class="literal">NULL</span> <span class="keyword">END</span> ) <span class="keyword">AS</span> digong, </span><br><span class="line">    <span class="built_in">COUNT</span>( <span class="keyword">CASE</span> <span class="keyword">WHEN</span> mother &lt;=<span class="number">24</span> <span class="keyword">THEN</span> <span class="number">1</span> <span class="keyword">ELSE</span> <span class="literal">NULL</span> <span class="keyword">END</span> ) <span class="keyword">AS</span> tiangong</span><br><span class="line"><span class="keyword">FROM</span> prince</span><br></pre></td></tr></table></figure>
+
+<p><strong>执行结果</strong></p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">digong</span>  tiangong</span><br><span class="line"><span class="attribute">49971</span>   <span class="number">50029</span></span><br></pre></td></tr></table></figure>
+<p>在100,000行数据上的运行时间：0.02365825 秒</p>
+<p><strong>分析</strong><br>此方法的关键在于<code>COUNT( CASE WHEN mother &gt;24 THEN 1 ELSE NULL END )</code><br>这里的COUNT和<code>CASE WHEN</code>联合使用，做到了分类计数。先使用<code>CASE WHEN</code>，当满足条件时，将字段值设置为 1， 不满足条件时，将字段值设置为NULL，接着COUNT函数仅对非NULL字段进行计数，于是，问题解决。</p>
+<p><strong>优缺点</strong><br>优点嘛，此方法也不涉及到排序，因此运行时间上与方法2相当，SELECT语句减少到了1条。<br>缺点就是语句比较长，对语句长度有洁癖的同学可能会比较不舒服。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>对于确定分类的按条件计数，可以尽量不用<code>GROUP BY</code>，从而避免排序动作，加速Query的执行。</p>
+<p>如果需要根据某个字段的值进行分类，而该字段的值是可变的，比如皇帝要统计每一个妃子的产子数，而他可能不停的再娶很多妃子，这种情况下，使用方法2和方法3就不太灵光了，还是使用一个<code>GROUP BY</code>来得简单便捷。</p>
+<blockquote>
+<p>转自：<a target="_blank" rel="noopener" href="https://www.pureweber.com/article/mysql-conditional-count/">https://www.pureweber.com/article/mysql-conditional-count/</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2017/09/16/Mysql%E6%8C%89%E6%9D%A1%E4%BB%B6%E8%AE%A1%E6%95%B0%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E6%B3%95/" data-id="cl9pgenua00pjycv1dd7398dc" data-title="Mysql按条件计数的几种方法" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2017/09/20/TextView%E4%BD%BF%E7%94%A8HTML%E5%A4%84%E7%90%86%E5%AD%97%E4%BD%93%E6%A0%B7%E5%BC%8F%E3%80%81%E6%98%BE%E7%A4%BA%E5%9B%BE%E7%89%87%E7%AD%89/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          TextView使用HTML处理字体样式、显示图片等
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2017/08/27/php%E5%9C%A8foreach%E4%B8%AD%E4%BD%BF%E7%94%A8%E5%BC%95%E7%94%A8%E8%B5%8B%E5%80%BC-%E5%8F%AF%E8%83%BD%E9%81%87%E5%88%B0%E7%9A%84%E9%97%AE%E9%A2%98/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">php在foreach中使用引用赋值&amp;可能遇到的问题</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

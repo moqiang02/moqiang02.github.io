@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>php文件缓存数据 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="最近在做微信的摇一摇跑马活动，实现原理是用户摇动手机，通过ajax往数据库写入数据（小马跑的步数），然后PC端用过ajax每一秒钟从数据库中调取一次数据（小马跑的步数），然后显示在PC屏幕上，这样就会非常频繁的读写数据库，而且小马跑步的数据只要活动结束即可清除，完全没有存入数据库的必要。 这个功能由于不能够做成静态化,那么就只能够动态,用动态的时候会对数据库和服务器压力带来很大的考验。 所以就只能">
+<meta property="og:type" content="article">
+<meta property="og:title" content="php文件缓存数据">
+<meta property="og:url" content="http://moqiang02.github.io/2014/02/20/php%E6%96%87%E4%BB%B6%E7%BC%93%E5%AD%98%E6%95%B0%E6%8D%AE/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="最近在做微信的摇一摇跑马活动，实现原理是用户摇动手机，通过ajax往数据库写入数据（小马跑的步数），然后PC端用过ajax每一秒钟从数据库中调取一次数据（小马跑的步数），然后显示在PC屏幕上，这样就会非常频繁的读写数据库，而且小马跑步的数据只要活动结束即可清除，完全没有存入数据库的必要。 这个功能由于不能够做成静态化,那么就只能够动态,用动态的时候会对数据库和服务器压力带来很大的考验。 所以就只能">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2014-02-20T11:50:50.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:54.015Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-php文件缓存数据" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2014/02/20/php%E6%96%87%E4%BB%B6%E7%BC%93%E5%AD%98%E6%95%B0%E6%8D%AE/" class="article-date">
+  <time class="dt-published" datetime="2014-02-20T11:50:50.000Z" itemprop="datePublished">2014-02-20</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/php/">php</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      php文件缓存数据
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <p>最近在做微信的摇一摇跑马活动，实现原理是用户摇动手机，通过ajax往数据库写入数据（小马跑的步数），然后PC端用过ajax每一秒钟从数据库中调取一次数据（小马跑的步数），然后显示在PC屏幕上，这样就会非常频繁的读写数据库，而且小马跑步的数据只要活动结束即可清除，完全没有存入数据库的必要。</p>
+<p>这个功能由于不能够做成静态化,那么就只能够动态,用动态的时候会对数据库和服务器压力带来很大的考验。</p>
+<p>所以就只能用到缓存数据的方式了。</p>
+<span id="more"></span>
+<p>数据缓存的形式包括:</p>
+<ul>
+<li>将数据缓存到内存,相信大家这个就会想到了Memcached.memcached是高性能的分布式内存缓存服务器。一般的使用目的是，通过缓存数据库查询结果，减少数据库访问次数，以提高动态Web应用的速度、 提高可扩展性。</li>
+<li>用文件来缓存数据.将数据保存到文件中,用key=&gt;value的形式来保存,key指文件名.这个地方必须要保证key的唯一性</li>
+</ul>
+<p>设置文件的缓存时间,如果过时了就从数据库中得到数据并保存到文件中,下面是一个文件缓存类:</p>
+<p>1、缓存数据</p>
+<p>2、得到数据</p>
+<p>3、判断缓存数据是否存在</p>
+<p>4、删除某个缓存数据</p>
+<p>5、清除过时的缓存数据</p>
+<p>6、清除所以的缓存数据</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span>  </span><br><span class="line">    <span class="class"><span class="keyword">class</span> <span class="title">Inc_FileCache</span></span>&#123;        </span><br><span class="line">      </span><br><span class="line">        <span class="keyword">private</span> <span class="variable">$cacheTime</span> = <span class="number">3600</span>;        <span class="comment">//默认缓存时间   </span></span><br><span class="line">        <span class="keyword">private</span> <span class="variable">$cacheDir</span> = <span class="string">&#x27;./cache&#x27;</span>;    <span class="comment">//缓存绝对路径   </span></span><br><span class="line">        <span class="keyword">private</span> <span class="variable">$md5</span> = <span class="literal">true</span>;              <span class="comment">//是否对键进行加密   </span></span><br><span class="line">        <span class="keyword">private</span> <span class="variable">$suffix</span> = <span class="string">&quot;.php&quot;</span>;         <span class="comment">//设置文件后缀       </span></span><br><span class="line">      </span><br><span class="line">        <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"><span class="variable">$config</span></span>)</span>&#123;   </span><br><span class="line">            <span class="keyword">if</span>( <span class="title function_ invoke__">is_array</span>( <span class="variable">$config</span> ) )&#123;   </span><br><span class="line">                <span class="keyword">foreach</span>( <span class="variable">$config</span> <span class="keyword">as</span> <span class="variable">$key</span>=&gt;<span class="variable">$val</span> )&#123;  </span><br><span class="line">                    <span class="variable language_">$this</span>-&gt;<span class="variable">$key</span> = <span class="variable">$val</span>;   </span><br><span class="line">                &#125;  </span><br><span class="line">            &#125;  </span><br><span class="line">        &#125;        </span><br><span class="line">      </span><br><span class="line">        <span class="comment">//设置缓存   </span></span><br><span class="line">        <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">set</span>(<span class="params"><span class="variable">$key</span>,<span class="variable">$val</span>,<span class="variable">$leftTime</span>=<span class="literal">null</span></span>)</span>&#123;  </span><br><span class="line">            <span class="variable">$key</span> = <span class="variable language_">$this</span>-&gt;md5 ? <span class="title function_ invoke__">md5</span>(<span class="variable">$key</span>) : <span class="variable">$key</span>;  </span><br><span class="line">            <span class="variable">$leftTime</span> = <span class="variable">$leftTime</span> ? <span class="variable">$leftTime</span> : <span class="variable language_">$this</span>-&gt;cacheTime;   </span><br><span class="line">            !<span class="title function_ invoke__">file_exists</span>(<span class="variable">$this</span>-&gt;cacheDir) &amp;&amp; <span class="title function_ invoke__">mkdir</span>(<span class="variable">$this</span>-&gt;cacheDir,<span class="number">0777</span>);   </span><br><span class="line">            <span class="variable">$file</span> = <span class="variable language_">$this</span>-&gt;cacheDir.<span class="string">&#x27;/&#x27;</span>.<span class="variable">$key</span>.<span class="variable language_">$this</span>-&gt;suffix;   </span><br><span class="line">            <span class="variable">$val</span> = <span class="title function_ invoke__">serialize</span>(<span class="variable">$val</span>);   </span><br><span class="line">            @<span class="title function_ invoke__">file_put_contents</span>(<span class="variable">$file</span>,<span class="variable">$val</span>) <span class="keyword">or</span> <span class="variable language_">$this</span>-&gt;<span class="title function_ invoke__">error</span>(__line__,<span class="string">&quot;文件写入失败&quot;</span>);   </span><br><span class="line">            @<span class="title function_ invoke__">chmod</span>(<span class="variable">$file</span>,<span class="number">0777</span>)  <span class="keyword">or</span> <span class="variable language_">$this</span>-&gt;<span class="title function_ invoke__">error</span>(__line__,<span class="string">&quot;设定文件权限失败&quot;</span>);  </span><br><span class="line">            @<span class="title function_ invoke__">touch</span>(<span class="variable">$file</span>,<span class="title function_ invoke__">time</span>()+<span class="variable">$leftTime</span>) <span class="keyword">or</span> <span class="variable language_">$this</span>-&gt;<span class="title function_ invoke__">error</span>(__line__,<span class="string">&quot;更改文件时间失败&quot;</span>);   </span><br><span class="line">        &#125;   </span><br><span class="line">      </span><br><span class="line">        <span class="comment">//得到缓存   </span></span><br><span class="line">        <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">get</span>(<span class="params"><span class="variable">$key</span></span>)</span>&#123;   </span><br><span class="line">            <span class="variable language_">$this</span>-&gt;<span class="title function_ invoke__">clear</span>();   </span><br><span class="line">            <span class="keyword">if</span>( <span class="variable language_">$this</span>-&gt;<span class="title function_ invoke__">_isset</span>(<span class="variable">$key</span>) )&#123;   </span><br><span class="line">                <span class="variable">$key_md5</span> = <span class="variable language_">$this</span>-&gt;md5 ? <span class="title function_ invoke__">md5</span>(<span class="variable">$key</span>) : <span class="variable">$key</span>;  </span><br><span class="line">                <span class="variable">$file</span> = <span class="variable language_">$this</span>-&gt;cacheDir.<span class="string">&#x27;/&#x27;</span>.<span class="variable">$key_md5</span>.<span class="variable language_">$this</span>-&gt;suffix;   </span><br><span class="line">                <span class="variable">$val</span> = <span class="title function_ invoke__">file_get_contents</span>(<span class="variable">$file</span>);   </span><br><span class="line">                <span class="keyword">return</span> <span class="title function_ invoke__">unserialize</span>(<span class="variable">$val</span>);   </span><br><span class="line">            &#125;   </span><br><span class="line">            <span class="keyword">return</span> <span class="literal">null</span>;   </span><br><span class="line">        &#125;        </span><br><span class="line">      </span><br><span class="line">        <span class="comment">//判断文件是否有效   </span></span><br><span class="line">        <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">_isset</span>(<span class="params"><span class="variable">$key</span></span>)</span>&#123;   </span><br><span class="line">            <span class="variable">$key</span> = <span class="variable language_">$this</span>-&gt;md5 ? <span class="title function_ invoke__">md5</span>(<span class="variable">$key</span>) : <span class="variable">$key</span>;   </span><br><span class="line">            <span class="variable">$file</span> = <span class="variable language_">$this</span>-&gt;cacheDir.<span class="string">&#x27;/&#x27;</span>.<span class="variable">$key</span>.<span class="variable language_">$this</span>-&gt;suffix;   </span><br><span class="line">            <span class="keyword">if</span>( <span class="title function_ invoke__">file_exists</span>(<span class="variable">$file</span>) )&#123;   </span><br><span class="line">                <span class="keyword">if</span>( @<span class="title function_ invoke__">filemtime</span>(<span class="variable">$file</span>) &gt;= <span class="title function_ invoke__">time</span>() )&#123;   </span><br><span class="line">                    <span class="keyword">return</span> <span class="literal">true</span>;   </span><br><span class="line">                &#125;<span class="keyword">else</span>&#123;   </span><br><span class="line">                    @<span class="title function_ invoke__">unlink</span>(<span class="variable">$file</span>);   </span><br><span class="line">                    <span class="keyword">return</span> <span class="literal">false</span>;   </span><br><span class="line">                &#125;   </span><br><span class="line">            &#125;   </span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;  </span><br><span class="line">        &#125;        </span><br><span class="line">      </span><br><span class="line">        <span class="comment">//删除文件   </span></span><br><span class="line">        <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">_unset</span>(<span class="params"><span class="variable">$key</span></span>)</span>&#123;   </span><br><span class="line">            <span class="keyword">if</span>( <span class="variable language_">$this</span>-&gt;<span class="title function_ invoke__">_isset</span>(<span class="variable">$key</span>) )&#123;   </span><br><span class="line">                <span class="variable">$key_md5</span> = <span class="variable language_">$this</span>-&gt;md5 ? <span class="title function_ invoke__">md5</span>(<span class="variable">$key</span>) : <span class="variable">$key</span>;  </span><br><span class="line">                <span class="variable">$file</span> = <span class="variable language_">$this</span>-&gt;cacheDir.<span class="string">&#x27;/&#x27;</span>.<span class="variable">$key_md5</span>.<span class="variable language_">$this</span>-&gt;suffix;  </span><br><span class="line">                <span class="keyword">return</span> @<span class="title function_ invoke__">unlink</span>(<span class="variable">$file</span>);   </span><br><span class="line">            &#125;   </span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;   </span><br><span class="line">        &#125;     </span><br><span class="line">      </span><br><span class="line">        <span class="comment">//清除过期缓存文件   </span></span><br><span class="line">        <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">clear</span>(<span class="params"></span>)</span>&#123;   </span><br><span class="line">            <span class="variable">$files</span> = <span class="title function_ invoke__">scandir</span>(<span class="variable">$this</span>-&gt;cacheDir);  </span><br><span class="line">            <span class="keyword">foreach</span> (<span class="variable">$files</span> <span class="keyword">as</span> <span class="variable">$val</span>)&#123;   </span><br><span class="line">                <span class="keyword">if</span> (@<span class="title function_ invoke__">filemtime</span>(<span class="variable">$this</span>-&gt;cacheDir.<span class="string">&quot;/&quot;</span>.<span class="variable">$val</span>) &lt; <span class="title function_ invoke__">time</span>())&#123;   </span><br><span class="line">                    @<span class="title function_ invoke__">unlink</span>(<span class="variable">$this</span>-&gt;cacheDir.<span class="string">&quot;/&quot;</span>.<span class="variable">$val</span>);   </span><br><span class="line">                &#125;  </span><br><span class="line">            &#125;   </span><br><span class="line">        &#125;       </span><br><span class="line">      </span><br><span class="line">        <span class="comment">//清除所有缓存文件   </span></span><br><span class="line">        <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">clear_all</span>(<span class="params"></span>)</span>&#123;  </span><br><span class="line">            <span class="variable">$files</span> = <span class="title function_ invoke__">scandir</span>(<span class="variable">$this</span>-&gt;cacheDir);  </span><br><span class="line">            <span class="keyword">foreach</span> (<span class="variable">$files</span> <span class="keyword">as</span> <span class="variable">$val</span>)&#123;   </span><br><span class="line">                @<span class="title function_ invoke__">unlink</span>(<span class="variable">$this</span>-&gt;cacheDir.<span class="string">&quot;/&quot;</span>.<span class="variable">$val</span>);   </span><br><span class="line">            &#125;  </span><br><span class="line">        &#125;        </span><br><span class="line">      </span><br><span class="line">        <span class="keyword">private</span> <span class="function"><span class="keyword">function</span> <span class="title">error</span>(<span class="params"><span class="variable">$line</span>,<span class="variable">$msg</span></span>)</span>&#123;  </span><br><span class="line">            <span class="keyword">die</span>(<span class="string">&quot;出错文件：&quot;</span>.__file__.<span class="string">&quot;/n出错行：<span class="subst">$line</span>/n错误信息：<span class="subst">$msg</span>&quot;</span>);   </span><br><span class="line">        &#125;   </span><br><span class="line">    &#125;   </span><br><span class="line">      </span><br><span class="line"><span class="meta">?&gt;</span>  </span><br></pre></td></tr></table></figure>
+
+<p>在页面中的调用方法如下:</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span>  </span><br><span class="line">    <span class="keyword">include</span>(<span class="string">&quot;./cacheClass.php&quot;</span>);  </span><br><span class="line">      </span><br><span class="line">    <span class="variable">$cacheFile</span> = <span class="keyword">new</span> <span class="title class_">Inc_FileCache</span>(<span class="keyword">array</span>(<span class="string">&#x27;cacheTime&#x27;</span>=&gt;<span class="number">60</span>,<span class="string">&#x27;suffix&#x27;</span>=&gt;<span class="string">&#x27;.php&#x27;</span>));   </span><br><span class="line">      </span><br><span class="line">    <span class="variable">$value1</span> = <span class="string">&#x27;缓存成功1&#x27;</span>;  </span><br><span class="line">    <span class="variable">$value2</span> = <span class="string">&#x27;缓存成功2&#x27;</span>;  </span><br><span class="line">    <span class="variable">$value3</span> = <span class="string">&#x27;缓存成功3&#x27;</span>;  </span><br><span class="line">      </span><br><span class="line">    <span class="variable">$cacheFile</span>-&gt;<span class="title function_ invoke__">set</span>(<span class="string">&#x27;key1&#x27;</span>,<span class="variable">$value1</span>);   </span><br><span class="line">    <span class="variable">$cacheFile</span>-&gt;<span class="title function_ invoke__">set</span>(<span class="string">&#x27;key2&#x27;</span>,<span class="variable">$value2</span>);  </span><br><span class="line">    <span class="variable">$cacheFile</span>-&gt;<span class="title function_ invoke__">set</span>(<span class="string">&#x27;key3&#x27;</span>,<span class="variable">$value3</span>);  </span><br><span class="line">      </span><br><span class="line">    <span class="keyword">echo</span> <span class="variable">$cacheFile</span>-&gt;<span class="title function_ invoke__">get</span>(<span class="string">&#x27;key3&#x27;</span>);   </span><br><span class="line"><span class="meta">?&gt;</span>  </span><br></pre></td></tr></table></figure>
+
+<p>对于跑马这种活动，还有一种数据存储方式是：在MySQL中创建一张使用MEMORY引擎的表。MEMORY存储引擎使用保存在内存中的内容来创建表，且默认使用哈希索引，这使得它的响应速度非常快，对创建临时表非常有用。但是，当服务器关闭时，所有存储在MEMORY表里的数据都会丢失。MEMORY表只用于特殊范围，不会用于长期存储数据。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/02/20/php%E6%96%87%E4%BB%B6%E7%BC%93%E5%AD%98%E6%95%B0%E6%8D%AE/" data-id="cl9pgeo4601h2ycv19cfle8id" data-title="php文件缓存数据" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/02/20/php-cache%E7%B1%BB%E4%BB%A3%E7%A0%81-php%E6%95%B0%E6%8D%AE%E7%BC%93%E5%AD%98%E7%B1%BB/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          php cache类代码(php数据缓存类)
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/02/20/mysqldumpslow%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E%E6%80%BB%E7%BB%93/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">mysqldumpslow使用说明总结</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

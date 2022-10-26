@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>SpringBoot实现固定、动态定时任务和延迟任务 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="背景 最近要用到这个定时任务，之前就简单使用注解的那种方式，需求一变化，就得重新修改。就想到了动态定时任务，连接数据库来动态选择，这样确实解决了问题。但是仍然有一个缺陷，就是没法设置任务的执行时间，比如超过半小时未付款，把订单状态改为取消。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SpringBoot实现固定、动态定时任务和延迟任务">
+<meta property="og:url" content="http://moqiang02.github.io/2022/10/06/SpringBoot%E5%AE%9E%E7%8E%B0%E5%9B%BA%E5%AE%9A%E5%8A%A8%E6%80%81%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1%E5%92%8C%E5%BB%B6%E8%BF%9F%E4%BB%BB%E5%8A%A1/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="背景 最近要用到这个定时任务，之前就简单使用注解的那种方式，需求一变化，就得重新修改。就想到了动态定时任务，连接数据库来动态选择，这样确实解决了问题。但是仍然有一个缺陷，就是没法设置任务的执行时间，比如超过半小时未付款，把订单状态改为取消。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/SpringBoot%E5%AE%9E%E7%8E%B0%E5%9B%BA%E5%AE%9A%E5%8A%A8%E6%80%81%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1%E5%92%8C%E5%BB%B6%E8%BF%9F%E4%BB%BB%E5%8A%A1/1.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/SpringBoot%E5%AE%9E%E7%8E%B0%E5%9B%BA%E5%AE%9A%E5%8A%A8%E6%80%81%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1%E5%92%8C%E5%BB%B6%E8%BF%9F%E4%BB%BB%E5%8A%A1/2.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/SpringBoot%E5%AE%9E%E7%8E%B0%E5%9B%BA%E5%AE%9A%E5%8A%A8%E6%80%81%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1%E5%92%8C%E5%BB%B6%E8%BF%9F%E4%BB%BB%E5%8A%A1/3.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/SpringBoot%E5%AE%9E%E7%8E%B0%E5%9B%BA%E5%AE%9A%E5%8A%A8%E6%80%81%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1%E5%92%8C%E5%BB%B6%E8%BF%9F%E4%BB%BB%E5%8A%A1/4.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/SpringBoot%E5%AE%9E%E7%8E%B0%E5%9B%BA%E5%AE%9A%E5%8A%A8%E6%80%81%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1%E5%92%8C%E5%BB%B6%E8%BF%9F%E4%BB%BB%E5%8A%A1/5.png">
+<meta property="article:published_time" content="2022-10-06T09:34:16.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.893Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="SpringBoot">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/SpringBoot%E5%AE%9E%E7%8E%B0%E5%9B%BA%E5%AE%9A%E5%8A%A8%E6%80%81%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1%E5%92%8C%E5%BB%B6%E8%BF%9F%E4%BB%BB%E5%8A%A1/1.png">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-SpringBoot实现固定动态定时任务和延迟任务" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2022/10/06/SpringBoot%E5%AE%9E%E7%8E%B0%E5%9B%BA%E5%AE%9A%E5%8A%A8%E6%80%81%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1%E5%92%8C%E5%BB%B6%E8%BF%9F%E4%BB%BB%E5%8A%A1/" class="article-date">
+  <time class="dt-published" datetime="2022-10-06T09:34:16.000Z" itemprop="datePublished">2022-10-06</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/java/">java</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      SpringBoot实现固定、动态定时任务和延迟任务
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E6%B3%A8%E8%A7%A3%E5%AE%9E%E7%8E%B0%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1"><span class="toc-number">1.</span> <span class="toc-text">一、注解实现定时任务</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%8A%A8%E6%80%81%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1"><span class="toc-number">2.</span> <span class="toc-text">二、动态定时任务</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1%E3%80%81%E5%BB%BA%E6%95%B0%E6%8D%AE%E8%A1%A8"><span class="toc-number">2.1.</span> <span class="toc-text">2.1、建数据表</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2%E3%80%81%E5%AF%BC%E5%85%A5%E4%BE%9D%E8%B5%96%EF%BC%8C%E5%9F%BA%E7%A1%80%E7%BC%96%E7%A0%81"><span class="toc-number">2.2.</span> <span class="toc-text">2.2、导入依赖，基础编码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3%E3%80%81%E4%B8%BB%E8%A6%81%E5%AE%9E%E7%8E%B0%E4%BB%A3%E7%A0%81"><span class="toc-number">2.3.</span> <span class="toc-text">2.3、主要实现代码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4%E3%80%81%E6%95%88%E6%9E%9C"><span class="toc-number">2.4.</span> <span class="toc-text">2.4、效果</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E5%AE%9E%E7%8E%B0%E5%BB%B6%E8%BF%9F%E4%BB%BB%E5%8A%A1"><span class="toc-number">3.</span> <span class="toc-text">三、实现延迟任务</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%B7%E4%BD%93%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.1.</span> <span class="toc-text">具体实现</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E6%AD%A5"><span class="toc-number">3.2.</span> <span class="toc-text">第一步</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E6%AD%A5"><span class="toc-number">3.3.</span> <span class="toc-text">第二步</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC%E4%B8%89%E6%AD%A5"><span class="toc-number">3.4.</span> <span class="toc-text">第三步</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B5%8B%E8%AF%95"><span class="toc-number">3.5.</span> <span class="toc-text">测试</span></a></li></ol></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <p><strong>背景</strong></p>
+<p>最近要用到这个定时任务，之前就简单使用注解的那种方式，需求一变化，就得重新修改。就想到了动态定时任务，连接数据库来动态选择，这样确实解决了问题。但是仍然有一个缺陷，就是没法设置任务的执行时间，比如超过半小时未付款，把订单状态改为取消。<span id="more"></span></p>
+<p><strong>前言</strong></p>
+<p>阅读完本文：</p>
+<ol>
+<li><p> 知晓 <code>SpringBoot</code> 用注解如何实现定时任务</p>
+</li>
+<li><p> 明白 <code>SpringBoot</code> 如何实现一个动态定时任务 （与数据库相关联实现）</p>
+</li>
+<li><p> 理解 <code>SpringBoot</code> 实现设置时间执行定时任务  （使用 <code>ThreadPoolTaskScheduler</code>实现）</p>
+</li>
+</ol>
+<h2 id="一、注解实现定时任务"><a href="#一、注解实现定时任务" class="headerlink" title="一、注解实现定时任务"></a>一、注解实现定时任务</h2><p>用注解实现是真的简单，只要会 cron 表达式就行。</p>
+<p><strong>第一步</strong>： 主启动类上加上 <code>@EnableScheduling</code> 注解</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@EnableScheduling</span></span><br><span class="line"><span class="meta">@SpringBootApplication</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">SpringBootScheduled</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        SpringApplication.run(SpringBootScheduled.class);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>第二步</strong>：写一个类，注入到Spring，关键就是 <code>@Scheduled</code> 注解。 <code>（)</code> 里就是 cron 表达式，用来说明这个方法的执行周期的。 </p>
+<p>我常常也记不住，通常是在线生成的： <a target="_blank" rel="noopener" href="https://www.shouxicto.com/?url=aHR0cHM6Ly93d3cuYmVqc29uLmNvbS9vdGhlcnRvb2xzL2Nyb24v">Cron 表达式在线生成</a></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 定时任务 静态定时任务</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * 第一位，表示秒，取值0-59</span></span><br><span class="line"><span class="comment"> * 第二位，表示分，取值0-59</span></span><br><span class="line"><span class="comment"> * 第三位，表示小时，取值0-23</span></span><br><span class="line"><span class="comment"> * 第四位，日期天/日，取值1-31</span></span><br><span class="line"><span class="comment"> * 第五位，日期月份，取值1-12</span></span><br><span class="line"><span class="comment"> * 第六位，星期，取值1-7，1表示星期天，2表示星期一</span></span><br><span class="line"><span class="comment"> * 第七位，年份，可以留空，取值1970-2099</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> crush</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@since</span> 1.0.0</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@Date</span>: 2021-07-27 21:13</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">SchedulingTaskBasic</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 每五秒执行一次</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@Scheduled(cron = &quot;*/5 * * * * ?&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">printNowDate</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">long</span> <span class="variable">nowDateTime</span> <span class="operator">=</span> System.currentTimeMillis();</span><br><span class="line">        System.out.println(<span class="string">&quot;固定定时任务执行:---&gt;&quot;</span>+nowDateTime+<span class="string">&quot;，此任务为每五秒执行一次&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>执行效果：</p>
+<p><img src="/images/SpringBoot%E5%AE%9E%E7%8E%B0%E5%9B%BA%E5%AE%9A%E5%8A%A8%E6%80%81%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1%E5%92%8C%E5%BB%B6%E8%BF%9F%E4%BB%BB%E5%8A%A1/1.png"></p>
+<p><a target="_blank" rel="noopener" href="https://gitee.com/crushlxb/spring-boot">源码：springboot-scheduled</a></p>
+<p>@Scheduled除去cron还有三种方式：<strong>fixedRate，fixedDelay，initialDelay</strong></p>
+<p><strong>cron:</strong> 表达式可以定制化执行任务，但是执行的方式是与fixedDelay相近的，也是会按照上一次方法结束时间开始算起。</p>
+<p><strong>fixedDelay:</strong> 控制方法执行的间隔时间，是以上一次方法执行完开始算起，如上一次方法执行阻塞住了，那么直到上一次执行完，并间隔给定的时间后，执行下一次。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="meta">@EnableScheduling</span>    <span class="comment">//开启定时任务</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ScheduleTask1</span> &#123;</span><br><span class="line">    <span class="comment">//每3秒执行一次</span></span><br><span class="line">    <span class="meta">@Scheduled(fixedDelay = 3000)</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">myTasks</span><span class="params">()</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;I do myself per third seconds&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>fixedRate:</strong> 是按照一定的速率执行，是从上一次方法执行开始的时间算起，如果上一次方法阻塞住了，下一次也是不会执行，但是在阻塞这段时间内累计应该执行的次数，当不再阻塞时，一下子把这些全部执行掉，而后再按照固定速率继续执行。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="meta">@EnableScheduling</span>    <span class="comment">//开启定时任务</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ScheduleTask2</span> &#123;</span><br><span class="line">    <span class="comment">//每10秒执行一次</span></span><br><span class="line">    <span class="meta">@Scheduled(fixedRate = 10000)</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">myTasks2</span><span class="params">()</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;我是一个定时任务&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>initialDelay:</strong> initialDelay = 10000 表示在容器启动后，延迟10秒后再执行一次定时器。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="meta">@EnableScheduling</span>    <span class="comment">//开启定时任务</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ScheduleTask</span> &#123;</span><br><span class="line">    <span class="comment">//容器启动后,延迟10秒后再执行一次定时器,以后每10秒再执行一次该定时器。</span></span><br><span class="line">    <span class="meta">@Scheduled(initialDelay = 10000, fixedRate = 10000)</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">myTasks3</span><span class="params">()</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;我是一个定时任务3&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="二、动态定时任务"><a href="#二、动态定时任务" class="headerlink" title="二、动态定时任务"></a>二、动态定时任务</h2><p>其实也非常的简单。</p>
+<h3 id="2-1、建数据表"><a href="#2-1、建数据表" class="headerlink" title="2.1、建数据表"></a>2.1、建数据表</h3><p><strong>第一步</strong>：建个数据库表。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> `tb_cron`  (</span><br><span class="line">  `id` <span class="type">bigint</span>(<span class="number">20</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span> AUTO_INCREMENT COMMENT <span class="string">&#x27;动态定时任务时间表&#x27;</span>,</span><br><span class="line">  `cron_expression` <span class="type">varchar</span>(<span class="number">50</span>) <span class="type">CHARACTER</span> <span class="keyword">SET</span> utf8 <span class="keyword">COLLATE</span> utf8_general_ci <span class="keyword">NOT</span> <span class="keyword">NULL</span> COMMENT <span class="string">&#x27;定时任务表达式&#x27;</span>,</span><br><span class="line">  `cron_describe` <span class="type">varchar</span>(<span class="number">50</span>) <span class="type">CHARACTER</span> <span class="keyword">SET</span> utf8 <span class="keyword">COLLATE</span> utf8_general_ci <span class="keyword">NULL</span> <span class="keyword">DEFAULT</span> <span class="keyword">NULL</span> COMMENT <span class="string">&#x27;描述&#x27;</span>,</span><br><span class="line">  <span class="keyword">PRIMARY</span> KEY (`id`) <span class="keyword">USING</span> BTREE</span><br><span class="line">) ENGINE <span class="operator">=</span> InnoDB AUTO_INCREMENT <span class="operator">=</span> <span class="number">3</span> <span class="type">CHARACTER</span> <span class="keyword">SET</span> <span class="operator">=</span> utf8 <span class="keyword">COLLATE</span> <span class="operator">=</span> utf8_general_ci ROW_FORMAT <span class="operator">=</span> <span class="keyword">Dynamic</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> `tb_cron` <span class="keyword">VALUES</span> (<span class="number">1</span>, <span class="string">&#x27;0 0/1 * * * ?&#x27;</span>, <span class="string">&#x27;每分钟执行一次&#x27;</span>);</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-2、导入依赖，基础编码"><a href="#2-2、导入依赖，基础编码" class="headerlink" title="2.2、导入依赖，基础编码"></a>2.2、导入依赖，基础编码</h3><p>实体类：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="meta">@TableName(&quot;tb_cron&quot;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Cron</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> Long id;</span><br><span class="line">    <span class="keyword">private</span> String cronExpression;</span><br><span class="line">    <span class="keyword">private</span> String cronDescribe;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>mapper层：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Repository</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">CronMapper</span> <span class="keyword">extends</span> <span class="title class_">BaseMapper</span>&lt;Cron&gt; &#123;</span><br><span class="line">    <span class="meta">@Select(&quot;select cron_expression from tb_cron where id=1&quot;)</span></span><br><span class="line">    String <span class="title function_">getCron1</span><span class="params">()</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-3、主要实现代码"><a href="#2-3、主要实现代码" class="headerlink" title="2.3、主要实现代码"></a>2.3、主要实现代码</h3><p>写一个类 实现 <code>SchedulingConfigurer</code></p>
+<p>实现 <code>void configureTasks(ScheduledTaskRegistrar taskRegistrar);</code> 方法，此方法的作用就是根据给定的 ScheduledTaskRegistrar 注册 TaskScheduler 和特定的Task实例</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CompleteScheduleConfig</span> <span class="keyword">implements</span> <span class="title class_">SchedulingConfigurer</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="meta">@SuppressWarnings(&quot;all&quot;)</span></span><br><span class="line">    CronMapper cronMapper;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 执行定时任务.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">configureTasks</span><span class="params">(ScheduledTaskRegistrar taskRegistrar)</span> &#123;</span><br><span class="line">        taskRegistrar.addTriggerTask(</span><br><span class="line">                <span class="comment">//1.添加任务内容(Runnable)</span></span><br><span class="line">                () -&gt; System.out.println(<span class="string">&quot;执行动态定时任务1: &quot;</span> + LocalDateTime.now().toLocalTime()+<span class="string">&quot;,此任务执行周期由数据库中的cron表达式决定&quot;</span>),</span><br><span class="line">                <span class="comment">//2.设置执行周期(Trigger)</span></span><br><span class="line">                triggerContext -&gt; &#123;</span><br><span class="line">                    <span class="comment">//2.1 从数据库获取执行周期</span></span><br><span class="line">                    <span class="type">String</span> <span class="variable">cron</span> <span class="operator">=</span> cronMapper.getCron1();</span><br><span class="line">                    <span class="comment">//2.2 合法性校验.</span></span><br><span class="line">                    <span class="keyword">if</span> (cron!=<span class="literal">null</span>) &#123;</span><br><span class="line">                        <span class="comment">// Omitted Code ..</span></span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="comment">//2.3 返回执行周期(Date)</span></span><br><span class="line">                    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">CronTrigger</span>(cron).nextExecutionTime(triggerContext);</span><br><span class="line">                &#125;</span><br><span class="line">        );</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-4、效果"><a href="#2-4、效果" class="headerlink" title="2.4、效果"></a>2.4、效果</h3><p><img src="/images/SpringBoot%E5%AE%9E%E7%8E%B0%E5%9B%BA%E5%AE%9A%E5%8A%A8%E6%80%81%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1%E5%92%8C%E5%BB%B6%E8%BF%9F%E4%BB%BB%E5%8A%A1/2.png"></p>
+<p>注意：当你修改了任务执行周期后，生效时间为执行完最近一次任务后。这一点是需要注意的，用生活中的例子理解就是我们取消电话卡的套餐也要下个月生效，含义是一样的。</p>
+<p><a target="_blank" rel="noopener" href="https://gitee.com/crushlxb/spring-boot">源码：springboot-scheduled</a></p>
+<h2 id="三、实现延迟任务"><a href="#三、实现延迟任务" class="headerlink" title="三、实现延迟任务"></a>三、实现延迟任务</h2><p>ThreadPoolTaskScheduler 这个类是在 <code>org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler</code> 这个包中。</p>
+<p>ThreadPoolTaskScheduler 是 <code>spring taskSchedule</code> 接口的实现，可以用来做定时任务使用。</p>
+<p><strong>ThreadPoolTaskScheduler 四个版本定时任务方法：</strong></p>
+<ul>
+<li>  <code>schedule(Runnable task, Date stateTime)</code>，在指定时间执行一次定时任务(<strong>实现一次性延迟任务</strong>)</li>
+<li>  <code>schedule(Runnable task, Trigger trigger)</code>，动态创建指定表达式cron的定时任务</li>
+<li>  <code>scheduleAtFixedRate</code>，指定间隔时间执行一次任务，间隔时间为前一次执行开始到下次任务开始时间</li>
+<li>  <code>scheduleWithFixedDelay</code>，指定间隔时间执行一次任务，间隔时间为前一次任务完成到下一次开始时间</li>
+</ul>
+<h3 id="具体实现"><a href="#具体实现" class="headerlink" title="具体实现"></a>具体实现</h3><p>我们需要向 spring 容器中注入一个 ThreadPoolTaskScheduler 的 bean，用于调度定时任务，以及需要增加一个缓存用于存入当前执行任务的 scheduleFuture 对象，将 ScheduledFuture 对象缓存的原因是在于，为了方面于停止对应的任务。</p>
+<p>我们点击 ThreadPoolTaskScheduler 类，看具体的源码的时候会发现有这么一段断码：</p>
+<p><img src="/images/SpringBoot%E5%AE%9E%E7%8E%B0%E5%9B%BA%E5%AE%9A%E5%8A%A8%E6%80%81%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1%E5%92%8C%E5%BB%B6%E8%BF%9F%E4%BB%BB%E5%8A%A1/3.png"><br>这里是表示初始化的线程池的大小为 1，也就是说线程调度器设置只有一个线程容量，如果存在多个任务被触发时，会等第一个任务执行完毕才会执行下一个任务。所以这里还是需要自己去定义线程的大小，避免因为默认的线程池导致出现奇奇怪怪的问题。</p>
+<h3 id="第一步"><a href="#第一步" class="headerlink" title="第一步"></a>第一步</h3><p>创建 ThreadPoolTaskScheduler Bean 以及 用于存放定时任务的 map</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ScheduleConfig</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 用来存入线程执行情况, 方便于停止定时任务时使用</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> ConcurrentHashMap&lt;String, ScheduledFuture&gt; taskList= <span class="keyword">new</span> <span class="title class_">ConcurrentHashMap</span>&lt;String, ScheduledFuture&gt;();</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> ThreadPoolTaskScheduler <span class="title function_">threadPoolTaskScheduler</span><span class="params">()</span>&#123;</span><br><span class="line">        <span class="type">ThreadPoolTaskScheduler</span> <span class="variable">threadPoolTaskScheduler</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ThreadPoolTaskScheduler</span>();</span><br><span class="line">        threadPoolTaskScheduler.setPoolSize(<span class="number">10</span>);                        <span class="comment">// 线程池大小</span></span><br><span class="line">        threadPoolTaskScheduler.setThreadNamePrefix(<span class="string">&quot;taskExecutor-&quot;</span>);   <span class="comment">// 线程名称</span></span><br><span class="line">        threadPoolTaskScheduler.setAwaitTerminationSeconds(<span class="number">60</span>);         <span class="comment">// 等待时长</span></span><br><span class="line">        threadPoolTaskScheduler.setWaitForTasksToCompleteOnShutdown(<span class="literal">true</span>);  <span class="comment">// 调度器shutdown被调用时等待当前被调度的任务完成</span></span><br><span class="line">        <span class="keyword">return</span> threadPoolTaskScheduler;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="第二步"><a href="#第二步" class="headerlink" title="第二步"></a>第二步</h3><p>增加用于外部访问的接口 controller，等程序启动完成之后，我们需要调用对应的方法进行访问测试</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@RestController</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TestController</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> DynamicTask task;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@RequestMapping(&quot;start&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">startTask</span><span class="params">()</span> &#123;</span><br><span class="line">        com.demo.task.startCron();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 测试访问： http://localhost:8080/stopById?taskId=任务一</span></span><br><span class="line">    <span class="meta">@RequestMapping(&quot;stopById&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">stopById</span><span class="params">(String taskId)</span> &#123;</span><br><span class="line">        com.demo.task.stop(taskId);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@RequestMapping(&quot;stopAll&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">stopAll</span><span class="params">()</span> &#123;</span><br><span class="line">        com.demo.task.stopAll();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="第三步"><a href="#第三步" class="headerlink" title="第三步"></a>第三步</h3><p><strong>核心逻辑</strong></p>
+<p>在这里当在执行 <code>threadPoolTaskScheduler.schedule()</code> 时，会传入一个自定义的 com.demo.task，以及一个 trigger。<br>调用完成之后会返回一个 scheduledFuture，这个就是当前的任务调度器，停止的时候需要找到这个调度器，用这个调用器来终止。</p>
+<ul>
+<li>  <code>threadPoolTaskScheduler.schedule(com.demo.task, cron)</code> 用来调度任务</li>
+<li>  <code>boolean cancelled = scheduledFuture.isCancelled();</code> 用来判断是否已经取消</li>
+<li>  <code>scheduledFuture.cancel(true)</code> 用来将当前的任务取消</li>
+</ul>
+<p>下面是核心代码逻辑：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">DynamicTask</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">static</span> <span class="type">Logger</span> <span class="variable">logger</span> <span class="operator">=</span> LoggerFactory.getLogger(DynamicTask.class);</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> ThreadPoolTaskScheduler threadPoolTaskScheduler;    <span class="comment">// 注入线程池任务调度类</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">startCron</span><span class="params">()</span>&#123;</span><br><span class="line"></span><br><span class="line">        getTasks().forEach(customizeTask -&gt; &#123;</span><br><span class="line">            <span class="comment">// 开始执行调度（CronTrigger是定时任务）</span></span><br><span class="line">            <span class="type">ScheduledFuture</span> <span class="variable">scheduledFuture</span> <span class="operator">=</span> </span><br><span class="line">                threadPoolTaskScheduler.schedule(customizeTask, <span class="keyword">new</span> <span class="title class_">CronTrigger</span>(customizeTask.getCron()));</span><br><span class="line">            <span class="comment">// 将 scheduledFuture 保存下来用于停止任务使用</span></span><br><span class="line">            ScheduleConfig.taskList.put(customizeTask.getName(), scheduledFuture);</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">stop</span><span class="params">(String taskId)</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (ScheduleConfig.taskList.isEmpty()) <span class="keyword">return</span>;</span><br><span class="line">        <span class="keyword">if</span> (ScheduleConfig.taskList.get(taskId) == <span class="literal">null</span>) <span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">        <span class="type">ScheduledFuture</span> <span class="variable">scheduledFuture</span> <span class="operator">=</span> ScheduleConfig.taskList.get(taskId);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (scheduledFuture != <span class="literal">null</span>) &#123;</span><br><span class="line">            scheduledFuture.cancel(<span class="literal">true</span>);   <span class="comment">// 这里需要使用指定的 scheduledFuture 来停止当前的线程</span></span><br><span class="line">            ScheduleConfig.taskList.remove(taskId);        <span class="comment">// 移除缓存</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">stopAll</span><span class="params">()</span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (ScheduleConfig.taskList.isEmpty()) <span class="keyword">return</span>;</span><br><span class="line">        ScheduleConfig.taskList.values().forEach(scheduledFuture -&gt; scheduledFuture.cancel(<span class="literal">true</span>) );</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> List&lt;CustomizeTask&gt; <span class="title function_">getTasks</span><span class="params">()</span>&#123;</span><br><span class="line">        <span class="keyword">return</span> Arrays.asList(</span><br><span class="line">                <span class="keyword">new</span> <span class="title class_">CustomizeTask</span>(<span class="string">&quot;任务一&quot;</span>, <span class="string">&quot;0/2 * * * * ?&quot;</span>),</span><br><span class="line">                <span class="keyword">new</span> <span class="title class_">CustomizeTask</span>(<span class="string">&quot;任务二&quot;</span>, <span class="string">&quot;0/3 * * * * ?&quot;</span>)</span><br><span class="line">            );</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 自定义任务，这里用来对任务进行封装</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">class</span> <span class="title class_">CustomizeTask</span> <span class="keyword">implements</span> <span class="title class_">Runnable</span> &#123;</span><br><span class="line">        <span class="keyword">private</span> String name;    <span class="comment">// 任务名字</span></span><br><span class="line">        <span class="keyword">private</span> String cron;    <span class="comment">// 触发条件</span></span><br><span class="line"></span><br><span class="line">        CustomizeTask(String name, String cron) &#123;</span><br><span class="line">            <span class="built_in">this</span>.name = name;</span><br><span class="line">            <span class="built_in">this</span>.cron = cron;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> String <span class="title function_">getCron</span><span class="params">()</span>&#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="built_in">this</span>.cron;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> String <span class="title function_">getName</span><span class="params">()</span>&#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="built_in">this</span>.name;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="comment">//schedule会定时执行run方法中的内容</span></span><br><span class="line">            logger.info(<span class="string">&quot;当前任务名称：&#123;&#125;&quot;</span>, name );</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>对于上面的任务类 <code>CustomizeTask</code> 可以自定义进行封装，可以增加成员属性调用的 <code>服务方法类</code> 以及 <code>调用参数</code>，在 run 方法上面就可以去调用对应的服务方法了，详见：<a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_46522803/article/details/127313780">SpringBoot动态定时任务(完整版)</a></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">class</span> <span class="title class_">CustomizeTask</span> <span class="keyword">implements</span> <span class="title class_">Runnable</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> String name;    <span class="comment">// 任务名字</span></span><br><span class="line">    <span class="keyword">private</span> String cron;    <span class="comment">// 触发条件</span></span><br><span class="line">    <span class="keyword">private</span> String data;    <span class="comment">// 传输的数据参数</span></span><br><span class="line">    <span class="keyword">private</span> String method;  <span class="comment">// 需要调用的方法</span></span><br><span class="line"></span><br><span class="line">    CustomizeTask(String name, String cron, String data, String method) &#123;</span><br><span class="line">        <span class="built_in">this</span>.name = name;</span><br><span class="line">        <span class="built_in">this</span>.cron = cron;</span><br><span class="line">        <span class="built_in">this</span>.data = data;</span><br><span class="line">        <span class="built_in">this</span>.method = method;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">getCron</span><span class="params">()</span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">this</span>.cron;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">getName</span><span class="params">()</span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">this</span>.name;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// 通过反射获取到调用的方法，传入调用的参数 data</span></span><br><span class="line">        logger.info(<span class="string">&quot;当前任务名称：&#123;&#125;&quot;</span>, name );</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><p>当源码搭建完成之后，启动服务，我们测试下，首先我们先访问下启动任务</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://localhost:8080/start</span><br></pre></td></tr></table></figure>
+
+<p>这里可以看到控制台交替输出任务的名称</p>
+<p><img src="/images/SpringBoot%E5%AE%9E%E7%8E%B0%E5%9B%BA%E5%AE%9A%E5%8A%A8%E6%80%81%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1%E5%92%8C%E5%BB%B6%E8%BF%9F%E4%BB%BB%E5%8A%A1/4.png"><br>接着，我们再来测试下停止其中的某个服务，当访问下面的链接之后，会发现任务一就已经被停止了</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://localhost:8080/stopById?taskId=任务一</span><br></pre></td></tr></table></figure>
+
+<p><img src="/images/SpringBoot%E5%AE%9E%E7%8E%B0%E5%9B%BA%E5%AE%9A%E5%8A%A8%E6%80%81%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1%E5%92%8C%E5%BB%B6%E8%BF%9F%E4%BB%BB%E5%8A%A1/5.png"><br>最后，我们访问下停止所有的任务：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://localhost:8080/stopAll</span><br></pre></td></tr></table></figure>
+
+<p>就会发现控制台没有任务在执行了。</p>
+<blockquote>
+<p>摘自：<a target="_blank" rel="noopener" href="https://www.shouxicto.com/article/811.html">SpringBoot实现固定、动态定时任务的三种实现方式</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2022/10/06/SpringBoot%E5%AE%9E%E7%8E%B0%E5%9B%BA%E5%AE%9A%E5%8A%A8%E6%80%81%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1%E5%92%8C%E5%BB%B6%E8%BF%9F%E4%BB%BB%E5%8A%A1/" data-id="cl9pgenxd00znycv12b8q0ogo" data-title="SpringBoot实现固定、动态定时任务和延迟任务" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/SpringBoot/" rel="tag">SpringBoot</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2022/10/08/SpringBoot%E6%95%B4%E5%90%88Redis%E4%BD%BF%E7%94%A8%E6%95%99%E7%A8%8B-%E6%B2%89%E9%BB%98%E7%8E%8B%E4%BA%8C/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          SpringBoot整合Redis使用教程(沉默王二)
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2022/10/05/SpringBoot%E4%BD%BF%E7%94%A8-Async%E5%AE%9E%E7%8E%B0%E5%BC%82%E6%AD%A5%E4%BB%BB%E5%8A%A1/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">SpringBoot使用@Async实现异步任务</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>SSO (单点登录)实现方式 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="SSO (Single-Sign-On) 即单点登录，在互联网应用中是多个站点通过一次登录即可访问所有产品，如Google所有产品通过 http:&#x2F;&#x2F;accounts.google.com&#x2F; ，百度所有产品统一登录地点是 http:&#x2F;&#x2F;passport.baidu.com&#x2F;  等，也有些产品是提供自己的登录界面，然后到统一入口验证。总之，就是要实现一次登录，处处登录。 如果所有产品都是在同一主域下">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SSO (单点登录)实现方式">
+<meta property="og:url" content="http://moqiang02.github.io/2015/07/25/SSO-%E5%8D%95%E7%82%B9%E7%99%BB%E5%BD%95-%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="SSO (Single-Sign-On) 即单点登录，在互联网应用中是多个站点通过一次登录即可访问所有产品，如Google所有产品通过 http:&#x2F;&#x2F;accounts.google.com&#x2F; ，百度所有产品统一登录地点是 http:&#x2F;&#x2F;passport.baidu.com&#x2F;  等，也有些产品是提供自己的登录界面，然后到统一入口验证。总之，就是要实现一次登录，处处登录。 如果所有产品都是在同一主域下">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2015-07-25T14:47:20.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.882Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-SSO-单点登录-实现方式" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2015/07/25/SSO-%E5%8D%95%E7%82%B9%E7%99%BB%E5%BD%95-%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F/" class="article-date">
+  <time class="dt-published" datetime="2015-07-25T14:47:20.000Z" itemprop="datePublished">2015-07-25</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/php/">php</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      SSO (单点登录)实现方式
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <p>SSO (Single-Sign-On) 即单点登录，在互联网应用中是多个站点通过一次登录即可访问所有产品，如Google所有产品通过 <a target="_blank" rel="noopener" href="http://accounts.google.com/">http://accounts.google.com/</a> ，百度所有产品统一登录地点是 <a target="_blank" rel="noopener" href="http://passport.baidu.com/">http://passport.baidu.com/</a>  等，也有些产品是提供自己的登录界面，然后到统一入口验证。总之，就是要实现一次登录，处处登录。</p>
+<p>如果所有产品都是在同一主域下，那么只要把登录的标识信息存放到主域的 cookie 中，即可实现访问任一产品的页面时把登录信息传递到服务器，然后服务器根据该信息判断是否需要用户再次登录。虽然大多数公司的产品都是在同一个域名下，但有些还是独立域名的，这时就涉及到跨域问题，也是 SSO 的难点所在。<span id="more"></span></p>
+<p>基本思路是在一个固定的入口登录，成功后返回一个 token，将这个 token 附带在跨域访问的某个文件上，该文件拿到这个 token 和服务器上存放的值比较，并获取对应的登录用户信息，然后设置登录标识 cookie，以此完成 SSO 登录。服务器上的 token 可以存在 memcache 等缓存中，或者通过 RPC 访问。</p>
+<p>通过查看现有网站，主要是百度和新浪的 SSO 实现方案（截至2013-7-31），来对 SSO 实现方式有一个详细的了解。</p>
+<h3 id="百度的-SSO"><a href="#百度的-SSO" class="headerlink" title="百度的 SSO"></a>百度的 SSO</h3><p>百度的很多产品都是在 baidu.com 这个主域名下，纳入到 SSO 的其他独立域名目前只有 hao123.com（很讨厌这个网站，一不小心就会在装软件时将它设为默认首页，还好现在不怎么用 IE）。</p>
+<p>点击百度产品的登录，一般会跳转到 passport.baidu.com，在这个页面完成登录，也有些是浮层，但登录实现方式一样：<br>1.填写完用户名密码后，点击“登录”按钮。</p>
+<p>2.js 创建一个 div 容器，在这个容器中主要创建两个元素：form 表单和 iframe。</p>
+<ul>
+<li>from 中包含很多<code>type=&quot;hidden&quot;</code>的 <code>&lt;input/&gt;</code> 标记，主要包含填写内容和其他相关内容，如要登录的产品标识和成功后的跳转地址等。form 的提交目标窗口指向之后的 iframe。</li>
+<li>iframe 初始地址所一个 _blank.html 文件，会造成一次 http 请求。</li>
+<li>这些内容都是拼成一个字符串，一次性写入的。</li>
+</ul>
+<p>3.动态创建节点完成后，马上提交数据，指向 iframe 中 passport.baidu.com/v2/api/?login。</p>
+<p>4.提交返回的结果内容在 iframe 中，通过 js 中的<code>location.replace()</code>跳转 iframe 到一个新的页面，这个页面是第2步中的表单项 ‘staticpage’ 指定的，一般都叫 v3Jump.hmtl，不同产品只是路径不同。</p>
+<p>5.v3Jump.html 中的 js 的作用就是以形如<code>parent.someMethod(&#123;&#125;)</code>的方式调用 iframe 父级窗口的 js 方法。涉及到不同域名调用主窗口 js 方法，因此一般 v3Jump.html 都是放在和主窗口同一域名下。</p>
+<p>6.主窗口的 js 处理页面表现，同时为了实现跨域，会调用 <a target="_blank" rel="noopener" href="https://user.hao123.com/static/crossdomain.php?bdu=...&amp;t=3434312">https://user.hao123.com/static/crossdomain.php?bdu=...&amp;t=3434312</a> ，这个 php 会根据 bdu 值验证登录状态，并设置 hao123.com 这个域名的 cookie 登录标识。比较巧妙的是，百度把这个地址作为一个 Image 对象的 src 属性，这样能完成请求，还不会渲染到页面上。</p>
+<p>7.最后，主窗口的 js 跳转页面到指定的地址。</p>
+<h3 id="新浪的-SSO"><a href="#新浪的-SSO" class="headerlink" title="新浪的 SSO"></a>新浪的 SSO</h3><p>新浪的独立域名好像只有一个 weibo.com，其他产品都是在 sina.com.cn 下。它的登录方式与百度基本相同，这里挑选不同的几点说明。<br><strong>在 weibo.com 登录</strong></p>
+<p>1.同百度</p>
+<p>2.同百度</p>
+<p>3.提交数据到 iframe, 指向 login.sina.com.cn/sso/login.php，提交表单后，会立马删除 from 节点（百度只在登录失败再次提交时才替换这个 form 节点)</p>
+<p>4.如果登录失败，iframe 中的内容为 location.replace() 跳转到 weibo.com/ajaxlogin.php；如果登录成功，则跳转地址为 weibo.com/sso/login.php，该文件返回 302，跳转到 ajaxlogin.php。</p>
+<p>5.ajaxlogin.php 负责用形如 parent.someMethod({}) 方式调用父窗口 js，处理页面。</p>
+<p>6.父窗口 js 删除 iframe 节点</p>
+<p>7.同百度</p>
+<p><strong>新浪其他 sina.com.cn 子域登录</strong></p>
+<p>1.同 weibo</p>
+<p>2.同 weibo</p>
+<p>3.同 weibo，但不会删除 form 节点</p>
+<p>4.这里有些不同，login.sina.com.cn 下，login.php 的内容用<code>location.replace()</code>指向 login.sina.com.cn/crossdomain2.php，由这个页面调用<code>parent.someMethod()</code>；而在新浪首页，login.php 中先设置 <code>document.domain=&#39;sina.com.cn&#39;</code>(login.php 与页面域名不完全相同)，然后再调用<code>parent.someMethod()</code>。</p>
+<p>5.父窗口的 js 处理页面表现，并用jsonp方式（放到script标记的src中）调用 weibo.com/sso/login.php 来完成跨域登录。</p>
+<p>6.结束</p>
+<p>新浪的登录 js 并不统一，明显 weibo 的 js 处理的更精细。</p>
+<p>weibo 登录中的第 4 步，iframe 中跳转方式实现对跨域的访问，显然有些局限。如果还有其他独立域名需要访问，这种跳转将无法兼顾。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>上面两个站点的实现方式基本相同，都是用 iframe 登录，然后在 iframe 中跳转来达到通过同一入口进行登录。难点在于跨域，特别需要注意的是：</p>
+<ul>
+<li><p>iframe 中的 js 如果要访问父窗口的方法，需要保证域名相同，或者主域相同并都设置domain属性为主域地址，否则浏览器会报安全警告。</p>
+</li>
+<li><p>跨域只要发起跨域的http请求即可，可以放到 script 标记的src中，也可已放到图片对象的 src 中，推荐后者，因为后者不用放到dom节点中。需要注意的是，这两种方式都要带一个每次都不同的参数，可以是时间戳，以防止浏览器的自动缓存。</p>
+</li>
+</ul>
+<p>上面着重关注了访问的跳转顺序，还有一个关键点是如何标识登录状态。上面的方案中，都会在请求跨域文件时，带上登录返回的一个唯一字符串，将它作为一个 token，在后端验证登录，识别登录的用户。可以把这个 token 设置为很短的时间有效，如1分钟，并在访问一次后删除，可以保证一定的安全性，但是如果在使用前截取，那么可以拿到任何一个地方登录。因为上面两个网站对跨域文件的访问都是写在主窗口的js里，因此可以很容易设置断点获取之。</p>
+<p>据说 Google 在这点上是安全的，可惜身边没法翻墙，留待以后吧。</p>
+<h3 id="补记"><a href="#补记" class="headerlink" title="补记"></a>补记</h3><p>周末有空折腾了一下翻墙，找到个超级好东西：SmartHosts，Youtube/Facebook/twitter… 都可以上了。</p>
+<h4 id="Google-SSO-实现方式"><a href="#Google-SSO-实现方式" class="headerlink" title="Google SSO 实现方式"></a>Google SSO 实现方式</h4><p>Google 所有产品的登录都是通过 <a target="_blank" rel="noopener" href="https://accounts.google.com/">https://accounts.google.com/</a> 进行处理，基本流程如下：</p>
+<p>1.在 Google 产品站点击“登录”，会跳转到 <a target="_blank" rel="noopener" href="https://accounts.google.com/ServiceLogin">https://accounts.google.com/ServiceLogin</a> 登录；</p>
+<p>2.表单 post 提交到 <a target="_blank" rel="noopener" href="https://accounts.google.com/ServiceLoginAuth">https://accounts.google.com/ServiceLoginAuth</a> 验证；</p>
+<p>3.登录成功则直接通过 302 转到 <a target="_blank" rel="noopener" href="https://accounts.google.com/CheckCookie">https://accounts.google.com/CheckCookie</a> ，访问跨域产品的页面，一般是 accounts.hostname/accounts/SetSID，设置登录cookie；</p>
+<p>4.页面跳转回登录来源页。</p>
+<p>针对不同的来源，具体处理上在第3步有些差别：</p>
+<blockquote>
+<p>如果登录来源是 *.google.com 或 youtube.com，则直接通过302指向 accounts.youtube.com/accounts/SetSID，之后该地址再转向到来源地址。</p>
+</blockquote>
+<blockquote>
+<p>如果登录来源是 *.google.com.hk，则返回200，通过 jsonp 请求 accounts.google.com.hk/accounts/SetSID 和 accounts.youtube.com/accounts/SetSID</p>
+</blockquote>
+<p>可以看到，基本原理是一样的，都是登录后，访问一下跨域的页面，完成登录信息的cookie设置。</p>
+<p>过程中通过修改 accounts.youtube.com 的 ip 指向，截取到了登录后的 /accounts/SetSID 链接，直接在一个新的浏览器中访问，是可以完成登录的。因此，Google 的 token 也不能保证这种截取的安全性。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2015/07/25/SSO-%E5%8D%95%E7%82%B9%E7%99%BB%E5%BD%95-%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F/" data-id="cl9pgenwt00xrycv1308ma4f4" data-title="SSO (单点登录)实现方式" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2015/08/02/%E7%B1%BB%E5%90%8D-this%E4%B8%8E%E7%B1%BB%E5%90%8D-class/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          类名.this与类名.class
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/07/25/SSO%E5%8D%95%E7%82%B9%E7%99%BB%E5%BD%95%E5%9C%A8web%E4%B8%8A%E7%9A%84%E5%85%B3%E9%94%AE%E7%82%B9-cookie%E8%B7%A8%E5%9F%9F/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">SSO单点登录在web上的关键点 cookie跨域</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

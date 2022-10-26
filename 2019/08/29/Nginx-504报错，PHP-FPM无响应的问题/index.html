@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Nginx 504报错，PHP-FPM无响应的问题 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="问题测试环境，压测接口中间件时遇到报错Nginx 504，查询nginx日志 1232017&#x2F;11&#x2F;21 15:20:15 [error] 26954#0: *1835 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.46, server: 192.168.23.9">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Nginx 504报错，PHP-FPM无响应的问题">
+<meta property="og:url" content="http://moqiang02.github.io/2019/08/29/Nginx-504%E6%8A%A5%E9%94%99%EF%BC%8CPHP-FPM%E6%97%A0%E5%93%8D%E5%BA%94%E7%9A%84%E9%97%AE%E9%A2%98/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="问题测试环境，压测接口中间件时遇到报错Nginx 504，查询nginx日志 1232017&#x2F;11&#x2F;21 15:20:15 [error] 26954#0: *1835 connect() failed (111: Connection refused) while connecting to upstream, client: 192.168.1.46, server: 192.168.23.9">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-08-29T05:00:46.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.829Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Nginx-504报错，PHP-FPM无响应的问题" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2019/08/29/Nginx-504%E6%8A%A5%E9%94%99%EF%BC%8CPHP-FPM%E6%97%A0%E5%93%8D%E5%BA%94%E7%9A%84%E9%97%AE%E9%A2%98/" class="article-date">
+  <time class="dt-published" datetime="2019-08-29T05:00:46.000Z" itemprop="datePublished">2019-08-29</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/nginx/">nginx</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Nginx 504报错，PHP-FPM无响应的问题
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%97%AE%E9%A2%98"><span class="toc-number">1.</span> <span class="toc-text">问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%B5%84%E6%96%99"><span class="toc-number">2.</span> <span class="toc-text">资料</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%88%86%E6%9E%90%E4%B8%8E%E8%A7%A3%E5%86%B3"><span class="toc-number">2.1.</span> <span class="toc-text">分析与解决</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%8D%E6%80%9D"><span class="toc-number">3.</span> <span class="toc-text">反思</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Nginx-502-amp-Nginx-504"><span class="toc-number">3.1.</span> <span class="toc-text">Nginx 502 &amp; Nginx 504</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%85%B3%E4%BA%8Epm-max-children"><span class="toc-number">3.2.</span> <span class="toc-text">关于pm.max_children</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E9%85%8D%E7%BD%AEmax-children%E5%8F%8A%E4%BC%98%E5%8C%96PHP-FPM"><span class="toc-number">3.3.</span> <span class="toc-text">如何配置max_children及优化PHP-FPM</span></a></li></ol></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p>测试环境，压测接口中间件时遇到报错Nginx 504，查询nginx日志</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">2017/11/21 15:20:15 [<span class="built_in">error</span>] 26954#0: <span class="number">*1835</span> connect() failed (111:<span class="built_in"> Connection </span>refused) <span class="keyword">while</span> connecting <span class="keyword">to</span> upstream, client: 192.168.1.46, server: 192.168.23.95, request: <span class="string">&quot;POST /screenInterface/FunctionByTime.php HTTP/1.1&quot;</span>, upstream: <span class="string">&quot;fastcgi://127.0.0.1:9000&quot;</span>, host: <span class="string">&quot;192.168.23.95:6010&quot;</span>, referrer: <span class="string">&quot;http://192.168.23.95:6010/screen2/&quot;</span></span><br><span class="line">2017/11/21 15:20:15 [<span class="built_in">error</span>] 26954#0: <span class="number">*1821</span> connect() failed (111:<span class="built_in"> Connection </span>refused) <span class="keyword">while</span> connecting <span class="keyword">to</span> upstream, client: 192.168.1.46, server: 192.168.23.95, request: <span class="string">&quot;POST /screenInterface/FUnctionByMobile.php HTTP/1.1&quot;</span>, upstream: <span class="string">&quot;fastcgi://127.0.0.1:9000&quot;</span>, host: <span class="string">&quot;192.168.23.95:6010&quot;</span>, referrer: <span class="string">&quot;http://192.168.23.95:6010/screen2/&quot;</span></span><br><span class="line">2017/11/21 15:20:15 [<span class="built_in">error</span>] 26954#0: <span class="number">*1836</span> connect() failed (111:<span class="built_in"> Connection </span>refused) <span class="keyword">while</span> connecting <span class="keyword">to</span> upstream, client: 192.168.1.46, server: 192.168.23.95, request: <span class="string">&quot;POST /screenInterface/LeftGraph.php HTTP/1.1&quot;</span>, upstream: <span class="string">&quot;fastcgi://127.0.0.1:9000&quot;</span>, host: <span class="string">&quot;192.168.23.95:6010&quot;</span>, referrer: <span class="string">&quot;http://192.168.23.95:6010/screen2/&quot;</span></span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+<h3 id="资料"><a href="#资料" class="headerlink" title="资料"></a>资料</h3><h4 id="分析与解决"><a href="#分析与解决" class="headerlink" title="分析与解决"></a>分析与解决</h4><p>初步推测为php-fpm无响应：</p>
+<ul>
+<li>能够成功访问nginx静态资源</li>
+<li>本地9000端口成功访问php资源php ./info.php</li>
+<li>nginx error code 504</li>
+</ul>
+<p>查询PHP-fpm的error日志发现报错：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">[21-Nov-2017 12:28:30] WARNING: [pool www] server reached pm.max_children setting (5), consider raising it</span><br><span class="line">[21-Nov-2017 12:33:29] WARNING: [pool www] server reached pm.max_children setting (5), consider raising it</span><br><span class="line">[21-Nov-2017 14:10:57] WARNING: [pool www] server reached pm.max_children setting (5), consider raising it</span><br><span class="line">[21-Nov-2017 14:31:05] WARNING: [pool www] server reached pm.max_children setting (5), consider raising it</span><br><span class="line">[21-Nov-2017 14:57:54] ERROR: unable to <span class="built_in">bind</span> listening socket <span class="keyword">for</span> address <span class="string">&#x27;127.0.0.1:9000&#x27;</span>: Address already <span class="keyword">in</span> use (98)</span><br><span class="line">[21-Nov-2017 14:57:54] ERROR: FPM initialization failed</span><br><span class="line">[21-Nov-2017 14:58:32] NOTICE: fpm is running, pid 26714</span><br><span class="line">[21-Nov-2017 14:58:32] NOTICE: ready to handle connections</span><br><span class="line">[21-Nov-2017 14:59:50] WARNING: [pool www] server reached pm.max_children setting (5), consider raising it</span><br><span class="line">[21-Nov-2017 15:20:12] NOTICE: Terminating ...</span><br><span class="line">[21-Nov-2017 15:20:12] NOTICE: exiting, bye-bye!</span><br><span class="line">[21-Nov-2017 15:20:25] NOTICE: fpm is running, pid 26972</span><br><span class="line">[21-Nov-2017 15:20:25] NOTICE: ready to handle connections</span><br><span class="line">[21-Nov-2017 15:20:44] WARNING: [pool www] server reached pm.max_children setting (5), consider raising it</span><br></pre></td></tr></table></figure>
+<p>推测原因为pm.max_children设置过小，将增大该值后重启中间件，问题解决。</p>
+<h3 id="反思"><a href="#反思" class="headerlink" title="反思"></a>反思</h3><h4 id="Nginx-502-amp-Nginx-504"><a href="#Nginx-502-amp-Nginx-504" class="headerlink" title="Nginx 502 &amp; Nginx 504"></a>Nginx 502 &amp; Nginx 504</h4><ul>
+<li>Nginx 502 Bad Gateway的含义是请求的PHP-CGI已经执行，但是由于某种原因(一般是读取资源的问题)没有执行完毕而导致PHP-CGI进程终止。</li>
+<li>Nginx 504 Gateway Time-out的含义是所请求的网关没有请求到，简单来说就是没有请求到可以执行的PHP-CGI。</li>
+</ul>
+<h4 id="关于pm-max-children"><a href="#关于pm-max-children" class="headerlink" title="关于pm.max_children"></a>关于pm.max_children</h4><p>一个前提设置： <code>pm = static/dynamic</code>,这个选项是标识fpm子进程的产生模式：</p>
+<ul>
+<li>static ：表示在fpm运行时直接fork出pm.max_chindren个worker进程，</li>
+<li>dynamic：表示，运行时fork出start_servers个进程，随着负载的情况，动态的调整，最多不超过max_children个进程。<br>一般推荐用static，优点是不用动态的判断负载情况，提升性能，缺点是多占用些系统内存资源。</li>
+</ul>
+<p>max_chindren代表的worker的进程数。对于配置越多能同时处理的并发也就越多，则是一个比较大的误区：</p>
+<ul>
+<li>管理进程和worker进程是通过pipe进行数据通讯的。所以进程多了，增加进程管理的开销，系统进程切换的开销，更核心的是，能并发执行的fpm进程不会超过cpu个数。因此通过多开worker的个数来提升qps是错误的。</li>
+<li>但worker进程开少了，如果server比较繁忙的话，会导到nginx把数据打到fpm的时候，发现所有的woker都在工作中，没有空闲的worker来接受请求，从而导致502。</li>
+</ul>
+<h4 id="如何配置max-children及优化PHP-FPM"><a href="#如何配置max-children及优化PHP-FPM" class="headerlink" title="如何配置max_children及优化PHP-FPM"></a>如何配置max_children及优化PHP-FPM</h4><p>php-fpm.conf有两个至关重要的参数：一个是”max_children”，另一个是”request_terminate_timeout”.</p>
+<ul>
+<li>request_terminate_timeout的值可以根 据你服务器的性能进行设定。一般来说性能越好你可以设置越高，20分钟-30分钟都可以。由于服务器PHP脚本需要长时间运行，有的可能会超过10分钟因此我设置了900秒，这样不会导致PHP-CGI死掉而出现502 Bad gateway这个错误。</li>
+<li>max_children的值原则上是越大越好，php-cgi的进程多了就会处理的很快，排队的请求就会很少。设置”max_children” 也需要根据服务器的性能进行设定，一般来说一台服务器正常情况下每一个php-cgi所耗费的内存在20M左右，因此”max_children”我设置成40个，20M*40=800M也就是说在峰值的时候所有PHP-CGI所耗内存在800M以内，低于我的有效内存1Gb。而如果我 的”max_children”设置的较小，比如5-10个，那么php-cgi就会“很累”，处理速度也很慢，等待的时间也较长。如果长时间没有得到处 理的请求就会出现504 Gateway Time-out这个错误，而正在处理的很累的那几个php-cgi如果遇到了问题就会出现502 Bad gateway这个错误。</li>
+<li>max_requests：每个进程若超过这个数目(跟php进程有一点点关系,关系不大),就自动杀死。</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2019/08/29/Nginx-504%E6%8A%A5%E9%94%99%EF%BC%8CPHP-FPM%E6%97%A0%E5%93%8D%E5%BA%94%E7%9A%84%E9%97%AE%E9%A2%98/" data-id="cl9pgenuf00prycv17s9jeaad" data-title="Nginx 504报错，PHP-FPM无响应的问题" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2019/09/04/%E4%B8%8D%E5%90%8C%E6%A6%82%E7%8E%87%E6%A8%A1%E5%9E%8B%E7%9A%84%E6%8A%BD%E5%A5%96%E4%BD%93%E9%AA%8C/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          不同概率模型的抽奖体验
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2019/08/26/vue%E4%B8%AD%E4%BD%BF%E7%94%A8html2canvas%E5%B0%86DOM%E8%BD%AC%E5%8C%96%E4%B8%BA%E5%9B%BE%E7%89%87/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">vue中使用html2canvas将DOM转化为图片</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

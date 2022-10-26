@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>php-fpm 与 Nginx优化总结 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="php-fpm参数概述php-fpm的配置文件在Ubuntu系统中的路径是&#x2F;etc&#x2F;php&#x2F;7.4&#x2F;fpm&#x2F;pool.d&#x2F;www.conf，下面对每个参数的意义进行简要的概述分析。 pm&#x3D;dynamic 该项共有三种设置方式 static 、 dynamic 、ondemand">
+<meta property="og:type" content="article">
+<meta property="og:title" content="php-fpm 与 Nginx优化总结">
+<meta property="og:url" content="http://moqiang02.github.io/2019/12/27/php-fpm-%E4%B8%8E-Nginx%E4%BC%98%E5%8C%96%E6%80%BB%E7%BB%93/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="php-fpm参数概述php-fpm的配置文件在Ubuntu系统中的路径是&#x2F;etc&#x2F;php&#x2F;7.4&#x2F;fpm&#x2F;pool.d&#x2F;www.conf，下面对每个参数的意义进行简要的概述分析。 pm&#x3D;dynamic 该项共有三种设置方式 static 、 dynamic 、ondemand">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-12-27T03:34:23.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.999Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-php-fpm-与-Nginx优化总结" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2019/12/27/php-fpm-%E4%B8%8E-Nginx%E4%BC%98%E5%8C%96%E6%80%BB%E7%BB%93/" class="article-date">
+  <time class="dt-published" datetime="2019-12-27T03:34:23.000Z" itemprop="datePublished">2019-12-27</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/linux/">linux</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      php-fpm 与 Nginx优化总结
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#php-fpm%E5%8F%82%E6%95%B0%E6%A6%82%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">php-fpm参数概述</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%9B%B8%E5%85%B3%E5%91%BD%E4%BB%A4%E5%8F%82%E8%80%83"><span class="toc-number">2.</span> <span class="toc-text">相关命令参考</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <h3 id="php-fpm参数概述"><a href="#php-fpm参数概述" class="headerlink" title="php-fpm参数概述"></a>php-fpm参数概述</h3><p>php-fpm的配置文件在Ubuntu系统中的路径是<code>/etc/php/7.4/fpm/pool.d/www.conf</code>，下面对每个参数的意义进行简要的概述分析。</p>
+<p><strong>pm=dynamic</strong></p>
+<p>该项共有三种设置方式 static 、 dynamic 、ondemand<span id="more"></span></p>
+<p>一种是<code>pm = static</code>，始终保持一个固定数量的子进程，这个数由<code>pm.max_children</code>定义，这种方式很不灵活，也通常不是默认的。<br>另一种是<code>pm = dynamic</code>，他是这样的，启动时，会产生固定数量的子进程（由<code>pm.start_servers</code>控制）可以理解成最小子进程数，而最大子进程数则由<code>pm.max_children</code>去控制，这样的话，子进程数会在最大和最小数范围中变化，还没有完，闲置的子进程数还可以由另2个配置控制，分别是<code>pm.min_spare_servers</code>和<code>pm.max_spare_servers</code>，也就是闲置的子进程也可以有最小和最大的数目，而如果闲置的子进程超出了<code>pm.max_spare_servers</code>，则会被杀掉。（注意，<code>pm.max_spare_servers</code>应小于<code>pm.max_children</code>）</p>
+<p>第三种就是<code>pm = ondemand</code>模式，这种模式和<code>pm = dynamic</code>相反，把内存放在第一位，他的工作模式很简单，每个闲置进程，在持续闲置了<code>pm.process_idle_timeout</code>秒后就会被杀掉，有了这个模式，到了服务器低峰期内存自然会降下来，如果服务器长时间没有请求，就只会有一个php-fpm主进程，当然弊端是，遇到高峰期或者如果<code>pm.process_idle_timeout</code>的值太短的话，无法避免服务器频繁创建进程的问题，因此<code>pm = dynamic</code>和<code>pm = ondemand</code>谁更适合视实际情况而定。</p>
+<p>可以看到，<code>pm = dynamic</code>模式非常灵活，也通常是默认的选项。但是，dynamic模式为了最大化地优化服务器响应，会造成更多内存使用，因为这种模式只会杀掉超出最大闲置进程数（<code>pm.max_spare_servers</code>）的闲置进程，比如最大闲置进程数是30，最大进程数是50，然后网站经历了一次访问高峰，此时50个进程全部忙碌，0个闲置进程数，接着过了高峰期，可能没有一个请求，于是会有50个闲置进程，但是此时php-fpm只会杀掉20个子进程，始终剩下30个进程继续作为闲置进程来等待请求，这可能就是为什么过了高峰期后即便请求数大量减少服务器内存使用却也没有大量减少，也可能是为什么有些时候重启下服务器情况就会好很多，因为重启后，php-fpm的子进程数会变成最小闲置进程数，而不是之前的最大闲置进程数。</p>
+<p><strong>max_requests</strong></p>
+<p>最大处理请求数是指一个php-fpm的worker进程在处理多少个请求后就终止掉，master进程会重新respawn一个新的。<br>这个配置的主要目的是避免php解释器或程序引用的第三方库造成的内存泄露。<br>当一个PHP-CGI进程处理的请求数累积到max_requests个后，自动重启该进程。<br>502，是后端 PHP-FPM 不可用造成的，间歇性的502一般认为是由于PHP-FPM进程重启造成的.</p>
+<p>但是为什么要重启进程呢？<br>如果不定期重启 PHP-CGI 进程，势必造成内存使用量不断增长（比如第三方库有问题等）。因此 PHP-FPM 作为 PHP-CGI 的管理器，提供了这么一项监控功能，对请求达到指定次数的 PHP-CGI 进程进行重启，保证内存使用量不增长。<br>正是因为这个机制，在高并发中，经常导致502错误<br>目前我们解决方案是把这个值尽量设置大些，减少 PHP-CGI 重新 SPAWN 的次数，同时也能提高总体性能。PS：刚开始我们是500导致内存飙高，现在改成5120，当然可以再大一些，10240等，这个主要看测试结果，如果没有内存泄漏等问题，可以再大一些。</p>
+<p><strong>max_children</strong></p>
+<p>最大进程数，一般来说一台服务器正常情况下每一个php-fpm所耗费的内存在40M左右，1G内存理想最大进程数可计算为<code>1000/40=25</code>，但是实际上内存不止有php-fpm在占用，故可根据实际情况来，适当减小使得内存不会因php-fpm进程过多而耗尽。而如果我的max_children设置的较小，比如5-10个，那么php-fpm就会“很累”，处理速度也很慢，等待的时间也较长。如果长时间没有得到处 理的请求就会出现”504 Gateway Time-out”这个错误。</p>
+<p><strong>request_terminate_timeout</strong></p>
+<p>据你服务器的性能进行设定。一般来说性能越好你可以设置越高，20分钟-30分钟都可以。由于我的服务器PHP脚本需要长时间运行，有的可能会超过10分 钟因此我设置了1200秒，这样不会导致php-fpm死掉而出现”502 Bad gateway”这个错误。</p>
+<p><strong>pm.start_servers</strong></p>
+<p>动态方式下的起始php-fpm进程数量<br><code>pm.start_servers</code>的默认值为2。并且php-fpm中给的计算方式也为：<br><code>（cpu空闲时等待连接的php的最小子进程数） + （cpu空闲时等待连接的php的最大子进程数 - cpu空闲时等待连接的php的最小子进程数）/ 2</code><br>用配置表示就是：<code>min_spare_servers + (max_spare_servers - min_spare_servers) / 2</code><br>一般而言，设置成10-20之间的数据足够满足需求了。</p>
+<p><strong>pm.min_spare_servers</strong></p>
+<p>动态方式下的最小php-fpm闲置进程数</p>
+<p><strong>pm.max_spare_servers</strong></p>
+<p>动态方式下的最大php-fpm闲置进程数量</p>
+<h3 id="相关命令参考"><a href="#相关命令参考" class="headerlink" title="相关命令参考"></a>相关命令参考</h3><p>php-fpm 重启</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">kill</span> -USR2 `<span class="built_in">cat</span> /usr/local/php/var/run/php-fpm.pid`</span><br></pre></td></tr></table></figure>
+
+<p>查看php-fpm进程数量<br><code>ps aux | grep -c php</code></p>
+<p>查看内存占用情况<br><code>free</code></p>
+<p>倒序查看内存详细占用情况<br><code>top ————&gt; M</code></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2019/12/27/php-fpm-%E4%B8%8E-Nginx%E4%BC%98%E5%8C%96%E6%80%BB%E7%BB%93/" data-id="cl9pgeo2x01ekycv1e5lr8zu9" data-title="php-fpm 与 Nginx优化总结" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2019/12/27/Redis%E5%86%85%E5%AD%98%E6%BA%A2%E5%87%BA%E5%90%8E%E6%8A%A5%E9%94%99%E7%9A%84%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          Redis内存溢出后报错的解决办法
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2019/12/22/css3%E8%87%AA%E9%80%82%E5%BA%94%E6%B3%95%E5%AE%9Dfill-available%E3%80%81fit-content%E3%80%81max-content%E3%80%81min-content/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">css3自适应法宝fill-available、fit-content、max-content、min-content</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

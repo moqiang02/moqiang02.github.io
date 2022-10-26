@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Nginx实战系列之功能篇-后端节点健康检查 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="公司前一段对业务线上的nginx做了整理，重点就是对nginx上负载均衡器的后端节点做健康检查。目前，nginx对后端节点健康检查的方式主要有3种，这里列出： 1、ngx_http_proxy_module 模块和ngx_http_upstream_module模块（自带）   官网地址：http:&#x2F;&#x2F;nginx.org&#x2F;cn&#x2F;docs&#x2F;http&#x2F;ngx_http_proxy_module.htm">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Nginx实战系列之功能篇-后端节点健康检查">
+<meta property="og:url" content="http://moqiang02.github.io/2013/12/23/Nginx%E5%AE%9E%E6%88%98%E7%B3%BB%E5%88%97%E4%B9%8B%E5%8A%9F%E8%83%BD%E7%AF%87-%E5%90%8E%E7%AB%AF%E8%8A%82%E7%82%B9%E5%81%A5%E5%BA%B7%E6%A3%80%E6%9F%A5/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="公司前一段对业务线上的nginx做了整理，重点就是对nginx上负载均衡器的后端节点做健康检查。目前，nginx对后端节点健康检查的方式主要有3种，这里列出： 1、ngx_http_proxy_module 模块和ngx_http_upstream_module模块（自带）   官网地址：http:&#x2F;&#x2F;nginx.org&#x2F;cn&#x2F;docs&#x2F;http&#x2F;ngx_http_proxy_module.htm">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/Nginx%E5%AE%9E%E6%88%98%E7%B3%BB%E5%88%97%E4%B9%8B%E5%8A%9F%E8%83%BD%E7%AF%87/1.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/Nginx%E5%AE%9E%E6%88%98%E7%B3%BB%E5%88%97%E4%B9%8B%E5%8A%9F%E8%83%BD%E7%AF%87/2.jpg">
+<meta property="article:published_time" content="2013-12-23T02:46:47.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.831Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/Nginx%E5%AE%9E%E6%88%98%E7%B3%BB%E5%88%97%E4%B9%8B%E5%8A%9F%E8%83%BD%E7%AF%87/1.jpg">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Nginx实战系列之功能篇-后端节点健康检查" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2013/12/23/Nginx%E5%AE%9E%E6%88%98%E7%B3%BB%E5%88%97%E4%B9%8B%E5%8A%9F%E8%83%BD%E7%AF%87-%E5%90%8E%E7%AB%AF%E8%8A%82%E7%82%B9%E5%81%A5%E5%BA%B7%E6%A3%80%E6%9F%A5/" class="article-date">
+  <time class="dt-published" datetime="2013-12-23T02:46:47.000Z" itemprop="datePublished">2013-12-23</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/nginx/">nginx</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Nginx实战系列之功能篇-后端节点健康检查
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <p>公司前一段对业务线上的nginx做了整理，重点就是对nginx上负载均衡器的后端节点做健康检查。目前，nginx对后端节点健康检查的方式主要有3种，这里列出：</p>
+<p>1、ngx_http_proxy_module 模块和ngx_http_upstream_module模块（自带）<br>   官网地址：<a target="_blank" rel="noopener" href="http://nginx.org/cn/docs/http/ngx_http_proxy_module.html#proxy_next_upstream">http://nginx.org/cn/docs/http/ngx_http_proxy_module.html#proxy_next_upstream</a><br>2、nginx_upstream_check_module模块<br>   官网网址：<a target="_blank" rel="noopener" href="https://github.com/yaoweibin/nginx_upstream_check_module">https://github.com/yaoweibin/nginx_upstream_check_module</a><br>3、ngx_http_healthcheck_module模块<br>   官网网址：<a target="_blank" rel="noopener" href="http://wiki.nginx.org/NginxHttpHealthcheckModule">http://wiki.nginx.org/NginxHttpHealthcheckModule</a></p>
+<p>公司业务线上对后端节点的健康检查是通过nginx_upstream_check_module模块做的，这里我将分别介绍这三种实现方式以及之间的差异性。  </p>
+<span id="more"></span>
+<h3 id="一、-ngx-http-proxy-module-模块-和ngx-http-upstream-module模块-（自带）"><a href="#一、-ngx-http-proxy-module-模块-和ngx-http-upstream-module模块-（自带）" class="headerlink" title="一、 ngx_http_proxy_module 模块 和ngx_http_upstream_module模块 （自带）"></a>一、 ngx_http_proxy_module 模块 和ngx_http_upstream_module模块 （自带）</h3><p>严格来说，nginx自带是没有针对负载均衡后端节点的健康检查的，但是可以通过默认自带的 ngx_http_proxy_module 模块 和ngx_http_upstream_module模块中的相关指令来完成当后端节点出现故障时，自动切换到健康节点来提供访问。</p>
+<p>这里列出这两个模块中相关的指令：</p>
+<p>ngx_http_proxy_module 模块中的  proxy_connect_timeout 指令、 proxy_read_timeout指令和proxy_next_upstream指令</p>
+<p>语法:    proxy_connect_timeout time;<br>默认值:    proxy_connect_timeout 60s;<br>上下文:    http, server, location</p>
+<p>设置与后端服务器建立连接的超时时间。应该注意这个超时一般不可能大于75秒。</p>
+<p>语法:    proxy_read_timeout time;<br>默认值:    proxy_read_timeout 60s;<br>上下文:    http, server, location</p>
+<p>定义从后端服务器读取响应的超时。此超时是指相邻两次读操作之间的最长时间间隔，而不是整个响应传输完成的最长时间。如果后端服务器在超时时间段内没有传输任何数据，连接将被关闭。</p>
+<p>语法:    proxy_next_upstream error ｜ timeout ｜ invalid_header ｜ http_500 ｜ http_502 ｜ http_503 ｜ http_504 ｜http_404 ｜ off …;<br>默认值:    proxy_next_upstream error timeout;<br>上下文:    http, server, location</p>
+<p>指定在何种情况下一个失败的请求应该被发送到下一台后端服务器：</p>
+<p>error      # 和后端服务器建立连接时，或者向后端服务器发送请求时，或者从后端服务器接收响应头时，出现错误<br>timeout    # 和后端服务器建立连接时，或者向后端服务器发送请求时，或者从后端服务器接收响应头时，出现超时<br>invalid_header  # 后端服务器返回空响应或者非法响应头<br>http_500   # 后端服务器返回的响应状态码为500<br>http_502   # 后端服务器返回的响应状态码为502<br>http_503   # 后端服务器返回的响应状态码为503<br>http_504   # 后端服务器返回的响应状态码为504<br>http_404   # 后端服务器返回的响应状态码为404<br>off        # 停止将请求发送给下一台后端服务器</p>
+<p>需要理解一点的是，只有在没有向客户端发送任何数据以前，将请求转给下一台后端服务器才是可行的。也就是说，如果在传输响应到客户端时出现错误或者超时，这类错误是不可能恢复的。</p>
+<p>范例如下：</p>
+<figure class="highlight applescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">http &#123;</span><br><span class="line">proxy_next_upstream http_502 http_504 http_404 <span class="keyword">error</span> <span class="keyword">timeout</span> invalid_header;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>ngx_http_upstream_module模块中的server指令</p>
+<p>语法:    server address [parameters];<br>默认值:    ―<br>上下文:    upstream</p>
+<p>范例如下：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">upstream name &#123;</span><br><span class="line">       <span class="built_in"> server </span>10.1.1.110:8080 <span class="attribute">max_fails</span>=1 <span class="attribute">fail_timeout</span>=10s;</span><br><span class="line">       <span class="built_in"> server </span>10.1.1.122:8080 <span class="attribute">max_fails</span>=1 <span class="attribute">fail_timeout</span>=10s;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>下面是每个指令的介绍：</p>
+<p>max_fails=number      # 设定Nginx与服务器通信的尝试失败的次数。在fail_timeout参数定义的时间段内，如果失败的次数达到此值，Nginx就认为服务器不可用。在下一个fail_timeout时间段，服务器不会再被尝试。 失败的尝试次数默认是1。设为0就会停止统计尝试次数，认为服务器是一直可用的。 你可以通过指令proxy_next_upstream、fastcgi_next_upstream和 memcached_next_upstream来配置什么是失败的尝试。 默认配置时，http_404状态不被认为是失败的尝试。<br>fail_timeout=time       # 设定服务器被认为不可用的时间段以及统计失败尝试次数的时间段。在这段时间中，服务器失败次数达到指定的尝试次数，服务器就被认为不可用。默认情况下，该超时时间是10秒。</p>
+<p>在实际应用当中，如果你后端应用是能够快速重启的应用，比如nginx的话，自带的模块是可以满足需求的。但是需要注意。如果后端有不健康节点，负载均衡器依然会先把该请求转发给该不健康节点，然后再转发给别的节点，这样就会浪费一次转发。<br>可是，如果当后端应用重启时，重启操作需要很久才能完成的时候就会有可能拖死整个负载均衡器。此时，由于无法准确判断节点健康状态，导致请求handle住，出现假死状态，最终整个负载均衡器上的所有节点都无法正常响应请求。由于公司的业务程序都是java开发的，因此后端主要是nginx集群和tomcat集群。由于tomcat重启应部署上面的业务不同，有些业务启动初始化时间过长，就会导致上述现象的发生，因此不是很建议使用该模式。<br>并且ngx_http_upstream_module模块中的server指令中的max_fails参数设置值，也会和ngx_http_proxy_module 模块中的的proxy_next_upstream指令设置起冲突。比如如果将max_fails设置为0，则代表不对后端服务器进行健康检查，这样还会使fail_timeout参数失效（即不起作用）。此时，其实我们可以通过调节ngx_http_proxy_module 模块中的 proxy_connect_timeout 指令、proxy_read_timeout指令，通过将他们的值调低来发现不健康节点，进而将请求往健康节点转移。<br>以上就是nginx自带的两个和后端健康检查相关的模块。</p>
+<h3 id="二、nginx-upstream-check-module模块"><a href="#二、nginx-upstream-check-module模块" class="headerlink" title="二、nginx_upstream_check_module模块"></a>二、nginx_upstream_check_module模块</h3><p>除了自带的上述模块，还有一个更专业的模块，来专门提供负载均衡器内节点的健康检查的。这个就是淘宝技术团队开发的 nginx 模块 nginx_upstream_check_module，通过它可以用来检测后端 realserver 的健康状态。如果后端 realserver 不可用，则所以的请求就不会转发到该节点上。</p>
+<p>在淘宝自己的 tengine 上是自带了该模块的，大家可以访问淘宝tengine的官网来获取该版本的nginx，官方地址： <a target="_blank" rel="noopener" href="http://tengine.taobao.org/">http://tengine.taobao.org/</a> 。</p>
+<p>如果我们没有使用淘宝的 tengine 的话，可以通过补丁的方式来添加该模块到我们自己的 nginx 中。我们业务线上就是采用该方式进行添加的。</p>
+<p>下面是部署流程！</p>
+<p>1、下载 nginx_upstream_check_module模块</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost ~]<span class="comment"># cd /usr/local/src</span></span><br><span class="line">wget https:<span class="regexp">//</span>codeload.github.com<span class="regexp">/yaoweibin/</span>nginx_upstream_check_module<span class="regexp">/zip/m</span>aster</span><br><span class="line">unzip master</span><br><span class="line">[root@localhost <span class="regexp">/usr/</span>local/src]<span class="comment"># ll -d nginx_upstream_check_module-master</span></span><br><span class="line">drwxr-xr-x. <span class="number">6</span> root root <span class="number">4096</span> Dec  <span class="number">1</span> <span class="number">02</span>:<span class="number">28</span> nginx_upstream_check_module-master</span><br></pre></td></tr></table></figure>
+<p>2、为nginx打补丁</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost <span class="regexp">/usr/</span>local/src]# cd nginx-<span class="number">1.6</span>.<span class="number">0</span> # 进入nginx的源码目录</span><br><span class="line">[root@localhost nginx-<span class="number">1.6</span>.<span class="number">0</span>]# patch -p1 &lt; ..<span class="regexp">/nginx_upstream_check_module-master/</span>check_1.<span class="number">5.12</span>+.patch</span><br><span class="line">[root@localhost nginx-<span class="number">1.6</span>.<span class="number">0</span>]# .<span class="regexp">/configure --user=nginx --group=nginx --prefix=/u</span>sr<span class="regexp">/local/</span>nginx-<span class="number">1.6</span>.<span class="number">0</span> --with-http_ssl_module --with-openssl=<span class="regexp">/usr/</span>local<span class="regexp">/src/</span>openssl-<span class="number">0.9</span>.<span class="number">8</span>q --with-pcre=<span class="regexp">/usr/</span>local<span class="regexp">/src/</span>pcre-<span class="number">8.32</span> --add-module=<span class="regexp">/usr/</span>local<span class="regexp">/src/</span>nginx_concat_module<span class="regexp">/ --add-module=../</span>nginx_upstream_check_module-master/</span><br><span class="line">make (注意：此处只make，编译参数需要和之前的一样)</span><br><span class="line">[root@localhost nginx-<span class="number">1.6</span>.<span class="number">0</span>]# mv <span class="regexp">/usr/</span>local<span class="regexp">/nginx/</span>sbin<span class="regexp">/nginx /u</span>sr<span class="regexp">/local/</span>nginx<span class="regexp">/sbin/</span>nginx-<span class="number">1.6</span>.<span class="number">0</span>.bak</span><br><span class="line">[root@localhost nginx-<span class="number">1.6</span>.<span class="number">0</span>]# cp .<span class="regexp">/objs/</span>nginx <span class="regexp">/usr/</span>local<span class="regexp">/nginx/</span>sbin/</span><br><span class="line">[root@localhost nginx-<span class="number">1.6</span>.<span class="number">0</span>]# <span class="regexp">/usr/</span>local<span class="regexp">/nginx/</span>sbin/nginx -t  # 检查下是否有问题</span><br><span class="line">[root@localhost nginx-<span class="number">1.6</span>.<span class="number">0</span>]# kill -USR2 `cat <span class="regexp">/usr/</span>local<span class="regexp">/nginx/</span>logs/nginx.pid`</span><br></pre></td></tr></table></figure>
+<p>3、在nginx.conf配置文件里面的upstream加入健康检查，如下：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">upstream name &#123;</span><br><span class="line">      <span class="built_in"> server </span>192.168.0.21:80;</span><br><span class="line">      <span class="built_in"> server </span>192.168.0.22:80;</span><br><span class="line">       check <span class="attribute">interval</span>=3000 <span class="attribute">rise</span>=2 <span class="attribute">fall</span>=5 <span class="attribute">timeout</span>=1000 <span class="attribute">type</span>=http;</span><br><span class="line">       </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面 配置的意思是，对name这个负载均衡条目中的所有节点，每个3秒检测一次，请求2次正常则标记 realserver状态为up，如果检测 5 次都失败，则标记 realserver的状态为down，超时时间为1秒。</p>
+<p>这里列出 nginx_upstream_check_module 模块所支持的指令意思：</p>
+<p>Syntax: check interval=milliseconds [fall=count] [rise=count] [timeout=milliseconds] [default_down=true｜false] [type=tcp｜http｜ssl_hello｜mysql｜ajp] [port=check_port]<br>Default: 如果没有配置参数，默认值是：interval=30000 fall=5 rise=2 timeout=1000 default_down=true type=tcp<br>Context: upstream</p>
+<p>该指令可以打开后端服务器的健康检查功能。</p>
+<p>指令后面的参数意义是：</p>
+<p>  -interval：向后端发送的健康检查包的间隔。<br>  -fall(fall_count): 如果连续失败次数达到fall_count，服务器就被认为是down。<br>  -rise(rise_count): 如果连续成功次数达到rise_count，服务器就被认为是up。<br>  -timeout: 后端健康请求的超时时间。<br>  -default_down: 设定初始时服务器的状态，如果是true，就说明默认是down的，如果是false，就是up的。默认值是true，也就是一开始服务器认为是不可用，要等健康检查包达到一定成功次数以后才会被认为是健康的。<br>  -type：健康检查包的类型，现在支持以下多种类型<br>    -tcp：简单的tcp连接，如果连接成功，就说明后端正常。<br>    -ssl_hello：发送一个初始的SSL hello包并接受服务器的SSL hello包。<br>    -http：发送HTTP请求，通过后端的回复包的状态来判断后端是否存活。<br>    -mysql: 向mysql服务器连接，通过接收服务器的greeting包来判断后端是否存活。<br>    -ajp：向后端发送AJP协议的Cping包，通过接收Cpong包来判断后端是否存活。<br>  -port: 指定后端服务器的检查端口。你可以指定不同于真实服务的后端服务器的端口，比如后端提供的是443端口的应用，你可以去检查80端口的状态来判断后端健康状况。默认是0，表示跟后端server提供真实服务的端口一样。该选项出现于Tengine-1.4.0。</p>
+<p>Syntax: check_keepalive_requests request_num<br>Default: 1<br>Context: upstream</p>
+<p>该指令可以配置一个连接发送的请求数，其默认值为1，表示Tengine完成1次请求后即关闭连接。</p>
+<p>Syntax: check_http_send http_packet<br>Default: “GET / HTTP/1.0\r\n\r\n”<br>Context: upstream</p>
+<p>该指令可以配置http健康检查包发送的请求内容。为了减少传输数据量，推荐采用”HEAD”方法。</p>
+<p>当采用长连接进行健康检查时，需在该指令中添加keep-alive请求头，如：”HEAD / HTTP/1.1\r\nConnection: keep-alive\r\n\r\n”。 同时，在采用”GET”方法的情况下，请求uri的size不宜过大，确保可以在1个interval内传输完成，否则会被健康检查模块视为后端服务器或网络异常。</p>
+<p>Syntax: check_http_expect_alive [ http_2xx ｜ http_3xx ｜ http_4xx ｜ http_5xx ]<br>Default: http_2xx ｜ http_3xx<br>Context: upstream</p>
+<p>该指令指定HTTP回复的成功状态，默认认为2XX和3XX的状态是健康的。</p>
+<p>Syntax: check_shm_size size<br>Default: 1M<br>Context: http</p>
+<p>所有的后端服务器健康检查状态都存于共享内存中，该指令可以设置共享内存的大小。默认是1M，如果你有1千台以上的服务器并在配置的时候出现了错误，就可能需要扩大该内存的大小。</p>
+<p>Syntax: check_status [html｜csv｜json]<br>Default: check_status html<br>Context: location</p>
+<p>显示服务器的健康状态页面。该指令需要在http块中配置。</p>
+<p>在Tengine-1.4.0以后，你可以配置显示页面的格式。支持的格式有: html、csv、 json。默认类型是html。</p>
+<p>你也可以通过请求的参数来指定格式，假设‘/status’是你状态页面的URL， format参数改变页面的格式，比如：</p>
+<p>/status?format=html<br>/status?format=csv<br>/status?format=json</p>
+<p>同时你也可以通过status参数来获取相同服务器状态的列表，比如：</p>
+<p>/status?format=html&amp;status=down<br>/status?format=csv&amp;status=up</p>
+<p>下面是一个状态也配置的范例：</p>
+<figure class="highlight crmsh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">http &#123;</span><br><span class="line">      server &#123;</span><br><span class="line">       <span class="keyword">location</span> <span class="title">/nstatus</span> &#123;</span><br><span class="line">         check_status;</span><br><span class="line">         access_log off;</span><br><span class="line">         <span class="comment">#allow IP;</span></span><br><span class="line">         <span class="comment">#deny all;</span></span><br><span class="line">       &#125;</span><br><span class="line">      &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>配置完毕后，重启nginx。此时通过访问定义好的路径，就可以看到当前 realserver 实时的健康状态啦。效果如下图：<br>realserver 都正常的状态：<br><img src="/images/Nginx%E5%AE%9E%E6%88%98%E7%B3%BB%E5%88%97%E4%B9%8B%E5%8A%9F%E8%83%BD%E7%AF%87/1.jpg"></p>
+<p>一台 realserver 故障的状态：<br><img src="/images/Nginx%E5%AE%9E%E6%88%98%E7%B3%BB%E5%88%97%E4%B9%8B%E5%8A%9F%E8%83%BD%E7%AF%87/2.jpg"></p>
+<p> OK，以上nginx_upstream_check_module模块的相关信息，更多的信息大家可以去该模块的淘宝tengine页面和github上该项目页面去查看，下面是访问地址：</p>
+<p><a target="_blank" rel="noopener" href="http://tengine.taobao.org/document_cn/http_upstream_check_cn.html">http://tengine.taobao.org/document_cn/http_upstream_check_cn.html</a></p>
+<p><a target="_blank" rel="noopener" href="https://github.com/yaoweibin/nginx_upstream_check_module">https://github.com/yaoweibin/nginx_upstream_check_module</a><br>在生产环境的实施应用中，需要注意的有 2 点：</p>
+<p>1、主要定义好type。由于默认的type是tcp类型，因此假设你服务启动，不管是否初始化完毕，它的端口都会起来，所以此时前段负载均衡器为认为该服务已经可用，其实是不可用状态。</p>
+<p>2、注意check_http_send值的设定。由于它的默认值是”GET / HTTP/1.0\r\n\r\n”。假设你的应用是通过<a target="_blank" rel="noopener" href="http://ip/name%E8%AE%BF%E9%97%AE%E7%9A%84%EF%BC%8C%E9%82%A3%E4%B9%88%E8%BF%99%E9%87%8C%E4%BD%A0%E7%9A%84">http://ip/name访问的，那么这里你的</a> check_http_send值就需要更改为 “GET /name HTTP/1.0\r\n\r\n”才可以。针对采用长连接进行检查的， 这里增加 keep-alive请求 头，即”HEAD /name HTTP/1.1\r\nConnection: keep-alive\r\n\r\n”。如果你后端的tomcat是基于域名的多虚拟机，此时你需要通过 check_http_send定义host，不然每次访问都是失败，范例：check_http_send “GET /mobileapi HTTP/1.0\r\n HOST  <a target="_blank" rel="noopener" href="http://www.redhat.sx/r/n/r/n&quot;">www.redhat.sx\r\n\r\n&quot;</a>;</p>
+<h3 id="三、-ngx-http-healthcheck-module模块"><a href="#三、-ngx-http-healthcheck-module模块" class="headerlink" title="三、 ngx_http_healthcheck_module模块"></a>三、 ngx_http_healthcheck_module模块</h3><p>除了上面两个模块，nginx官方在早期的时候还提供了一个 ngx_http_healthcheck_module  模块用来进行 nginx后端节点的健康检查。 nginx_upstream_check_module模块就是参照 该模块的设计理念进行开发的，因此在使用和效果上都大同小异。但是需要注意的是， ngx_http_healthcheck_module  模块仅仅支持nginx的1.0.0版本，1.1.0版本以后都不支持了！因此，对于目前常见的生产环境上都不会去用了，这里仅仅留个纪念，给大家介绍下这个模块！</p>
+<p>具体的使用方法，这里可以贴出几篇靠谱的博文地址以及官方地址：</p>
+<p><a target="_blank" rel="noopener" href="http://wiki.nginx.org/HttpHealthcheckModule">http://wiki.nginx.org/HttpHealthcheckModule</a></p>
+<p><a target="_blank" rel="noopener" href="https://github.com/cep21/healthcheck_nginx_upstreams/blob/master/README">https://github.com/cep21/healthcheck_nginx_upstreams/blob/master/README</a></p>
+<p>OK！</p>
+<p>以上就是本文的内容，希望能够对51博友有所帮助！<br>原文  <a target="_blank" rel="noopener" href="http://nolinux.blog.51cto.com/4824967/1594029">http://nolinux.blog.51cto.com/4824967/1594029</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2013/12/23/Nginx%E5%AE%9E%E6%88%98%E7%B3%BB%E5%88%97%E4%B9%8B%E5%8A%9F%E8%83%BD%E7%AF%87-%E5%90%8E%E7%AB%AF%E8%8A%82%E7%82%B9%E5%81%A5%E5%BA%B7%E6%A3%80%E6%9F%A5/" data-id="cl9pgenui00q3ycv128731p1h" data-title="Nginx实战系列之功能篇-后端节点健康检查" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2013/12/23/nginx%E5%88%A9%E7%94%A8%E7%AC%AC%E4%B8%89%E6%96%B9%E6%A8%A1%E5%9D%97nginx-upstream-check-module%E6%9D%A5%E6%A3%80%E6%9F%A5%E5%90%8E%E7%AB%AF%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84%E5%81%A5%E5%BA%B7%E6%83%85%E5%86%B5/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          nginx利用第三方模块nginx_upstream_check_module来检查后端服务器的健康情况
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2013/12/23/Nginx-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%92%8C%E5%8F%8D%E5%90%91%E4%BB%A3%E7%90%86/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">Nginx 负载均衡和反向代理</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

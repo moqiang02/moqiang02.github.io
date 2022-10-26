@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>SpringBoot使用AOP记录接口操作日志 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="前言：我们项目中可能有这种需求，每个人请求了哪些接口？做了什么事情？参数是什么？重要的接口我们需要记录操作日志以便查找。操作日志和系统日志不一样，操作日志必须要做到简单易懂。所以如何让操作日志不跟业务逻辑耦合，如何让操作日志的内容易于理解，如何让操作日志的接入更加简单？我们不可能在每个接口中去一一处理，可以借助Spring提供的AOP能力+自定义注解轻松应对。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SpringBoot使用AOP记录接口操作日志">
+<meta property="og:url" content="http://moqiang02.github.io/2022/09/27/SpringBoot%E4%BD%BF%E7%94%A8AOP%E8%AE%B0%E5%BD%95%E6%8E%A5%E5%8F%A3%E6%93%8D%E4%BD%9C%E6%97%A5%E5%BF%97/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="前言：我们项目中可能有这种需求，每个人请求了哪些接口？做了什么事情？参数是什么？重要的接口我们需要记录操作日志以便查找。操作日志和系统日志不一样，操作日志必须要做到简单易懂。所以如何让操作日志不跟业务逻辑耦合，如何让操作日志的内容易于理解，如何让操作日志的接入更加简单？我们不可能在每个接口中去一一处理，可以借助Spring提供的AOP能力+自定义注解轻松应对。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-09-27T09:59:43.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.891Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="SpringBoot">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-SpringBoot使用AOP记录接口操作日志" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2022/09/27/SpringBoot%E4%BD%BF%E7%94%A8AOP%E8%AE%B0%E5%BD%95%E6%8E%A5%E5%8F%A3%E6%93%8D%E4%BD%9C%E6%97%A5%E5%BF%97/" class="article-date">
+  <time class="dt-published" datetime="2022-09-27T09:59:43.000Z" itemprop="datePublished">2022-09-27</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/java/">java</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      SpringBoot使用AOP记录接口操作日志
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E6%93%8D%E4%BD%9C%E6%97%A5%E5%BF%97%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">一、操作日志简介</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1%E3%80%81%E7%B3%BB%E7%BB%9F%E6%97%A5%E5%BF%97%E5%92%8C%E6%93%8D%E4%BD%9C%E6%97%A5%E5%BF%97%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="toc-number">1.1.</span> <span class="toc-text">1.1、系统日志和操作日志的区别</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2%E3%80%81%E6%93%8D%E4%BD%9C%E6%97%A5%E5%BF%97%E8%AE%B0%E5%BD%95%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F"><span class="toc-number">1.2.</span> <span class="toc-text">1.2、操作日志记录实现方式</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81AOP%E9%9D%A2%E5%90%91%E5%88%87%E9%9D%A2%E7%BC%96%E7%A8%8B"><span class="toc-number">2.</span> <span class="toc-text">二、AOP面向切面编程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1%E3%80%81AOP%E7%AE%80%E4%BB%8B"><span class="toc-number">2.1.</span> <span class="toc-text">2.1、AOP简介</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2%E3%80%81AOP%E4%BD%9C%E7%94%A8"><span class="toc-number">2.2.</span> <span class="toc-text">2.2、AOP作用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3%E3%80%81AOP%E7%9B%B8%E5%85%B3%E6%9C%AF%E8%AF%AD"><span class="toc-number">2.3.</span> <span class="toc-text">2.3、AOP相关术语</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4%E3%80%81JointPoint%E5%92%8CProceedingJoinPoint"><span class="toc-number">2.4.</span> <span class="toc-text">2.4、JointPoint和ProceedingJoinPoint</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-5%E3%80%81AOP%E7%9B%B8%E5%85%B3%E6%B3%A8%E8%A7%A3"><span class="toc-number">2.5.</span> <span class="toc-text">2.5、AOP相关注解</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81AOP%E5%88%87%E9%9D%A2%E5%AE%9E%E7%8E%B0%E6%8E%A5%E5%8F%A3%E6%97%A5%E5%BF%97%E8%AE%B0%E5%BD%95"><span class="toc-number">3.</span> <span class="toc-text">三、AOP切面实现接口日志记录</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1%E3%80%81%E5%BC%95%E5%85%A5AOP%E4%BE%9D%E8%B5%96"><span class="toc-number">3.1.</span> <span class="toc-text">3.1、引入AOP依赖</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2%E3%80%81%E5%88%9B%E5%BB%BA%E6%97%A5%E5%BF%97%E4%BF%A1%E6%81%AF%E5%B0%81%E8%A3%85%E7%B1%BBWebLog"><span class="toc-number">3.2.</span> <span class="toc-text">3.2、创建日志信息封装类WebLog</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3%E3%80%81%E5%88%9B%E5%BB%BA%E5%88%87%E9%9D%A2%E7%B1%BBWebLogAspect"><span class="toc-number">3.3.</span> <span class="toc-text">3.3、创建切面类WebLogAspect</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4%E3%80%81%E8%B0%83%E7%94%A8%E6%8E%A5%E5%8F%A3%E8%BF%9B%E8%A1%8C%E6%B5%8B%E8%AF%95"><span class="toc-number">3.4.</span> <span class="toc-text">3.4、调用接口进行测试</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81AOP%E5%88%87%E9%9D%A2-%E8%87%AA%E5%AE%9A%E4%B9%89%E6%B3%A8%E8%A7%A3%E5%AE%9E%E7%8E%B0%E6%8E%A5%E5%8F%A3%E6%97%A5%E5%BF%97%E8%AE%B0%E5%BD%95"><span class="toc-number">4.</span> <span class="toc-text">四、AOP切面+自定义注解实现接口日志记录</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1%E3%80%81%E8%87%AA%E5%AE%9A%E4%B9%89%E6%97%A5%E5%BF%97%E6%B3%A8%E8%A7%A3"><span class="toc-number">4.1.</span> <span class="toc-text">4.1、自定义日志注解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2%E3%80%81%E5%AE%9A%E4%B9%89%E6%8B%A6%E6%88%AA%E6%93%8D%E4%BD%9C%E6%97%A5%E5%BF%97%E7%9A%84%E5%88%87%E9%9D%A2"><span class="toc-number">4.2.</span> <span class="toc-text">4.2、定义拦截操作日志的切面</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3%E3%80%81%E5%9C%A8%E6%8E%A5%E5%8F%A3%E4%B8%8A%E5%A2%9E%E5%8A%A0%E6%93%8D%E4%BD%9C%E6%97%A5%E5%BF%97%E6%B3%A8%E8%A7%A3"><span class="toc-number">4.3.</span> <span class="toc-text">4.3、在接口上增加操作日志注解</span></a></li></ol></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <p><strong>前言：</strong>我们项目中可能有这种需求，每个人请求了哪些接口？做了什么事情？参数是什么？重要的接口我们需要记录操作日志以便查找。操作日志和系统日志不一样，操作日志必须要做到简单易懂。所以如何让操作日志不跟业务逻辑耦合，如何让操作日志的内容易于理解，如何让操作日志的接入更加简单？我们不可能在每个接口中去一一处理，可以借助Spring提供的AOP能力+自定义注解轻松应对。<span id="more"></span></p>
+<h2 id="一、操作日志简介"><a href="#一、操作日志简介" class="headerlink" title="一、操作日志简介"></a>一、操作日志简介</h2><p>日志记录量是很大的，所以只记录关键地方并按期归档，最好是存在如elasticsearch中；如果存在数据库中，分表是不错的选择。</p>
+<h3 id="1-1、系统日志和操作日志的区别"><a href="#1-1、系统日志和操作日志的区别" class="headerlink" title="1.1、系统日志和操作日志的区别"></a>1.1、系统日志和操作日志的区别</h3><p><strong>系统日志</strong>：系统日志主要是为开发排查问题提供依据，一般打印在日志文件中；系统日志的可读性要求没那么高，日志中会包含代码的信息，比如在某个类的某一行打印了一个日志。</p>
+<p><strong>操作日志</strong>：主要是对某个对象进行新增操作或者修改操作后记录下这个新增或者修改，操作日志要求可读性比较强，因为它主要是给用户看的，比如订单的物流信息，用户需要知道在什么时间发生了什么事情。再比如，客服对工单的处理记录信息。</p>
+<blockquote>
+<p>操作日志记录的是：某一个“时间”“谁”对“什么”做了什么“事情”。<br>比如LogUtil.log(orderNo, “订单创建”, “小明”) ：这里解释下为什么记录操作日志的时候都绑定了一个 OrderNo，因为操作日志记录的是：某一个“时间”“谁”对“什么”做了什么“事情”。当查询业务的操作日志的时候，会查询针对这个订单的的所有操作，所以代码中加上了 OrderNo，记录操作日志的时候需要记录下操作人，所以传了操作人“小明”进来。</p>
+</blockquote>
+<p>操作日志的记录格式大概分为下面几种：</p>
+<ul>
+<li>  单纯的文字记录，比如：2021-09-16 10:00 订单创建。</li>
+<li>  简单的动态的文本记录，比如：2021-09-16 10:00 订单创建，订单号：NO.11089999，其中涉及变量订单号“NO.11089999”。</li>
+<li>  修改类型的文本，包含修改前和修改后的值，比如：2021-09-16 10:00 用户小明修改了订单的配送地址：从“金灿灿小区”修改到“银盏盏小区” ，其中涉及变量配送的原地址“金灿灿小区”和新地址“银盏盏小区”。</li>
+<li>  修改表单，一次会修改多个字段。</li>
+</ul>
+<h3 id="1-2、操作日志记录实现方式"><a href="#1-2、操作日志记录实现方式" class="headerlink" title="1.2、操作日志记录实现方式"></a>1.2、操作日志记录实现方式</h3><p><strong>（1）使用 Canal 监听数据库记录操作日志</strong></p>
+<p>Canal是阿里开源的一款基于 MySQL 数据库增量日志解析中间件，提供增量数据订阅和消费的开源组件，通过采用监听数据库 Binlog 的方式，这样可以从底层知道是哪些数据做了修改，然后根据更改的数据记录操作日志。</p>
+<p>这种方式的优点是和业务逻辑完全分离。缺点也很明显，局限性太高，只能针对数据库的更改做操作日志记录，如果修改涉及到其他团队的 RPC 的调用，就没办法监听数据库了。举个例子：给用户发送通知，通知服务一般都是公司内部的公共组件，这时候只能在调用 RPC 的时候手工记录发送通知的操作日志了。</p>
+<p><strong>（2）高度代码耦合：在业务逻辑中直接调用日志记录接口</strong></p>
+<p>通过日志文件的方式记录，这样就可以把日志单独保存在一个文件中，然后通过日志收集可以把日志保存在 Elasticsearch 或者数据库中，接下来我们看下如何生成可读的操作日志。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//操作日志记录的是：某一个“时间”“谁”对“什么”做了什么“事情”。</span></span><br><span class="line">log.info(<span class="string">&quot;订单创建&quot;</span>)</span><br><span class="line">log.info(<span class="string">&quot;订单已经创建，订单编号:&#123;&#125;&quot;</span>, orderNo)</span><br><span class="line">log.info(<span class="string">&quot;修改了订单的配送地址：从“&#123;&#125;”修改到“&#123;&#125;”， &quot;</span>金灿灿小区<span class="string">&quot;, &quot;</span>银盏盏小区<span class="string">&quot;)</span></span><br></pre></td></tr></table></figure>
+
+<p>但是当业务变得复杂后，记录操作日志放在业务代码中会导致业务的逻辑比较繁杂。</p>
+<p><strong>（3）采用AOP方式：AOP方式能和业务逻辑解耦</strong></p>
+<p>为了解决上面问题，一般采用 AOP 的方式记录日志，让操作日志和业务逻辑解耦，接下来看一个简单的 AOP 日志的例子。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@LogRecord(content=&quot;修改了配送地址&quot;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">modifyAddress</span><span class="params">(updateDeliveryRequest request)</span>&#123;</span><br><span class="line">    <span class="comment">// 更新派送信息 电话，收件人、地址</span></span><br><span class="line">    doUpdate(request);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们可以在注解的操作日志上记录固定文案，这样业务逻辑和业务代码可以做到解耦，让我们的业务代码变得纯净起来。可能有同学注意到，上面的方式虽然解耦了操作日志的代码，但是记录的文案并不符合我们的预期，文案是静态的，没有包含动态的文案，因为我们需要记录的操作日志是：用户%s修改了订单的配送地址，从“%s”修改到“%s”。接下来，我们介绍一下如何优雅地使用 AOP 生成动态的操作日志。</p>
+<h2 id="二、AOP面向切面编程"><a href="#二、AOP面向切面编程" class="headerlink" title="二、AOP面向切面编程"></a>二、AOP面向切面编程</h2><h3 id="2-1、AOP简介"><a href="#2-1、AOP简介" class="headerlink" title="2.1、AOP简介"></a>2.1、AOP简介</h3><p>AOP为Aspect Oriented Programming的缩写，意为：面向切面编程，通过预编译方式和运行期间动态代理实现程序功能的统一维护的一种技术。<strong>这种在运行时，动态地将代码切入到类的指定方法或指定位置上的编程思想就是面向切面的编程。</strong>利用AOP可以将日志记录，性能统计，安全控制，事务处理，异常处理等代码从业务逻辑代码中划分出来作为公共部分，从而使得业务逻辑各部分之间的耦合度降低，提高程序的可重用性，同时提高了开发的效率。</p>
+<h3 id="2-2、AOP作用"><a href="#2-2、AOP作用" class="headerlink" title="2.2、AOP作用"></a>2.2、AOP作用</h3><blockquote>
+<p>日志记录，性能统计，安全控制，事务处理，异常处理等等。</p>
+</blockquote>
+<p>在面向切面编程AOP的思想里面，核心业务和切面通用功能（例如事务处理、日志管理、权限控制等)分别独立进行开发，然后把切面功能和核心业务功能 “编织” 在一起，这就叫AOP。这种思想有利于减少系统的重复代码，降低模块间的耦合度，并有利于未来的可拓展性和可维护性。</p>
+<h3 id="2-3、AOP相关术语"><a href="#2-3、AOP相关术语" class="headerlink" title="2.3、AOP相关术语"></a>2.3、AOP相关术语</h3><p><strong>通知（Advice）</strong></p>
+<p>通知描述了切面要完成的工作以及何时执行。比如我们的日志切面需要记录每个接口调用时长，就需要在接口调用前后分别记录当前时间，再取差值。</p>
+<ul>
+<li>  前置通知（Before）：在目标方法调用前调用通知功能；</li>
+<li>  后置通知（After）：在目标方法调用之后调用通知功能，不关心方法的返回结果；</li>
+<li>  返回通知（AfterReturning）：在目标方法成功执行之后调用通知功能；</li>
+<li>  异常通知（AfterThrowing）：在目标方法抛出异常后调用通知功能；</li>
+<li>  环绕通知（Around）：通知包裹了目标方法，在目标方法调用之前和之后执行自定义的行为。</li>
+</ul>
+<p><strong>切点（Pointcut）</strong><br>切点定义了通知功能被应用的范围。比如日志切面的应用范围就是所有接口，即所有controller层的接口方法。</p>
+<p><strong>切面（Aspect）</strong><br>切面是通知和切点的结合，定义了何时、何地应用通知功能。</p>
+<p><strong>引入（Introduction）</strong><br>在无需修改现有类的情况下，向现有的类添加新方法或属性。</p>
+<p><strong>织入（Weaving）</strong><br>把切面应用到目标对象并创建新的代理对象的过程。</p>
+<p><strong>连接点（JoinPoint）</strong><br>通知功能被应用的时机。比如接口方法被调用的时候就是日志切面的连接点。</p>
+<h3 id="2-4、JointPoint和ProceedingJoinPoint"><a href="#2-4、JointPoint和ProceedingJoinPoint" class="headerlink" title="2.4、JointPoint和ProceedingJoinPoint"></a>2.4、JointPoint和ProceedingJoinPoint</h3><blockquote>
+<p>JointPoint是程序运行过程中可识别的连接点，这个点可以用来作为AOP切入点。JointPoint对象则包含了和切入相关的很多信息，比如切入点的方法，参数、注解、对象和属性等。我们可以通过反射的方式获取这些点的状态和信息，用于追踪tracing和记录logging应用信息。</p>
+</blockquote>
+<p><strong>（1）JointPoint</strong><br>通过JpointPoint对象可以获取到下面信息</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 返回目标对象，即被代理的对象</span></span><br><span class="line">Object <span class="title function_ invoke__">getTarget</span>();</span><br><span class="line"> </span><br><span class="line"><span class="comment"># 返回切入点的参数</span></span><br><span class="line">Object[] <span class="title function_ invoke__">getArgs</span>();</span><br><span class="line"> </span><br><span class="line"><span class="comment"># 返回切入点的Signature</span></span><br><span class="line">Signature <span class="title function_ invoke__">getSignature</span>();</span><br><span class="line"> </span><br><span class="line"><span class="comment"># 返回切入的类型，比如method-call，field-get等等，感觉不重要 </span></span><br><span class="line"> String <span class="title function_ invoke__">getKind</span>();</span><br></pre></td></tr></table></figure>
+
+<p><strong>（2）ProceedingJoinPoint</strong></p>
+<blockquote>
+<p>Proceedingjoinpoint 继承了 JoinPoint。是在JoinPoint的基础上暴露出 proceed 这个方法。proceed很重要，这个是aop代理链执行的方法。环绕通知=前置+目标方法执行+后置通知，proceed方法就是用于启动目标方法执行的。</p>
+</blockquote>
+<p>暴露出这个方法，就能支持 aop:around 这种切面（而其他的几种切面只需要用到JoinPoint，，这也是环绕通知和前置、后置通知方法的一个最大区别。这跟切面类型有关）， 能决定是否走代理链还是走自己拦截的其他逻辑。</p>
+<p>ProceedingJoinPoint可以获取切入点的信息:</p>
+<ul>
+<li>  切入点的方法名字及其参数</li>
+<li>  切入点方法标注的注解对象（通过该对象可以获取注解信息）</li>
+<li>  切入点目标对象（可以通过反射获取对象的类名，属性和方法名）</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//获取切入点方法的名字,getSignature());是获取到这样的信息 :修饰符+ 包名+组件名(类名) +方法名</span></span><br><span class="line"><span class="type">String</span> <span class="variable">methodName</span> <span class="operator">=</span> joinPoint.getSignature().getName()</span><br><span class="line"> </span><br><span class="line"><span class="comment">//获取方法的参数,这里返回的是切入点方法的参数列表</span></span><br><span class="line">Object[] args = joinPoint.getArgs();</span><br><span class="line"> </span><br><span class="line"><span class="comment">//获取方法上的注解</span></span><br><span class="line"><span class="type">Signature</span> <span class="variable">signature</span> <span class="operator">=</span> joinPoint.getSignature();</span><br><span class="line"><span class="type">MethodSignature</span> <span class="variable">methodSignature</span> <span class="operator">=</span> (MethodSignature) signature;</span><br><span class="line"><span class="type">Method</span> <span class="variable">method</span> <span class="operator">=</span> methodSignature.getMethod();</span><br><span class="line"><span class="keyword">if</span> (method != <span class="literal">null</span>)</span><br><span class="line">&#123;</span><br><span class="line">   xxxxxx annoObj= method.getAnnotation(xxxxxx.class);</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">//获取切入点所在目标对象</span></span><br><span class="line"><span class="type">Object</span> <span class="variable">targetObj</span> <span class="operator">=</span>joinPoint.getTarget();</span><br><span class="line"><span class="comment">//可以发挥反射的功能获取关于类的任何信息，例如获取类名如下</span></span><br><span class="line"><span class="type">String</span> <span class="variable">className</span> <span class="operator">=</span> joinPoint.getTarget().getClass().getName();</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-5、AOP相关注解"><a href="#2-5、AOP相关注解" class="headerlink" title="2.5、AOP相关注解"></a>2.5、AOP相关注解</h3><p>Spring中使用注解创建切面</p>
+<ul>
+<li>  @Aspect：用于定义切面</li>
+<li>  @Before：通知方法会在目标方法调用之前执行</li>
+<li>  @After：通知方法会在目标方法返回或抛出异常后执行</li>
+<li>  @AfterReturning：通知方法会在目标方法返回后执行</li>
+<li>  @AfterThrowing：通知方法会在目标方法抛出异常后执行</li>
+<li>  @Around：通知方法会将目标方法封装起来</li>
+<li>  @Pointcut：定义切点表达式</li>
+<li>  切点表达式：指定了通知被应用的范围，表达式格式：</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">execution(方法修饰符 返回类型 方法所属的包.类名.方法名称(方法参数)</span><br><span class="line"><span class="comment">//com.hs.demo.controller包中所有类的public方法都应用切面里的通知</span></span><br><span class="line">execution(<span class="keyword">public</span> * com.hs.demo.controller.*.*(..))</span><br><span class="line"><span class="comment">//com.hs.demo.service包及其子包下所有类中的所有方法都应用切面里的通知</span></span><br><span class="line">execution(* com.hs.demo.service..*.*(..))</span><br><span class="line"><span class="comment">//com.hs.demo.service.EmployeeService类中的所有方法都应用切面里的通知</span></span><br><span class="line">execution(* com.hs.demo.service.EmployeeService.*(..))</span><br></pre></td></tr></table></figure>
+
+<p><strong>(1)@POINTCUT定义切入点，有以下2种方式：</strong></p>
+<p>方式一：设置为注解@LogFilter标记的方法，有标记注解的方法触发该AOP，没有标记就没有。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Aspect</span></span><br><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">LogFilter1Aspect</span> &#123;</span><br><span class="line">	<span class="meta">@Pointcut(value = &quot;@annotation(com.hs.aop.annotation.LogFilter)&quot;)</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">pointCut</span><span class="params">()</span>&#123;</span><br><span class="line">	</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>自定义注解LogFilter：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Target(ElementType.METHOD)</span></span><br><span class="line"><span class="meta">@Retention(value = RetentionPolicy.RUNTIME)</span></span><br><span class="line"><span class="keyword">public</span> <span class="meta">@interface</span> LogFilter1 &#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>对应的Controller方法如下，手动添加@LogFilter注解：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@RestController</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">AopController</span> &#123;</span><br><span class="line"> </span><br><span class="line">	<span class="meta">@RequestMapping(&quot;/aop&quot;)</span></span><br><span class="line">	<span class="meta">@LogFilter</span></span><br><span class="line">	<span class="keyword">public</span> String <span class="title function_">aop</span><span class="params">()</span>&#123;</span><br><span class="line">	    System.out.println(<span class="string">&quot;这是执行方法&quot;</span>);</span><br><span class="line">	    <span class="keyword">return</span> <span class="string">&quot;success&quot;</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>方式二：采用表达式批量添加切入点，如下方法，表示AopController下的所有public方法都添加LogFilter1切面。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Pointcut(value = &quot;execution(public * com.train.aop.controller.AopController.*(..))&quot;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">pointCut</span><span class="params">()</span>&#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>(2)@Around环绕通知</strong></p>
+<p>@Around集成了@Before、@AfterReturing、@AfterThrowing、@After四大通知。需要注意的是，他和其他四大通知注解最大的不同是需要手动进行接口内方法的反射后才能执行接口中的方法，换言之，@Around其实就是一个动态代理。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 环绕通知是spring框架为我们提供的一种可以在代码中手动控制增强部分什么时候执行的方式。</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">aroundPringLog</span><span class="params">(ProceedingJoinPoint pjp)</span></span><br><span class="line">  &#123;</span><br><span class="line">     <span class="comment">//拿到目标方法的方法签名</span></span><br><span class="line">      <span class="type">Signature</span> <span class="variable">signature</span> <span class="operator">=</span> pjp.getSignature();</span><br><span class="line">     <span class="comment">//获取方法名</span></span><br><span class="line">     <span class="type">String</span> <span class="variable">name</span> <span class="operator">=</span> signature.getName();</span><br><span class="line"></span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">		<span class="comment">//@Before</span></span><br><span class="line">		System.out.println(<span class="string">&quot;【环绕前置通知】【&quot;</span>+name+<span class="string">&quot;方法开始】&quot;</span>);</span><br><span class="line">           <span class="comment">//这句相当于method.invoke(obj,args)，通过反射来执行接口中的方法</span></span><br><span class="line">		proceed = pjp.proceed();</span><br><span class="line">		<span class="comment">//@AfterReturning</span></span><br><span class="line">		System.out.println(<span class="string">&quot;【环绕返回通知】【&quot;</span>+name+<span class="string">&quot;方法返回，返回值：&quot;</span>+proceed+<span class="string">&quot;】&quot;</span>);</span><br><span class="line">	&#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">		<span class="comment">//@AfterThrowing</span></span><br><span class="line">		System.out.println(<span class="string">&quot;【环绕异常通知】【&quot;</span>+name+<span class="string">&quot;方法异常，异常信息：&quot;</span>+e+<span class="string">&quot;】&quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">       <span class="keyword">finally</span>&#123;</span><br><span class="line">		<span class="comment">//@After</span></span><br><span class="line">		System.out.println(<span class="string">&quot;【环绕后置通知】【&quot;</span>+name+<span class="string">&quot;方法结束】&quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>proceed = pjp.proceed(args)</code>这条语句其实就是method.invoke，以前手写版的动态代理，也是method.invoke执行了，jdk才会利用反射进行动态代理的操作，在Spring的环绕通知里面，只有这条语句执行了，spring才会去切入到目标方法中。</p>
+<p><strong>为什么说环绕通知就是一个动态代理呢？</strong></p>
+<blockquote>
+<p><code>proceed = pjp.proceed(args)</code>这条语句就是动态代理的开始，当我们把这条语句用try-catch包围起来的时候，在这条语句前面写的信息，就相当于前置通知，在它后面写的就相当于返回通知，在catch里面写的就相当于异常通知，在finally里写的就相当于后置通知。</p>
+</blockquote>
+<h2 id="三、AOP切面实现接口日志记录"><a href="#三、AOP切面实现接口日志记录" class="headerlink" title="三、AOP切面实现接口日志记录"></a>三、AOP切面实现接口日志记录</h2><blockquote>
+<p>通过AOP面向切面编程技术，实现操作日志记录功能以便进行信息监控和信息统计，不侵入业务代码逻辑，提高代码的可重用性。</p>
+</blockquote>
+<h3 id="3-1、引入AOP依赖"><a href="#3-1、引入AOP依赖" class="headerlink" title="3.1、引入AOP依赖"></a>3.1、引入AOP依赖</h3><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-aop<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span>  </span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="3-2、创建日志信息封装类WebLog"><a href="#3-2、创建日志信息封装类WebLog" class="headerlink" title="3.2、创建日志信息封装类WebLog"></a>3.2、创建日志信息封装类WebLog</h3><p>用于封装需要记录的日志信息，包括操作的描述、时间、消耗时间、url、请求参数和返回结果等信息。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">WebLog</span> &#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 操作描述</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> String description;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 操作用户</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> String username;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 操作时间</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> Long startTime;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 消耗时间</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> Integer spendTime;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 根路径</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> String basePath;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * URI</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> String uri;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * URL</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> String url;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 请求类型</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> String method;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * IP地址</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> String ip;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 请求参数</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> Object parameter;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 请求返回的结果</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> Object result;</span><br><span class="line"> </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-3、创建切面类WebLogAspect"><a href="#3-3、创建切面类WebLogAspect" class="headerlink" title="3.3、创建切面类WebLogAspect"></a>3.3、创建切面类WebLogAspect</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> cn.hutool.core.util.StrUtil;</span><br><span class="line"><span class="keyword">import</span> cn.hutool.core.util.URLUtil;</span><br><span class="line"><span class="keyword">import</span> cn.hutool.json.JSONUtil;</span><br><span class="line"><span class="keyword">import</span> lombok.extern.slf4j.Slf4j;</span><br><span class="line"><span class="keyword">import</span> org.aspectj.lang.JoinPoint;</span><br><span class="line"><span class="keyword">import</span> org.aspectj.lang.ProceedingJoinPoint;</span><br><span class="line"><span class="keyword">import</span> org.aspectj.lang.Signature;</span><br><span class="line"><span class="keyword">import</span> org.aspectj.lang.annotation.*;</span><br><span class="line"><span class="keyword">import</span> org.aspectj.lang.reflect.MethodSignature;</span><br><span class="line"><span class="keyword">import</span> org.springframework.core.annotation.Order;</span><br><span class="line"><span class="keyword">import</span> org.springframework.stereotype.Component;</span><br><span class="line"><span class="keyword">import</span> org.springframework.util.StringUtils;</span><br><span class="line"><span class="keyword">import</span> org.springframework.web.bind.annotation.RequestBody;</span><br><span class="line"><span class="keyword">import</span> org.springframework.web.bind.annotation.RequestParam;</span><br><span class="line"><span class="keyword">import</span> org.springframework.web.context.request.RequestContextHolder;</span><br><span class="line"><span class="keyword">import</span> org.springframework.web.context.request.ServletRequestAttributes;</span><br><span class="line"><span class="keyword">import</span> javax.servlet.http.HttpServletRequest;</span><br><span class="line"><span class="keyword">import</span> java.lang.reflect.Method;</span><br><span class="line"><span class="keyword">import</span> java.lang.reflect.Parameter;</span><br><span class="line"><span class="keyword">import</span> java.util.ArrayList;</span><br><span class="line"><span class="keyword">import</span> java.util.HashMap;</span><br><span class="line"><span class="keyword">import</span> java.util.List;</span><br><span class="line"><span class="keyword">import</span> java.util.Map;</span><br><span class="line"> </span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 统一日志处理切面</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="meta">@Aspect</span></span><br><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="meta">@Order(1)</span></span><br><span class="line"><span class="meta">@Slf4j</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">WebLogAspect</span> &#123;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">//定义切点表达式,指定通知功能被应用的范围</span></span><br><span class="line">    <span class="meta">@Pointcut(&quot;execution(public * com.hs.notice.controller.*.*(..))&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">webLog</span><span class="params">()</span> &#123;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="meta">@Before(&quot;webLog()&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">doBefore</span><span class="params">(JoinPoint joinPoint)</span> <span class="keyword">throws</span> Throwable &#123;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">/**value切入点位置</span></span><br><span class="line"><span class="comment">     * returning 自定义的变量，标识目标方法的返回值,自定义变量名必须和通知方法的形参一样</span></span><br><span class="line"><span class="comment">     * 特点：在目标方法之后执行的,能够获取到目标方法的返回值，可以根据这个返回值做不同的处理</span></span><br><span class="line"><span class="comment">     */</span>     </span><br><span class="line">    <span class="meta">@AfterReturning(value = &quot;webLog()&quot;, returning = &quot;ret&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">doAfterReturning</span><span class="params">(Object ret)</span> <span class="keyword">throws</span> Throwable &#123;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">//通知包裹了目标方法，在目标方法调用之前和之后执行自定义的行为</span></span><br><span class="line">    <span class="comment">//ProceedingJoinPoint切入点可以获取切入点方法上的名字、参数、注解和对象</span></span><br><span class="line">    <span class="meta">@Around(&quot;webLog()&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> Object <span class="title function_">doAround</span><span class="params">(ProceedingJoinPoint joinPoint)</span> <span class="keyword">throws</span> Throwable </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="type">long</span> <span class="variable">startTime</span> <span class="operator">=</span> System.currentTimeMillis();</span><br><span class="line">        <span class="comment">//获取当前请求对象</span></span><br><span class="line">        <span class="type">ServletRequestAttributes</span> <span class="variable">attributes</span> <span class="operator">=</span> (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();</span><br><span class="line">        <span class="type">HttpServletRequest</span> <span class="variable">request</span> <span class="operator">=</span> attributes.getRequest();</span><br><span class="line">        <span class="comment">//记录请求信息</span></span><br><span class="line">        <span class="type">WebLog</span> <span class="variable">webLog</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">WebLog</span>();</span><br><span class="line"> </span><br><span class="line">        <span class="comment">//前面是前置通知，后面是后置通知</span></span><br><span class="line">        <span class="type">Object</span> <span class="variable">result</span> <span class="operator">=</span> joinPoint.proceed();</span><br><span class="line"> </span><br><span class="line">        <span class="type">Signature</span> <span class="variable">signature</span> <span class="operator">=</span> joinPoint.getSignature();</span><br><span class="line">        <span class="type">MethodSignature</span> <span class="variable">methodSignature</span> <span class="operator">=</span> (MethodSignature) signature;</span><br><span class="line">        <span class="type">Method</span> <span class="variable">method</span> <span class="operator">=</span> methodSignature.getMethod();</span><br><span class="line">        <span class="type">long</span> <span class="variable">endTime</span> <span class="operator">=</span> System.currentTimeMillis();</span><br><span class="line">        <span class="type">String</span> <span class="variable">urlStr</span> <span class="operator">=</span> request.getRequestURL().toString();</span><br><span class="line">        webLog.setBasePath(StrUtil.removeSuffix(urlStr, URLUtil.url(urlStr).getPath()));</span><br><span class="line">        webLog.setIp(request.getRemoteUser());</span><br><span class="line">        webLog.setMethod(request.getMethod());</span><br><span class="line">        webLog.setParameter(getParameter(method, joinPoint.getArgs()));</span><br><span class="line">        webLog.setResult(result);</span><br><span class="line">        webLog.setSpendTime((<span class="type">int</span>) (endTime - startTime));</span><br><span class="line">        webLog.setStartTime(startTime);</span><br><span class="line">        webLog.setUri(request.getRequestURI());</span><br><span class="line">        webLog.setUrl(request.getRequestURL().toString());</span><br><span class="line">        log.info(<span class="string">&quot;&#123;&#125;&quot;</span>, JSONUtil.parse(webLog));</span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 根据方法和传入的参数获取请求参数</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> Object <span class="title function_">getParameter</span><span class="params">(Method method, Object[] args)</span> </span><br><span class="line">   &#123;</span><br><span class="line">        List&lt;Object&gt; argList = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">        Parameter[] parameters = method.getParameters();</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; parameters.length; i++) &#123;</span><br><span class="line">            <span class="comment">//将RequestBody注解修饰的参数作为请求参数</span></span><br><span class="line">            <span class="type">RequestBody</span> <span class="variable">requestBody</span> <span class="operator">=</span> parameters[i].getAnnotation(RequestBody.class);</span><br><span class="line">            <span class="keyword">if</span> (requestBody != <span class="literal">null</span>) &#123;</span><br><span class="line">                argList.add(args[i]);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">//将RequestParam注解修饰的参数作为请求参数</span></span><br><span class="line">            <span class="type">RequestParam</span> <span class="variable">requestParam</span> <span class="operator">=</span> parameters[i].getAnnotation(RequestParam.class);</span><br><span class="line">            <span class="keyword">if</span> (requestParam != <span class="literal">null</span>) &#123;</span><br><span class="line">                Map&lt;String, Object&gt; map = <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;&gt;();</span><br><span class="line">                <span class="type">String</span> <span class="variable">key</span> <span class="operator">=</span> parameters[i].getName();</span><br><span class="line">                <span class="keyword">if</span> (!StringUtils.isEmpty(requestParam.value())) &#123;</span><br><span class="line">                    key = requestParam.value();</span><br><span class="line">                &#125;</span><br><span class="line">                map.put(key, args[i]);</span><br><span class="line">                argList.add(map);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (argList.size() == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (argList.size() == <span class="number">1</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> argList.get(<span class="number">0</span>);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> argList;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-4、调用接口进行测试"><a href="#3-4、调用接口进行测试" class="headerlink" title="3.4、调用接口进行测试"></a>3.4、调用接口进行测试</h3><p>随便访问一个com.hs.notice.controller包下的接口，可以看到WebLogAspect输出的日志信息：</p>
+<figure class="highlight cs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">2022</span><span class="number">-01</span><span class="number">-07</span> <span class="number">10</span>:<span class="number">43</span>:<span class="number">33.732</span>  INFO <span class="number">11400</span> --- [nio<span class="number">-8086</span>-exec<span class="number">-7</span>] com.cernet.notice.util.WebLogAspect: </span><br><span class="line">&#123;<span class="string">&quot;result&quot;</span>:&#123;<span class="string">&quot;code&quot;</span>:<span class="number">200</span>,<span class="string">&quot;data&quot;</span>:&#123;<span class="string">&quot;appName&quot;</span>:<span class="string">&quot;Tiktok&quot;</span>,<span class="string">&quot;isSend&quot;</span>:<span class="number">1</span>,<span class="string">&quot;id&quot;</span>:<span class="number">1</span>,<span class="string">&quot;sendAT&quot;</span>:<span class="number">1640596730378</span>,</span><br><span class="line"><span class="string">&quot;tilte&quot;</span>:<span class="string">&quot;【测试数据】&quot;</span>,<span class="string">&quot;receiverEmail&quot;</span>:<span class="string">&quot;110@qq.com&quot;</span>,<span class="string">&quot;content&quot;</span>:<span class="string">&quot;测试&quot;</span>&#125;,<span class="string">&quot;message&quot;</span>:<span class="string">&quot;请求成功&quot;</span>&#125;,</span><br><span class="line"><span class="string">&quot;basePath&quot;</span>:<span class="string">&quot;http://localhost:8086&quot;</span>,<span class="string">&quot;method&quot;</span>:<span class="string">&quot;GET&quot;</span>,<span class="string">&quot;startTime&quot;</span>:<span class="number">1641523413722</span>,</span><br><span class="line"><span class="string">&quot;uri&quot;</span>:<span class="string">&quot;/api/email-notices/1&quot;</span>,<span class="string">&quot;url&quot;</span>:<span class="string">&quot;http://localhost:8086/api/email-notices/1&quot;</span>,<span class="string">&quot;spendTime&quot;</span>:<span class="number">6</span>&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="四、AOP切面-自定义注解实现接口日志记录"><a href="#四、AOP切面-自定义注解实现接口日志记录" class="headerlink" title="四、AOP切面+自定义注解实现接口日志记录"></a>四、AOP切面+自定义注解实现接口日志记录</h2><h3 id="4-1、自定义日志注解"><a href="#4-1、自定义日志注解" class="headerlink" title="4.1、自定义日志注解"></a>4.1、自定义日志注解</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.lang.annotation.Documented;</span><br><span class="line"><span class="keyword">import</span> java.lang.annotation.ElementType;</span><br><span class="line"><span class="keyword">import</span> java.lang.annotation.Retention;</span><br><span class="line"><span class="keyword">import</span> java.lang.annotation.RetentionPolicy;</span><br><span class="line"><span class="keyword">import</span> java.lang.annotation.Target;</span><br><span class="line"> </span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 定义操作日志注解</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="meta">@Target(ElementType.METHOD)</span></span><br><span class="line"><span class="meta">@Retention(RetentionPolicy.RUNTIME)</span></span><br><span class="line"><span class="meta">@Documented</span></span><br><span class="line"><span class="keyword">public</span> <span class="meta">@interface</span> OperatorLog </span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 操作</span></span><br><span class="line">    String <span class="title function_">operate</span><span class="params">()</span>;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// 模块</span></span><br><span class="line">    String <span class="title function_">module</span><span class="params">()</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="4-2、定义拦截操作日志的切面"><a href="#4-2、定义拦截操作日志的切面" class="headerlink" title="4.2、定义拦截操作日志的切面"></a>4.2、定义拦截操作日志的切面</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> org.apache.logging.log4j.LogManager;</span><br><span class="line"><span class="keyword">import</span> org.apache.logging.log4j.Logger;</span><br><span class="line"><span class="keyword">import</span> org.aspectj.lang.JoinPoint;</span><br><span class="line"><span class="keyword">import</span> org.aspectj.lang.annotation.AfterReturning;</span><br><span class="line"><span class="keyword">import</span> org.aspectj.lang.annotation.Aspect;</span><br><span class="line"><span class="keyword">import</span> org.aspectj.lang.annotation.Pointcut;</span><br><span class="line"><span class="keyword">import</span> org.springframework.stereotype.Component;</span><br><span class="line"><span class="keyword">import</span> com.elon.springbootdemo.manager.OperatorLog;</span><br><span class="line"><span class="keyword">import</span> com.elon.springbootdemo.model.ResponseModel;</span><br><span class="line"> </span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 操作日志切面定义</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="meta">@Aspect</span></span><br><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">OperatorLogApsect</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">Logger</span> <span class="variable">logger</span> <span class="operator">=</span> LogManager.getLogger(OperatorLogApsect.class);</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Pointcut(&quot;@annotation(com.hs.springbootdemo.aop.OperatorLog)&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">operatorLog</span><span class="params">()</span> &#123;</span><br><span class="line">        </span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@SuppressWarnings(&quot;rawtypes&quot;)</span></span><br><span class="line">    <span class="meta">@AfterReturning(returning=&quot;result&quot;, pointcut=&quot;operatorLog()&amp;&amp;@annotation(log)&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">afterReturn</span><span class="params">(JoinPoint joinPoint, ResponseModel result, OperatorLog log)</span> &#123;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">         * 接口调用信息可以记日志，也可以写到数据库</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        <span class="type">StringBuilder</span> <span class="variable">sb</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">StringBuilder</span>();</span><br><span class="line">        sb.append(<span class="string">&quot;模块：&quot;</span>).append(log.<span class="keyword">module</span>());</span><br><span class="line">        sb.append(<span class="string">&quot;|操作:&quot;</span>).append(log.operate());</span><br><span class="line">        sb.append(<span class="string">&quot;|接口名称:&quot;</span>).append(joinPoint.getSignature().getName());</span><br><span class="line">        sb.append(<span class="string">&quot;|错误码:&quot;</span>).append(result.getRetCode());</span><br><span class="line">        sb.append(<span class="string">&quot;|错误信息:&quot;</span>).append(result.getErrorMsg());</span><br><span class="line">        logger.info(sb.toString());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="4-3、在接口上增加操作日志注解"><a href="#4-3、在接口上增加操作日志注解" class="headerlink" title="4.3、在接口上增加操作日志注解"></a>4.3、在接口上增加操作日志注解</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@RequestMapping(value=&quot;/v1/query-user&quot;, method=RequestMethod.GET)</span></span><br><span class="line"><span class="meta">@OperatorLog(operate=&quot;查询用户&quot;, module=&quot;用户管理&quot;)</span></span><br><span class="line"><span class="keyword">public</span> ResponseModel <span class="title function_">queryUser</span><span class="params">(<span class="meta">@RequestParam(value=&quot;user&quot;, required=true)</span> String user)</span> </span><br><span class="line">&#123;</span><br><span class="line">    log.info(<span class="string">&quot;[INFO]user info:&quot;</span> + user);</span><br><span class="line">    log.warn(<span class="string">&quot;[WARN]user info:&quot;</span> + user);</span><br><span class="line">    log.error(<span class="string">&quot;[ERROR]user info:&quot;</span> + user);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> ResponseModel.success(<span class="literal">null</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>调用接口，可以看到输出的日志信息</p>
+<blockquote>
+<p>参考链接：<br><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/JC51S_bI02npm4CE5NEEow" title="美团技术团队—如何优雅地记录操作日志？">美团技术团队—如何优雅地记录操作日志？</a><br><a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_48453772/article/details/109486653" title="SpringAOP中的ProceedingJoinPoint使用,配合注解的方式">SpringAOP中的ProceedingJoinPoint使用,配合注解的方式</a><br><a target="_blank" rel="noopener" href="https://www.cnblogs.com/bfe0-ceb6/p/15220117.html" title="使用（Annotation）自定义注解做日志记录">使用（Annotation）自定义注解做日志记录</a><br><a target="_blank" rel="noopener" href="https://blog.csdn.net/dreamwbt/article/details/82658842" title="Spring 过滤器  拦截器  AOP区别">Spring 过滤器 拦截器 AOP区别</a><br><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/165386758?utm_source=qq&utm_medium=social&utm_oi=1191043391151181824" title="SpringBoot 拦截器解析">SpringBoot 拦截器解析</a><br><a target="_blank" rel="noopener" href="https://blog.csdn.net/u011521890/article/details/74990338" title="使用拦截器(intercept)和AOP写操作日志-springboot">使用拦截器(intercept)和AOP写操作日志-springboot</a></p>
+</blockquote>
+<blockquote>
+<p>扩展阅读：<a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/BRgsKmvrZWeqrb-E0hlr4A">Spring AOP，应该不会有比这更详细的介绍了！</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2022/09/27/SpringBoot%E4%BD%BF%E7%94%A8AOP%E8%AE%B0%E5%BD%95%E6%8E%A5%E5%8F%A3%E6%93%8D%E4%BD%9C%E6%97%A5%E5%BF%97/" data-id="cl9pgenx900z9ycv12gvhc7fg" data-title="SpringBoot使用AOP记录接口操作日志" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/SpringBoot/" rel="tag">SpringBoot</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2022/09/28/SpringBoot%E5%88%A9%E7%94%A8-Async%E6%B3%A8%E8%A7%A3%E5%AE%9E%E7%8E%B0%E5%BC%82%E6%AD%A5%E8%B0%83%E7%94%A8/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          SpringBoot利用@Async注解实现异步调用
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2022/09/27/SpringBoot%E8%87%AA%E5%AE%9A%E4%B9%89logback%E6%97%A5%E5%BF%97%E9%85%8D%E7%BD%AE/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">SpringBoot自定义logback日志配置</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

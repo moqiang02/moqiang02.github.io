@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>利用keepalived构建高可用MySQL-HA | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="关于MySQL-HA，目前有多种解决方案，比如heartbeat、drbd、mmm、共享存储，但是它们各有优缺点。heartbeat、drbd配置较为复杂，需要自己写脚本才能实现MySQL自动切换，对于不会脚本语言的人来说，这无疑是一种脑裂问题；对于mmm，生产环境中很少有人用，且mmm 管理端需要单独运行一台服务器上，要是想实现高可用，就得对mmm管理端做HA，这样无疑又增加了硬件开支；对于共享">
+<meta property="og:type" content="article">
+<meta property="og:title" content="利用keepalived构建高可用MySQL-HA">
+<meta property="og:url" content="http://moqiang02.github.io/2014/02/22/%E5%88%A9%E7%94%A8keepalived%E6%9E%84%E5%BB%BA%E9%AB%98%E5%8F%AF%E7%94%A8MySQL-HA/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="关于MySQL-HA，目前有多种解决方案，比如heartbeat、drbd、mmm、共享存储，但是它们各有优缺点。heartbeat、drbd配置较为复杂，需要自己写脚本才能实现MySQL自动切换，对于不会脚本语言的人来说，这无疑是一种脑裂问题；对于mmm，生产环境中很少有人用，且mmm 管理端需要单独运行一台服务器上，要是想实现高可用，就得对mmm管理端做HA，这样无疑又增加了硬件开支；对于共享">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2014-02-22T12:49:12.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:54.090Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="集群">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-利用keepalived构建高可用MySQL-HA" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2014/02/22/%E5%88%A9%E7%94%A8keepalived%E6%9E%84%E5%BB%BA%E9%AB%98%E5%8F%AF%E7%94%A8MySQL-HA/" class="article-date">
+  <time class="dt-published" datetime="2014-02-22T12:49:12.000Z" itemprop="datePublished">2014-02-22</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/mysql/">mysql</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      利用keepalived构建高可用MySQL-HA
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E3%80%81MySQL-master-master%E9%85%8D%E7%BD%AE"><span class="toc-number">1.</span> <span class="toc-text">一、MySQL master-master配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8C%E3%80%81keepalived%E5%AE%89%E8%A3%85%E5%8F%8A%E9%85%8D%E7%BD%AE"><span class="toc-number">2.</span> <span class="toc-text">二、keepalived安装及配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E6%B5%8B%E8%AF%95"><span class="toc-number">3.</span> <span class="toc-text">三、测试</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <p>关于MySQL-HA，目前有多种解决方案，比如heartbeat、drbd、mmm、共享存储，但是它们各有优缺点。heartbeat、drbd配置较为复杂，需要自己写脚本才能实现MySQL自动切换，对于不会脚本语言的人来说，这无疑是一种脑裂问题；对于mmm，生产环境中很少有人用，且mmm 管理端需要单独运行一台服务器上，要是想实现高可用，就得对mmm管理端做HA，这样无疑又增加了硬件开支；对于共享存储，个人觉得MySQL数据还是放在本地较为安全，存储设备毕竟存在单点隐患。使用MySQL双master+keepalived是一种非常好的解决方案，在MySQL-HA环境中，MySQL互为主从关系，这样就保证了两台MySQL数据的一致性，然后用keepalived实现虚拟IP，通过keepalived自带的服务监控功能来实现MySQL故障时自动切换。</p>
+<p>下面，我把即将上线的一个生产环境中的架构与大家分享一下，看一下这个架构中，MySQL-HA是如何实现的，环境拓扑如下：<br>MySQL-VIP：192.168.1.200<br>MySQL-master1：192.168.1.201<br>MySQL-master2：192.168.1.202  </p>
+<p>OS版本：CentOS 5.4<br>MySQL版本：5.0.89<br>Keepalived版本：1.1.20 </p>
+<span id="more"></span>
+<h3 id="一、MySQL-master-master配置"><a href="#一、MySQL-master-master配置" class="headerlink" title="一、MySQL master-master配置"></a>一、MySQL master-master配置</h3><p>1、修改MySQL配置文件</p>
+<p>两台MySQL均如要开启binlog日志功能，开启方法：在MySQL配置文件[MySQLd]段中加上log-bin=MySQL-bin选项</p>
+<p>两台MySQL的server-ID不能一样，默认情况下两台MySQL的serverID都是1，需将其中一台修改为2即可</p>
+<p>2、将192.168.1.201设为192.168.1.202的主服务器</p>
+<p>在192.168.1.201上新建授权用户</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">MySQL&gt; <span class="keyword">grant</span> <span class="keyword">replication</span> slave <span class="keyword">on</span> *.* <span class="keyword">to</span> <span class="string">&#x27;replication&#x27;</span>@<span class="string">&#x27;%&#x27;</span> identified <span class="keyword">by</span> <span class="string">&#x27;replication&#x27;</span>;  </span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.00</span> sec)  </span><br><span class="line"> </span><br><span class="line">MySQL&gt; <span class="keyword">show</span> master status;  </span><br><span class="line">+<span class="comment">------------------+----------+--------------+------------------+  </span></span><br><span class="line">| File             | Position | Binlog_Do_DB | Binlog_Ignore_DB |  </span><br><span class="line">+<span class="comment">------------------+----------+--------------+------------------+  </span></span><br><span class="line">| MySQL-bin<span class="number">.000003</span> |      <span class="number">374</span> |              |                  |   </span><br><span class="line">+<span class="comment">------------------+----------+--------------+------------------+  </span></span><br><span class="line"><span class="number">1</span> <span class="keyword">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec) </span><br></pre></td></tr></table></figure>
+<p>在192.168.1.202上将192.168.1.201设为自己的主服务器</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">MySQL&gt;</span> <span class="string">change</span> <span class="string">master</span> <span class="string">to</span> <span class="string">master_host=&#x27;192.168.1.201&#x27;,master_user=&#x27;replication&#x27;,master_password=&#x27;replication&#x27;,master_log_file=&#x27;MySQL-bin.000003&#x27;,master_log_pos=374;</span>  </span><br><span class="line"><span class="string">Query</span> <span class="string">OK,</span> <span class="number">0</span> <span class="string">rows</span> <span class="string">affected</span> <span class="string">(0.05</span> <span class="string">sec)</span>  </span><br><span class="line"> </span><br><span class="line"><span class="string">MySQL&gt;</span> <span class="string">start</span> <span class="string">slave;</span>  </span><br><span class="line"><span class="string">Query</span> <span class="string">OK,</span> <span class="number">0</span> <span class="string">rows</span> <span class="string">affected</span> <span class="string">(0.00</span> <span class="string">sec)</span>  </span><br><span class="line"> </span><br><span class="line"><span class="string">MySQL&gt;</span> <span class="string">show</span> <span class="string">slave</span> <span class="string">status\G</span>  </span><br><span class="line"><span class="string">***************************</span> <span class="number">1</span><span class="string">.</span> <span class="string">row</span> <span class="string">***************************</span>  </span><br><span class="line">             <span class="attr">Slave_IO_State:</span> <span class="string">Waiting</span> <span class="string">for</span> <span class="string">master</span> <span class="string">to</span> <span class="string">send</span> <span class="string">event</span>  </span><br><span class="line">                <span class="attr">Master_Host:</span> <span class="number">192.168</span><span class="number">.1</span><span class="number">.201</span>  </span><br><span class="line">                <span class="attr">Master_User:</span> <span class="string">replication</span>  </span><br><span class="line">                <span class="attr">Master_Port:</span> <span class="number">3306</span>  </span><br><span class="line">              <span class="attr">Connect_Retry:</span> <span class="number">60</span>  </span><br><span class="line">            <span class="attr">Master_Log_File:</span> <span class="string">MySQL-bin.000003</span>  </span><br><span class="line">        <span class="attr">Read_Master_Log_Pos:</span> <span class="number">374</span>  </span><br><span class="line">             <span class="attr">Relay_Log_File:</span> <span class="string">MySQL-master2-relay-bin.000002</span>  </span><br><span class="line">              <span class="attr">Relay_Log_Pos:</span> <span class="number">235</span>  </span><br><span class="line">      <span class="attr">Relay_Master_Log_File:</span> <span class="string">MySQL-bin.000003</span>  </span><br><span class="line">           <span class="attr">Slave_IO_Running:</span> <span class="literal">Yes</span>  </span><br><span class="line">          <span class="attr">Slave_SQL_Running:</span> <span class="literal">Yes</span>  </span><br><span class="line">            <span class="attr">Replicate_Do_DB:</span>   </span><br><span class="line">        <span class="attr">Replicate_Ignore_DB:</span>   </span><br><span class="line">         <span class="attr">Replicate_Do_Table:</span>   </span><br><span class="line">     <span class="attr">Replicate_Ignore_Table:</span>   </span><br><span class="line">    <span class="attr">Replicate_Wild_Do_Table:</span>   </span><br><span class="line"><span class="attr">Replicate_Wild_Ignore_Table:</span>   </span><br><span class="line">                 <span class="attr">Last_Errno:</span> <span class="number">0</span>  </span><br><span class="line">                 <span class="attr">Last_Error:</span>   </span><br><span class="line">               <span class="attr">Skip_Counter:</span> <span class="number">0</span>  </span><br><span class="line">        <span class="attr">Exec_Master_Log_Pos:</span> <span class="number">374</span>  </span><br><span class="line">            <span class="attr">Relay_Log_Space:</span> <span class="number">235</span>  </span><br><span class="line">            <span class="attr">Until_Condition:</span> <span class="string">None</span>  </span><br><span class="line">             <span class="attr">Until_Log_File:</span>   </span><br><span class="line">              <span class="attr">Until_Log_Pos:</span> <span class="number">0</span>  </span><br><span class="line">         <span class="attr">Master_SSL_Allowed:</span> <span class="literal">No</span>  </span><br><span class="line">         <span class="attr">Master_SSL_CA_File:</span>   </span><br><span class="line">         <span class="attr">Master_SSL_CA_Path:</span>   </span><br><span class="line">            <span class="attr">Master_SSL_Cert:</span>   </span><br><span class="line">          <span class="attr">Master_SSL_Cipher:</span>   </span><br><span class="line">             <span class="attr">Master_SSL_Key:</span>   </span><br><span class="line">      <span class="attr">Seconds_Behind_Master:</span> <span class="number">0</span>  </span><br><span class="line"><span class="number">1</span> <span class="string">row</span> <span class="string">in</span> <span class="string">set</span> <span class="string">(0.00</span> <span class="string">sec)</span> </span><br></pre></td></tr></table></figure>
+<p>3、将192.168.1.202设为192.168.1.201的主服务器</p>
+<p>在192.168.1.202上新建授权用户</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">MySQL&gt; <span class="keyword">grant</span> <span class="keyword">replication</span> slave <span class="keyword">on</span> *.* <span class="keyword">to</span> <span class="string">&#x27;replication&#x27;</span>@<span class="string">&#x27;%&#x27;</span> identified <span class="keyword">by</span> <span class="string">&#x27;replication&#x27;</span>;  </span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.00</span> sec)  </span><br><span class="line"> </span><br><span class="line">MySQL&gt; <span class="keyword">show</span> master status;  </span><br><span class="line">+<span class="comment">------------------+----------+--------------+------------------+  </span></span><br><span class="line">| File             | Position | Binlog_Do_DB | Binlog_Ignore_DB |  </span><br><span class="line">+<span class="comment">------------------+----------+--------------+------------------+  </span></span><br><span class="line">| MySQL-bin<span class="number">.000003</span> |      <span class="number">374</span> |              |                  |   </span><br><span class="line">+<span class="comment">------------------+----------+--------------+------------------+  </span></span><br><span class="line"><span class="number">1</span> <span class="keyword">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec) </span><br></pre></td></tr></table></figure>
+<p>在192.168.1.201上，将192.168.1.202设为自己的主服务器</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">MySQL&gt;</span> <span class="string">change</span> <span class="string">master</span> <span class="string">to</span> <span class="string">master_host=&#x27;192.168.1.202&#x27;,master_user=&#x27;replication&#x27;,master_password=&#x27;replication&#x27;,master_log_file=&#x27;MySQL-bin.000003&#x27;,master_log_pos=374;</span>  </span><br><span class="line"><span class="string">Query</span> <span class="string">OK,</span> <span class="number">0</span> <span class="string">rows</span> <span class="string">affected</span> <span class="string">(0.05</span> <span class="string">sec)</span>  </span><br><span class="line"> </span><br><span class="line"><span class="string">MySQL&gt;</span> <span class="string">start</span> <span class="string">slave;</span>  </span><br><span class="line"><span class="string">Query</span> <span class="string">OK,</span> <span class="number">0</span> <span class="string">rows</span> <span class="string">affected</span> <span class="string">(0.00</span> <span class="string">sec)</span>  </span><br><span class="line"> </span><br><span class="line"><span class="string">MySQL&gt;</span> <span class="string">show</span> <span class="string">slave</span> <span class="string">status\G</span>  </span><br><span class="line"><span class="string">***************************</span> <span class="number">1</span><span class="string">.</span> <span class="string">row</span> <span class="string">***************************</span>  </span><br><span class="line">             <span class="attr">Slave_IO_State:</span> <span class="string">Waiting</span> <span class="string">for</span> <span class="string">master</span> <span class="string">to</span> <span class="string">send</span> <span class="string">event</span>  </span><br><span class="line">                <span class="attr">Master_Host:</span> <span class="number">192.168</span><span class="number">.1</span><span class="number">.202</span>  </span><br><span class="line">                <span class="attr">Master_User:</span> <span class="string">replication</span>  </span><br><span class="line">                <span class="attr">Master_Port:</span> <span class="number">3306</span>  </span><br><span class="line">              <span class="attr">Connect_Retry:</span> <span class="number">60</span>  </span><br><span class="line">            <span class="attr">Master_Log_File:</span> <span class="string">MySQL-bin.000003</span>  </span><br><span class="line">        <span class="attr">Read_Master_Log_Pos:</span> <span class="number">374</span>  </span><br><span class="line">             <span class="attr">Relay_Log_File:</span> <span class="string">MySQL-master1-relay-bin.000002</span>  </span><br><span class="line">              <span class="attr">Relay_Log_Pos:</span> <span class="number">235</span>  </span><br><span class="line">      <span class="attr">Relay_Master_Log_File:</span> <span class="string">MySQL-bin.000003</span>  </span><br><span class="line">           <span class="attr">Slave_IO_Running:</span> <span class="literal">Yes</span>  </span><br><span class="line">          <span class="attr">Slave_SQL_Running:</span> <span class="literal">Yes</span>  </span><br><span class="line">            <span class="attr">Replicate_Do_DB:</span>   </span><br><span class="line">        <span class="attr">Replicate_Ignore_DB:</span>   </span><br><span class="line">         <span class="attr">Replicate_Do_Table:</span>   </span><br><span class="line">     <span class="attr">Replicate_Ignore_Table:</span>   </span><br><span class="line">    <span class="attr">Replicate_Wild_Do_Table:</span>   </span><br><span class="line"><span class="attr">Replicate_Wild_Ignore_Table:</span>   </span><br><span class="line">                 <span class="attr">Last_Errno:</span> <span class="number">0</span>  </span><br><span class="line">                 <span class="attr">Last_Error:</span>   </span><br><span class="line">               <span class="attr">Skip_Counter:</span> <span class="number">0</span>  </span><br><span class="line">        <span class="attr">Exec_Master_Log_Pos:</span> <span class="number">374</span>  </span><br><span class="line">            <span class="attr">Relay_Log_Space:</span> <span class="number">235</span>  </span><br><span class="line">            <span class="attr">Until_Condition:</span> <span class="string">None</span>  </span><br><span class="line">             <span class="attr">Until_Log_File:</span>   </span><br><span class="line">              <span class="attr">Until_Log_Pos:</span> <span class="number">0</span>  </span><br><span class="line">         <span class="attr">Master_SSL_Allowed:</span> <span class="literal">No</span> </span><br><span class="line">         <span class="attr">Master_SSL_CA_File:</span>   </span><br><span class="line">         <span class="attr">Master_SSL_CA_Path:</span>   </span><br><span class="line">            <span class="attr">Master_SSL_Cert:</span>   </span><br><span class="line">          <span class="attr">Master_SSL_Cipher:</span>   </span><br><span class="line">             <span class="attr">Master_SSL_Key:</span>   </span><br><span class="line">      <span class="attr">Seconds_Behind_Master:</span> <span class="number">0</span>  </span><br><span class="line"><span class="number">1</span> <span class="string">row</span> <span class="string">in</span> <span class="string">set</span> <span class="string">(0.00</span> <span class="string">sec)</span> </span><br></pre></td></tr></table></figure>
+<p>4、MySQL同步测试</p>
+<p>如上述均正确配置，现在任何一台MySQL上更新数据都会同步到另一台MySQL，MySQL同步在此不再演示</p>
+<h3 id="二、keepalived安装及配置"><a href="#二、keepalived安装及配置" class="headerlink" title="二、keepalived安装及配置"></a>二、keepalived安装及配置</h3><p>1、192.168.1.201服务器上keepalived安装及配置</p>
+<p>安装keepalived</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">#tar zxvf keepalived-<span class="number">1.1</span>.<span class="number">20</span>.tar.gz  </span><br><span class="line">#cd keepalived-<span class="number">1.1</span>.<span class="number">20</span>  </span><br><span class="line">#.<span class="regexp">/configure --prefix=/u</span>sr<span class="regexp">/local/</span>keepalived --with-kernel-dir=<span class="regexp">/usr/</span>src<span class="regexp">/kernels/</span><span class="number">2.6</span>.<span class="number">18</span>-<span class="number">164</span>.el5-i686  </span><br><span class="line">#make &amp;&amp; make install </span><br></pre></td></tr></table></figure>
+<p>配置keepalived</p>
+<p>我们自己在新建一个配置文件，默认情况下keepalived启动时会去/etc/keepalived目录下找配置文件</p>
+
+<figure class="highlight tap"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#mkdir /etc/keepalived  </span></span><br><span class="line"><span class="comment">#vi /etc/keepalived/keepalived.conf  </span></span><br><span class="line">! Configuration File for keepalived  </span><br><span class="line">global_defs &#123;  </span><br><span class="line">     notification_email &#123;  </span><br><span class="line">     luwenju@live.cn  </span><br><span class="line">     &#125;  </span><br><span class="line">     notification_email_from luwenju@live.cn  </span><br><span class="line">     smtp_server 127.0.0.1  </span><br><span class="line">     smtp_connect_timeout<span class="number"> 30 </span> </span><br><span class="line">     router_id MySQL-ha  </span><br><span class="line">     &#125;  </span><br><span class="line"> </span><br><span class="line">vrrp_instance VI_1 &#123;  </span><br><span class="line">     state BACKUP   <span class="comment">#两台配置此处均是BACKUP  </span></span><br><span class="line">     interface eth0  </span><br><span class="line">     virtual_router_id<span class="number"> 51 </span> </span><br><span class="line">     priority<span class="number"> 100 </span>  <span class="comment">#优先级，另一台改为90  </span></span><br><span class="line">     advert_int<span class="number"> 1 </span> </span><br><span class="line">     nopreempt  <span class="comment">#不抢占，只在优先级高的机器上设置即可，优先级低的机器不设置  </span></span><br><span class="line">     authentication &#123;  </span><br><span class="line">     auth_type PASS  </span><br><span class="line">     auth_pass<span class="number"> 1111 </span> </span><br><span class="line">     &#125;  </span><br><span class="line">     virtual_ipaddress &#123;  </span><br><span class="line">     192.168.1.200  </span><br><span class="line">     &#125;  </span><br><span class="line">     &#125;  </span><br><span class="line"> </span><br><span class="line">virtual_server 192.168.1.200<span class="number"> 3306 </span>&#123;  </span><br><span class="line">     delay_loop<span class="number"> 2 </span>  <span class="comment">#每个2秒检查一次real_server状态  </span></span><br><span class="line">     lb_algo wrr   <span class="comment">#LVS算法  </span></span><br><span class="line">     lb_kind DR    <span class="comment">#LVS模式  </span></span><br><span class="line">     persistence_timeout<span class="number"> 60 </span>  <span class="comment">#会话保持时间  </span></span><br><span class="line">     protocol TCP  </span><br><span class="line">     real_server 192.168.1.201<span class="number"> 3306 </span>&#123;  </span><br><span class="line">     weight<span class="number"> 3 </span> </span><br><span class="line">     notify_down /usr/local/MySQL/bin/MySQL.sh  <span class="comment">#检测到服务down后执行的脚本  </span></span><br><span class="line">     TCP_CHECK &#123;  </span><br><span class="line">     connect_timeout<span class="number"> 10 </span>   <span class="comment">#连接超时时间  </span></span><br><span class="line">     nb_get_retry<span class="number"> 3 </span>      <span class="comment">#重连次数  </span></span><br><span class="line">     delay_before_retry<span class="number"> 3 </span>  <span class="comment">#重连间隔时间  </span></span><br><span class="line">     connect_port<span class="number"> 3306 </span>  <span class="comment">#健康检查端口  </span></span><br><span class="line">     &#125;  </span><br><span class="line">     &#125; </span><br></pre></td></tr></table></figure>
+
+<p>编写检测服务down后所要执行的脚本</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">#vi <span class="regexp">/usr/</span>local<span class="regexp">/MySQL/</span>bin/MySQL.sh  </span><br><span class="line">#!<span class="regexp">/bin/</span>sh  </span><br><span class="line">pkill keepalived  </span><br><span class="line">#chmod +x <span class="regexp">/usr/</span>local<span class="regexp">/MySQL/</span>bin/MySQL.sh </span><br></pre></td></tr></table></figure>
+<p>注：此脚本是上面配置文件notify_down选项所用到的，keepalived使用notify_down选项来检查real_server的服务状态，当发现real_server服务故障时，便触发此脚本；我们可以看到，脚本就一个命令，通过pkill keepalived强制杀死keepalived进程，从而实现了MySQL故障自动转移。另外，我们不用担心两个MySQL会同时提供数据更新操作，因为每台MySQL上的keepalived的配置里面只有本机MySQL的IP+VIP，而不是两台MySQL的IP+VIP</p>
+<p>启动keepalived</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">#<span class="regexp">/usr/</span>local<span class="regexp">/keepalived/</span>sbin/keepalived –D  </span><br><span class="line">#ps -aux | <span class="keyword">grep</span> keepalived </span><br></pre></td></tr></table></figure>
+<p>测试</p>
+<p>找一台局域网PC，然后去ping  MySQL的VIP，这时候MySQL的VIP是可以ping的通的</p>
+<p>停止MySQL服务，看keepalived健康检查程序是否会触发我们编写的脚本</p>
+<p>2、192.168.1.202上keepalived安装及配置</p>
+<p>安装keepalived</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">#tar zxvf keepalived-<span class="number">1.1</span>.<span class="number">20</span>.tar.gz  </span><br><span class="line">#cd keepalived-<span class="number">1.1</span>.<span class="number">20</span>  </span><br><span class="line">#.<span class="regexp">/configure --prefix=/u</span>sr<span class="regexp">/local/</span>keepalived --with-kernel-dir=<span class="regexp">/usr/</span>src<span class="regexp">/kernels/</span><span class="number">2.6</span>.<span class="number">18</span>-<span class="number">164</span>.el5-i686  </span><br><span class="line">#make &amp;&amp; make install </span><br></pre></td></tr></table></figure>
+<p>配置keepalived</p>
+<p>这台配置和上面基本一样，但有三个地方不同：优先级为90、无抢占设置、real_server为本机IP</p>
+
+<figure class="highlight tap"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#mkdir /etc/keepalived  </span></span><br><span class="line"><span class="comment">#vi /etc/keepalived/keepalived.conf  </span></span><br><span class="line">! Configuration File for keepalived  </span><br><span class="line">global_defs &#123;  </span><br><span class="line">     notification_email &#123;  </span><br><span class="line">     luwenju@live.cn  </span><br><span class="line">     &#125;  </span><br><span class="line">     notification_email_from luwenju@live.cn  </span><br><span class="line">     smtp_server 127.0.0.1  </span><br><span class="line">     smtp_connect_timeout<span class="number"> 30 </span> </span><br><span class="line">     router_id MySQL-ha  </span><br><span class="line">     &#125;  </span><br><span class="line"> </span><br><span class="line">vrrp_instance VI_1 &#123;  </span><br><span class="line">     state BACKUP  </span><br><span class="line">     interface eth0  </span><br><span class="line">     virtual_router_id<span class="number"> 51 </span> </span><br><span class="line">     priority<span class="number"> 90 </span> </span><br><span class="line">     advert_int<span class="number"> 1 </span> </span><br><span class="line">     authentication &#123;  </span><br><span class="line">     auth_type PASS  </span><br><span class="line">     auth_pass<span class="number"> 1111 </span> </span><br><span class="line">     &#125;  </span><br><span class="line">     virtual_ipaddress &#123;  </span><br><span class="line">     192.168.1.200  </span><br><span class="line">     &#125;  </span><br><span class="line">     &#125;  </span><br><span class="line"> </span><br><span class="line">virtual_server 192.168.1.200<span class="number"> 3306 </span>&#123;  </span><br><span class="line">     delay_loop<span class="number"> 2 </span> </span><br><span class="line">     lb_algo wrr  </span><br><span class="line">     lb_kind DR  </span><br><span class="line">     persistence_timeout<span class="number"> 60 </span> </span><br><span class="line">     protocol TCP  </span><br><span class="line">     real_server 192.168.1.202<span class="number"> 3306 </span>&#123;  </span><br><span class="line">     weight<span class="number"> 3 </span> </span><br><span class="line">     notify_down /usr/local/MySQL/bin/MySQL.sh  </span><br><span class="line">     TCP_CHECK &#123;  </span><br><span class="line">     connect_timeout<span class="number"> 10 </span> </span><br><span class="line">     nb_get_retry<span class="number"> 3 </span> </span><br><span class="line">     delay_before_retry<span class="number"> 3 </span> </span><br><span class="line">     connect_port<span class="number"> 3306 </span> </span><br><span class="line">     &#125;  </span><br><span class="line">     &#125; </span><br></pre></td></tr></table></figure>
+
+<p>编写检测服务down后所要执行的脚本</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">#vi <span class="regexp">/usr/</span>local<span class="regexp">/MySQL/</span>bin/MySQL.sh  </span><br><span class="line">#!<span class="regexp">/bin/</span>sh  </span><br><span class="line">pkill keepalived  </span><br><span class="line">#chmod +x <span class="regexp">/usr/</span>local<span class="regexp">/MySQL/</span>bin/MySQL.sh  </span><br><span class="line"> </span><br><span class="line">启动keepalived  </span><br><span class="line">#<span class="regexp">/usr/</span>local<span class="regexp">/keepalived/</span>sbin/keepalived –D  </span><br><span class="line">#ps -aux | <span class="keyword">grep</span> keepalived </span><br></pre></td></tr></table></figure>
+<p>测试</p>
+<p>停止MySQL服务，看keepalived健康检查程序是否会触发我们编写的脚本</p>
+<h3 id="三、测试"><a href="#三、测试" class="headerlink" title="三、测试"></a>三、测试</h3><p>MySQL远程登录测试</p>
+<p>我们找一台安装有MySQL客户端的windows，然后登录VIP，看是否能登录，在登录之两台MySQL服务器都要授权允许从远程登录</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">MySQL&gt; <span class="keyword">grant</span> <span class="keyword">all</span> <span class="keyword">privileges</span> <span class="keyword">on</span> *.* <span class="keyword">to</span> <span class="string">&#x27;root&#x27;</span>@<span class="string">&#x27;%&#x27;</span> identified <span class="keyword">by</span> <span class="string">&#x27;123456&#x27;</span>;  </span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.00</span> sec)  </span><br><span class="line"> </span><br><span class="line">MySQL&gt; flush <span class="keyword">privileges</span>;  </span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.00</span> sec) </span><br></pre></td></tr></table></figure>
+<p>使用客户端登录VIP测试</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">C:\MySQL\bin&gt;MySQL.exe -uroot -p123456 -h192<span class="number">.168</span><span class="number">.1</span><span class="number">.200</span> -P3306  </span><br><span class="line">Welcome <span class="keyword">to</span> the MySQL monitor.  Commands <span class="keyword">end</span> <span class="keyword">with</span> ; <span class="keyword">or</span> \g.  </span><br><span class="line">Your MySQL <span class="keyword">connection</span> id <span class="keyword">is</span> <span class="number">224</span>  </span><br><span class="line"><span class="keyword">Server</span> <span class="keyword">version</span>: <span class="number">5.0</span><span class="number">.89</span>-<span class="keyword">log</span> Source distribution  </span><br><span class="line"> </span><br><span class="line"><span class="keyword">Type</span> <span class="string">&#x27;help;&#x27;</span> <span class="keyword">or</span> <span class="string">&#x27;\h&#x27;</span> <span class="keyword">for</span> help. <span class="keyword">Type</span> <span class="string">&#x27;\c&#x27;</span> <span class="keyword">to</span> clear the <span class="keyword">current</span> <span class="keyword">input</span> <span class="keyword">statement</span>.  </span><br><span class="line"> </span><br><span class="line">MySQL&gt; </span><br></pre></td></tr></table></figure>
+<p>● keepalived故障转移测试</p>
+<p>※在windows客户端一直去ping  VIP，然后关闭192.168.1.201上的keepalived，正常情况下VIP就会切换到192.168.1.202上面去</p>
+<p>※开启192.168.1.201上的keepalived，关闭192.168.1.202上的keepalived，看是否能自动切换，正常情况下VIP又会属于192.168.1.201</p>
+<p>注：keepalived切换速度还是非常块的，整个切换过程只需1-3秒</p>
+<p>● MySQL故障转移测试</p>
+<p>※在192.168.1.201上关闭MySQL服务，看VIP是否会切换到192.168.1.202上</p>
+<p>※开启192.168.1.201上的MySQL和keepalived，然后关闭192.168.1.202上的MySQL，看VIP是否会切换到192.168.1.201上</p>
+<p>下面是用windows客户端连接的MySQL的VIP，在切换时我执行了一个MySQL查询命令，从执行show databases到显示出结果时间为3-5秒（大家可以看到上面有个错误提示，不过不用担心，因为我们的keepalived切换大概为3秒左右，这3秒左右VIP是谁都不属于的）</p>
+<figure class="highlight subunit"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">MySQL&gt; show databases;  </span><br><span class="line"><span class="keyword">ERROR </span>2006 (HY000): MySQL server has gone away  </span><br><span class="line">No connection. Trying to reconnect...  </span><br><span class="line">Connection id:    592  </span><br><span class="line">Current database: *** NONE ***  </span><br><span class="line"> </span><br><span class="line">+--------------------+  </span><br><span class="line">| Database           |  </span><br><span class="line">+--------------------+  </span><br><span class="line">| information_schema |  </span><br><span class="line">| MySQL              |  </span><br><span class="line">| test               |  </span><br><span class="line">+--------------------+  </span><br><span class="line">3 rows in set (9.01 sec) </span><br></pre></td></tr></table></figure>
+<p>后话：世间万事万物，都不具备绝对的完美，就像上面的MySQL-HA一样，keepalived只能做到对3306的健康检查，但是做不到比如像MySQL复制中的slave-SQL、slave-IO进程的检查。所以要想做到一些细致的健康检查，还得需要借助额外的监控工具，比如nagios，然后用nagios实现短信、邮件报警，从而能够有效地解决问题。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/02/22/%E5%88%A9%E7%94%A8keepalived%E6%9E%84%E5%BB%BA%E9%AB%98%E5%8F%AF%E7%94%A8MySQL-HA/" data-id="cl9pgeo8n01s5ycv16qncbej1" data-title="利用keepalived构建高可用MySQL-HA" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E9%9B%86%E7%BE%A4/" rel="tag">集群</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/02/22/%E8%A1%A8%E6%A0%BC%E6%95%B0%E6%8D%AE%E4%B8%8A%E4%B8%8B%E8%A1%8C%E4%BA%92%E6%8D%A2%E4%BD%8D%E7%BD%AE/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          表格数据上下行互换位置
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/02/22/mysql%E5%88%86%E8%A1%A8%E7%9A%843%E7%A7%8D%E6%96%B9%E6%B3%95/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">mysql分表的3种方法</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

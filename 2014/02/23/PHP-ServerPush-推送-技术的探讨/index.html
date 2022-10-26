@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>PHP ServerPush (推送) 技术的探讨 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="需求： 我想做个会员站内通知的功能。不想用以前的ajax查询，听说有个推技术。以下文章介绍的不错，来自转载， &#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D; PHP中Push(推送)技术的探讨  [http:&#x2F;&#x2F;vistaswx.com&#x2F;blog&#x2F;article&#x2F;php-serve">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PHP ServerPush (推送) 技术的探讨">
+<meta property="og:url" content="http://moqiang02.github.io/2014/02/23/PHP-ServerPush-%E6%8E%A8%E9%80%81-%E6%8A%80%E6%9C%AF%E7%9A%84%E6%8E%A2%E8%AE%A8/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="需求： 我想做个会员站内通知的功能。不想用以前的ajax查询，听说有个推技术。以下文章介绍的不错，来自转载， &#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D; PHP中Push(推送)技术的探讨  [http:&#x2F;&#x2F;vistaswx.com&#x2F;blog&#x2F;article&#x2F;php-serve">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2014-02-23T02:47:34.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.838Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-PHP-ServerPush-推送-技术的探讨" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2014/02/23/PHP-ServerPush-%E6%8E%A8%E9%80%81-%E6%8A%80%E6%9C%AF%E7%9A%84%E6%8E%A2%E8%AE%A8/" class="article-date">
+  <time class="dt-published" datetime="2014-02-23T02:47:34.000Z" itemprop="datePublished">2014-02-23</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/php/">php</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      PHP ServerPush (推送) 技术的探讨
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <p>需求：</p>
+<p>我想做个会员站内通知的功能。不想用以前的ajax查询，听说有个推技术。以下文章介绍的不错，来自转载，</p>
+<p>==================================================================================</p>
+<p>PHP中Push(推送)技术的探讨  [<a target="_blank" rel="noopener" href="http://vistaswx.com/blog/article/php-server-push]">http://vistaswx.com/blog/article/php-server-push]</a></p>
+<p>随着人们对Web即时应用需求的不断上升，Server Push(推送)技术在聊天、消息提醒尤其是社交网络等方面开始兴起，成为实时应用的数据流核心。这篇日志试图探讨的便是各种适合于PHP的Push的实现方式以及其优劣。</p>
+<span id="more"></span>
+<p>1.什么是Server Push</p>
+<p>想象在聊天应用中，如果使用传统的ajax来承担消息的传入，那么一般是通过每隔一定时间拉取一次信息的方式实现，但是其实这种方式有大量查询是浪费的。聊天等Web应用更需要服务器在特定时间来主动告知前端有新的消息(Push)，而不是前端每时每刻问服务器：“来消息了吗？”(Pull)。这也正是为什么这个技术常被叫做反向ajax。</p>
+<p>其他别名：Comet，反向Ajax</p>
+<p>2.如何实现Push</p>
+<p>其实所谓的推送技术也没有多么复杂，目前从大类上有3种，一种仍然建立在ajax基础上，还有一种建立在框架基础上，最后一种抛弃了传统的HTTP协议，使用Flash或者HTML5的WebSockets技术。接下来将对这三种类别产生的不同的方式进行探讨。</p>
+<ol>
+<li>Ajax 长轮询</li>
+</ol>
+<p>Ajax长轮询从本质上来说仍然是一种pull，但是实时性较高，无用请求减少很多，是一种不错的Push实现方案。不过它只减少了网络上的无谓消耗。</p>
+<p>核心: 客户端发起一个ajax请求，服务端将请求搁置(pending)或者说挂起，直到到了超时时间(timeout)或需要推送时返回；客户端则等待ajax返回后处理数据，再发起下一个ajax请求。</p>
+<p>优点: 兼容性较高，实现简单</p>
+<p>缺点: 对于php这种语言来说，如果要做到实时，那么服务端就要承受大得多的压力，因为搁置到什么时候往往是不确定的，这就要php脚本每次搁置都进行一个while循环。<br>当然，如果服务器刷新每秒级，那尚可接受，只是实时性上退化了。</p>
+<p>注意: 浏览器有连接数限制。我得出的结论是如果当前页面上有一个ajax请求处于等待返回状态，那么其他ajax请求都会被搁置(Chrome, Firefox已测)。如果页面有一般ajax需求怎么办？解决方法是开个框架，框架中使在另一个域名下进行Comet长轮询，需要注意跨域问题。</p>
+<p>PHP实现: <a target="_blank" rel="noopener" href="http://tech.techweb.com.cn/thread-439108-1-1.html">Jquery+php实现comet</a></p>
+<p>相关:<a target="_blank" rel="noopener" href="http://blog.csdn.net/zabcd117/article/details/2061669">Ajax跨域和js跨域解决方案</a></p>
+<ol start="2">
+<li>Frame 长连接</li>
+</ol>
+<p>受到ajax启发，出现了框架下的长连接。</p>
+<p>核心: Frame中发起一个普通请求，服务器将其搁置；需要推送时输出直接执行<br>脚本，然后继续保持连接。如果担心超时问题可以改成框架论询。</p>
+<p>优点: 与1一样具有高兼容特性</p>
+<p>缺点: 最大的问题是如果框架在载入，那么浏览器就好一直显示“载入中”，这就弱爆了(解决方法参见文末的相关阅读资源)。同样服务器也要能hold住大量循环……另外，是否有同域连接限制没测试。</p>
+<ol start="3">
+<li>Flash/HTML5 WebSockets</li>
+</ol>
+<p>用flash来发起WebSockets，秒杀前面一切问题。</p>
+<p>优点: 标准化, RealTime, Push</p>
+<p>缺点: 服务器需要能应对WebSockets；还有如果既没有Flash又不支持HTML5的怎么办？</p>
+<p>PHP实现: <a target="_blank" rel="noopener" href="http://net.tutsplus.com/tutorials/ajax/start-using-html5-websockets-today/">Start Using HTML5 WebSockets Today</a></p>
+<ol start="4">
+<li>使用兼容封装层(socket.io)</li>
+</ol>
+<p>以上每种方法都有优劣，那么终极解决方案便是合在一起！能WebSockets时候就WebSockets，不支持HTML5特性就退化到Flash，没有Flash则退化到Ajax长轮询。这也是我的Rainbowfish所采用的方式。</p>
+<p>优点: 高度封装，编写非常容易，几乎不需要关心如何去实现的。实时，超低负载，高并发。</p>
+<p>缺点: 其实算不上缺点，socket.io的服务器端要求是node.js，而不是php。</p>
+<p>个人看法: 如果你是独立主机，能运行程序，那么socket.io配合node.js是个非常高效的选择。为什么呢？因为它还可以避免php的服务端高负载。</p>
+<p>Rainbowfish的消息系统通过这种方式实现: 所有客户端都通过socket.io挂在nodejs服务器上(注意: 只是挂着，不需要任何循环，因为它是事件驱动的)；需要推送消息了，服务器就与nodejs通信(比如访问某个地址来实现)，告诉它推送什么消息到哪里；nodejs收到推送信号后，则通过socket.io实时传输数据给浏览器。这个其实也是一条单向的路，因为nodejs服务器不具备与php通信的能力，实际上也不需要，网页上直接连php就可以了。</p>
+<p>3.结束语</p>
+<p>事实上，第一个方法(Ajax Long Pull)是一个不错的方法，只是如果使用php完成的话服务器负载上有点大，但这其实是通病；而最后列举的socket.io方案完全避免了这个问题，因为它属于另一种架构，并且这种组合也可以配合几乎所有的脚本语言实现push。</p>
+<p>对于实时性要求非常高的应用，或许使用php实现实时部分并不是一个好的选择，将会面临非常大的服务器负载(可以通过编写支持等待事件的扩展来解决这个问题)；如果只是消息提示等，则可以调整服务器上刷新的间隔降低到秒的级别，负载尚可接受。不过无论哪种用途，配合那些非阻塞语言或许才是最好的选择。</p>
+<p>4.相关阅读</p>
+<p><a target="_blank" rel="noopener" href="http://www.zeitoun.net/articles/comet_and_php/start">How to implement COMET with PHP</a></p>
+<p><a target="_blank" rel="noopener" href="http://net.tutsplus.com/tutorials/ajax/start-using-html5-websockets-today/">Start Using HTML5 WebSockets Today</a></p>
+<p><a target="_blank" rel="noopener" href="http://en.wikipedia.org/wiki/Comet_%28programming%29">Comet(Wikipedia)</a></p>
+<p><a target="_blank" rel="noopener" href="http://blog.csdn.net/zabcd117/article/details/2061669">Ajax跨域和js跨域解决方案</a></p>
+<p><a target="_blank" rel="noopener" href="http://tech.techweb.com.cn/thread-439108-1-1.html">Jquery+php实现comet</a></p>
+<p>==============================================================================================</p>
+<p>comet研究[<a target="_blank" rel="noopener" href="http://lync.in/research-on-comet/]">http://lync.in/research-on-comet/]</a></p>
+<p>在Web应用中，客户端的AJAX技术已经非常普遍也非常深入人心了，但与此同时，另一些应用，诸如在线监控，实时数据显示，即时通讯等需要将后台数据变化情况实时显示到前台，这样的由服务器push的行为（也许会让你想到blackberry）则需要另一种方案来解决，也就是本文所要介绍的Comet —— 无需安装插件，保持http长连接的服务器推方案。<br>以下两点是方案中必须顾及到的。</p>
+<ul>
+<li>浏览器通用性，对各种不同实现结构模型的支持。</li>
+<li>长连接对于服务器资源的占用，以及服务器的承受能力。</li>
+</ul>
+<h3 id="Comet的客户端与服务端交互流"><a href="#Comet的客户端与服务端交互流" class="headerlink" title="Comet的客户端与服务端交互流"></a>Comet的客户端与服务端交互流</h3><p>业界对于Comet实现有两种主要的解决方案：</p>
+<p>（1）基于AJAX的轮询(long polling)方式</p>
+<p>这种方式就是由客户端发出AJAX请求，然后服务端阻塞请求直至有响应或超时。客户端在接收到服务端的指令之后会进行响应并发出新的请求。</p>
+<p>从实现层面上来说，当XMLHttpRequest的状态为4也就是load的状态时会进行客户端处理，而Gecko（Firefox）和Webkit（Chrome，Safari）目前支持在readystate为3的时候读取（当然只能读取到所有该请求已返回的串内容，所以需要自行确定指令边界），Trident（IE）目前如果中途去读取会抛出错误，IE8中使用XDomainRequest可以适当解决这个问题（参见Eric Law的COMET Streaming in Internet Explorer[]）。</p>
+<p>目前，开心网采用的是这一种方式。</p>
+<p>（2）基于iframe及htmlfile的流(streaming)方式</p>
+<p>这种方式是使用了iframe的机制，然后使得这个iframe请求一个特定的URL，并通过对这个页面的加载不断的从服务端抓回数据，这里从服务端抓回的数据大多是对页面当前JavaScript函数的引用和操作。</p>
+<p>这个方案的一个明显不足之处是页面会一直显示正在加载，而这在IE上会更明显。Google的天才们想到了用htmlfile的ActiveX控件来解决这个问题的方案，详细描述可以参见Alex Russell的<a target="_blank" rel="noopener" href="http://infrequently.org/2006/02/what-else-is-burried-down-in-the-depths-of-googles-amazing/">What else is burried down in the depth’s of Google’s amazing JavaScript?</a></p>
+<p>目前，人人网和GTalk采用的是这种方式。</p>
+<p>除了文首所提到的通用性和性能之外，还有几点是需要列入考量范围的。</p>
+<ul>
+<li>数据交换的格式。由于数据交换的形式是推送，所以不可避免的会有指令队列的存在，于是数据结构是需要前后台详细约定的，执行指令和数据指令都需要有严格的界定，一般来说，JSON的方案比较普遍。</li>
+<li>浏览器本身的连接数限制。HTTP 1.1规范中声明客户端不应该与服务器端建立超过两个的 HTTP 连接，而IE又严格遵守了这一点，所以前台在处理请求的时候需要谨慎控制请求的数量。</li>
+</ul>
+<p>其实，Comet技术在AJAX大红大紫的2005年之后的2006年时是业界一个很热的讨论点，目前的这两种方式非常成熟，在dojo，dwr等前端框架中都已经有这样的实现，而Bayeux协议的出现也已经在实质上订下了一种业界的标准。</p>
+<p>Comet的框架前端有Pushlet，dwr和dojo等，服务端有Jetty，Meteor，Orbited，Glassfish，Alpha，实现的产品语言也覆盖了Java，C++，Python，Perl，Ruby，Erlang，.Net等。</p>
+<p>下一代HTML5中的WebSocket会是Comet的一个新起点，但在那之前，在非插件的web层面应该不会有更进一步的讨论与技术出现。</p>
+<p>本文只是对Comet这个技术进行大体的概述，粗陋不明之处难免，在后续的文章中将会对WebSocket进行一定的解释和演示。</p>
+<p>参考资料：</p>
+<p>这里有一个php的comet的例子<a target="_blank" rel="noopener" href="http://www.zeitoun.net/articles/comet_and_php/start">How to implement COMET with PHP</a>。这个要看看<br>这是developerWorks上对于Comet的<a target="_blank" rel="noopener" href="http://www.ibm.com/developerworks/cn/web/wa-lo-comet/">介绍</a>。<br>这是当前Comet的服务器端的一些<a target="_blank" rel="noopener" href="http://cometdaily.com/maturity.html">产品及介绍</a>。<br>当然，Wikipedia上面对<a target="_blank" rel="noopener" href="http://en.wikipedia.org/wiki/Comet_%28programming%29">Comet的解释</a>也是非常详尽。<br>还可以看看AjaxPatterns上面的一些<a target="_blank" rel="noopener" href="http://ajaxpatterns.org/HTTP_Streaming">介绍</a>。<br>最后，<a target="_blank" rel="noopener" href="http://cometdaily.com/">CometDaily</a>是个值得去了解最新Comet新闻和知识的地方。<br>    =====================================================================================================</p>
+<p>Comet：基于 HTTP 长连接的“服务器推”技术</p>
+<p>  [<a target="_blank" rel="noopener" href="http://www.ibm.com/developerworks/cn/web/wa-lo-comet/]">http://www.ibm.com/developerworks/cn/web/wa-lo-comet/]</a></p>
+<p>ps:上述文章应该够你看明白的了。使用一种吧。但我现在还没有在项目用推技术，原因，还没有来得及折腾，但在本地测试都很正常 。</p>
+<p>以下提供protype 和 jquery的 +php实现的代码例子。[例子代码来自网上，已测试通过。好用]</p>
+<p><a target="_blank" rel="noopener" href="http://bbs.php100.com/read-htm-tid-290215-ds-1.html">http://bbs.php100.com/read-htm-tid-290215-ds-1.html</a></p>
+<p>扩展阅读：</p>
+<p><a target="_blank" rel="noopener" href="http://kb.cnblogs.com/page/72745/">HTML5 WebSockets 基础使用教程</a></p>
+<p><a target="_blank" rel="noopener" href="http://www.ibm.com/developerworks/cn/web/1112_huangxa_websocket/">使用 HTML5 WebSocket 构建实时 Web 应用</a></p>
+<p><a target="_blank" rel="noopener" href="http://www.ibm.com/developerworks/cn/web/wa-bluemix-html5chat/">使用 Node.js、Redis 和 Socket.io 在 Bluemix 上创建 HTML5 聊天应用程序</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/02/23/PHP-ServerPush-%E6%8E%A8%E9%80%81-%E6%8A%80%E6%9C%AF%E7%9A%84%E6%8E%A2%E8%AE%A8/" data-id="cl9pgenux00r1ycv146r211bw" data-title="PHP ServerPush (推送) 技术的探讨" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/02/23/%E5%88%A9%E7%94%A8Ajax%E5%AE%9E%E7%8E%B0%E9%95%BF%E8%BF%9E%E6%8E%A5-%E6%A8%A1%E6%8B%9F%E6%8E%A8%E9%80%81%EF%BC%8C%E5%8D%8A%E9%95%BF%E8%BF%9E%E6%8E%A5/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          利用Ajax实现长连接(模拟推送，半长连接)
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/02/23/js%E5%A6%82%E4%BD%95%E8%8E%B7%E5%8F%96object%E7%B1%BB%E5%9E%8B%E9%87%8C%E7%9A%84%E9%94%AE%E5%80%BC/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">js如何获取object类型里的键值</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>有赞延迟队列设计 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="延迟队列，顾名思义它是一种带有延迟功能的消息队列。 那么，是在什么场景下我才需要这样的队列呢？">
+<meta property="og:type" content="article">
+<meta property="og:title" content="有赞延迟队列设计">
+<meta property="og:url" content="http://moqiang02.github.io/2018/10/05/%E6%9C%89%E8%B5%9E%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E8%AE%BE%E8%AE%A1/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="延迟队列，顾名思义它是一种带有延迟功能的消息队列。 那么，是在什么场景下我才需要这样的队列呢？">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E6%9C%89%E8%B5%9E%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E8%AE%BE%E8%AE%A1/1.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E6%9C%89%E8%B5%9E%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E8%AE%BE%E8%AE%A1/2.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E6%9C%89%E8%B5%9E%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E8%AE%BE%E8%AE%A1/3.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/%E6%9C%89%E8%B5%9E%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E8%AE%BE%E8%AE%A1/4.png">
+<meta property="article:published_time" content="2018-10-05T14:23:02.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:54.148Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="消息队列">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/%E6%9C%89%E8%B5%9E%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E8%AE%BE%E8%AE%A1/1.png">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-有赞延迟队列设计" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2018/10/05/%E6%9C%89%E8%B5%9E%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E8%AE%BE%E8%AE%A1/" class="article-date">
+  <time class="dt-published" datetime="2018-10-05T14:23:02.000Z" itemprop="datePublished">2018-10-05</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/redis/">redis</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      有赞延迟队列设计
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <p>延迟队列，顾名思义它是一种带有延迟功能的消息队列。 那么，是在什么场景下我才需要这样的队列呢？<span id="more"></span></p>
+<h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>我们先看看以下业务场景：</p>
+<ul>
+<li>当订单一直处于未支付状态时，如何及时的关闭订单，并退还库存？</li>
+<li>如何定期检查处于退款状态的订单是否已经退款成功？</li>
+<li>新创建店铺，N天内没有上传商品，系统如何知道该信息，并发送激活短信？等等</li>
+</ul>
+<p>为了解决以上问题，最简单直接的办法就是定时去扫表。每个业务都要维护一个自己的扫表逻辑。 当业务越来越多时，我们会发现扫表部分的逻辑会非常类似。我们可以考虑将这部分逻辑从具体的业务逻辑里面抽出来，变成一个公共的部分。<br>那么开源界是否已有现成的方案呢？答案是肯定的。<a target="_blank" rel="noopener" href="http://kr.github.io/beanstalkd/">Beanstalkd</a>， 它基本上已经满足以上需求。但是，在删除消息的时候不是特别方便，需要更多的成本。而且，它是基于C语言开发的，当时我们团队主流是PHP和Java，没法做二次开发。于是我们借鉴了它的设计思路，用Java重新实现了一个延迟队列。</p>
+<h3 id="设计目标"><a href="#设计目标" class="headerlink" title="设计目标"></a>设计目标</h3><ul>
+<li>消息传输可靠性：消息进入到延迟队列后，保证至少被消费一次。</li>
+<li>Client支持丰富：由于业务上的需求，至少支持PHP和Python。</li>
+<li>高可用性：至少得支持多实例部署。挂掉一个实例后，还有后备实例继续提供服务。</li>
+<li>实时性：允许存在一定的时间误差。</li>
+<li>支持消息删除：业务使用方，可以随时删除指定消息。</li>
+</ul>
+<h3 id="整体结构"><a href="#整体结构" class="headerlink" title="整体结构"></a>整体结构</h3><p>整个延迟队列由4个部分组成：</p>
+<ul>
+<li>Job Pool用来存放所有Job的元信息。</li>
+<li>Delay Bucket是一组以时间为维度的有序队列，用来存放所有需要延迟的／已经被reserve的Job（这里只存放Job Id）。</li>
+<li>Timer负责实时扫描各个Bucket，并将delay时间大于等于当前时间的Job放入到对应的Ready Queue。</li>
+<li>Ready Queue存放处于Ready状态的Job（这里只存放Job Id），以供消费程序消费。<br>如下图表述： <img src="/images/%E6%9C%89%E8%B5%9E%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E8%AE%BE%E8%AE%A1/1.png" alt="Delay Queue"></li>
+</ul>
+<h3 id="设计要点"><a href="#设计要点" class="headerlink" title="设计要点"></a>设计要点</h3><p>基本概念</p>
+<ul>
+<li>Job：需要异步处理的任务，是延迟队列里的基本单元。与具体的Topic关联在一起。</li>
+<li>Topic：一组相同类型Job的集合（队列）。供消费者来订阅。</li>
+</ul>
+<h3 id="消息结构"><a href="#消息结构" class="headerlink" title="消息结构"></a>消息结构</h3><p>每个Job必须包含一下几个属性：</p>
+<ul>
+<li>Topic：Job类型。可以理解成具体的业务名称。</li>
+<li>Id：Job的唯一标识。用来检索和删除指定的Job信息。</li>
+<li>Delay：Job需要延迟的时间。单位：秒。（服务端会将其转换为绝对时间）</li>
+<li>TTR（time-to-run)：Job执行超时时间。单位：秒。</li>
+<li>Body：Job的内容，供消费者做具体的业务处理，以json格式存储。</li>
+</ul>
+<p>具体结构如下图表示： <img src="/images/%E6%9C%89%E8%B5%9E%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E8%AE%BE%E8%AE%A1/2.png" alt="Job Struct"><br>TTR的设计目的是为了保证消息传输的可靠性。</p>
+<h3 id="消息状态转换"><a href="#消息状态转换" class="headerlink" title="消息状态转换"></a>消息状态转换</h3><p>每个Job只会处于某一个状态下：</p>
+<ul>
+<li>ready：可执行状态，等待消费。</li>
+<li>delay：不可执行状态，等待时钟周期。</li>
+<li>reserved：已被消费者读取，但还未得到消费者的响应（delete、finish）。</li>
+<li>deleted：已被消费完成或者已被删除。<br>下面是四个状态的转换示意图： <img src="/images/%E6%9C%89%E8%B5%9E%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E8%AE%BE%E8%AE%A1/3.png" alt="Job State Flow"></li>
+</ul>
+<h3 id="消息存储"><a href="#消息存储" class="headerlink" title="消息存储"></a>消息存储</h3><p>在选择存储介质之前，先来确定下具体的数据结构：</p>
+<ul>
+<li>Job Poll存放的Job元信息，只需要K/V形式的结构即可。key为job id，value为job struct。</li>
+<li>Delay Bucket是一个有序队列。</li>
+<li>Ready Queue是一个普通list或者队列都行。<br>能够同时满足以上需求的，非redis莫属了。<br>bucket的数据结构就是redis的zset，将其分为多个bucket是为了提高扫描速度，降低消息延迟。</li>
+</ul>
+<h3 id="通信协议"><a href="#通信协议" class="headerlink" title="通信协议"></a>通信协议</h3><p>为了满足多语言Client的支持，我们选择Http通信方式，通过文本协议（json）来实现与Client端的交互。 目前支持以下协议：</p>
+<ul>
+<li>添加：{‘command’:’add’, ’topic’:’xxx’, ‘id’: ‘xxx’, ‘delay’: 30, ’TTR’: 60, ‘body’:‘xxx’}</li>
+<li>获取：{‘command’:’pop’, ’topic’:’xxx’}</li>
+<li>完成：{‘command’:’finish’, ‘id’:’xxx’}</li>
+<li>删除：{‘command’:’delete’, ‘id’:’xxx’}<br>body也是一个json串。<br>Response结构：{’success’:true/false, ‘error’:’error reason’, ‘id’:’xxx’, ‘value’:’job body’}<br>强调一下：job id是由业务使用方决定的，一定要保证全局唯一性。这里建议采用topic＋业务唯一id的组合。</li>
+</ul>
+<h3 id="举例说明一个Job的生命周期"><a href="#举例说明一个Job的生命周期" class="headerlink" title="举例说明一个Job的生命周期"></a>举例说明一个Job的生命周期</h3><ul>
+<li>用户对某个商品下单，系统创建订单成功，同时往延迟队列里put一个job。job结构为：{‘topic’:’orderclose’, ‘id’:’ordercloseorderNoXXX’, ‘delay’:1800 ,’TTR’:60 , ‘body’:’XXXXXXX’}</li>
+<li>延迟队列收到该job后，先往job pool中存入job信息，然后根据delay计算出绝对执行时间，并以轮询(round-robbin)的方式将job id放入某个bucket。</li>
+<li>timer每时每刻都在轮询各个bucket，当1800秒（30分钟）过后，检查到上面的job的执行时间到了，取得job id从job pool中获取元信息。如果这时该job处于deleted状态，则pass，继续做轮询；如果job处于非deleted状态，首先再次确认元信息中delay是否大于等于当前时间，如果满足则根据topic将job id放入对应的ready queue，然后从bucket中移除；如果不满足则重新计算delay时间，再次放入bucket，并将之前的job id从bucket中移除。</li>
+<li>消费端轮询对应的topic的ready queue（这里仍然要判断该job的合理性），获取job后做自己的业务逻辑。与此同时，服务端将已经被消费端获取的job按照其设定的TTR，重新计算执行时间，并将其放入bucket。</li>
+<li>消费端处理完业务后向服务端响应finish，服务端根据job id删除对应的元信息。如果消费端在ttr时间内没有响应，则ttr时间后会再收到该消息。</li>
+</ul>
+<h3 id="现有物理拓扑"><a href="#现有物理拓扑" class="headerlink" title="现有物理拓扑"></a>现有物理拓扑</h3><p><img src="/images/%E6%9C%89%E8%B5%9E%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E8%AE%BE%E8%AE%A1/4.png" alt="deploy"><br>目前采用的是集中存储机制，在多实例部署时Timer程序可能会并发执行，导致job被重复放入ready queue。为了解决这个问题，我们使用了redis的setnx命令实现了简单的分布式锁，以保证每个bucket每次只有一个timer thread来扫描。</p>
+<h3 id="设计不足的地方"><a href="#设计不足的地方" class="headerlink" title="设计不足的地方"></a>设计不足的地方</h3><p>timer是通过独立线程的无限循环来实现，在没有ready job的时候会对CPU造成一定的浪费。<br>消费端在reserve job的时候，采用的是http短轮询的方式，且每次只能取的一个job。如果ready job较多的时候会加大网络I/O的消耗。<br>数据存储使用的redis，消息在持久化上受限于redis的特性。<br>scale-out的时候依赖第三方（nginx）。</p>
+<h3 id="未来架构方向"><a href="#未来架构方向" class="headerlink" title="未来架构方向"></a>未来架构方向</h3><p>基于wait／notify方式的Timer实现。<br>提供TCP长连的API，实现push或者long-polling的消息reserve方法。<br>拥有自己的存储方案（内嵌数据库、自定义数据结构写文件），确保消息的持久化。<br>实现自己的name-server。<br>考虑提供周期性任务的直接支持。</p>
+<blockquote>
+<p>转自：<a target="_blank" rel="noopener" href="https://tech.youzan.com/queuing_delay/">https://tech.youzan.com/queuing_delay/</a><br>扩展阅读：<a target="_blank" rel="noopener" href="https://www.jianshu.com/p/e958e8590020">基于redis实现的延迟消息队列</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2018/10/05/%E6%9C%89%E8%B5%9E%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97%E8%AE%BE%E8%AE%A1/" data-id="cl9pgeoc201zzycv197q8cjyd" data-title="有赞延迟队列设计" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" rel="tag">消息队列</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/10/14/%E8%A7%A3%E5%86%B3Python3%E4%B8%8B%E6%89%93%E5%8D%B0utf-8%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%87%BA%E7%8E%B0UnicodeEncodeError%E7%9A%84%E9%97%AE%E9%A2%98/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          解决Python3下打印utf-8字符串出现UnicodeEncodeError的问题
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/09/29/Ubuntu%E5%AE%89%E8%A3%85%E8%AE%B0%E5%BD%95/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">Ubuntu安装记录</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

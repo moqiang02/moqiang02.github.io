@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Android项目重构之路:架构篇 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="去年10月底换到了新公司，做移动研发组的负责人，刚开始接手android项目时，发现该项目真的是一团糟。首先是其架构，是按功能模块进行划分的，本来按模块划分也挺好的，可是，他却分得太细，总共分为了17个模块，而好几个模块也就只有两三个类而已。但应用本身其实比较简单，要按功能模块来分的话，最多五个模块就够了。另外，有好多模块划分也很模糊，也有很多类按其功能其实可以属于多个模块的，也有些类定义不明确，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android项目重构之路:架构篇">
+<meta property="og:url" content="http://moqiang02.github.io/2016/01/31/Android%E9%A1%B9%E7%9B%AE%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF-%E6%9E%B6%E6%9E%84%E7%AF%87/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="去年10月底换到了新公司，做移动研发组的负责人，刚开始接手android项目时，发现该项目真的是一团糟。首先是其架构，是按功能模块进行划分的，本来按模块划分也挺好的，可是，他却分得太细，总共分为了17个模块，而好几个模块也就只有两三个类而已。但应用本身其实比较简单，要按功能模块来分的话，最多五个模块就够了。另外，有好多模块划分也很模糊，也有很多类按其功能其实可以属于多个模块的，也有些类定义不明确，">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/Android%E9%A1%B9%E7%9B%AE%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF%E6%9E%B6%E6%9E%84%E7%AF%87/1.jpg">
+<meta property="og:image" content="http://moqiang02.github.io/images/Android%E9%A1%B9%E7%9B%AE%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF%E6%9E%B6%E6%9E%84%E7%AF%87/2.jpg">
+<meta property="article:published_time" content="2016-01-31T02:33:33.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.698Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/Android%E9%A1%B9%E7%9B%AE%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF%E6%9E%B6%E6%9E%84%E7%AF%87/1.jpg">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Android项目重构之路-架构篇" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2016/01/31/Android%E9%A1%B9%E7%9B%AE%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF-%E6%9E%B6%E6%9E%84%E7%AF%87/" class="article-date">
+  <time class="dt-published" datetime="2016-01-31T02:33:33.000Z" itemprop="datePublished">2016-01-31</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/android/">android</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Android项目重构之路:架构篇
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <p>去年10月底换到了新公司，做移动研发组的负责人，刚开始接手android项目时，发现该项目真的是一团糟。首先是其架构，是按功能模块进行划分的，本来按模块划分也挺好的，可是，他却分得太细，总共分为了17个模块，而好几个模块也就只有两三个类而已。但应用本身其实比较简单，要按功能模块来分的话，最多五个模块就够了。另外，有好多模块划分也很模糊，也有很多类按其功能其实可以属于多个模块的，也有些类定义不明确，做了不该做的事。有时候，我要找一个界面的Activity，按照其功能应该属于A模块的，可是在A模块里却找不到，于是，我只好去AndroidManifest文件里找了，找到才发现原来在B模块里。也有时候，我要找另一个界面的Activity，可我看遍了所有模块，也没看出这个界面应该属于哪个模块，没法子，又只能去AndroidManifest文件里找了，找到才发现竟然在C模块里。代码也是又乱又臭，导致出现一大堆bug又不好找，改好一个bug又出现另一个。整个项目从架构到代码都是又臭又乱，开发人员只是不停地改bug，根本没法做新功能，更别谈扩展了。当时，公司已经有为不同客户定制化app的需求，而现有的架构完全无法满足这样的需求。因此，我决定重构，搭建一个易维护、易扩展、可定制的项目。<span id="more"></span></p>
+<p>我将项目分为了四个层级：模型层、接口层、核心层、界面层。模型层定义了所有的模型；接口层封装了服务器提供的API；核心层处理所有业务逻辑；界面层就处理界面的展示。几个层级之间的关系如下图所示：<br><img src="/images/Android%E9%A1%B9%E7%9B%AE%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF%E6%9E%B6%E6%9E%84%E7%AF%87/1.jpg"><br>下面展开说明具体的每个层次：</p>
+<h3 id="接口层"><a href="#接口层" class="headerlink" title="接口层"></a>接口层</h3><p>接口层封装了网络底层的API，并提供给核心层调用。刚开始，为了简单，该层的核心类我只定义了4个：</p>
+<ol>
+<li>PostEngine，请求引擎类，对请求的发送和响应结果进行处理；</li>
+<li>Response，响应类，封装了Http请求返回的数据结构；</li>
+<li>Api，接口类，定义了所有接口方法；</li>
+<li>ApiImpl，接口实现类，实现所有接口方法。</li>
+</ol>
+<p>PostEngine将请求封装好发送到服务器，并对响应结果的json数据转化为Response对象返回。Response其实就是响应结果的json数据实体类，json数据是有固定结构的，分为三类，如下：</p>
+<figure class="highlight nim"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&#123;<span class="string">&quot;event&quot;</span>: <span class="string">&quot;0&quot;</span>, <span class="string">&quot;msg&quot;</span>: <span class="string">&quot;success&quot;</span>&#125;</span><br><span class="line">&#123;<span class="string">&quot;event&quot;</span>: <span class="string">&quot;0&quot;</span>, <span class="string">&quot;msg&quot;</span>: <span class="string">&quot;success&quot;</span>, <span class="string">&quot;obj&quot;</span>:<span class="meta">&#123;...&#125;</span>&#125;</span><br><span class="line">&#123;<span class="string">&quot;event&quot;</span>: <span class="string">&quot;0&quot;</span>, <span class="string">&quot;msg&quot;</span>: <span class="string">&quot;success&quot;</span>, <span class="string">&quot;objList&quot;</span>:[<span class="meta">&#123;...&#125;</span>, <span class="meta">&#123;...&#125;</span>], <span class="string">&quot;currentPage&quot;</span>: <span class="number">1</span>, <span class="string">&quot;pageSize&quot;</span>: <span class="number">20</span>, <span class="string">&quot;maxCount&quot;</span>: <span class="number">2</span>, <span class="string">&quot;maxPage&quot;</span>: <span class="number">1</span>&#125;</span><br></pre></td></tr></table></figure>
+<p>event为返回码，0表示成功，msg则是返回的信息，obj是返回的单个数据对象，objList是返回的数据对象数组，currentPage表示当前页，pageSize则表示当前页最多对象数量，maxCount表示对象数据总量，maxPage表示总共有多少页。根据此结构，Response基本的定义如下：</p>
+<figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="symbol">Response</span>&lt;<span class="symbol">T</span>&gt; &#123;</span><br><span class="line">    <span class="keyword">private</span> String event;</span><br><span class="line">    <span class="keyword">private</span> String msg;</span><br><span class="line">    <span class="keyword">private</span> T obj;</span><br><span class="line">    <span class="keyword">private</span> T objList;</span><br><span class="line">    <span class="keyword">private</span> <span class="built_in">int</span> currentPage;</span><br><span class="line">    <span class="keyword">private</span> <span class="built_in">int</span> pageSize;</span><br><span class="line">    <span class="keyword">private</span> <span class="built_in">int</span> maxCount;</span><br><span class="line">    <span class="keyword">private</span> <span class="built_in">int</span> maxPage;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//getter和setter方法</span></span><br><span class="line">    ...    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>每个属性名称都要与json数据对应的名称相一致，否则无法转化。obj和objList用泛型则可以转化为相应的具体对象了。</p>
+<p>Api接口类定义了所有的接口方法，方法定义类似如下：</p>
+<figure class="highlight arduino"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Response&lt;Void&gt; <span class="title">login</span><span class="params">(<span class="type">String</span> loginName, <span class="type">String</span> password)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">public</span> Response&lt;VersionInfo&gt; <span class="title">getLastVersion</span><span class="params">()</span></span>;</span><br><span class="line"><span class="keyword">public</span> Response&lt;List&lt;Coupon&gt;&gt; <span class="built_in">listNewCoupon</span>(<span class="type">int</span> currentPage, <span class="type">int</span> pageSize);</span><br></pre></td></tr></table></figure>
+<p>ApiImpl则实现所有Api接口了，实现代码类似如下：</p>
+<figure class="highlight haxe"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line"><span class="keyword">public</span> Response&lt;<span class="keyword">Void</span>&gt; login(<span class="keyword">String</span> loginName, <span class="keyword">String</span> password) &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">String</span> method = Api.LOGIN;</span><br><span class="line">        List&lt;NameValuePair&gt; params = <span class="keyword">new</span> <span class="type">ArrayList</span>&lt;NameValuePair&gt;();</span><br><span class="line">        params.add(<span class="keyword">new</span> <span class="type">BasicNameValuePair</span>(<span class="string">&quot;loginName&quot;</span>, loginName));</span><br><span class="line">        params.add(<span class="keyword">new</span> <span class="type">BasicNameValuePair</span>(<span class="string">&quot;password&quot;</span>, EncryptUtil.makeMD5(password)));</span><br><span class="line">        TypeToken&lt;Response&lt;<span class="keyword">Void</span>&gt;&gt; typeToken = <span class="keyword">new</span> <span class="type">TypeToken</span>&lt;Response&lt;<span class="keyword">Void</span>&gt;&gt;()&#123;&#125;;</span><br><span class="line">        <span class="keyword">return</span> postEngine.specialHandle(method, params, typeToken);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        <span class="comment">//异常处理</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>实现中将请求参数和返回的类型定义好，调用PostEngine对象进行处理。<br>接口层的核心基本上就是这些了。</p>
+<h3 id="核心层"><a href="#核心层" class="headerlink" title="核心层"></a>核心层</h3><p>核心层介于接口层和界面层之间，主要处理业务逻辑，集中做数据处理。向上，给界面层提供数据处理的接口，称为Action；向下，调用接口层向服务器请求数据。向上的Action中定义的方法类似如下：</p>
+<p><code>public void getCustomer(String loginName, CallbackListener&lt;Customer&gt; callbackListener);</code></p>
+<p>这是一个获取用户信息的方法，因为需要向接口层请求服务器Api数据，所以添加了callback监听器，在callback里对返回的数据结果进行操作。CallbackListener就定义了一个成功和一个失败的方法，代码如下：</p>
+<figure class="highlight arduino"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> interface CallbackListener&lt;T&gt; &#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 请求的响应结果为成功时调用</span></span><br><span class="line"><span class="comment">     * @param data  返回的数据</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="type">void</span> <span class="title">onSuccess</span><span class="params">(T data)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 请求的响应结果为失败时调用</span></span><br><span class="line"><span class="comment">     * @param errorEvent 错误码</span></span><br><span class="line"><span class="comment">     * @param message    错误信息</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="type">void</span> <span class="title">onFailure</span><span class="params">(<span class="type">String</span> errorEvent, <span class="type">String</span> message)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>接口的实现基本分为两步：</p>
+<ol>
+<li>参数检查，检查参数的合法性，包括非空检查、边界检查、有效性检查等；</li>
+<li>使用异步任务调用接口层的Api，返回响应结果。</li>
+</ol>
+<p>需要注意的是，Action是面向界面的，界面上的数据可能需要根据不同情况调用不同的Api。<br>后续扩展可以在这里添加缓存，但也要视不同情况而定，比如有些变化太快的数据，添加缓存就不太适合了。</p>
+<h3 id="界面层"><a href="#界面层" class="headerlink" title="界面层"></a>界面层</h3><p>界面层处于最上层，其核心就是负责界面的展示。<br>因为公司有为不同商户定制不同app的需求，因此，这里就需要建立多个app的界面，这是一个很麻烦的事情，还好，Android Studio提供了很方便的方法可以大大减少工作量，主要通过设置Gradle，不同app可以添加不同的productFlavors。<br>界面层package的定义我也并不按照旧版的功能模块划分，而根据不同类型划分，主要分为以下几个包：<br><img src="/images/Android%E9%A1%B9%E7%9B%AE%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF%E6%9E%B6%E6%9E%84%E7%AF%87/2.jpg"><br>其中，activity、adapter、fragment各自都有一个基类，做统一的处理，比如定义了一些共用的常量、对象和方法等。<br>界面层是最复杂，最容易变得混乱不堪，最容易出问题的层级。所以，从架构到代码，很多东西都需要设计好，以及规范好，才能保证程序易维护、易扩展。后续的文章里将会详细分享下我在这方面的经验。</p>
+<h3 id="模型层"><a href="#模型层" class="headerlink" title="模型层"></a>模型层</h3><p>模型层横跨所有层级，封装了所有数据实体类，基本上也是跟json的obj数据一致的，在接口层会将obj转化为相应的实体类，再通过Action传到界面层。另外，模型层还定义了一些常量，比如用户状态、支付状态等。在Api里返回的是用1、2、3这样定义的，而我则用枚举类定义了这些状态。用枚举类定义，就可以避免了边界的检查，同时也更明了，谁会记得那么多1、2、3都代表什么状态呢。然而用枚举类定义的话，就必须能将1、2、3转化为相应的枚举常量。这里，我提供两种实现方式：<br>1.使用gson的@SerializedName标签，比如0为FALSE，1为TRUE，则可以如下定义：</p>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="selector-tag">public</span> <span class="selector-tag">enum</span> <span class="selector-tag">BooleanType</span> &#123;</span><br><span class="line">    <span class="variable">@SerializedName</span>(<span class="string">&quot;0&quot;</span>)</span><br><span class="line">    FALSE,</span><br><span class="line">    <span class="variable">@SerializedName</span>(<span class="string">&quot;1&quot;</span>)</span><br><span class="line">    TRUE</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>2.通过定义一个value，如下：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">enum</span> <span class="title class_">BooleanType</span> &#123;</span><br><span class="line">    <span class="title function_">FALSE</span>(<span class="string">&quot;0&quot;</span>),</span><br><span class="line">    <span class="title function_">TRUE</span>(<span class="string">&quot;1&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="title class_">String</span> value;</span><br><span class="line"></span><br><span class="line">    <span class="title class_">BooleanType</span>(<span class="title class_">String</span> value) &#123;</span><br><span class="line">        <span class="variable language_">this</span>.<span class="property">value</span> = value;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title class_">String</span> <span class="title function_">getValue</span>(<span class="params"></span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> value;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>通过gson的方式，直接访问TRUE或FALSE就会自动序列化为1或0；如果通过第二种方式，因为没有序列化，则需要通过getValue方式获取1或0。</p>
+<h3 id="结束"><a href="#结束" class="headerlink" title="结束"></a>结束</h3><p>以上就是最基本的架构了，讲得比较简单，只列了几个核心的东西。并没有进一步去扩展，扩展是下一步的事情了，后续的文章里会慢慢展开。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2016/01/31/Android%E9%A1%B9%E7%9B%AE%E9%87%8D%E6%9E%84%E4%B9%8B%E8%B7%AF-%E6%9E%B6%E6%9E%84%E7%AF%87/" data-id="cl9pgenoz006gycv1e6fef9xo" data-title="Android项目重构之路:架构篇" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/01/31/Gson%E9%80%9A%E8%BF%87%E5%80%9F%E5%8A%A9TypeToken%E8%8E%B7%E5%8F%96%E6%B3%9B%E5%9E%8B%E5%8F%82%E6%95%B0%E7%9A%84%E7%B1%BB%E5%9E%8B%E7%9A%84%E6%96%B9%E6%B3%95/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          Gson通过借助TypeToken获取泛型参数的类型的方法
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/01/30/WebView%E5%9B%A0%E9%87%8D%E5%AE%9A%E5%90%91%E6%97%A0%E6%B3%95%E6%AD%A3%E5%B8%B8goBack-%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">WebView因重定向无法正常goBack()解决方案</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

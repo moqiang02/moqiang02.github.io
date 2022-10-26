@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>SpringBoot自定义logback日志配置 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="前言：默认情况下，SpringBoot内部使用logback作为系统日志实现的框架，将日志输出到控制台，不会写到日志文件。如果在application.properties或application.yml配置，这样只能配置简单的场景，保存路径、日志格式等。复杂的场景（区分 info 和 error 的日志、每天产生一个日志文件等）满足不了，只能自定义配置文件logback-spring.xml。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SpringBoot自定义logback日志配置">
+<meta property="og:url" content="http://moqiang02.github.io/2022/09/27/SpringBoot%E8%87%AA%E5%AE%9A%E4%B9%89logback%E6%97%A5%E5%BF%97%E9%85%8D%E7%BD%AE/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="前言：默认情况下，SpringBoot内部使用logback作为系统日志实现的框架，将日志输出到控制台，不会写到日志文件。如果在application.properties或application.yml配置，这样只能配置简单的场景，保存路径、日志格式等。复杂的场景（区分 info 和 error 的日志、每天产生一个日志文件等）满足不了，只能自定义配置文件logback-spring.xml。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/SpringBoot%E8%87%AA%E5%AE%9A%E4%B9%89logback%E6%97%A5%E5%BF%97%E9%85%8D%E7%BD%AE/1.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/SpringBoot%E8%87%AA%E5%AE%9A%E4%B9%89logback%E6%97%A5%E5%BF%97%E9%85%8D%E7%BD%AE/2.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/SpringBoot%E8%87%AA%E5%AE%9A%E4%B9%89logback%E6%97%A5%E5%BF%97%E9%85%8D%E7%BD%AE/3.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/SpringBoot%E8%87%AA%E5%AE%9A%E4%B9%89logback%E6%97%A5%E5%BF%97%E9%85%8D%E7%BD%AE/4.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/SpringBoot%E8%87%AA%E5%AE%9A%E4%B9%89logback%E6%97%A5%E5%BF%97%E9%85%8D%E7%BD%AE/5.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/SpringBoot%E8%87%AA%E5%AE%9A%E4%B9%89logback%E6%97%A5%E5%BF%97%E9%85%8D%E7%BD%AE/6.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/SpringBoot%E8%87%AA%E5%AE%9A%E4%B9%89logback%E6%97%A5%E5%BF%97%E9%85%8D%E7%BD%AE/7.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/SpringBoot%E8%87%AA%E5%AE%9A%E4%B9%89logback%E6%97%A5%E5%BF%97%E9%85%8D%E7%BD%AE/8.png">
+<meta property="og:image" content="http://moqiang02.github.io/images/SpringBoot%E8%87%AA%E5%AE%9A%E4%B9%89logback%E6%97%A5%E5%BF%97%E9%85%8D%E7%BD%AE/9.png">
+<meta property="article:published_time" content="2022-09-27T07:41:12.000Z">
+<meta property="article:modified_time" content="2022-10-26T09:28:53.895Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="SpringBoot">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/SpringBoot%E8%87%AA%E5%AE%9A%E4%B9%89logback%E6%97%A5%E5%BF%97%E9%85%8D%E7%BD%AE/1.png">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-SpringBoot自定义logback日志配置" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2022/09/27/SpringBoot%E8%87%AA%E5%AE%9A%E4%B9%89logback%E6%97%A5%E5%BF%97%E9%85%8D%E7%BD%AE/" class="article-date">
+  <time class="dt-published" datetime="2022-09-27T07:41:12.000Z" itemprop="datePublished">2022-09-27</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/java/">java</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      SpringBoot自定义logback日志配置
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">contents</strong>
+              <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81application-properties%E7%B3%BB%E7%BB%9F%E9%85%8D%E7%BD%AElogback%E6%97%A5%E5%BF%97"><span class="toc-number">1.</span> <span class="toc-text">一、application.properties系统配置logback日志</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1%E3%80%81SpringBoot%E9%BB%98%E8%AE%A4%E7%9A%84%E6%97%A5%E5%BF%97%E9%85%8D%E7%BD%AE"><span class="toc-number">1.1.</span> <span class="toc-text">1.1、SpringBoot默认的日志配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2%E3%80%81%E6%B7%BB%E5%8A%A0%E4%BE%9D%E8%B5%96"><span class="toc-number">1.2.</span> <span class="toc-text">1.2、添加依赖</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-3%E3%80%81application-properties%E7%AE%80%E5%8D%95%E9%85%8D%E7%BD%AE%E6%97%A5%E5%BF%97%E7%9B%B8%E5%85%B3%E5%B1%9E%E6%80%A7"><span class="toc-number">1.3.</span> <span class="toc-text">1.3、application.properties简单配置日志相关属性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-4%E3%80%81%E4%B8%A4%E7%A7%8D%E9%85%8D%E7%BD%AE%E6%96%B9%E5%BC%8F%E6%80%BB%E7%BB%93"><span class="toc-number">1.4.</span> <span class="toc-text">1.4、两种配置方式总结</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E8%87%AA%E5%AE%9A%E4%B9%89%E6%97%A5%E5%BF%97%E9%85%8D%E7%BD%AElogback-spring-xml"><span class="toc-number">2.</span> <span class="toc-text">二、自定义日志配置logback-spring.xml</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1%E3%80%81%E6%97%A5%E5%BF%97%E8%AE%B0%E5%BD%95%E6%A1%86%E6%9E%B6%E7%9A%84%E9%BB%98%E8%AE%A4%E8%87%AA%E5%AE%9A%E4%B9%89%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E5%90%8D%E7%A7%B0"><span class="toc-number">2.1.</span> <span class="toc-text">2.1、日志记录框架的默认自定义配置文件名称</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2%E3%80%81SpringBoot%E6%8E%A8%E8%8D%90%E4%BD%BF%E7%94%A8logback-spring-xml"><span class="toc-number">2.2.</span> <span class="toc-text">2.2、SpringBoot推荐使用logback-spring.xml</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3%E3%80%81logback%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E7%9A%84%E8%8A%82%E7%82%B9%E5%B1%9E%E6%80%A7%E7%AE%80%E4%BB%8B"><span class="toc-number">2.3.</span> <span class="toc-text">2.3、logback配置文件的节点属性简介</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81-lt-springProfile-gt-%E5%A4%9A%E7%8E%AF%E5%A2%83%E8%BE%93%E5%87%BA%E6%97%A5%E5%BF%97%E6%96%87%E4%BB%B6"><span class="toc-number">3.</span> <span class="toc-text">三、&lt;springProfile&gt;多环境输出日志文件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81-%E8%A7%A3%E5%86%B3-logback-xml-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E4%B8%8D%E7%94%9F%E6%95%88%E7%9A%84%E9%97%AE%E9%A2%98"><span class="toc-number">4.</span> <span class="toc-text">四、 解决 logback.xml 配置文件不生效的问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81-%E4%B8%8D%E5%90%8C%E7%9A%84%E5%8C%85%EF%BC%88%E4%B8%9A%E5%8A%A1%E6%97%A5%E5%BF%97%EF%BC%89%E8%BE%93%E5%87%BA%E5%88%B0%E4%B8%8D%E5%90%8C%E6%97%A5%E5%BF%97%E6%96%87%E4%BB%B6"><span class="toc-number">5.</span> <span class="toc-text">五、 不同的包（业务日志）输出到不同日志文件</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%AE%9A%E4%B9%89%E6%97%A5%E5%BF%97%E8%BE%93%E5%87%BA%E6%96%87%E4%BB%B6"><span class="toc-number">5.1.</span> <span class="toc-text">1. 定义日志输出文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%AE%9A%E4%B9%89logger"><span class="toc-number">5.2.</span> <span class="toc-text">2. 定义logger</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E5%AE%9A%E4%B9%89logger%E5%8F%98%E9%87%8F"><span class="toc-number">5.3.</span> <span class="toc-text">3. 定义logger变量</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E8%AE%B0%E5%BD%95%E6%97%A5%E5%BF%97"><span class="toc-number">5.4.</span> <span class="toc-text">4. 记录日志</span></a></li></ol></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <p><strong>前言：</strong>默认情况下，SpringBoot内部使用logback作为系统日志实现的框架，将日志输出到控制台，不会写到日志文件。如果在application.properties或application.yml配置，这样只能配置简单的场景，保存路径、日志格式等。复杂的场景（区分 info 和 error 的日志、每天产生一个日志文件等）满足不了，只能自定义配置文件logback-spring.xml。<span id="more"></span></p>
+<h2 id="一、application-properties系统配置logback日志"><a href="#一、application-properties系统配置logback日志" class="headerlink" title="一、application.properties系统配置logback日志"></a>一、application.properties系统配置logback日志</h2><h3 id="1-1、SpringBoot默认的日志配置"><a href="#1-1、SpringBoot默认的日志配置" class="headerlink" title="1.1、SpringBoot默认的日志配置"></a>1.1、SpringBoot默认的日志配置</h3><p>日志记录器（Logger）的行为是分等级的，日志级别从低到高分为TRACE &lt; DEBUG &lt; INFO &lt; WARN &lt; ERROR &lt; FATAL，如果设置为WARN，则低于WARN的信息都不会输出。</p>
+<blockquote>
+<p>默认情况下，SpringBoot内部使用logback作为系统日志实现的框架，将日志输出到控制台，不会写到日志文件。Spring boot从控制台打印出来的日志级别默认只有INFO及以上级别，可以在application.properties中修改日志级别logging.level.root=WARN。</p>
+</blockquote>
+<p>SpringBoot默认配置好了日志, 只要启动 Spring Boot 项目就会在控制台输出日志信息。</p>
+<p><img src="/images/SpringBoot%E8%87%AA%E5%AE%9A%E4%B9%89logback%E6%97%A5%E5%BF%97%E9%85%8D%E7%BD%AE/1.png"></p>
+<p> 从上图可以看到，日志输出的内容如下：</p>
+<ul>
+<li>  时间日期：精确到毫秒</li>
+<li>  日志级别：ERROR，WARN，INFO，DEBUG，TRACE</li>
+<li>  进程ID</li>
+<li>  分隔符：— 标识实际日志的开始</li>
+<li>  线程名：方括号括起来(可能会截断控制台输出)</li>
+<li>  Logger名：通常使用源代码的类名</li>
+<li>  日志内容</li>
+</ul>
+<p><strong>控制台格式化输出内容：</strong></p>
+<figure class="highlight cs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta"># 格式化，只输出日期和内容</span></span><br><span class="line">logging.pattern.console= <span class="string">&quot;%d -%p -%m&quot;</span> %n</span><br></pre></td></tr></table></figure>
+<p><img src="/images/SpringBoot%E8%87%AA%E5%AE%9A%E4%B9%89logback%E6%97%A5%E5%BF%97%E9%85%8D%E7%BD%AE/2.png"></p>
+<p>打印参数: Log4J采用类似C语言中的printf函数的打印格式格式化日志信息，如下:</p>
+<blockquote>
+<p>%m       输出代码中指定的消息<br>%p       输出优先级，即DEBUG，INFO，WARN，ERROR，FATAL<br>%r       输出自应用启动到输出该log信息耗费的毫秒数<br>%c       输出所属的类目，通常就是所在类的全名<br>%t       输出产生该日志事件的线程名<br>%n       输出一个回车换行符，Windows平台为“\\r\\n”，Unix平台为“\\n”<br>%d       输出日志时间点的日期或时间,默认格式为ISO8601,也可以在其后指定格式，比如%d{yyy MMM dd HH:mm:ss,SSS}，输出类似：2018年6月15日22:10:28，921<br>%l       输出日志事件的发生位置，包括类目名、发生的线程，以及在代码中的行数。举例：estlog4.main(TestLog4.java: 10)</p>
+</blockquote>
+<h3 id="1-2、添加依赖"><a href="#1-2、添加依赖" class="headerlink" title="1.2、添加依赖"></a>1.2、添加依赖</h3><p>Spring Boot为我们提供了很多默认的日志配置，所以，只要将spring-boot-starter-logging作为依赖加入到pom.xml，则“开箱即用”。实际开发中我们不需要直接添加该依赖，你会发现spring-boot-starter其中包含了 spring-boot-starter-logging，该依赖内容就是 Spring Boot 默认的日志框架 logback。</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-logging<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="1-3、application-properties简单配置日志相关属性"><a href="#1-3、application-properties简单配置日志相关属性" class="headerlink" title="1.3、application.properties简单配置日志相关属性"></a>1.3、application.properties简单配置日志相关属性</h3><p>下面介绍几种在application.properties就可以配置的日志相关属性。</p>
+<p><strong>（1）控制台输出</strong></p>
+<p>Spring Boot中默认配置INFO、WARN和ERROR级别的日志只输出到控制台。</p>
+<p>我们可以在application.properties中修改日志级别logging.level.root=WARN，这样核心Logger（包含嵌入式容器、hibernate、spring）会输出更多内容，还有自己应用的日志就会输出为DEBUG级别。</p>
+<p><strong>（2）文件输出</strong></p>
+<p><strong>①使用application.properties默认配置</strong></p>
+<p>默认情况下，Spring Boot将日志输出到控制台，不会写到日志文件。如果要编写除控制台输出之外的日志文件，则需在application.properties中设置logging.file或logging.path属性。</p>
+<ul>
+<li><p>  logging.file：设置文件，可以是绝对路径，也可以是相对路径。如：logging.file=my.log</p>
+</li>
+<li><p>  logging.path：设置目录，会在该目录下创建spring.log文件，并写入日志内容，如：logging.path=/var/log</p>
+</li>
+</ul>
+<p>如果只配置 logging.file，会在项目的当前路径下生成一个 xxx.log 日志文件；</p>
+<p>如果只配置 logging.path，在 /var/log文件夹生成一个日志文件为 spring.log。</p>
+<p>注：二者不能同时使用，如若同时使用，则只有logging.file生效</p>
+<p>默认情况下，日志文件的大小达到10MB时会切分一次，产生新的日志文件，默认级别为：ERROR、WARN、INFO。</p>
+<p><strong>②使用logback-spring.xml自定义配置</strong></p>
+<p>如果在<code>application.properties</code>或<code>application.yml</code>配置，这样只能配置简单的场景，保存路径、日志格式等。复杂的场景（区分 info 和 error 的日志、每天产生一个日志文件等）满足不了，只能自定义logback配置，SpringBoot官方推荐使用logback-spring.xml作为logback框架的自定义日志配置文件。</p>
+<h3 id="1-4、两种配置方式总结"><a href="#1-4、两种配置方式总结" class="headerlink" title="1.4、两种配置方式总结"></a>1.4、<strong>两种配置方式总结</strong></h3><p>SpringBoot工程自带 logback和 slf4j的依赖，所以重点放在编写配置文件上：</p>
+<ul>
+<li><p>  application.properties或 application.yml （系统层面）</p>
+</li>
+<li><p>  logback-spring.xml（自定义文件方式）</p>
+</li>
+</ul>
+<p>第一种方式比较简单，可做的事情也比较简单，比如：只能配置日志文件的输出路径、日志文件的格式、日志的级别等。</p>
+<p>第二种方式比较复杂，对日志的处理比较好，生产上推荐这种，运行维护好。如有以下需求：<br>a、区分 debug、info、error 等类型的日志，并分别输出到不同的日志文件。<br>b、对日志文件进行维护，如每天产生一个日志文件，并设置日志文件的大小和保留天数等。</p>
+<h2 id="二、自定义日志配置logback-spring-xml"><a href="#二、自定义日志配置logback-spring-xml" class="headerlink" title="二、自定义日志配置logback-spring.xml"></a>二、自定义日志配置logback-spring.xml</h2><p>由于日志服务一般都在ApplicationContext创建前就初始化了，它并不是必须通过Spring的配置文件控制。因此通过系统属性和传统的Spring Boot外部配置文件依然可以很好的支持日志控制和管理。在类路径下放置自定义日志配置xml文件，SpringBoot就不会使用它本身的默认日志配置了。</p>
+<h3 id="2-1、日志记录框架的默认自定义配置文件名称"><a href="#2-1、日志记录框架的默认自定义配置文件名称" class="headerlink" title="2.1、日志记录框架的默认自定义配置文件名称"></a>2.1、日志记录框架的默认自定义配置文件名称</h3><p>下图是SpringBoot官方文档的提示内容，意思是：根据您的日志记录系统，将加载相应的文件使用。即如果我们使用logback日志框架，那么可以使用logback-spring.xml、logback-spring.groovy、logback.xml、logback.groovy之一作为配置文件来加载。<br><img src="/images/SpringBoot%E8%87%AA%E5%AE%9A%E4%B9%89logback%E6%97%A5%E5%BF%97%E9%85%8D%E7%BD%AE/3.png"></p>
+<p>根据不同的日志系统，你可以按如下规则组织配置文件名，并且放在src/main/resources下面就能被正确加载：</p>
+<ul>
+<li>  Logback：logback-spring.xml, logback-spring.groovy, logback.xml, logback.groovy</li>
+<li>  Log4j：log4j-spring.properties, log4j-spring.xml, log4j.properties, log4j.xml</li>
+<li>  Log4j2：log4j2-spring.xml, log4j2.xml</li>
+<li>  JDK (Java Util Logging)：logging.properties</li>
+</ul>
+<h3 id="2-2、SpringBoot推荐使用logback-spring-xml"><a href="#2-2、SpringBoot推荐使用logback-spring-xml" class="headerlink" title="2.2、SpringBoot推荐使用logback-spring.xml"></a>2.2、SpringBoot推荐使用logback-spring.xml</h3><blockquote>
+<p>SpringBoot官方推荐使用logback-spring.xml作为logback框架的自定义日志配置文件（例如：使用logback-spring.xml而不是logback.xml），因为带-spring后缀的配置文件可以使用SpringBoot提供的一些高级功能，如profile多环境日志输出。</p>
+</blockquote>
+<p>将所有日志都存储在一个文件中文件大小也随着应用的运行越来越大并且不好排查问题，正确的做法应该是将 error日志和其他系统输出日志分开，并且不同级别的日志根据时间段进行记录存储。</p>
+<p>在 src/main/resources 下创建 logback-spring.xml 文件，分开记录系统输出日志和Error日志：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=<span class="string">&quot;1.0&quot;</span> encoding=<span class="string">&quot;UTF-8&quot;</span>?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">include</span> <span class="attr">resource</span>=<span class="string">&quot;org/springframework/boot/logging/logback/defaults.xml&quot;</span> /&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!--彩色日志输出格式--&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;CONSOLE_LOG_PATTERN&quot;</span> <span class="attr">value</span>=<span class="string">&quot;%clr(%d&#123;yyyy-MM-dd HH:mm:ss.SSS&#125;)&#123;faint&#125; %clr(%level)&#123;blue&#125; %clr($&#123;PID&#125;)&#123;magenta&#125; %clr([%thread])&#123;orange&#125; %clr(%logger)&#123;cyan&#125; %m%n$&#123;LOG_EXCEPTION_CONVERSION_WORD:-%wEx&#125;&quot;</span>/&gt;</span></span><br><span class="line">    <span class="comment">&lt;!--非彩色日志输出格式--&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;PATTERN&quot;</span> <span class="attr">value</span>=<span class="string">&quot;%d&#123;yyyy-MM-dd HH:mm:ss.SSS&#125; [%thread] %-5level %logger&#123;36&#125; - %msg%n&quot;</span> /&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!--dev文件路径：src同级目录logs,如果上级目录不存在会自动创建--&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;DEV_FILE_PATH&quot;</span> <span class="attr">value</span>=<span class="string">&quot;./logs&quot;</span> /&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- pro文件路径 --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;PRO_FILE_PATH&quot;</span> <span class="attr">value</span>=<span class="string">&quot;/opt/prod/logs&quot;</span> /&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!-- 控制台输出 --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">appender</span> <span class="attr">name</span>=<span class="string">&quot;consoleAppender&quot;</span> <span class="attr">class</span>=<span class="string">&quot;ch.qos.logback.core.ConsoleAppender&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">encoder</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">pattern</span>&gt;</span>$&#123;CONSOLE_LOG_PATTERN&#125;<span class="tag">&lt;/<span class="name">pattern</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">encoder</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">appender</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!-- 按照每天生成输出日志文件 --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">appender</span> <span class="attr">name</span>=<span class="string">&quot;fileAppender&quot;</span> <span class="attr">class</span>=<span class="string">&quot;ch.qos.logback.core.rolling.RollingFileAppender&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">encoder</span>&gt;</span></span><br><span class="line">            <span class="comment">&lt;!--格式化输出：%d表示日期，%thread表示线程，%-5level：级别从左显示五个字符宽度，%logger&#123;36&#125;：logger是class的全名,后面的数字代表限制最长的字符，%msg：日志消息，%n换行符--&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">pattern</span>&gt;</span>%d&#123;yyyy-MM-dd HH:mm:ss.SSS&#125; [%thread] %-5level %logger&#123;36&#125; - %msg%n<span class="tag">&lt;/<span class="name">pattern</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">encoder</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!--滚动策略按照时间滚动--&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">rollingPolicy</span> <span class="attr">class</span>=<span class="string">&quot;ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy&quot;</span>&gt;</span></span><br><span class="line">            <span class="comment">&lt;!-- rollover daily 文件名称 --&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">fileNamePattern</span>&gt;</span>$&#123;DEV_FILE_PATH&#125;/output-%d&#123;yyyy-MM-dd&#125;-%i.log<span class="tag">&lt;/<span class="name">fileNamePattern</span>&gt;</span></span><br><span class="line">            <span class="comment">&lt;!-- each file should be at most 10MB, keep 60 days worth of history, but at most 1GB --&gt;</span></span><br><span class="line">            <span class="comment">&lt;!--单个文件大小--&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">maxFileSize</span>&gt;</span>10MB<span class="tag">&lt;/<span class="name">maxFileSize</span>&gt;</span></span><br><span class="line">            <span class="comment">&lt;!--日志文件保留天数--&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">maxHistory</span>&gt;</span>60<span class="tag">&lt;/<span class="name">maxHistory</span>&gt;</span></span><br><span class="line">            <span class="comment">&lt;!--用来指定日志文件的上限大小，到了这个值就会删除旧日志--&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">totalSizeCap</span>&gt;</span>1GB<span class="tag">&lt;/<span class="name">totalSizeCap</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">rollingPolicy</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">appender</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!-- 按照每天生成错误日志文件 --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">appender</span> <span class="attr">name</span>=<span class="string">&quot;errorAppender&quot;</span> <span class="attr">class</span>=<span class="string">&quot;ch.qos.logback.core.rolling.RollingFileAppender&quot;</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!-- 此日志文件只记录ERROR级别的 --&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">filter</span> <span class="attr">class</span>=<span class="string">&quot;ch.qos.logback.classic.filter.ThresholdFilter&quot;</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">level</span>&gt;</span>ERROR<span class="tag">&lt;/<span class="name">level</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">filter</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">encoder</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">pattern</span>&gt;</span>%d&#123;yyyy-MM-dd HH:mm:ss.SSS&#125; [%thread] %-5level %logger&#123;36&#125; - %msg%n<span class="tag">&lt;/<span class="name">pattern</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">encoder</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!--输出日志到src同级目录logs中的error.log文件中--&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">rollingPolicy</span> <span class="attr">class</span>=<span class="string">&quot;ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy&quot;</span>&gt;</span></span><br><span class="line">            <span class="comment">&lt;!--基于大小和时间的轮转策略，当日志内容超出文件大小限制后，会自动生成一个文件来继续记录和重命名--&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">fileNamePattern</span>&gt;</span>$&#123;DEV_FILE_PATH&#125;/error-%d&#123;yyyy-MM-dd&#125;-%i.log<span class="tag">&lt;/<span class="name">fileNamePattern</span>&gt;</span></span><br><span class="line">            <span class="comment">&lt;!-- each file should be at most 10MB, keep 60 days worth of history, but at most 1GB --&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">maxFileSize</span>&gt;</span>10MB<span class="tag">&lt;/<span class="name">maxFileSize</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">maxHistory</span>&gt;</span>60<span class="tag">&lt;/<span class="name">maxHistory</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">totalSizeCap</span>&gt;</span>1GB<span class="tag">&lt;/<span class="name">totalSizeCap</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">rollingPolicy</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">appender</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!--开发环境:打印控制台--&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">springProfile</span> <span class="attr">name</span>=<span class="string">&quot;dev&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">root</span> <span class="attr">level</span>=<span class="string">&quot;INFO&quot;</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">appender-ref</span> <span class="attr">ref</span>=<span class="string">&quot;consoleAppender&quot;</span> /&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">appender-ref</span> <span class="attr">ref</span>=<span class="string">&quot;fileAppender&quot;</span> /&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">appender-ref</span> <span class="attr">ref</span>=<span class="string">&quot;errorAppender&quot;</span> /&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">root</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">springProfile</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!--生产环境:输出到文件--&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">springProfile</span> <span class="attr">name</span>=<span class="string">&quot;pro&quot;</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!-- root日志以INFO级别输出，指定日志信息输出到哪个地方--&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">root</span> <span class="attr">level</span>=<span class="string">&quot;INFO&quot;</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">appender-ref</span> <span class="attr">ref</span>=<span class="string">&quot;consoleAppender&quot;</span> /&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">appender-ref</span> <span class="attr">ref</span>=<span class="string">&quot;fileAppender&quot;</span> /&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">appender-ref</span> <span class="attr">ref</span>=<span class="string">&quot;errorAppender&quot;</span> /&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">root</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">springProfile</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>输出结果：</strong></p>
+<p>非彩色日志：<br><img src="/images/SpringBoot%E8%87%AA%E5%AE%9A%E4%B9%89logback%E6%97%A5%E5%BF%97%E9%85%8D%E7%BD%AE/4.png"></p>
+<p>彩色日志：<br><img src="/images/SpringBoot%E8%87%AA%E5%AE%9A%E4%B9%89logback%E6%97%A5%E5%BF%97%E9%85%8D%E7%BD%AE/5.png"><br><img src="/images/SpringBoot%E8%87%AA%E5%AE%9A%E4%B9%89logback%E6%97%A5%E5%BF%97%E9%85%8D%E7%BD%AE/6.png"></p>
+<h3 id="2-3、logback配置文件的节点属性简介"><a href="#2-3、logback配置文件的节点属性简介" class="headerlink" title="2.3、logback配置文件的节点属性简介"></a>2.3、logback配置文件的节点属性简介</h3><p>Appender是负责写日志的组件，设置日志信息的去向，常用的有以下几个：</p>
+<ul>
+<li>  ch.qos.logback.core.ConsoleAppender (控制台)</li>
+<li>  ch.qos.logback.core.rolling.RollingFileAppender (文件大小到达指定尺寸的时候产生一个新文件)</li>
+<li>  ch.qos.logback.core.FileAppender (文件)</li>
+</ul>
+<p>其中，<code>&lt;springProfile&gt;</code> 标签的 name 属性对应 application.properties 中的 spring.profiles.active 的配置。即 spring.profiles.active 的值可以看作是日志配置文件中对应的 springProfile 是否生效的开关。</p>
+<p><strong>(1) logger</strong></p>
+<p>用来设置某一个包或者具体的某一个类的日志打印级别、以及指定appender。logger仅有一个name属性，一个可选的level和一个可选的additivity属性。</p>
+<ul>
+<li>  name：用来指定受此logger约束的某一个包或者具体的某一个类。</li>
+<li>  level：用来设置打印级别，大小写无关：TRACE, DEBUG, INFO, WARN, ERROR, ALL 和 OFF，还有一个特殊值INHERITED或者同义词NULL，代表强制执行上级的级别。如果未设置此属性，那么当前logger将会继承上级的级别。</li>
+<li>  additivity：是否向上级logger传递打印信息。默认是true。</li>
+</ul>
+<p>logger可以包含零个或多个appender-ref元素，标识这个appender将会添加到这个logger。</p>
+<p><strong>(2)root</strong></p>
+<p>也是logger元素，但是它是根logger。只有一个level属性，因为已经被命名为”root”。</p>
+<ul>
+<li>  level：用来设置打印级别，大小写无关：TRACE,DEBUG,INFO,WARN,ERROR,ALL和OFF，不能设置为INHERITED或者同义词NULL。默认是DEBUG。</li>
+</ul>
+<p>root可以包含零个或多个appender-ref元素，标识这个appender将会添加到这个logger。rootLogger指定日志信息输出到哪个地方，可以同时指定多个输出目的地。</p>
+<h2 id="三、-lt-springProfile-gt-多环境输出日志文件"><a href="#三、-lt-springProfile-gt-多环境输出日志文件" class="headerlink" title="三、&lt;springProfile&gt;多环境输出日志文件"></a>三、<code>&lt;springProfile&gt;</code>多环境输出日志文件</h2><p>SpringBoot官方建议使用logback-spring.xml作为logback框架的自定义日志配置文件，使用logback-spring.xml而不是logback.xml，因为带<code>-spring</code>后缀的配置文件可以使用使用Spring扩展profile支持，提供profile多环境日志输出得功能。</p>
+<p>Logback 配置文件中的 <code>&lt;springProfile&gt;</code>节点指令允许您根据配置文件激活参数(active) 选择性的包含和排查部分配置信息。根据不同环境来定义不同的日志输出，在 logback-spring.xml中使用 <code>&lt;springProfile&gt;</code>节点来定义，方法如下：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!-- 测试环境+开发环境. 多个使用逗号隔开. --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">springProfile</span> <span class="attr">name</span>=<span class="string">&quot;test,dev&quot;</span>&gt;</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">&lt;!--用来设置某一个包或者具体的某一个类的日志打印级别,可以让控制台输出debug--&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">logger</span> <span class="attr">name</span>=<span class="string">&quot;com.hs&quot;</span> <span class="attr">level</span>=<span class="string">&quot;debug&quot;</span> /&gt;</span></span><br><span class="line">    <span class="comment">&lt;!--</span></span><br><span class="line"><span class="comment">        root节点是必选节点，用来指定最基础的日志输出级别，只有一个level属性，可以包含零个或多个appender元素。</span></span><br><span class="line"><span class="comment">    --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">root</span> <span class="attr">level</span>=<span class="string">&quot;INFO&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">appender-ref</span> <span class="attr">ref</span>=<span class="string">&quot;CONSOLE&quot;</span> /&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">appender-ref</span> <span class="attr">ref</span>=<span class="string">&quot;INFO_FILE&quot;</span> /&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">appender-ref</span> <span class="attr">ref</span>=<span class="string">&quot;WARN_FILE&quot;</span> /&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">appender-ref</span> <span class="attr">ref</span>=<span class="string">&quot;ERROR_FILE&quot;</span> /&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">root</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">springProfile</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">&lt;!--生产环境:输出到文件--&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">springProfile</span> <span class="attr">name</span>=<span class="string">&quot;pro&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">root</span> <span class="attr">level</span>=<span class="string">&quot;INFO&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">appender-ref</span> <span class="attr">ref</span>=<span class="string">&quot;CONSOLE&quot;</span> /&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">appender-ref</span> <span class="attr">ref</span>=<span class="string">&quot;DEBUG_FILE&quot;</span> /&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">appender-ref</span> <span class="attr">ref</span>=<span class="string">&quot;INFO_FILE&quot;</span> /&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">appender-ref</span> <span class="attr">ref</span>=<span class="string">&quot;ERROR_FILE&quot;</span> /&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">appender-ref</span> <span class="attr">ref</span>=<span class="string">&quot;WARN_FILE&quot;</span> /&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">root</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">springProfile</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>为何root配置的INFO，logger特殊指定的包/类日志DEBUG级别，最后也能打印出来？</p>
+<p>答案：因为没有设置<code>addtivity=&quot;false&quot;</code> ，如下即可。</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">logger</span> <span class="attr">name</span>=<span class="string">&quot;包名/类名&quot;</span> <span class="attr">level</span>=<span class="string">&quot;DEBUG&quot;</span> <span class="attr">addtivity</span>=<span class="string">&quot;false&quot;</span> /&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>logger有一个属性<code>addtivity=&quot;true&quot;</code> 默认就是true,标识向上级传递日志（INFO是DEBUG的上级）。只有显示指定为false时，才不会向上级输出。</p>
+<p>（1）可以启动服务的时候指定 profile （如不指定使用默认），如指定prod 的方式为：</p>
+<p><code>java -jar xxx.jar –spring.profiles.active=prod</code></p>
+<p>（2）也可以在yml配置文件中指明当前环境是什么环境，否则启动会报错，如下：<br><img src="/images/SpringBoot%E8%87%AA%E5%AE%9A%E4%B9%89logback%E6%97%A5%E5%BF%97%E9%85%8D%E7%BD%AE/7.png"></p>
+<h2 id="四、-解决-logback-xml-配置文件不生效的问题"><a href="#四、-解决-logback-xml-配置文件不生效的问题" class="headerlink" title="四、 解决 logback.xml 配置文件不生效的问题"></a>四、 解决 logback.xml 配置文件不生效的问题</h2><p><strong>问题描述：</strong>在resources目录下建立logback-spring配置文件后，只能打印控制台日志，不能创建日志文件。疯狂修改配置文件的内容，就连常用的重启、清除缓存都试过了，但是日志配置依然不生效。所以就查找原因，既然不是配置文件内部的问题，那就是配置文件根本就没起效果。</p>
+<p><strong>原因追溯：</strong>意外发现SpringBoot项目打包后的target/classes没有包含logback-spring.xml，这就是logback.xml 配置不起作用的根本原因。<br><img src="/images/SpringBoot%E8%87%AA%E5%AE%9A%E4%B9%89logback%E6%97%A5%E5%BF%97%E9%85%8D%E7%BD%AE/8.png"></p>
+<p> 然后发现之前在pom.xml中加了个resources目录下文件的过滤配置，没有保留logback日志文件：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!--添加打包过滤的配置文件规则,定义资源过滤,用来保证配置文件打包生成到target中--&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">resources</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">resource</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">directory</span>&gt;</span>src/main/resources<span class="tag">&lt;/<span class="name">directory</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!-- 开启过滤替换功能,用于替换resources里的变量--&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">filtering</span>&gt;</span>true<span class="tag">&lt;/<span class="name">filtering</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!--按需保留需要的profile文件--&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">includes</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">include</span>&gt;</span>application-$&#123;spring.profiles.active&#125;.yaml<span class="tag">&lt;/<span class="name">include</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">include</span>&gt;</span>application.properties<span class="tag">&lt;/<span class="name">include</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">include</span>&gt;</span>application.properties<span class="tag">&lt;/<span class="name">include</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">includes</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">resource</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">resources</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>解决方案：</strong>保留logback-spring.xml和logback.xml配置文件</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!--添加打包过滤的配置文件规则,定义资源过滤,用来保证配置文件打包生成到target中--&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">resources</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">resource</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">directory</span>&gt;</span>src/main/resources<span class="tag">&lt;/<span class="name">directory</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!-- 开启过滤替换功能,用于替换resources里的变量--&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">filtering</span>&gt;</span>true<span class="tag">&lt;/<span class="name">filtering</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!--按需保留需要的profile文件--&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">includes</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">include</span>&gt;</span>application-$&#123;spring.profiles.active&#125;.yaml<span class="tag">&lt;/<span class="name">include</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">include</span>&gt;</span>application.properties<span class="tag">&lt;/<span class="name">include</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">include</span>&gt;</span>application.properties<span class="tag">&lt;/<span class="name">include</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">include</span>&gt;</span>logback.xml<span class="tag">&lt;/<span class="name">include</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">include</span>&gt;</span>logback-spring.xml<span class="tag">&lt;/<span class="name">include</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">includes</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">resource</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">resources</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>现在target-classes下有了logback.xml配置文件，相关日志正常生效。<br><img src="/images/SpringBoot%E8%87%AA%E5%AE%9A%E4%B9%89logback%E6%97%A5%E5%BF%97%E9%85%8D%E7%BD%AE/9.png"></p>
+<h2 id="五、-不同的包（业务日志）输出到不同日志文件"><a href="#五、-不同的包（业务日志）输出到不同日志文件" class="headerlink" title="五、 不同的包（业务日志）输出到不同日志文件"></a>五、 不同的包（业务日志）输出到不同日志文件</h2><h3 id="1-定义日志输出文件"><a href="#1-定义日志输出文件" class="headerlink" title="1. 定义日志输出文件"></a>1. 定义日志输出文件</h3><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!-- 业务日志输出 --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">appender</span> <span class="attr">name</span>=<span class="string">&quot;biz_info&quot;</span> <span class="attr">class</span>=<span class="string">&quot;ch.qos.logback.core.rolling.RollingFileAppender&quot;</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- &lt;file&gt;$&#123;log.path&#125;/biz_info.log&lt;/file&gt; --&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- 循环政策：基于时间创建日志文件 --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">rollingPolicy</span> <span class="attr">class</span>=<span class="string">&quot;ch.qos.logback.core.rolling.TimeBasedRollingPolicy&quot;</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!-- 日志文件名格式 --&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">fileNamePattern</span>&gt;</span>$&#123;log.path&#125;/biz-info.%d&#123;yyyy-MM-dd&#125;.log<span class="tag">&lt;/<span class="name">fileNamePattern</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!-- 日志保留最大60个 --&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">maxHistory</span>&gt;</span>60<span class="tag">&lt;/<span class="name">maxHistory</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">cleanHistoryOnStart</span>&gt;</span>true<span class="tag">&lt;/<span class="name">cleanHistoryOnStart</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">rollingPolicy</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">encoder</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">pattern</span>&gt;</span>$&#123;log.pattern&#125;<span class="tag">&lt;/<span class="name">pattern</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">encoder</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">filter</span> <span class="attr">class</span>=<span class="string">&quot;ch.qos.logback.classic.filter.LevelFilter&quot;</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!-- 过滤的级别 --&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">level</span>&gt;</span>INFO<span class="tag">&lt;/<span class="name">level</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!-- 匹配时的操作：接收（记录） --&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">onMatch</span>&gt;</span>ACCEPT<span class="tag">&lt;/<span class="name">onMatch</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!-- 不匹配时的操作：拒绝（不记录） --&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">onMismatch</span>&gt;</span>DENY<span class="tag">&lt;/<span class="name">onMismatch</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">filter</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">appender</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>maxHistory: 参数表示保留日志文件的最大个数<br>{yyyy-MM-dd}: 参数表示按天分割文件，{yyyy-MM-dd-HH}表示按小时分割文件。因为时间格式化出来的字符串和之前的字符串不相同，则重新生成一个文件。此时生成文件名中，还需要增加-%i<br>cleanHistoryOnStart:设置为true，表示启动的时候清除多余的日志。</p>
+</blockquote>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!-- 日志存放路径 --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;log.path&quot;</span> <span class="attr">value</span>=<span class="string">&quot;log/posonline/&quot;</span> /&gt;</span></span><br><span class="line"><span class="comment">&lt;!-- 日志输出格式 --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;log.pattern&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">value</span>=<span class="string">&quot;%d&#123;yyyy-MM-dd HH:mm:ss.SSS&#125; - [%25.25(%thread)] - [%-5level] - %-30.30(%logger&#123;30&#125;) : %msg%n&quot;</span> /&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">&lt;!-- 业务日志输出 --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">appender</span> <span class="attr">name</span>=<span class="string">&quot;biz_info&quot;</span> <span class="attr">class</span>=<span class="string">&quot;ch.qos.logback.core.rolling.RollingFileAppender&quot;</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- &lt;file&gt;$&#123;log.path&#125;/biz_info.log&lt;/file&gt; --&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- 循环政策：基于时间创建日志文件 --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">rollingPolicy</span> <span class="attr">class</span>=<span class="string">&quot;ch.qos.logback.core.rolling.TimeBasedRollingPolicy&quot;</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!-- 日志文件名格式 -%i --&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">fileNamePattern</span>&gt;</span>$&#123;log.path&#125;/biz-info.%d&#123;yyyy-MM-dd&#125;-%i.log<span class="tag">&lt;/<span class="name">fileNamePattern</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!-- 日志保留最大 60个 --&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">maxHistory</span>&gt;</span>60<span class="tag">&lt;/<span class="name">maxHistory</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">timeBasedFileNamingAndTriggeringPolicy</span> <span class="attr">class</span>=<span class="string">&quot;ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP&quot;</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">maxFileSize</span>&gt;</span>100MB<span class="tag">&lt;/<span class="name">maxFileSize</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">timeBasedFileNamingAndTriggeringPolicy</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">rollingPolicy</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">encoder</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">pattern</span>&gt;</span>$&#123;log.pattern&#125;<span class="tag">&lt;/<span class="name">pattern</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">encoder</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">filter</span> <span class="attr">class</span>=<span class="string">&quot;ch.qos.logback.classic.filter.LevelFilter&quot;</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!-- 过滤的级别 --&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">level</span>&gt;</span>INFO<span class="tag">&lt;/<span class="name">level</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!-- 匹配时的操作：接收（记录） --&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">onMatch</span>&gt;</span>ACCEPT<span class="tag">&lt;/<span class="name">onMatch</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!-- 不匹配时的操作：拒绝（不记录） --&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">onMismatch</span>&gt;</span>DENY<span class="tag">&lt;/<span class="name">onMismatch</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">filter</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">appender</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>timeBasedFileNamingAndTriggeringPolicy：按文件大小进行切分。</p>
+</blockquote>
+<h3 id="2-定义logger"><a href="#2-定义logger" class="headerlink" title="2. 定义logger"></a>2. 定义logger</h3><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!--业务日志--&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">logger</span> <span class="attr">name</span>=<span class="string">&quot;biz_info&quot;</span> <span class="attr">level</span>=<span class="string">&quot;info&quot;</span> <span class="attr">additivity</span>=<span class="string">&quot;false&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">appender-ref</span> <span class="attr">ref</span>=<span class="string">&quot;biz_info&quot;</span>/&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">logger</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p> <code>additivity=&quot;false&quot;</code>表示这里的日志不写入root对应的logger。</p>
+</blockquote>
+<h3 id="3-定义logger变量"><a href="#3-定义logger变量" class="headerlink" title="3. 定义logger变量"></a>3. 定义logger变量</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">Logger</span> <span class="variable">log</span> <span class="operator">=</span> LoggerFactory.getLogger(<span class="string">&quot;biz_info&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>需要记录日志的类，定义logger变量。</p>
+<h3 id="4-记录日志"><a href="#4-记录日志" class="headerlink" title="4. 记录日志"></a>4. 记录日志</h3><figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">log</span>.info(<span class="string">&quot;列表显示&quot;</span>);</span><br></pre></td></tr></table></figure>
+<p>按照正常的方式记录日志即可。</p>
+<blockquote>
+<p>参考链接：<br><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s?__biz=Mzg4ODA3NTk0Nw==&mid=2247504585&idx=2&sn=db4d6d786ba15860f56e62720edfc58b&chksm=cf82310df8f5b81b5256113afa74e5e6cd01294d260add5a7df7779c8dfefa3aa4d8761ecde2&mpshare=1&scene=23&srcid=0121QDzCEWMfJu2TEHuwFOVp&sharer_sharetime=1642700473069&sharer_shareid=503249feddb0743e37fdb0abcec36801#rd">Springboot日志框架Logback的使用及配置</a><br><a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/1639939">SpringBoot配置logback - 云+社区 - 腾讯云</a><br><a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/1639939">logback日志配置（控制台日志、输出日志、错误日志)</a><br><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_42875895/article/details/106092041">Springboot-logbackc彩色日志配色方案</a><br><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s?__biz=MzU2OTMyMTAxNA==&mid=2247507544&idx=3&sn=aaabddc56e86bdaf08d323dcae0af18c&chksm=fc82ed01cbf5641767ac87861b2b85e8dc46c1d84c9e5d7e9fb4878411d1aed4ed8308a86d22&mpshare=1&scene=23&srcid=0121SgHKpFfPDW6WoKpAqzRl&sharer_sharetime=1642700325465&sharer_shareid=503249feddb0743e37fdb0abcec36801#rd">Logback日志这样配置，让你性能提升10倍！</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2022/09/27/SpringBoot%E8%87%AA%E5%AE%9A%E4%B9%89logback%E6%97%A5%E5%BF%97%E9%85%8D%E7%BD%AE/" data-id="cl9pgenxf00zwycv14qf00yvy" data-title="SpringBoot自定义logback日志配置" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/SpringBoot/" rel="tag">SpringBoot</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2022/09/27/SpringBoot%E4%BD%BF%E7%94%A8AOP%E8%AE%B0%E5%BD%95%E6%8E%A5%E5%8F%A3%E6%93%8D%E4%BD%9C%E6%97%A5%E5%BF%97/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          SpringBoot使用AOP记录接口操作日志
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2022/09/27/SpringBoot-%E5%BF%AB%E9%80%9F%E9%9B%86%E6%88%90-JWT-%E5%AE%9E%E7%8E%B0%E7%94%A8%E6%88%B7%E7%99%BB%E5%BD%95%E8%AE%A4%E8%AF%81/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">SpringBoot 快速集成 JWT 实现用户登录认证</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">47</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.75px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 12.5px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/Laravel/" style="font-size: 18.75px;">Laravel</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 16.88px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.75px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.5px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 18.13px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/26/java%E4%B8%ADMap%E5%8F%8AMap-Entry%E8%AF%A6%E8%A7%A3/">java中Map及Map.Entry详解</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/23/spring-boot-redis-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%EF%BC%88pub-sub%E5%92%8Cstream%EF%BC%89/">spring boot redis 消息队列（pub/sub和stream）</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/19/Java%E9%97%AE%E9%A2%98%E9%9B%86%E9%94%A6/">Java问题集锦</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/18/SpringBoot%E4%BD%BF%E7%94%A8Maven%E6%89%93%E5%8C%85%E5%BC%82%E5%B8%B8-%E5%BC%95%E5%85%A5%E5%A4%96%E9%83%A8jar/">SpringBoot使用Maven打包异常-引入外部jar</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>
