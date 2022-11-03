@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>SpringBoot 中使用 @Valid 注解 + Exception 全局处理器优雅处理参数验证(小豆丁技术栈) | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="一、为什么使用 @Valid 来验证参数在平常通过 Spring 框架写代码时候，会经常写接口类，相信大家对该类的写法非常熟悉。在写接口时经常要写效验请求参数逻辑，这时候我们会常用做法是写大量的 if 与 if else 类似这样的代码来做判断，如下： 123456789101112131415161718@RestControllerpublic class TestController &amp;#1">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SpringBoot 中使用 @Valid 注解 + Exception 全局处理器优雅处理参数验证(小豆丁技术栈)">
+<meta property="og:url" content="http://moqiang02.github.io/2022/11/02/SpringBoot-%E4%B8%AD%E4%BD%BF%E7%94%A8-Valid-%E6%B3%A8%E8%A7%A3-Exception-%E5%85%A8%E5%B1%80%E5%A4%84%E7%90%86%E5%99%A8%E4%BC%98%E9%9B%85%E5%A4%84%E7%90%86%E5%8F%82%E6%95%B0%E9%AA%8C%E8%AF%81/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="一、为什么使用 @Valid 来验证参数在平常通过 Spring 框架写代码时候，会经常写接口类，相信大家对该类的写法非常熟悉。在写接口时经常要写效验请求参数逻辑，这时候我们会常用做法是写大量的 if 与 if else 类似这样的代码来做判断，如下： 123456789101112131415161718@RestControllerpublic class TestController &amp;#1">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://moqiang02.github.io/images/SpringBoot%E4%B8%AD%E4%BD%BF%E7%94%A8Valid%E6%B3%A8%E8%A7%A3Exception%E5%85%A8%E5%B1%80%E5%A4%84%E7%90%86%E5%99%A8%E4%BC%98%E9%9B%85%E5%A4%84%E7%90%86%E5%8F%82%E6%95%B0%E9%AA%8C%E8%AF%81/0.png">
+<meta property="article:published_time" content="2022-11-02T07:54:08.000Z">
+<meta property="article:modified_time" content="2022-11-02T08:34:21.934Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="SpringBoot">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://moqiang02.github.io/images/SpringBoot%E4%B8%AD%E4%BD%BF%E7%94%A8Valid%E6%B3%A8%E8%A7%A3Exception%E5%85%A8%E5%B1%80%E5%A4%84%E7%90%86%E5%99%A8%E4%BC%98%E9%9B%85%E5%A4%84%E7%90%86%E5%8F%82%E6%95%B0%E9%AA%8C%E8%AF%81/0.png">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-SpringBoot-中使用-Valid-注解-Exception-全局处理器优雅处理参数验证" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2022/11/02/SpringBoot-%E4%B8%AD%E4%BD%BF%E7%94%A8-Valid-%E6%B3%A8%E8%A7%A3-Exception-%E5%85%A8%E5%B1%80%E5%A4%84%E7%90%86%E5%99%A8%E4%BC%98%E9%9B%85%E5%A4%84%E7%90%86%E5%8F%82%E6%95%B0%E9%AA%8C%E8%AF%81/" class="article-date">
+  <time class="dt-published" datetime="2022-11-02T07:54:08.000Z" itemprop="datePublished">2022-11-02</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/java/">java</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      SpringBoot 中使用 @Valid 注解 + Exception 全局处理器优雅处理参数验证(小豆丁技术栈)
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">目录</strong>
+              <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BD%BF%E7%94%A8-Valid-%E6%9D%A5%E9%AA%8C%E8%AF%81%E5%8F%82%E6%95%B0"><span class="toc-number">1.</span> <span class="toc-text">一、为什么使用 @Valid 来验证参数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81-Valid-%E6%B3%A8%E8%A7%A3%E7%9A%84%E4%BD%9C%E7%94%A8"><span class="toc-number">2.</span> <span class="toc-text">二、@Valid 注解的作用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81-Valid-%E7%9A%84%E7%9B%B8%E5%85%B3%E6%B3%A8%E8%A7%A3"><span class="toc-number">3.</span> <span class="toc-text">三、@Valid 的相关注解</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E4%BD%BF%E7%94%A8-Valid-%E8%BF%9B%E8%A1%8C%E5%8F%82%E6%95%B0%E6%95%88%E9%AA%8C%E6%AD%A5%E9%AA%A4"><span class="toc-number">4.</span> <span class="toc-text">四、使用 @Valid 进行参数效验步骤</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1%E3%80%81%E5%AE%9E%E4%BD%93%E7%B1%BB%E4%B8%AD%E6%B7%BB%E5%8A%A0-Valid-%E7%9B%B8%E5%85%B3%E6%B3%A8%E8%A7%A3"><span class="toc-number">4.1.</span> <span class="toc-text">1、实体类中添加 @Valid 相关注解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2%E3%80%81%E6%8E%A5%E5%8F%A3%E7%B1%BB%E4%B8%AD%E6%B7%BB%E5%8A%A0-Valid-%E6%B3%A8%E8%A7%A3"><span class="toc-number">4.2.</span> <span class="toc-text">2、接口类中添加 @Valid 注解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3%E3%80%81%E5%85%A8%E5%B1%80%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E7%B1%BB%E4%B8%AD%E5%A4%84%E7%90%86-Valid-%E6%8A%9B%E5%87%BA%E7%9A%84%E5%BC%82%E5%B8%B8"><span class="toc-number">4.3.</span> <span class="toc-text">3、全局异常处理类中处理 @Valid 抛出的异常</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81SpringBoot-%E4%B8%AD%E4%BD%BF%E7%94%A8-Valid-%E7%A4%BA%E4%BE%8B"><span class="toc-number">5.</span> <span class="toc-text">五、SpringBoot 中使用 @Valid 示例</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1%E3%80%81Maven-%E5%BC%95%E5%85%A5%E7%9B%B8%E5%85%B3%E4%BE%9D%E8%B5%96"><span class="toc-number">5.1.</span> <span class="toc-text">1、Maven 引入相关依赖</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2%E3%80%81%E8%87%AA%E5%AE%9A%E4%B9%89%E4%B8%AA%E5%BC%82%E5%B8%B8%E7%B1%BB"><span class="toc-number">5.2.</span> <span class="toc-text">2、自定义个异常类</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3%E3%80%81%E8%87%AA%E5%AE%9A%E4%B9%89%E5%93%8D%E5%BA%94%E6%9E%9A%E4%B8%BE%E7%B1%BB"><span class="toc-number">5.3.</span> <span class="toc-text">3、自定义响应枚举类</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4%E3%80%81%E8%87%AA%E5%AE%9A%E4%B9%89%E5%93%8D%E5%BA%94%E5%AF%B9%E8%B1%A1%E7%B1%BB"><span class="toc-number">5.4.</span> <span class="toc-text">4、自定义响应对象类</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5%E3%80%81%E8%87%AA%E5%AE%9A%E4%B9%89%E5%AE%9E%E4%BD%93%E7%B1%BB%E4%B8%AD%E6%B7%BB%E5%8A%A0-Valid-%E7%9B%B8%E5%85%B3%E6%B3%A8%E8%A7%A3"><span class="toc-number">5.5.</span> <span class="toc-text">5、自定义实体类中添加 @Valid 相关注解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6%E3%80%81Controller-%E4%B8%AD%E6%B7%BB%E5%8A%A0-Valid-%E6%B3%A8%E8%A7%A3"><span class="toc-number">5.6.</span> <span class="toc-text">6、Controller 中添加 @Valid 注解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7%E3%80%81%E5%85%A8%E5%B1%80%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86"><span class="toc-number">5.7.</span> <span class="toc-text">7、全局异常处理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#8%E3%80%81%E5%90%AF%E5%8A%A8%E7%B1%BB"><span class="toc-number">5.8.</span> <span class="toc-text">8、启动类</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#9%E3%80%81%E7%A4%BA%E4%BE%8B%E6%B5%8B%E8%AF%95"><span class="toc-number">5.9.</span> <span class="toc-text">9、示例测试</span></a></li></ol></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <h2 id="一、为什么使用-Valid-来验证参数"><a href="#一、为什么使用-Valid-来验证参数" class="headerlink" title="一、为什么使用 @Valid 来验证参数"></a>一、为什么使用 @Valid 来验证参数</h2><p>在平常通过 Spring 框架写代码时候，会经常写接口类，相信大家对该类的写法非常熟悉。在写接口时经常要写效验请求参数逻辑，这时候我们会常用做法是写大量的 <code>if</code> 与 <code>if else</code> 类似这样的代码来做判断，如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@RestController</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TestController</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@PostMapping(&quot;/user&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">addUserInfo</span><span class="params">(<span class="meta">@RequestBody</span> User user)</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (user.getName() == <span class="literal">null</span> || <span class="string">&quot;&quot;</span>.equals(user.getName()) &#123;</span><br><span class="line">            ......</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span>(user.getSex() == <span class="literal">null</span> || <span class="string">&quot;&quot;</span>.equals(user.getSex())) &#123;</span><br><span class="line">            ......</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span>(user.getUsername() == <span class="literal">null</span> || <span class="string">&quot;&quot;</span>.equals(user.getUsername())) &#123;</span><br><span class="line">            ......</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            ......</span><br><span class="line">        &#125;</span><br><span class="line">        ......</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这样的代码如果按正常代码逻辑来说，是没有什么问题的，不过按优雅来说，简直糟糕透了。不仅不优雅，而且如果存在大量的验证逻辑，这会使代码看起来乱糟糟，大大降低代码可读性，那么有没有更好的方法能够简化这个过程呢？答案当然是有，推荐的是使用 <code>@Valid</code> 注解来帮助我们简化验证逻辑。<span id="more"></span></p>
+<h2 id="二、-Valid-注解的作用"><a href="#二、-Valid-注解的作用" class="headerlink" title="二、@Valid 注解的作用"></a>二、@Valid 注解的作用</h2><p>注解 <code>@Valid</code> 的主要作用是用于数据效验，可以在定义的实体中的属性上，添加不同的注解来完成不同的校验规则，而在接口类中的接收数据参数中添加 <code>@valid</code> 注解，这时你的实体将会开启一个校验的功能。</p>
+<h2 id="三、-Valid-的相关注解"><a href="#三、-Valid-的相关注解" class="headerlink" title="三、@Valid 的相关注解"></a>三、@Valid 的相关注解</h2><p>下面是 @Valid 相关的注解，在实体类中不同的属性上添加不同的注解，就能实现不同数据的效验功能。</p>
+<table>
+<thead>
+<tr>
+<th>注解名称</th>
+<th>作用描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>@Null</td>
+<td>限制只能为null</td>
+</tr>
+<tr>
+<td>@NotNull</td>
+<td>限制必须不为null</td>
+</tr>
+<tr>
+<td>@AssertFalse</td>
+<td>限制必须为false</td>
+</tr>
+<tr>
+<td>@AssertTrue</td>
+<td>限制必须为true</td>
+</tr>
+<tr>
+<td>@DecimalMax(value)</td>
+<td>限制必须为一个不大于指定值的数字</td>
+</tr>
+<tr>
+<td>@DecimalMin(value)</td>
+<td>限制必须为一个不小于指定值的数字</td>
+</tr>
+<tr>
+<td>@Digits(integer,fraction)</td>
+<td>限制必须为一个小数，且整数部分的位数不能超过integer，小数部分的位数不能超过fraction</td>
+</tr>
+<tr>
+<td>@Future</td>
+<td>限制必须是一个将来的日期</td>
+</tr>
+<tr>
+<td>@Max(value)</td>
+<td>限制必须为一个不大于指定值的数字</td>
+</tr>
+<tr>
+<td>@Min(value)</td>
+<td>限制必须为一个不小于指定值的数字</td>
+</tr>
+<tr>
+<td>@Past</td>
+<td>限制必须是一个过去的日期</td>
+</tr>
+<tr>
+<td>@Pattern(value)</td>
+<td>限制必须符合指定的正则表达式</td>
+</tr>
+<tr>
+<td>@Size(max,min)</td>
+<td>限制字符长度必须在min到max之间</td>
+</tr>
+<tr>
+<td>@Past</td>
+<td>验证注解的元素值（日期类型）比当前时间早</td>
+</tr>
+<tr>
+<td>@NotEmpty</td>
+<td>验证注解的元素值不为null且不为空（字符串长度不为0、集合大小不为0）</td>
+</tr>
+<tr>
+<td>@NotBlank</td>
+<td>验证注解的元素值不为空（不为null、去除首位空格后长度为0），不同于@NotEmpty，@NotBlank只应用于字符串且在比较时会去除字符串的空格</td>
+</tr>
+<tr>
+<td>@Email</td>
+<td>验证注解的元素值是Email，也可以通过正则表达式和flag指定自定义的email格式</td>
+</tr>
+</tbody></table>
+<h2 id="四、使用-Valid-进行参数效验步骤"><a href="#四、使用-Valid-进行参数效验步骤" class="headerlink" title="四、使用 @Valid 进行参数效验步骤"></a>四、使用 @Valid 进行参数效验步骤</h2><p>整个过程如下图所示，用户访问接口，然后进行参数效验，因为 @Valid 不支持平面的参数效验（直接写在参数中字段的效验）所以基于 GET 请求的参数还是按照原先方式进行效验，而 POST 则可以以实体对象为参数，可以使用 @Valid 方式进行效验。如果效验通过，则进入业务逻辑，否则抛出异常，交由全局异常处理器进行处理。</p>
+<p><img src="/images/SpringBoot%E4%B8%AD%E4%BD%BF%E7%94%A8Valid%E6%B3%A8%E8%A7%A3Exception%E5%85%A8%E5%B1%80%E5%A4%84%E7%90%86%E5%99%A8%E4%BC%98%E9%9B%85%E5%A4%84%E7%90%86%E5%8F%82%E6%95%B0%E9%AA%8C%E8%AF%81/0.png"></p>
+<h3 id="1、实体类中添加-Valid-相关注解"><a href="#1、实体类中添加-Valid-相关注解" class="headerlink" title="1、实体类中添加 @Valid 相关注解"></a>1、实体类中添加 @Valid 相关注解</h3><p>使用 <code>@Valid</code> 相关注解非常简单，只需要在参数的实体类中属性上面添加如 <code>@NotBlank</code>、<code>@Max</code>、<code>@Min</code> 等注解来对该字段进限制，如下：</p>
+<p><strong>User：</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">User</span> &#123;</span><br><span class="line">    <span class="meta">@NotBlank(message = &quot;姓名不为空&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> String username;</span><br><span class="line">    <span class="meta">@NotBlank(message = &quot;密码不为空&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> String password;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果是嵌套的实体对象，则需要在最外层属性上添加 <code>@Valid</code> 注解：</p>
+<p><strong>User：</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">User</span> &#123;</span><br><span class="line">    <span class="meta">@NotBlank(message = &quot;姓名不为空&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> String username;</span><br><span class="line">    <span class="meta">@NotBlank(message = &quot;密码不为空&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> String password;</span><br><span class="line">    <span class="comment">//嵌套必须加 @Valid，否则嵌套中的验证不生效</span></span><br><span class="line">    <span class="meta">@Valid</span></span><br><span class="line">    <span class="meta">@NotNull(message = &quot;用户信息不能为空&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> UserInfo userInfo;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>UserInfo：</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">User</span> &#123;</span><br><span class="line">    <span class="meta">@NotBlank(message = &quot;年龄不为空&quot;)</span></span><br><span class="line">    <span class="meta">@Max(value = 18, message = &quot;不能超过18岁&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> String age;</span><br><span class="line">    <span class="meta">@NotBlank(message = &quot;性别不能为空&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> String gender;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="2、接口类中添加-Valid-注解"><a href="#2、接口类中添加-Valid-注解" class="headerlink" title="2、接口类中添加 @Valid 注解"></a>2、接口类中添加 @Valid 注解</h3><p>在 <code>Controller</code> 类中添加接口，<code>POST</code> 方法中接收设置了 @Valid 相关注解的实体对象，然后在参数中添加 <code>@Valid</code> 注解来开启效验功能，需要注意的是， <code>@Valid</code> 对 <code>Get</code> 请求中接收的平面参数请求无效，稍微略显遗憾。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@RestController</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TestController</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@PostMapping(&quot;/user&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">addUserInfo</span><span class="params">(<span class="meta">@Valid</span> <span class="meta">@RequestBody</span> User user)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;调用成功!&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="3、全局异常处理类中处理-Valid-抛出的异常"><a href="#3、全局异常处理类中处理-Valid-抛出的异常" class="headerlink" title="3、全局异常处理类中处理 @Valid 抛出的异常"></a>3、全局异常处理类中处理 @Valid 抛出的异常</h3><p>最后，我们写一个全局异常处理类，然后对接口中抛出的异常进行处理，而 <code>@Valid</code> 配合 <code>Spring</code> 会抛出 <code>MethodArgumentNotValidException</code> 异常，这里我们需要对该异常进行处理即可。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@RestControllerAdvice(&quot;club.mydlq.valid&quot;)</span>   <span class="comment">//指定异常处理的包名</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">GlobalExceptionHandler</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@ResponseStatus(HttpStatus.BAD_REQUEST)</span> <span class="comment">//设置状态码为 400</span></span><br><span class="line">    <span class="meta">@ExceptionHandler(&#123;MethodArgumentNotValidException.class&#125;)</span></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">paramExceptionHandler</span><span class="params">(MethodArgumentNotValidException e)</span> &#123;</span><br><span class="line">        <span class="type">BindingResult</span> <span class="variable">exceptions</span> <span class="operator">=</span> e.getBindingResult();</span><br><span class="line">        <span class="comment">// 判断异常中是否有错误信息，如果存在就使用异常中的消息，否则使用默认消息</span></span><br><span class="line">        <span class="keyword">if</span> (exceptions.hasErrors()) &#123;</span><br><span class="line">            List&lt;ObjectError&gt; errors = exceptions.getAllErrors();</span><br><span class="line">            <span class="keyword">if</span> (!errors.isEmpty()) &#123;</span><br><span class="line">                <span class="comment">// 这里列出了全部错误参数，按正常逻辑，只需要第一条错误即可</span></span><br><span class="line">                <span class="type">FieldError</span> <span class="variable">fieldError</span> <span class="operator">=</span> (FieldError) errors.get(<span class="number">0</span>);</span><br><span class="line">                <span class="keyword">return</span> fieldError.getDefaultMessage();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;请求参数错误&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="五、SpringBoot-中使用-Valid-示例"><a href="#五、SpringBoot-中使用-Valid-示例" class="headerlink" title="五、SpringBoot 中使用 @Valid 示例"></a>五、SpringBoot 中使用 @Valid 示例</h2><h3 id="1、Maven-引入相关依赖"><a href="#1、Maven-引入相关依赖" class="headerlink" title="1、Maven 引入相关依赖"></a>1、Maven 引入相关依赖</h3><p>Maven 引入 SpringBoot 相关依赖，这里引入了 Lombok 包来简化开发过程。</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=<span class="string">&quot;1.0&quot;</span> encoding=<span class="string">&quot;UTF-8&quot;</span>?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">project</span> <span class="attr">xmlns</span>=<span class="string">&quot;http://maven.apache.org/POM/4.0.0&quot;</span> <span class="attr">xmlns:xsi</span>=<span class="string">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span></span></span><br><span class="line"><span class="tag">	<span class="attr">xsi:schemaLocation</span>=<span class="string">&quot;http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd&quot;</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">modelVersion</span>&gt;</span>4.0.0<span class="tag">&lt;/<span class="name">modelVersion</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">parent</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-parent<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">version</span>&gt;</span>2.2.1.RELEASE<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">parent</span>&gt;</span></span><br><span class="line"></span><br><span class="line">	<span class="tag">&lt;<span class="name">groupId</span>&gt;</span>mydlq.club<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>springboot-valid-demo<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">version</span>&gt;</span>0.0.1-SNAPSHOT<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">name</span>&gt;</span>springboot-valid-demo<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">description</span>&gt;</span>@valid demo<span class="tag">&lt;/<span class="name">description</span>&gt;</span></span><br><span class="line"></span><br><span class="line">	<span class="tag">&lt;<span class="name">properties</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">java.version</span>&gt;</span>1.8<span class="tag">&lt;/<span class="name">java.version</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">properties</span>&gt;</span></span><br><span class="line"></span><br><span class="line">	<span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">			<span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">			<span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-web<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">			<span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.projectlombok<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">			<span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>lombok<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">			<span class="tag">&lt;<span class="name">optional</span>&gt;</span>true<span class="tag">&lt;/<span class="name">optional</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br><span class="line"></span><br><span class="line">	<span class="tag">&lt;<span class="name">build</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">plugins</span>&gt;</span></span><br><span class="line">			<span class="tag">&lt;<span class="name">plugin</span>&gt;</span></span><br><span class="line">				<span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">				<span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-maven-plugin<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">			<span class="tag">&lt;/<span class="name">plugin</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;/<span class="name">plugins</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">build</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">project</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>注意!：</strong>在 SpringBoot 2.3.x 以前 SpringBoot 包 默认引入 spring-boot-starter-validation 包，而自 SpringBoot 2.3.x 以后官方将其排除，需要单独引入，所以如果你是用的是 2.3.x 以上版本，请单独引入下面依赖：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-validation<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="2、自定义个异常类"><a href="#2、自定义个异常类" class="headerlink" title="2、自定义个异常类"></a>2、自定义个异常类</h3><p>自定义个异常类，方便我们处理 GET 请求（GET 请求参数中一般是没有实体对象的，所以不能使用 @Valid），当请求验证失败时，手动抛出自定义异常，交由全局异常处理。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ParamaErrorException</span> <span class="keyword">extends</span> <span class="title class_">RuntimeException</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">ParamaErrorException</span><span class="params">()</span> &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">ParamaErrorException</span><span class="params">(String message)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>(message);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="3、自定义响应枚举类"><a href="#3、自定义响应枚举类" class="headerlink" title="3、自定义响应枚举类"></a>3、自定义响应枚举类</h3><p>定义一个返回信息的枚举类，方便我们快速响应信息，不必每次都写返回消息和响应码。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">enum</span> <span class="title class_">ResultEnum</span> &#123;</span><br><span class="line"></span><br><span class="line">    SUCCESS(<span class="number">1000</span>, <span class="string">&quot;请求成功&quot;</span>),</span><br><span class="line">    PARAMETER_ERROR(<span class="number">1001</span>, <span class="string">&quot;请求参数有误!&quot;</span>),</span><br><span class="line">    UNKNOWN_ERROR(<span class="number">9999</span>, <span class="string">&quot;未知的错误!&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Integer code;</span><br><span class="line">    <span class="keyword">private</span> String message;</span><br><span class="line"></span><br><span class="line">    ResultEnum(Integer code, String message) &#123;</span><br><span class="line">        <span class="built_in">this</span>.code = code;</span><br><span class="line">        <span class="built_in">this</span>.message = message;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> Integer <span class="title function_">getCode</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> code;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">getMessage</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> message;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="4、自定义响应对象类"><a href="#4、自定义响应对象类" class="headerlink" title="4、自定义响应对象类"></a>4、自定义响应对象类</h3><p>创建用于返回调用方的响应信息的实体类。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> mydlq.club.parameter.enums.ResultEnum;</span><br><span class="line"><span class="keyword">import</span> lombok.Data;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ResponseResult</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> Integer code;</span><br><span class="line">    <span class="keyword">private</span> String msg;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">ResponseResult</span><span class="params">()</span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">ResponseResult</span><span class="params">(ResultEnum resultEnum)</span>&#123;</span><br><span class="line">        <span class="built_in">this</span>.code = resultEnum.getCode();</span><br><span class="line">        <span class="built_in">this</span>.msg = resultEnum.getMessage();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">ResponseResult</span><span class="params">(Integer code, String msg)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.code = code;</span><br><span class="line">        <span class="built_in">this</span>.msg = msg;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="5、自定义实体类中添加-Valid-相关注解"><a href="#5、自定义实体类中添加-Valid-相关注解" class="headerlink" title="5、自定义实体类中添加 @Valid 相关注解"></a>5、自定义实体类中添加 @Valid 相关注解</h3><p>下面将创建用于 POST 方法接收参数的实体对象，里面添加 @Valid 相关验证注解，并在注解中添加出错时的响应消息。</p>
+<p><strong>User</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> lombok.Data;</span><br><span class="line"><span class="keyword">import</span> javax.validation.Valid;</span><br><span class="line"><span class="keyword">import</span> javax.validation.constraints.NotBlank;</span><br><span class="line"><span class="keyword">import</span> javax.validation.constraints.NotNull;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * user实体类</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">User</span> &#123;</span><br><span class="line">    <span class="meta">@NotBlank(message = &quot;姓名不为空&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> String username;</span><br><span class="line">    <span class="meta">@NotBlank(message = &quot;密码不为空&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> String password;</span><br><span class="line">    <span class="comment">// 嵌套必须加 @Valid，否则嵌套中的验证不生效</span></span><br><span class="line">    <span class="meta">@Valid</span></span><br><span class="line">    <span class="meta">@NotNull(message = &quot;userinfo不能为空&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> UserInfo userInfo;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>UserInfo</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> lombok.Data;</span><br><span class="line"><span class="keyword">import</span> javax.validation.constraints.Max;</span><br><span class="line"><span class="keyword">import</span> javax.validation.constraints.NotBlank;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">UserInfo</span> &#123;</span><br><span class="line">    <span class="meta">@NotBlank(message = &quot;年龄不为空&quot;)</span></span><br><span class="line">    <span class="meta">@Max(value = 18, message = &quot;不能超过18岁&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> String age;</span><br><span class="line">    <span class="meta">@NotBlank(message = &quot;性别不能为空&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> String gender;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="6、Controller-中添加-Valid-注解"><a href="#6、Controller-中添加-Valid-注解" class="headerlink" title="6、Controller 中添加 @Valid 注解"></a>6、Controller 中添加 @Valid 注解</h3><p>接口类中添加 GET 和 POST 方法的两个接口用于测试，其中 POST 方法以上面创建的 Uer 实体对象接收参数，并使用 @Valid，而 GET 请求一般接收参数较少，所以使用正常判断逻辑进行参数效验。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> club.mydlq.valid.entity.ResponseResult;</span><br><span class="line"><span class="keyword">import</span> club.mydlq.valid.entity.User;</span><br><span class="line"><span class="keyword">import</span> club.mydlq.valid.enums.ResultEnum;</span><br><span class="line"><span class="keyword">import</span> club.mydlq.valid.exception.ParamaErrorException;</span><br><span class="line"><span class="keyword">import</span> org.springframework.validation.annotation.Validated;</span><br><span class="line"><span class="keyword">import</span> org.springframework.web.bind.annotation.*;</span><br><span class="line"><span class="keyword">import</span> javax.validation.Valid;</span><br><span class="line"></span><br><span class="line"><span class="meta">@RestController</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TestController</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 获取用户信息</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> username 姓名</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> ResponseResult</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@Validated</span></span><br><span class="line">    <span class="meta">@GetMapping(&quot;/user/&#123;username&#125;&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> ResponseResult <span class="title function_">findUserInfo</span><span class="params">(<span class="meta">@PathVariable</span> String username)</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (username == <span class="literal">null</span> || <span class="string">&quot;&quot;</span>.equals(username)) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">ParamaErrorException</span>(<span class="string">&quot;username 不能为空&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">ResponseResult</span>(ResultEnum.SUCCESS);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 新增用户</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> user 用户信息</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> ResponseResult</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@PostMapping(&quot;/user&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> ResponseResult <span class="title function_">addUserInfo</span><span class="params">(<span class="meta">@Valid</span> <span class="meta">@RequestBody</span> User user)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">ResponseResult</span>(ResultEnum.SUCCESS);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="7、全局异常处理"><a href="#7、全局异常处理" class="headerlink" title="7、全局异常处理"></a>7、全局异常处理</h3><p>这里创建一个全局异常处理类，方便统一处理异常错误信息。里面添加了不同异常处理的方法，专门用于处理接口中抛出的异常信。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> club.mydlq.valid.entity.ResponseResult;</span><br><span class="line"><span class="keyword">import</span> club.mydlq.valid.enums.ResultEnum;</span><br><span class="line"><span class="keyword">import</span> club.mydlq.valid.exception.ParamaErrorException;</span><br><span class="line"><span class="keyword">import</span> lombok.extern.slf4j.Slf4j;</span><br><span class="line"><span class="keyword">import</span> org.springframework.http.HttpStatus;</span><br><span class="line"><span class="keyword">import</span> org.springframework.http.converter.HttpMessageNotReadableException;</span><br><span class="line"><span class="keyword">import</span> org.springframework.util.StringUtils;</span><br><span class="line"><span class="keyword">import</span> org.springframework.validation.BindingResult;</span><br><span class="line"><span class="keyword">import</span> org.springframework.validation.FieldError;</span><br><span class="line"><span class="keyword">import</span> org.springframework.validation.ObjectError;</span><br><span class="line"><span class="keyword">import</span> org.springframework.web.bind.MethodArgumentNotValidException;</span><br><span class="line"><span class="keyword">import</span> org.springframework.web.bind.MissingServletRequestParameterException;</span><br><span class="line"><span class="keyword">import</span> org.springframework.web.bind.annotation.ExceptionHandler;</span><br><span class="line"><span class="keyword">import</span> org.springframework.web.bind.annotation.ResponseStatus;</span><br><span class="line"><span class="keyword">import</span> org.springframework.web.bind.annotation.RestControllerAdvice;</span><br><span class="line"><span class="keyword">import</span> java.util.List;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Slf4j</span></span><br><span class="line"><span class="meta">@RestControllerAdvice(&quot;club.mydlq.valid&quot;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">GlobalExceptionHandler</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 忽略参数异常处理器</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> e 忽略参数异常</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> ResponseResult</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@ResponseStatus(HttpStatus.BAD_REQUEST)</span></span><br><span class="line">    <span class="meta">@ExceptionHandler(MissingServletRequestParameterException.class)</span></span><br><span class="line">    <span class="keyword">public</span> ResponseResult <span class="title function_">parameterMissingExceptionHandler</span><span class="params">(MissingServletRequestParameterException e)</span> &#123;</span><br><span class="line">        log.error(<span class="string">&quot;&quot;</span>, e);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">ResponseResult</span>(ResultEnum.PARAMETER_ERROR.getCode(), <span class="string">&quot;请求参数 &quot;</span> + e.getParameterName() + <span class="string">&quot; 不能为空&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 缺少请求体异常处理器</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> e 缺少请求体异常</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> ResponseResult</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@ResponseStatus(HttpStatus.BAD_REQUEST)</span></span><br><span class="line">    <span class="meta">@ExceptionHandler(HttpMessageNotReadableException.class)</span></span><br><span class="line">    <span class="keyword">public</span> ResponseResult <span class="title function_">parameterBodyMissingExceptionHandler</span><span class="params">(HttpMessageNotReadableException e)</span> &#123;</span><br><span class="line">        log.error(<span class="string">&quot;&quot;</span>, e);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">ResponseResult</span>(ResultEnum.PARAMETER_ERROR.getCode(), <span class="string">&quot;参数体不能为空&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 参数效验异常处理器</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> e 参数验证异常</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> ResponseInfo</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@ResponseStatus(HttpStatus.BAD_REQUEST)</span></span><br><span class="line">    <span class="meta">@ExceptionHandler(MethodArgumentNotValidException.class)</span></span><br><span class="line">    <span class="keyword">public</span> ResponseResult <span class="title function_">parameterExceptionHandler</span><span class="params">(MethodArgumentNotValidException e)</span> &#123;</span><br><span class="line">        log.error(<span class="string">&quot;&quot;</span>, e);</span><br><span class="line">        <span class="comment">// 获取异常信息</span></span><br><span class="line">        <span class="type">BindingResult</span> <span class="variable">exceptions</span> <span class="operator">=</span> e.getBindingResult();</span><br><span class="line">        <span class="comment">// 判断异常中是否有错误信息，如果存在就使用异常中的消息，否则使用默认消息</span></span><br><span class="line">        <span class="keyword">if</span> (exceptions.hasErrors()) &#123;</span><br><span class="line">            List&lt;ObjectError&gt; errors = exceptions.getAllErrors();</span><br><span class="line">            <span class="keyword">if</span> (!errors.isEmpty()) &#123;</span><br><span class="line">                <span class="comment">// 这里列出了全部错误参数，按正常逻辑，只需要第一条错误即可</span></span><br><span class="line">                <span class="type">FieldError</span> <span class="variable">fieldError</span> <span class="operator">=</span> (FieldError) errors.get(<span class="number">0</span>);</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">ResponseResult</span>(ResultEnum.PARAMETER_ERROR.getCode(), fieldError.getDefaultMessage());</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">ResponseResult</span>(ResultEnum.PARAMETER_ERROR);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 自定义参数错误异常处理器</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> e 自定义参数</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> ResponseInfo</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@ResponseStatus(HttpStatus.BAD_REQUEST)</span></span><br><span class="line">    <span class="meta">@ExceptionHandler(&#123;ParamaErrorException.class&#125;)</span></span><br><span class="line">    <span class="keyword">public</span> ResponseResult <span class="title function_">paramExceptionHandler</span><span class="params">(ParamaErrorException e)</span> &#123;</span><br><span class="line">        log.error(<span class="string">&quot;&quot;</span>, e);</span><br><span class="line">        <span class="comment">// 判断异常中是否有错误信息，如果存在就使用异常中的消息，否则使用默认消息</span></span><br><span class="line">        <span class="keyword">if</span> (!StringUtils.isEmpty(e.getMessage())) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">ResponseResult</span>(ResultEnum.PARAMETER_ERROR.getCode(), e.getMessage());</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">ResponseResult</span>(ResultEnum.PARAMETER_ERROR);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="8、启动类"><a href="#8、启动类" class="headerlink" title="8、启动类"></a>8、启动类</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> org.springframework.boot.SpringApplication;</span><br><span class="line"><span class="keyword">import</span> org.springframework.boot.autoconfigure.SpringBootApplication;</span><br><span class="line"></span><br><span class="line"><span class="meta">@SpringBootApplication</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Application</span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">		SpringApplication.run(Application.class, args);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="9、示例测试"><a href="#9、示例测试" class="headerlink" title="9、示例测试"></a>9、示例测试</h3><p>下面将针对上面示例中设置的两种接口进行测试，分别来验证参数效验功能。</p>
+<p><strong>测试接口 /user/{username}</strong></p>
+<p>使用 GET 方法请求地址 <a target="_blank" rel="noopener" href="http://localhost:8080/user?username=test">http://localhost:8080/user?username=test</a> 时，返回信息：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;code&quot;</span><span class="punctuation">:</span> <span class="number">1000</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;msg&quot;</span><span class="punctuation">:</span> <span class="string">&quot;请求成功&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>当不输入参数，输入地址 <a target="_blank" rel="noopener" href="http://localhost:8080/user">http://localhost:8080/user</a> 时，返回信息：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;code&quot;</span><span class="punctuation">:</span> <span class="number">1001</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;msg&quot;</span><span class="punctuation">:</span> <span class="string">&quot;请求参数 username 不能为空&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>可以看到在执行 GET 请求，能够正常按我们全局异常处理器中的设置处理异常信息。</p>
+<p><strong>测试接口 /user</strong></p>
+<p>(1)、使用 POST 方法发起请求，首先进行不加 JSON 请求体来对 <a target="_blank" rel="noopener" href="http://localhost:8080/user">http://localhost:8080/user</a> 地址进行请求，返回信息：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;code&quot;</span><span class="punctuation">:</span> <span class="number">1001</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;msg&quot;</span><span class="punctuation">:</span> <span class="string">&quot;参数体不能为空&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>(2)、输入部分参数进行测试。</p>
+<ul>
+<li>  请求内容：</li>
+</ul>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line"> <span class="attr">&quot;username&quot;</span><span class="punctuation">:</span><span class="string">&quot;test&quot;</span><span class="punctuation">,</span></span><br><span class="line"> <span class="attr">&quot;password&quot;</span><span class="punctuation">:</span><span class="string">&quot;123&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>  返回信息：</li>
+</ul>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;code&quot;</span><span class="punctuation">:</span> <span class="number">1001</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;msg&quot;</span><span class="punctuation">:</span> <span class="string">&quot;userinfo不能为空&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>(3)、输入完整参数，且设置 age &gt; 18 时，进行测试。</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line"> <span class="attr">&quot;username&quot;</span><span class="punctuation">:</span><span class="string">&quot;111&quot;</span><span class="punctuation">,</span></span><br><span class="line"> <span class="attr">&quot;password&quot;</span><span class="punctuation">:</span><span class="string">&quot;sa&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;userInfo&quot;</span><span class="punctuation">:</span><span class="punctuation">&#123;</span></span><br><span class="line">  	<span class="attr">&quot;age&quot;</span><span class="punctuation">:</span><span class="number">19</span><span class="punctuation">,</span></span><br><span class="line">  	<span class="attr">&quot;gender&quot;</span><span class="punctuation">:</span><span class="string">&quot;男&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>  返回信息：</li>
+</ul>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;code&quot;</span><span class="punctuation">:</span> <span class="number">1001</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;msg&quot;</span><span class="punctuation">:</span> <span class="string">&quot;不能超过18岁&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>可以看到在执行 POST 请求，也能正常按我们全局异常处理器中的设置处理异常信息，且提示信息为我们设置在实体类中的 Message。</p>
+<p><strong>示例项目 Github：</strong> <a target="_blank" rel="noopener" href="https://github.com/my-dlq/blog-example/tree/master/springboot/springboot-filter-example">https://github.com/my-dlq/blog-example/tree/master/springboot/springboot-filter-example</a></p>
+<blockquote>
+<p>转自：<a target="_blank" rel="noopener" href="http://www.mydlq.club/article/49">http://www.mydlq.club/article/49</a></p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2022/11/02/SpringBoot-%E4%B8%AD%E4%BD%BF%E7%94%A8-Valid-%E6%B3%A8%E8%A7%A3-Exception-%E5%85%A8%E5%B1%80%E5%A4%84%E7%90%86%E5%99%A8%E4%BC%98%E9%9B%85%E5%A4%84%E7%90%86%E5%8F%82%E6%95%B0%E9%AA%8C%E8%AF%81/" data-id="cla0v660f0106g0v1eajx3ha9" data-title="SpringBoot 中使用 @Valid 注解 + Exception 全局处理器优雅处理参数验证(小豆丁技术栈)" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/SpringBoot/" rel="tag">SpringBoot</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2022/11/02/SpringBoot-%E7%BB%93%E5%90%88-Spring-Cache-%E6%93%8D%E4%BD%9C-Redis-%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E7%BC%93%E5%AD%98/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          SpringBoot 结合 Spring Cache 操作 Redis 实现数据缓存(小豆丁技术栈)
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2022/11/02/SpringBoot-%E5%85%A8%E5%B1%80%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E8%AF%A6%E8%A7%A3/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">SpringBoot 全局异常处理详解(小豆丁技术栈)</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">55</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">50</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.13px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 19.38px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 14.38px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/JavaSE/" style="font-size: 17.5px;">JavaSE</a> <a href="/tags/Laravel/" style="font-size: 18.13px;">Laravel</a> <a href="/tags/Maven/" style="font-size: 10.63px;">Maven</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 18.75px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.13px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 16.88px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 17.5px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/11/03/Ubuntu%E5%AE%89%E8%A3%85Docker/">Ubuntu安装Docker</a>
+          </li>
+        
+          <li>
+            <a href="/2022/11/02/Dockerfile-%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5/">Dockerfile 最佳实践</a>
+          </li>
+        
+          <li>
+            <a href="/2022/11/02/Docker-%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8/">Docker 快速入门</a>
+          </li>
+        
+          <li>
+            <a href="/2022/11/02/SpringBoot-%E5%AE%9E%E7%8E%B0-Websocket-%E9%80%9A%E4%BF%A1%E8%AF%A6%E8%A7%A3/">SpringBoot 实现 Websocket 通信详解(小豆丁技术栈)</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>
