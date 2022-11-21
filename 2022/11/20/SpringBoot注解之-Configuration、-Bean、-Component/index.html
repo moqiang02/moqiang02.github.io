@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>SpringBoot注解之@Configuration、@Bean、@Component | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="首先：我们先简单描述一下这三个的作用:  @Component注解表明一个类会作为组件类，并告知Spring要为这个类创建bean。 @Bean注解告诉Spring这个方法将会返回一个对象，这个对象要注册为Spring应用上下文中的bean。通常方法体中包含了最终产生bean实例的逻辑。用于显式声明单个bean，而不是让Spring像上面那样自动执行它。它将bean的声明与类定义分离，并允许您精确">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SpringBoot注解之@Configuration、@Bean、@Component">
+<meta property="og:url" content="http://moqiang02.github.io/2022/11/20/SpringBoot%E6%B3%A8%E8%A7%A3%E4%B9%8B-Configuration%E3%80%81-Bean%E3%80%81-Component/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="首先：我们先简单描述一下这三个的作用:  @Component注解表明一个类会作为组件类，并告知Spring要为这个类创建bean。 @Bean注解告诉Spring这个方法将会返回一个对象，这个对象要注册为Spring应用上下文中的bean。通常方法体中包含了最终产生bean实例的逻辑。用于显式声明单个bean，而不是让Spring像上面那样自动执行它。它将bean的声明与类定义分离，并允许您精确">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-11-20T14:00:01.000Z">
+<meta property="article:modified_time" content="2022-11-21T01:41:36.341Z">
+<meta property="article:author" content="moqiang">
+<meta property="article:tag" content="SpringBoot">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-SpringBoot注解之-Configuration、-Bean、-Component" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2022/11/20/SpringBoot%E6%B3%A8%E8%A7%A3%E4%B9%8B-Configuration%E3%80%81-Bean%E3%80%81-Component/" class="article-date">
+  <time class="dt-published" datetime="2022-11-20T14:00:01.000Z" itemprop="datePublished">2022-11-20</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/java/">java</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      SpringBoot注解之@Configuration、@Bean、@Component
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">目录</strong>
+              <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Component%EF%BC%9A%E9%80%9A%E7%94%A8%E7%9A%84%E6%B3%A8%E8%A7%A3%EF%BC%81"><span class="toc-number">1.</span> <span class="toc-text">@Component：通用的注解！</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Bean"><span class="toc-number">2.</span> <span class="toc-text">@Bean</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%95%E5%85%A5%E7%AC%AC%E4%B8%89%E6%96%B9%E7%9A%84%E7%B1%BB"><span class="toc-number">2.1.</span> <span class="toc-text">引入第三方的类</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Bean%E7%B2%BE%E5%87%86%E5%88%9B%E5%BB%BA"><span class="toc-number">2.2.</span> <span class="toc-text">@Bean精准创建</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Configuration"><span class="toc-number">3.</span> <span class="toc-text">@Configuration</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <p>首先：我们先简单描述一下这三个的作用:</p>
+<ul>
+<li>@Component注解表明一个类会作为组件类，并告知Spring要为这个类创建bean。</li>
+<li>@Bean注解告诉Spring这个方法将会返回一个对象，这个对象要注册为Spring应用上下文中的bean。通常方法体中包含了最终产生bean实例的逻辑。用于显式声明单个bean，而不是让Spring像上面那样自动执行它。它将bean的声明与类定义分离，并允许您精确地创建和配置bean。另外@Bean注解的方法返回值是对象，可以在方法中为对象设置属性。</li>
+<li>@Configuration即用来代替Spring配置文件的，它就是一个@Component组件，接收一个value值也就是bean的名字，value可以不填。</li>
+</ul>
+<p>但是上面的讲解都只是冰冷的概念，决定重新捡起来，好好研究这些配置，因为虽说平时自己写的时候都是机械性的，甚至是试探性的，但是还是要更深入一点。</p>
+<span id="more"></span>
+<p>为什么要先讲这三个概念，是因为他们之间的关系，有些你中有我我中有你，最好先有一个大概的了解。</p>
+<h2 id="Component：通用的注解！"><a href="#Component：通用的注解！" class="headerlink" title="@Component：通用的注解！"></a>@Component：通用的注解！</h2><p>通俗的讲：@Compent就是说，只要你想将你写的类交给Spring容器来管理，那就可以用它！</p>
+<p>1、@controller：controller控制器层（注入服务）</p>
+<p>2、@service：service服务层（注入dao）</p>
+<p>3、@repository：dao持久层（实现dao访问）</p>
+<p>为什么摆出上面这三个，因为他们其实就是@Compent，例如我们进入到@Controller里看一下,发现在Controller上就有一个@Component，剩下的两个同理</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> org.springframework.stereotype;</span><br><span class="line">​</span><br><span class="line"><span class="keyword">import</span> java.lang.annotation.Documented;</span><br><span class="line"><span class="keyword">import</span> java.lang.annotation.ElementType;</span><br><span class="line"><span class="keyword">import</span> java.lang.annotation.Retention;</span><br><span class="line"><span class="keyword">import</span> java.lang.annotation.RetentionPolicy;</span><br><span class="line"><span class="keyword">import</span> java.lang.annotation.Target;</span><br><span class="line"><span class="keyword">import</span> org.springframework.core.annotation.AliasFor;</span><br><span class="line">​</span><br><span class="line"><span class="meta">@Target(&#123;ElementType.TYPE&#125;)</span></span><br><span class="line"><span class="meta">@Retention(RetentionPolicy.RUNTIME)</span></span><br><span class="line"><span class="meta">@Documented</span></span><br><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="meta">@interface</span> Controller &#123;</span><br><span class="line">    <span class="meta">@AliasFor(</span></span><br><span class="line"><span class="meta">        annotation = Component.class</span></span><br><span class="line"><span class="meta">    )</span></span><br><span class="line">    String <span class="title function_">value</span><span class="params">()</span> <span class="keyword">default</span> <span class="string">&quot;&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>一步一步来，先看最简单的功能</p>
+<p>先写一个类，用@Compent注解上</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">package com.<span class="property">newcrud</span>.<span class="property">learn</span>;</span><br><span class="line">​</span><br><span class="line"><span class="keyword">import</span> lombok.<span class="property">Data</span>;</span><br><span class="line"><span class="keyword">import</span> org.<span class="property">springframework</span>.<span class="property">stereotype</span>.<span class="property">Component</span>;</span><br><span class="line">​</span><br><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">KangShiFuTwo</span> &#123;</span><br><span class="line">    <span class="title class_">String</span> name;</span><br><span class="line">    <span class="title class_">Integer</span> age;</span><br><span class="line">    <span class="keyword">public</span> <span class="built_in">void</span> <span class="title function_">getKangShiFuTwo</span>(<span class="params"></span>)&#123;</span><br><span class="line">        <span class="title class_">System</span>.<span class="property">out</span>.<span class="title function_">println</span>(<span class="string">&quot;getKangShiFuTwo&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">​</span><br></pre></td></tr></table></figure>
+
+<p>再写一个测试类</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.newcrud.learn;</span><br><span class="line">​</span><br><span class="line"><span class="keyword">import</span> org.springframework.beans.factory.annotation.Autowired;</span><br><span class="line"><span class="keyword">import</span> org.springframework.boot.test.context.SpringBootTest;</span><br><span class="line"><span class="keyword">import</span> org.springframework.test.context.testng.AbstractTestNGSpringContextTests;</span><br><span class="line"><span class="keyword">import</span> org.testng.annotations.Test;</span><br><span class="line">​</span><br><span class="line"><span class="meta">@SpringBootTest</span></span><br><span class="line">​</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">KangShiFuTwoTest</span> <span class="keyword">extends</span> <span class="title class_">AbstractTestNGSpringContextTests</span> &#123;</span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    KangShiFuTwo kangShiFuTwo;</span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">testGetKangShiFuTwo</span><span class="params">()</span> &#123;</span><br><span class="line">        kangShiFuTwo.getKangShiFuTwo();</span><br><span class="line">    &#125;</span><br><span class="line">​</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>执行结果</p>
+<figure class="highlight ebnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">getKangShiFuTwo</span></span><br></pre></td></tr></table></figure>
+
+<p>可以用@Autowired获取到说明已经在Spring容器里了</p>
+<h2 id="Bean"><a href="#Bean" class="headerlink" title="@Bean"></a>@Bean</h2><p>我们先看一下@Bean的源码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> org.springframework.context.annotation;</span><br><span class="line">​</span><br><span class="line"><span class="keyword">import</span> java.lang.annotation.Documented;</span><br><span class="line"><span class="keyword">import</span> java.lang.annotation.ElementType;</span><br><span class="line"><span class="keyword">import</span> java.lang.annotation.Retention;</span><br><span class="line"><span class="keyword">import</span> java.lang.annotation.RetentionPolicy;</span><br><span class="line"><span class="keyword">import</span> java.lang.annotation.Target;</span><br><span class="line"><span class="keyword">import</span> org.springframework.beans.factory.annotation.Autowire;</span><br><span class="line"><span class="keyword">import</span> org.springframework.core.annotation.AliasFor;</span><br><span class="line">​</span><br><span class="line"><span class="meta">@Target(&#123;ElementType.METHOD, ElementType.ANNOTATION_TYPE&#125;)</span></span><br><span class="line"><span class="meta">@Retention(RetentionPolicy.RUNTIME)</span></span><br><span class="line"><span class="meta">@Documented</span></span><br><span class="line"><span class="keyword">public</span> <span class="meta">@interface</span> Bean &#123;</span><br><span class="line">    <span class="meta">@AliasFor(&quot;name&quot;)</span></span><br><span class="line">    String[] value() <span class="keyword">default</span> &#123;&#125;;</span><br><span class="line">​</span><br><span class="line">    <span class="meta">@AliasFor(&quot;value&quot;)</span></span><br><span class="line">    String[] name() <span class="keyword">default</span> &#123;&#125;;</span><br><span class="line">​</span><br><span class="line">    <span class="comment">/** <span class="doctag">@deprecated</span> */</span></span><br><span class="line">    <span class="meta">@Deprecated</span></span><br><span class="line">    Autowire <span class="title function_">autowire</span><span class="params">()</span> <span class="keyword">default</span> Autowire.NO;</span><br><span class="line">​</span><br><span class="line">    <span class="type">boolean</span> <span class="title function_">autowireCandidate</span><span class="params">()</span> <span class="keyword">default</span> <span class="literal">true</span>;</span><br><span class="line">​</span><br><span class="line">    String <span class="title function_">initMethod</span><span class="params">()</span> <span class="keyword">default</span> <span class="string">&quot;&quot;</span>;</span><br><span class="line">​</span><br><span class="line">    String <span class="title function_">destroyMethod</span><span class="params">()</span> <span class="keyword">default</span> <span class="string">&quot;(inferred)&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>emmm,他没有@Compent</p>
+<h3 id="引入第三方的类"><a href="#引入第三方的类" class="headerlink" title="引入第三方的类"></a>引入第三方的类</h3><p>那，我们首先创建一个没有@Compent的类</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">package com.<span class="property">newcrud</span>.<span class="property">learn</span>;</span><br><span class="line">​</span><br><span class="line"><span class="keyword">import</span> lombok.<span class="property">Data</span>;</span><br><span class="line">​</span><br><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">KangShiFuOne</span> &#123;</span><br><span class="line">    <span class="title class_">String</span> name;</span><br><span class="line">    <span class="title class_">Integer</span> age;</span><br><span class="line">    <span class="keyword">public</span> <span class="built_in">void</span> <span class="title function_">getKangShiFuOne</span>(<span class="params"></span>)&#123;</span><br><span class="line">        <span class="title class_">System</span>.<span class="property">out</span>.<span class="title function_">println</span>(<span class="string">&quot;getKangShiFuOne&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>再来写一个配置类</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.newcrud.learn;</span><br><span class="line">​</span><br><span class="line"><span class="keyword">import</span> org.springframework.context.annotation.Bean;</span><br><span class="line"><span class="keyword">import</span> org.springframework.context.annotation.Configuration;</span><br><span class="line">​</span><br><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MyConfiguration</span> &#123;</span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> KangShiFuOne <span class="title function_">getKangShiFuOneConfig</span><span class="params">()</span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">KangShiFuOne</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>再来写一个测试类</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.newcrud.learn;</span><br><span class="line">​</span><br><span class="line"><span class="keyword">import</span> org.springframework.beans.factory.annotation.Autowired;</span><br><span class="line"><span class="keyword">import</span> org.springframework.boot.test.context.SpringBootTest;</span><br><span class="line"><span class="keyword">import</span> org.springframework.test.context.testng.AbstractTestNGSpringContextTests;</span><br><span class="line"><span class="keyword">import</span> org.testng.annotations.Test;</span><br><span class="line"><span class="meta">@SpringBootTest</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MyConfigurationTest</span> <span class="keyword">extends</span> <span class="title class_">AbstractTestNGSpringContextTests</span> &#123;</span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    KangShiFuOne kangShiFuOne;</span><br><span class="line">​</span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">testGetKangShiFuTwoConfig</span><span class="params">()</span> &#123;</span><br><span class="line">        kangShiFuOne.getKangShiFuOne();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>结果如下</p>
+<figure class="highlight ebnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">getKangShiFuOne</span></span><br></pre></td></tr></table></figure>
+
+<p>能被@Autowired获取到，是因为@Configuration的作用，那@Bean的作用是什么呢，因为他有一个@Compent没有的功能，那就是他可以将第三方包里的类放到Spring容器里，比如说你在pom文件中引入的工具包，你并不能把@Compent放到工具包里面去对不对，那你就可以通过@Bean的方式来获取。</p>
+<p>这个涉及到springboot的自动装载的概念，当你的bean不在你jar包的扫描目录下时，是没法实例化的给spring管理的。</p>
+<p>好吧，上面的例子好像并不能展示出引用第三方库中的类需要装配到Spring容器时，则只能通过@Bean来实现的，也不能展示出@Bean的精准创建的功能，但是引用第三方库中的类，也实在懒得写了，我们就来再看一下精准创建的功能</p>
+<h3 id="Bean精准创建"><a href="#Bean精准创建" class="headerlink" title="@Bean精准创建"></a>@Bean精准创建</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.newcrud.learn;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.springframework.context.annotation.Bean;</span><br><span class="line"><span class="keyword">import</span> org.springframework.context.annotation.Configuration;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MyBean</span> &#123;</span><br><span class="line">    <span class="meta">@Bean(&quot;getKangShiFuOneHello&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> KangShiFuOne <span class="title function_">getKangShiFuOne</span><span class="params">()</span>&#123;</span><br><span class="line">        KangShiFuOne kangShiFuOne=<span class="keyword">new</span> <span class="title class_">KangShiFuOne</span>();</span><br><span class="line">        kangShiFuOne.setAge(<span class="number">19</span>);</span><br><span class="line">        kangShiFuOne.setName(<span class="string">&quot;zhangsan&quot;</span>);</span><br><span class="line">        kangShiFuOne.getKangShiFuOne();</span><br><span class="line">        <span class="keyword">return</span> kangShiFuOne;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>再写一个测试类</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.newcrud.learn;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.springframework.beans.factory.annotation.Autowired;</span><br><span class="line"><span class="keyword">import</span> org.springframework.boot.test.context.SpringBootTest;</span><br><span class="line"><span class="keyword">import</span> org.springframework.context.ApplicationContext;</span><br><span class="line"><span class="keyword">import</span> org.springframework.test.context.testng.AbstractTestNGSpringContextTests;</span><br><span class="line"><span class="keyword">import</span> org.testng.annotations.Test;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> <span class="keyword">static</span> org.testng.Assert.*;</span><br><span class="line"><span class="meta">@SpringBootTest</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MyBeanTest</span> <span class="keyword">extends</span> <span class="title class_">AbstractTestNGSpringContextTests</span> &#123;</span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    ApplicationContext applicationContext;</span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">testGetKangShiFuOne</span><span class="params">()</span> &#123;</span><br><span class="line">        KangShiFuOne kangShiFuOne=(KangShiFuOne) applicationContext.getBean(<span class="string">&quot;getKangShiFuOneHello&quot;</span>);</span><br><span class="line">        System.out.println(kangShiFuOne);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>结果</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">KangShiFuOne(<span class="attr">name</span>=zhangsan, age=<span class="number">19</span>)</span><br></pre></td></tr></table></figure>
+
+<p>发现已经从上下文中获取到了我们精准定制化的getKangShiFuOneHello。</p>
+<h2 id="Configuration"><a href="#Configuration" class="headerlink" title="@Configuration"></a>@Configuration</h2><p>官方文档描述：用@Conﬁguration注释类表明其主要目的是作为bean定义的源</p>
+<p>我们再来看一下@Configuration的源代码，发现在上面也有一个@Compent，那就说明，它也有@Compent的功能</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> org.springframework.context.annotation;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.lang.annotation.Documented;</span><br><span class="line"><span class="keyword">import</span> java.lang.annotation.ElementType;</span><br><span class="line"><span class="keyword">import</span> java.lang.annotation.Retention;</span><br><span class="line"><span class="keyword">import</span> java.lang.annotation.RetentionPolicy;</span><br><span class="line"><span class="keyword">import</span> java.lang.annotation.Target;</span><br><span class="line"><span class="keyword">import</span> org.springframework.core.annotation.AliasFor;</span><br><span class="line"><span class="keyword">import</span> org.springframework.stereotype.Component;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Target(&#123;ElementType.TYPE&#125;)</span></span><br><span class="line"><span class="meta">@Retention(RetentionPolicy.RUNTIME)</span></span><br><span class="line"><span class="meta">@Documented</span></span><br><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="meta">@interface</span> Configuration &#123;</span><br><span class="line">    <span class="meta">@AliasFor(</span></span><br><span class="line"><span class="meta">        annotation = Component.class</span></span><br><span class="line"><span class="meta">    )</span></span><br><span class="line">    String <span class="title function_">value</span><span class="params">()</span> <span class="keyword">default</span> <span class="string">&quot;&quot;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="type">boolean</span> <span class="title function_">proxyBeanMethods</span><span class="params">()</span> <span class="keyword">default</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>通俗的来讲，这个就是代表它所注释的类是一个配置类，但什么才是配置类呢，上面我们也看到了@Configuration好像也就是个@Compent啊，没啥大用</p>
+<p>那我们先来编写两个类</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.newcrud.learn;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> lombok.Data;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">KangShiFuFour</span> &#123;</span><br><span class="line">    <span class="keyword">public</span>  <span class="title function_">KangShiFuFour</span><span class="params">()</span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;getKangShiFuFour&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    String name;</span><br><span class="line">    Integer age;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.newcrud.learn;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> lombok.Data;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">KangShiFuThree</span> &#123;</span><br><span class="line">    <span class="keyword">public</span>  <span class="title function_">KangShiFuThree</span><span class="params">()</span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;getKangShiFuThree&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    String name;</span><br><span class="line">    Integer age;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>再来写我们的@Configuration</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">package com.<span class="property">newcrud</span>.<span class="property">learn</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.<span class="property">springframework</span>.<span class="property">context</span>.<span class="property">annotation</span>.<span class="property">Bean</span>;</span><br><span class="line"><span class="keyword">import</span> org.<span class="property">springframework</span>.<span class="property">context</span>.<span class="property">annotation</span>.<span class="property">Configuration</span>;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MyConfigurationTwo</span> &#123;</span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> <span class="title class_">KangShiFuThree</span> <span class="title function_">getKangShiFuThree</span>(<span class="params"></span>)&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">KangShiFuThree</span>();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> <span class="title class_">KangShiFuFour</span> <span class="title function_">getKangShiFuFour</span>(<span class="params"></span>)&#123;</span><br><span class="line">        <span class="title function_">getKangShiFuThree</span>();</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">KangShiFuFour</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>再写我们的测试类</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.newcrud.learn;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.springframework.boot.test.context.SpringBootTest;</span><br><span class="line"><span class="keyword">import</span> org.springframework.test.context.testng.AbstractTestNGSpringContextTests;</span><br><span class="line"><span class="keyword">import</span> org.testng.annotations.Test;</span><br><span class="line"></span><br><span class="line"><span class="meta">@SpringBootTest</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MyConfigurationTwoTest</span> <span class="keyword">extends</span> <span class="title class_">AbstractTestNGSpringContextTests</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">testGetKangShiFuThree</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">//这个只是保留一个执行的入口，没有实际意义，我们要看的是启动信息</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在启动后会打印两个类的初始化函数输出</p>
+<figure class="highlight ebnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">getKangShiFuThree</span></span><br><span class="line"><span class="attribute">getKangShiFuFour</span></span><br></pre></td></tr></table></figure>
+
+<p>但是我们仔细想一下，我们是调用了两次getKangShiFuThree的构造函数的，但是只打印了一次，这也是他的一个功能：保持单例模式！</p>
+<p>我们再来看一下他的另一个功能</p>
+<p>@Conﬁguration类允许通过调用同一类中的其他@Bean方法来定义bean之间的依赖关系</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">package com.<span class="property">newcrud</span>.<span class="property">learn</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.<span class="property">springframework</span>.<span class="property">context</span>.<span class="property">annotation</span>.<span class="property">Bean</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MyConfigurationTwo</span> &#123;</span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> <span class="title class_">KangShiFuThree</span> <span class="title function_">getKangShiFuThree</span>(<span class="params"></span>)&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">KangShiFuThree</span>();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> <span class="title class_">KangShiFuFour</span> <span class="title function_">getKangShiFuFour</span>(<span class="params"></span>)&#123;</span><br><span class="line">        <span class="title function_">getKangShiFuThree</span>();<span class="comment">//去掉@Conﬁguration，这里就会报错：Method annotated with @Bean is called directly. Use dependency injection instead.，因为未添加@Configuration注解，导致@Bean之间相互调用出错</span></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">KangShiFuFour</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2022/11/20/SpringBoot%E6%B3%A8%E8%A7%A3%E4%B9%8B-Configuration%E3%80%81-Bean%E3%80%81-Component/" data-id="claq4ijfy0003i8v148kteo1c" data-title="SpringBoot注解之@Configuration、@Bean、@Component" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/SpringBoot/" rel="tag">SpringBoot</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          Java教程索引
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2022/11/15/SpringBoot%E6%8E%A5%E6%94%B6%E8%AF%B7%E6%B1%82%E7%9A%84N%E7%A7%8D%E5%A7%BF%E5%8A%BF/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">SpringBoot接收请求的N种姿势</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">62</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">114</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">51</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.75px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.25px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 18.13px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.63px;">CI</a> <a href="/tags/CURL/" style="font-size: 13.13px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 18.75px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 15px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.63px;">Flask</a> <a href="/tags/JavaSE/" style="font-size: 18.13px;">JavaSE</a> <a href="/tags/Laravel/" style="font-size: 18.13px;">Laravel</a> <a href="/tags/Maven/" style="font-size: 10.63px;">Maven</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/SpringBoot/" style="font-size: 19.38px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.88px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.5px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.13px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 13.13px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 15px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 14.38px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.5px;">smarty</a> <a href="/tags/socket/" style="font-size: 15px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.88px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.5px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.25px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.63px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.88px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 16.25px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 16.88px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 17.5px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/11/27/Java%E6%95%99%E7%A8%8B%E7%B4%A2%E5%BC%95/">Java教程索引</a>
+          </li>
+        
+          <li>
+            <a href="/2022/11/20/SpringBoot%E6%B3%A8%E8%A7%A3%E4%B9%8B-Configuration%E3%80%81-Bean%E3%80%81-Component/">SpringBoot注解之@Configuration、@Bean、@Component</a>
+          </li>
+        
+          <li>
+            <a href="/2022/11/15/SpringBoot%E6%8E%A5%E6%94%B6%E8%AF%B7%E6%B1%82%E7%9A%84N%E7%A7%8D%E5%A7%BF%E5%8A%BF/">SpringBoot接收请求的N种姿势</a>
+          </li>
+        
+          <li>
+            <a href="/2022/11/15/%E4%BD%BF%E7%94%A8Springboot%E8%87%AA%E5%AE%9A%E4%B9%89%E8%BD%AC%E6%8D%A2%E5%99%A8%E5%AE%9E%E7%8E%B0%E5%8F%82%E6%95%B0%E5%8E%BB%E7%A9%BA%E6%A0%BC%E5%8A%9F%E8%83%BD/">使用Springboot自定义转换器实现参数去空格功能</a>
+          </li>
+        
+          <li>
+            <a href="/2022/11/15/RESTful%E5%BC%80%E5%8F%91%E6%97%A5%E6%9C%9F%E7%B1%BB%E5%9E%8B%E5%AD%97%E6%AE%B5%E5%A6%82%E4%BD%95%E6%AD%A3%E7%A1%AE%E4%BC%A0%E9%80%92/">RESTful开发日期类型字段如何正确传递</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2022 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>
