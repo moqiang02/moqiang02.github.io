@@ -67,6 +67,213 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-CI控制器调用内部方法并载入相应模板的做法" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2014/06/11/CI%E6%8E%A7%E5%88%B6%E5%99%A8%E8%B0%83%E7%94%A8%E5%86%85%E9%83%A8%E6%96%B9%E6%B3%95%E5%B9%B6%E8%BD%BD%E5%85%A5%E7%9B%B8%E5%BA%94%E6%A8%A1%E6%9D%BF%E7%9A%84%E5%81%9A%E6%B3%95/" class="article-date">
+  <time class="dt-published" datetime="2014-06-11T14:55:59.000Z" itemprop="datePublished">2014-06-11</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/php/">php</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2014/06/11/CI%E6%8E%A7%E5%88%B6%E5%99%A8%E8%B0%83%E7%94%A8%E5%86%85%E9%83%A8%E6%96%B9%E6%B3%95%E5%B9%B6%E8%BD%BD%E5%85%A5%E7%9B%B8%E5%BA%94%E6%A8%A1%E6%9D%BF%E7%9A%84%E5%81%9A%E6%B3%95/">CI控制器调用内部方法并载入相应模板的做法</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>当我打开链接：<a target="_blank" rel="noopener" href="http://localhost/3g/index/open/a/b?from=timeline">http://localhost/3g/index/open/a/b?from=timeline</a> 后，判断链接中的from是否等于timeline，如果等于timeline，那么就调用控制器内部的timeline方法，并载入timeline.php这个模板。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Index</span> <span class="keyword">extends</span> <span class="title">CI_Controller</span> </span>&#123;  </span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"></span>) </span>&#123;  </span><br><span class="line">        <span class="built_in">parent</span>::<span class="title function_ invoke__">__construct</span>();  </span><br><span class="line">    &#125;  </span><br><span class="line">  </span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">open</span>(<span class="params"><span class="variable">$a</span>=<span class="number">0</span>,<span class="variable">$b</span>=<span class="number">0</span></span>) </span>&#123;  </span><br><span class="line">        <span class="keyword">if</span> (<span class="variable">$_GET</span>[<span class="string">&#x27;from&#x27;</span>] == <span class="string">&#x27;timeline&#x27;</span>) &#123;  </span><br><span class="line">            <span class="variable language_">$this</span> -&gt; <span class="title function_ invoke__">timeline</span>(<span class="variable">$a</span>);  </span><br><span class="line">            <span class="keyword">die</span>;  </span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;  </span><br><span class="line">            <span class="variable">$data</span>[<span class="string">&#x27;b&#x27;</span>] = <span class="variable">$b</span>;  </span><br><span class="line">            <span class="variable language_">$this</span> -&gt; load -&gt; <span class="title function_ invoke__">view</span>(<span class="string">&#x27;3g/index/open&#x27;</span>,<span class="variable">$data</span>);  </span><br><span class="line">        &#125;  </span><br><span class="line">    &#125;  </span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">timeline</span>(<span class="params"><span class="variable">$a</span>=<span class="number">0</span></span>) </span>&#123;  </span><br><span class="line">        <span class="variable">$data</span>[<span class="string">&#x27;a&#x27;</span>] = <span class="variable">$a</span>;  </span><br><span class="line">        <span class="variable language_">$this</span> -&gt; load -&gt; <span class="title function_ invoke__">view</span>(<span class="string">&#x27;3g/index/timeline&#x27;</span>,<span class="variable">$data</span>);  </span><br><span class="line">    &#125;  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
+<p>此时输出的页面一片空白，并没有载入timeline.php这个模板，这是因为<code>$this -&gt; timeline($a);</code>的后面加了<code>die;</code>的缘故。<br>解决方法一：去掉<code>die;</code></p>
+        
+          <p class="article-more-link">
+            <a href="/2014/06/11/CI%E6%8E%A7%E5%88%B6%E5%99%A8%E8%B0%83%E7%94%A8%E5%86%85%E9%83%A8%E6%96%B9%E6%B3%95%E5%B9%B6%E8%BD%BD%E5%85%A5%E7%9B%B8%E5%BA%94%E6%A8%A1%E6%9D%BF%E7%9A%84%E5%81%9A%E6%B3%95/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/06/11/CI%E6%8E%A7%E5%88%B6%E5%99%A8%E8%B0%83%E7%94%A8%E5%86%85%E9%83%A8%E6%96%B9%E6%B3%95%E5%B9%B6%E8%BD%BD%E5%85%A5%E7%9B%B8%E5%BA%94%E6%A8%A1%E6%9D%BF%E7%9A%84%E5%81%9A%E6%B3%95/" data-id="cla0v65so007og0v158so3f5j" data-title="CI控制器调用内部方法并载入相应模板的做法" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/CI/" rel="tag">CI</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+    <article id="post-ecshop调用商品简单描述" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2014/06/10/ecshop%E8%B0%83%E7%94%A8%E5%95%86%E5%93%81%E7%AE%80%E5%8D%95%E6%8F%8F%E8%BF%B0/" class="article-date">
+  <time class="dt-published" datetime="2014-06-10T06:12:14.000Z" itemprop="datePublished">2014-06-10</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2014/06/10/ecshop%E8%B0%83%E7%94%A8%E5%95%86%E5%93%81%E7%AE%80%E5%8D%95%E6%8F%8F%E8%BF%B0/">ecshop调用商品简单描述</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <p>在下面文件 </p>
+<p>recommend_new.lbi </p>
+<p>recommend_best.lbi </p>
+<p>recommend_hot.lbi </p>
+<p>cat_goods.lbi </p>
+<p>里调用商品简单描述用：{$goods.brief}    </p>
+<p>good_list.lib </p>
+<p>search.dwt<br>里调用商品简单描述用：{$goods.goods_brief} </p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/06/10/ecshop%E8%B0%83%E7%94%A8%E5%95%86%E5%93%81%E7%AE%80%E5%8D%95%E6%8F%8F%E8%BF%B0/" data-id="cla0v663j019tg0v1fkzff1ik" data-title="ecshop调用商品简单描述" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ecshop/" rel="tag">ecshop</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+    <article id="post-禁用和关闭ECSHOP缓存" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2014/06/09/%E7%A6%81%E7%94%A8%E5%92%8C%E5%85%B3%E9%97%ADECSHOP%E7%BC%93%E5%AD%98/" class="article-date">
+  <time class="dt-published" datetime="2014-06-09T06:07:35.000Z" itemprop="datePublished">2014-06-09</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2014/06/09/%E7%A6%81%E7%94%A8%E5%92%8C%E5%85%B3%E9%97%ADECSHOP%E7%BC%93%E5%AD%98/">禁用和关闭ECSHOP缓存</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>ECSHOP的缓存机制从一定程度上可以减少ECSHOP反复读取数据库的几率，从而一定程度上降低服务器负担，提高访问速度。<br>但是启用缓存机制，对一些新手站长也有不利的地方。我就遇到很多新手站长经常问，我明明修改了什么什么，为什么前台就没变化呢，这就是缓存在作怪，一般到后台清除缓存就可以了。</p>
+<p>鉴于上述原因，有一些站长就在想能不能“禁用ECSHOP缓存，关闭ECSHOP缓存”呢？答案是肯定的。<br>下面就来讲一讲“如何禁用ECSHOP缓存，如何关闭ECSHOP缓存？”</p>
+<p>ECSHOP的缓存分两种，一种是SMARTY的页面缓存；另一种是SQL查询结果的缓存。<br>这两种缓存都是保存在<code>templates/caches/</code>文件夹下。<br>只要我们分别关闭这两个缓存，就可以完全禁用ECSHOP的缓存。<br>当然你也可以根据自己的需要关闭其中某一个。</p>
+        
+          <p class="article-more-link">
+            <a href="/2014/06/09/%E7%A6%81%E7%94%A8%E5%92%8C%E5%85%B3%E9%97%ADECSHOP%E7%BC%93%E5%AD%98/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/06/09/%E7%A6%81%E7%94%A8%E5%92%8C%E5%85%B3%E9%97%ADECSHOP%E7%BC%93%E5%AD%98/" data-id="cla0v66gl023zg0v17kag9hjd" data-title="禁用和关闭ECSHOP缓存" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ecshop/" rel="tag">ecshop</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+    <article id="post-ecshop的商品列表输出中多出一条空记录" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2014/06/04/ecshop%E7%9A%84%E5%95%86%E5%93%81%E5%88%97%E8%A1%A8%E8%BE%93%E5%87%BA%E4%B8%AD%E5%A4%9A%E5%87%BA%E4%B8%80%E6%9D%A1%E7%A9%BA%E8%AE%B0%E5%BD%95/" class="article-date">
+  <time class="dt-published" datetime="2014-06-04T06:10:36.000Z" itemprop="datePublished">2014-06-04</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2014/06/04/ecshop%E7%9A%84%E5%95%86%E5%93%81%E5%88%97%E8%A1%A8%E8%BE%93%E5%87%BA%E4%B8%AD%E5%A4%9A%E5%87%BA%E4%B8%80%E6%9D%A1%E7%A9%BA%E8%AE%B0%E5%BD%95/">ecshop的商品列表输出中多出一条空记录</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+
+        <p>这个是ECSHOP的一个BUG, 在模板中显示商品列表的位置,加一句<code>&#123;if $goods&#125;</code>判断商品存在才显示:</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">&#123;<span class="keyword">foreach</span> <span class="attribute">from</span>=<span class="variable">$goods_list</span> <span class="attribute">item</span>=goods&#125;</span><br><span class="line"></span><br><span class="line">    &#123;<span class="keyword">if</span> <span class="variable">$goods</span>&#125;</span><br><span class="line"></span><br><span class="line">        原来商品列表代码</span><br><span class="line"></span><br><span class="line">    &#123;/<span class="keyword">if</span>&#125;</span><br><span class="line"></span><br><span class="line">&#123;/<span class="keyword">foreach</span>&#125;</span><br></pre></td></tr></table></figure>
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2014/06/04/ecshop%E7%9A%84%E5%95%86%E5%93%81%E5%88%97%E8%A1%A8%E8%BE%93%E5%87%BA%E4%B8%AD%E5%A4%9A%E5%87%BA%E4%B8%80%E6%9D%A1%E7%A9%BA%E8%AE%B0%E5%BD%95/" data-id="cla0v663j019vg0v19prd1vx6" data-title="ecshop的商品列表输出中多出一条空记录" class="article-share-link">分享</a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ecshop/" rel="tag">ecshop</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
     <article id="post-ECSHOP商品属性调用到任意页面方法" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
     <a href="/2014/06/03/ECSHOP%E5%95%86%E5%93%81%E5%B1%9E%E6%80%A7%E8%B0%83%E7%94%A8%E5%88%B0%E4%BB%BB%E6%84%8F%E9%A1%B5%E9%9D%A2%E6%96%B9%E6%B3%95/" class="article-date">
@@ -119,201 +326,11 @@
 
 
   
-    <article id="post-在centos6-3用yum安装redis" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2014/06/01/%E5%9C%A8centos6-3%E7%94%A8yum%E5%AE%89%E8%A3%85redis/" class="article-date">
-  <time class="dt-published" datetime="2014-06-01T02:53:31.000Z" itemprop="datePublished">2014-06-01</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/redis/">redis</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2014/06/01/%E5%9C%A8centos6-3%E7%94%A8yum%E5%AE%89%E8%A3%85redis/">在centos6.3用yum安装redis</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <p>去下面的网站下载EPEL对应的版本：（epel是fedora维护的yum源，里面软件众多）<br><a target="_blank" rel="noopener" href="http://fedoraproject.org/wiki/EPEL">http://fedoraproject.org/wiki/EPEL</a></p>
-<p>我下载的是这个：<br><code>wget http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm</code><br>或者<br><a target="_blank" rel="noopener" href="http://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm">http://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm</a></p>
-<p>安装epel：<br><code>rpm -ivh epel-release-6-8.noarch.rpm</code></p>
-        
-          <p class="article-more-link">
-            <a href="/2014/06/01/%E5%9C%A8centos6-3%E7%94%A8yum%E5%AE%89%E8%A3%85redis/#more">Read More</a>
-          </p>
-        
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2014/06/01/%E5%9C%A8centos6-3%E7%94%A8yum%E5%AE%89%E8%A3%85redis/" data-id="cla0v66cx01vtg0v16p01gjl5" data-title="在centos6.3用yum安装redis" class="article-share-link">分享</a>
-      
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-MySQL优化实例" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2014/05/29/MySQL%E4%BC%98%E5%8C%96%E5%AE%9E%E4%BE%8B/" class="article-date">
-  <time class="dt-published" datetime="2014-05-29T11:23:28.000Z" itemprop="datePublished">2014-05-29</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/mysql/">mysql</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2014/05/29/MySQL%E4%BC%98%E5%8C%96%E5%AE%9E%E4%BE%8B/">MySQL优化实例</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <p>在Apache, PHP, MySQL的体系架构中，MySQL对于性能的影响最大，也是关键的核心部分。对于Discuz!论坛程序也是如此，MySQL的设置是否合理优化，直接 影响到论坛的速度和承载量！同时，MySQL也是优化难度最大的一个部分，不但需要理解一些MySQL专业知识，同时还需要长时间的观察统计并且根据经验 进行判断，然后设置合理的参数。</p>
-<p>下面我们了解一下MySQL优化的一些基础，MySQL的优化我分为两个部分，一是服务器物理硬件的优化；二是MySQL自身(my.cnf)的优化。</p>
-        
-          <p class="article-more-link">
-            <a href="/2014/05/29/MySQL%E4%BC%98%E5%8C%96%E5%AE%9E%E4%BE%8B/#more">Read More</a>
-          </p>
-        
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2014/05/29/MySQL%E4%BC%98%E5%8C%96%E5%AE%9E%E4%BE%8B/" data-id="cla0v65xd00pdg0v1hizg9ilb" data-title="MySQL优化实例" class="article-share-link">分享</a>
-      
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-Jquery多选框互相内容交换" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2014/05/23/Jquery%E5%A4%9A%E9%80%89%E6%A1%86%E4%BA%92%E7%9B%B8%E5%86%85%E5%AE%B9%E4%BA%A4%E6%8D%A2/" class="article-date">
-  <time class="dt-published" datetime="2014-05-23T06:09:01.000Z" itemprop="datePublished">2014-05-23</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/javascript/">javascript</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2014/05/23/Jquery%E5%A4%9A%E9%80%89%E6%A1%86%E4%BA%92%E7%9B%B8%E5%86%85%E5%AE%B9%E4%BA%A4%E6%8D%A2/">Jquery多选框互相内容交换</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-
-          <!-- rex -->
-          
-
-        <figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">head</span> <span class="attr">runat</span>=<span class="string">&quot;server&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">title</span>&gt;</span>无标题页<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span> <span class="attr">type</span>=<span class="string">&quot;text/javascript&quot;</span> <span class="attr">src</span>=<span class="string">&quot;js/jquery-1.4.2.min.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span> <span class="attr">type</span>=<span class="string">&quot;text/javascript&quot;</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">        $(<span class="variable language_">document</span>).<span class="title function_">ready</span>(<span class="keyword">function</span>(<span class="params"></span>)&#123;</span></span><br><span class="line"><span class="language-javascript">          </span></span><br><span class="line"><span class="language-javascript">            <span class="comment">// 把选择项追加给对方</span></span></span><br><span class="line"><span class="language-javascript">            $(<span class="string">&#x27;#add&#x27;</span>).<span class="title function_">click</span>(<span class="keyword">function</span>(<span class="params"></span>)&#123;</span></span><br><span class="line"><span class="language-javascript">            <span class="keyword">var</span> options=$(<span class="string">&#x27;#select1 option:selected&#x27;</span>);</span></span><br><span class="line"><span class="language-javascript">            <span class="keyword">var</span> remove=options.<span class="title function_">remove</span>();</span></span><br><span class="line"><span class="language-javascript">            remove.<span class="title function_">appendTo</span>(<span class="string">&quot;#select2&quot;</span>);</span></span><br><span class="line"><span class="language-javascript">            &#125;);</span></span><br><span class="line"><span class="language-javascript">       </span></span><br><span class="line"><span class="language-javascript">            <span class="comment">// 把所有项追加给对方</span></span></span><br><span class="line"><span class="language-javascript">            $(<span class="string">&#x27;#addAll&#x27;</span>).<span class="title function_">click</span>(<span class="keyword">function</span>(<span class="params"></span>)&#123;</span></span><br><span class="line"><span class="language-javascript">            <span class="keyword">var</span> options=$(<span class="string">&#x27;#select1 option&#x27;</span>);</span></span><br><span class="line"><span class="language-javascript">            <span class="keyword">var</span> remove=options.<span class="title function_">remove</span>();</span></span><br><span class="line"><span class="language-javascript">            remove.<span class="title function_">appendTo</span>(<span class="string">&quot;#select2&quot;</span>);</span></span><br><span class="line"><span class="language-javascript">            &#125;);</span></span><br><span class="line"><span class="language-javascript">          </span></span><br><span class="line"><span class="language-javascript">            <span class="comment">// 把选择项退回给对方</span></span></span><br><span class="line"><span class="language-javascript">            $(<span class="string">&#x27;#remove&#x27;</span>).<span class="title function_">click</span>(<span class="keyword">function</span>(<span class="params"></span>)&#123;</span></span><br><span class="line"><span class="language-javascript">            <span class="keyword">var</span> options=$(<span class="string">&#x27;#select2 option:selected&#x27;</span>);</span></span><br><span class="line"><span class="language-javascript">            <span class="keyword">var</span> remove=options.<span class="title function_">remove</span>();</span></span><br><span class="line"><span class="language-javascript">            remove.<span class="title function_">appendTo</span>(<span class="string">&quot;#select1&quot;</span>);</span></span><br><span class="line"><span class="language-javascript">            &#125;);</span></span><br><span class="line"><span class="language-javascript">          </span></span><br><span class="line"><span class="language-javascript">            <span class="comment">// 把全部项退回给对方</span></span></span><br><span class="line"><span class="language-javascript">            $(<span class="string">&#x27;#removeAll&#x27;</span>).<span class="title function_">click</span>(<span class="keyword">function</span>(<span class="params"></span>)&#123;</span></span><br><span class="line"><span class="language-javascript">            <span class="keyword">var</span> options=$(<span class="string">&#x27;#select2 option&#x27;</span>);</span></span><br><span class="line"><span class="language-javascript">            <span class="keyword">var</span> remove=options.<span class="title function_">remove</span>();</span></span><br><span class="line"><span class="language-javascript">            remove.<span class="title function_">appendTo</span>(<span class="string">&quot;#select1&quot;</span>);</span></span><br><span class="line"><span class="language-javascript">            &#125;);</span></span><br><span class="line"><span class="language-javascript">                </span></span><br><span class="line"><span class="language-javascript">        &#125;);</span></span><br><span class="line"><span class="language-javascript">    </span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"> </span><br><span class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">form</span> <span class="attr">id</span>=<span class="string">&quot;form1&quot;</span> <span class="attr">runat</span>=<span class="string">&quot;server&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span> <span class="attr">id</span>=<span class="string">&quot;left&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">select</span> <span class="attr">multiple</span>=<span class="string">&quot;multiple&quot;</span> <span class="attr">id</span>=<span class="string">&quot;select1&quot;</span> <span class="attr">style</span>=<span class="string">&quot;width:100px;height:160px&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">option</span>&gt;</span>选项1<span class="tag">&lt;/<span class="name">option</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">option</span>&gt;</span>选项2<span class="tag">&lt;/<span class="name">option</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">option</span>&gt;</span>选项3<span class="tag">&lt;/<span class="name">option</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">option</span>&gt;</span>选项4<span class="tag">&lt;/<span class="name">option</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">option</span>&gt;</span>选项5<span class="tag">&lt;/<span class="name">option</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">select</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">span</span> <span class="attr">id</span>=<span class="string">&quot;add&quot;</span>&gt;</span>选中项添加至右边&gt;&gt;<span class="tag">&lt;/<span class="name">span</span>&gt;</span><span class="tag">&lt;<span class="name">br</span> /&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">span</span> <span class="attr">id</span>=<span class="string">&quot;addAll&quot;</span>&gt;</span>全部添加到右边&gt;&gt;<span class="tag">&lt;/<span class="name">span</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">  </span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span> <span class="attr">id</span>=<span class="string">&quot;right&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">select</span> <span class="attr">multiple</span>=<span class="string">&quot;multiple&quot;</span> <span class="attr">id</span>=<span class="string">&quot;select2&quot;</span> <span class="attr">style</span>=<span class="string">&quot;width:100px;height:160px&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">select</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">span</span> <span class="attr">id</span>=<span class="string">&quot;remove&quot;</span>&gt;</span>&lt;&lt;选中项还原至左边<span class="tag">&lt;/<span class="name">span</span>&gt;</span><span class="tag">&lt;<span class="name">br</span> /&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">span</span> <span class="attr">id</span>=<span class="string">&quot;removeAll&quot;</span>&gt;</span>&lt;&lt;全部还原至左边<span class="tag">&lt;/<span class="name">span</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">form</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br></pre></td></tr></table></figure>
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2014/05/23/Jquery%E5%A4%9A%E9%80%89%E6%A1%86%E4%BA%92%E7%9B%B8%E5%86%85%E5%AE%B9%E4%BA%A4%E6%8D%A2/" data-id="cla0v65vx00kbg0v1dyozhqye" data-title="Jquery多选框互相内容交换" class="article-share-link">分享</a>
-      
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-apache-mod-alias模块功能介绍" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2014/05/23/apache-mod-alias%E6%A8%A1%E5%9D%97%E5%8A%9F%E8%83%BD%E4%BB%8B%E7%BB%8D/" class="article-date">
-  <time class="dt-published" datetime="2014-05-23T02:52:55.000Z" itemprop="datePublished">2014-05-23</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/apache/">apache</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2014/05/23/apache-mod-alias%E6%A8%A1%E5%9D%97%E5%8A%9F%E8%83%BD%E4%BB%8B%E7%BB%8D/">apache mod_alias模块功能介绍</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <p>我觉得mod_alias根mod_rewrite挺像的，都可以实现url的重写，而mod_alias可以实现简单的url重写的功能 ，而mod_rewrite可以实现比较复杂的重写。mod_alias有一种功能是非常强大的，使不在DocumentRoot目录下的内容也能成为”自己文档“中的一部分。而不需要在重新弄一个VirtualHost。</p>
-        
-          <p class="article-more-link">
-            <a href="/2014/05/23/apache-mod-alias%E6%A8%A1%E5%9D%97%E5%8A%9F%E8%83%BD%E4%BB%8B%E7%BB%8D/#more">Read More</a>
-          </p>
-        
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2014/05/23/apache-mod-alias%E6%A8%A1%E5%9D%97%E5%8A%9F%E8%83%BD%E4%BB%8B%E7%BB%8D/" data-id="cla0v662r017ng0v189lj188g" data-title="apache mod_alias模块功能介绍" class="article-share-link">分享</a>
-      
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
 
 
   <nav id="page-nav">
     
-    <a class="extend prev" rel="prev" href="/page/165/">&laquo; 上一页</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/164/">164</a><a class="page-number" href="/page/165/">165</a><span class="page-number current">166</span><a class="page-number" href="/page/167/">167</a><a class="page-number" href="/page/168/">168</a><span class="space">&hellip;</span><a class="page-number" href="/page/242/">242</a><a class="extend next" rel="next" href="/page/167/">下一页 &raquo;</a>
+    <a class="extend prev" rel="prev" href="/page/165/">&laquo; 上一页</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/164/">164</a><a class="page-number" href="/page/165/">165</a><span class="page-number current">166</span><a class="page-number" href="/page/167/">167</a><a class="page-number" href="/page/168/">168</a><span class="space">&hellip;</span><a class="page-number" href="/page/243/">243</a><a class="extend next" rel="next" href="/page/167/">下一页 &raquo;</a>
   </nav>
 
 </section>
@@ -324,7 +341,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">分类</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">75</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">115</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">51</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">78</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">115</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">51</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
     </div>
   </div>
 
@@ -346,23 +363,23 @@
       <ul>
         
           <li>
+            <a href="/2023/02/24/Java%E6%96%B9%E6%B3%95%E4%BC%A0%E5%8F%82%E5%88%B0%E5%BA%95%E4%BC%A0%E6%89%80%E9%9C%80%E5%8F%82%E6%95%B0%E5%A5%BD%E8%BF%98%E6%98%AF%E4%BC%A0%E5%AE%9E%E4%BD%93%E5%A5%BD%EF%BC%9F/">Java方法传参到底传所需参数好还是传实体好？</a>
+          </li>
+        
+          <li>
+            <a href="/2023/02/09/Java8%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B8%AD%E7%9A%84%E6%96%B0%E6%96%B9%E6%B3%95/">Java8集合框架中的新方法</a>
+          </li>
+        
+          <li>
+            <a href="/2023/01/22/APM%E8%B0%83%E7%A0%94/">APM调研</a>
+          </li>
+        
+          <li>
+            <a href="/2023/01/22/linux-%E7%AE%80%E5%8D%95%E7%9A%84mysql%E5%A4%87%E4%BB%BD%E5%92%8C%E5%AF%BC%E5%85%A5%EF%BC%8C%E4%BB%A5%E5%8F%8A%E6%96%87%E4%BB%B6%E7%9A%84%E5%A4%87%E4%BB%BD%E5%92%8C%E5%AF%BC%E5%85%A5/">linux 简单的mysql备份和导入，以及文件的备份和导入</a>
+          </li>
+        
+          <li>
             <a href="/2023/01/15/ThreadLocal%E8%AF%A6%E8%A7%A3/">ThreadLocal详解</a>
-          </li>
-        
-          <li>
-            <a href="/2023/01/14/%E5%A6%82%E4%BD%95%E5%88%A9%E7%94%A8CompletableFuture%E5%AE%9E%E7%8E%B0%E2%80%9C%E6%97%85%E6%B8%B8%E5%B9%B3%E5%8F%B0%E2%80%9D%E9%97%AE%E9%A2%98%EF%BC%9F/">如何利用CompletableFuture实现“旅游平台”问题？</a>
-          </li>
-        
-          <li>
-            <a href="/2023/01/12/MyBatis-Plus-%E5%AD%97%E6%AE%B5%E7%B1%BB%E5%9E%8B%E5%A4%84%E7%90%86%E5%99%A8%E4%B9%8B%E6%B3%9B%E5%9E%8B%E6%93%A6%E9%99%A4%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/">MyBatis-Plus - 字段类型处理器之泛型擦除解决方案</a>
-          </li>
-        
-          <li>
-            <a href="/2023/01/12/%E6%AD%BB%E5%BE%AA%E7%8E%AFwhile-for%E4%B8%ADnew%E5%AF%B9%E8%B1%A1-%E4%B8%8D%E6%80%95-OOM-%E5%90%97%EF%BC%9F/">死循环while/for中new对象? 不怕 OOM 吗？</a>
-          </li>
-        
-          <li>
-            <a href="/2023/01/06/%E4%B8%80%E4%B8%AAJava%E7%8C%BF%E7%9C%BC%E4%B8%ADVue3%E5%92%8CVue2%E7%9A%84%E5%B7%AE%E5%BC%82/">一个Java猿眼中Vue3和Vue2的差异</a>
           </li>
         
       </ul>
