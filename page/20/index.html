@@ -67,10 +67,10 @@
       <div class="outer">
         <section id="main">
   
-    <article id="post-Uber开源之高性能日志库-zap" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+    <article id="post-结构体与json相互转换，map与json相互转换" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
-    <a href="/2021/11/17/Uber%E5%BC%80%E6%BA%90%E4%B9%8B%E9%AB%98%E6%80%A7%E8%83%BD%E6%97%A5%E5%BF%97%E5%BA%93-zap/" class="article-date">
-  <time class="dt-published" datetime="2021-11-17T13:01:37.000Z" itemprop="datePublished">2021-11-17</time>
+    <a href="/2021/12/01/%E7%BB%93%E6%9E%84%E4%BD%93%E4%B8%8Ejson%E7%9B%B8%E4%BA%92%E8%BD%AC%E6%8D%A2%EF%BC%8Cmap%E4%B8%8Ejson%E7%9B%B8%E4%BA%92%E8%BD%AC%E6%8D%A2/" class="article-date">
+  <time class="dt-published" datetime="2021-12-01T11:42:06.000Z" itemprop="datePublished">2021-12-01</time>
 </a>
     
   <div class="article-category">
@@ -85,7 +85,7 @@
         
   
     <h1 itemprop="name">
-      <a class="p-name article-title" href="/2021/11/17/Uber%E5%BC%80%E6%BA%90%E4%B9%8B%E9%AB%98%E6%80%A7%E8%83%BD%E6%97%A5%E5%BF%97%E5%BA%93-zap/">Uber开源之高性能日志库(zap)</a>
+      <a class="p-name article-title" href="/2021/12/01/%E7%BB%93%E6%9E%84%E4%BD%93%E4%B8%8Ejson%E7%9B%B8%E4%BA%92%E8%BD%AC%E6%8D%A2%EF%BC%8Cmap%E4%B8%8Ejson%E7%9B%B8%E4%BA%92%E8%BD%AC%E6%8D%A2/">结构体与json相互转换，map与json相互转换</a>
     </h1>
   
 
@@ -93,16 +93,16 @@
     
     <div class="e-content article-entry" itemprop="articleBody">
       
-        <h3 id="1-介绍"><a href="#1-介绍" class="headerlink" title="1.介绍"></a>1.介绍</h3><p><code>Zap</code>是<code>uber</code>开源的日志库，支持日志级别分级 、结构化记录，对性能和内存分配做了极致的优化。源码地址: <a target="_blank" rel="noopener" href="https://github.com/uber-go/zap">https://github.com/uber-go/zap</a></p>
+        <h3 id="一-结构体转json，使用json-Marshal-返回值-byte-error"><a href="#一-结构体转json，使用json-Marshal-返回值-byte-error" class="headerlink" title="一.结构体转json，使用json.Marshal()返回值([]byte, error)"></a>一.结构体转json，使用<code>json.Marshal()</code>返回值<code>([]byte, error)</code></h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;encoding/json&quot;</span></span><br><span class="line">    <span class="string">&quot;fmt&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> Student <span class="keyword">struct</span> &#123;</span><br><span class="line">    Name <span class="type">string</span></span><br><span class="line">    Age <span class="type">int</span></span><br><span class="line">    Gender <span class="type">byte</span></span><br><span class="line">    Subject []<span class="type">string</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    s := Student&#123;</span><br><span class="line">        <span class="string">&quot;XiaoMing&quot;</span>,</span><br><span class="line">        <span class="number">15</span>,</span><br><span class="line">        <span class="string">&#x27;M&#x27;</span>,</span><br><span class="line">        []<span class="type">string</span>&#123;<span class="string">&quot;数学&quot;</span>,<span class="string">&quot;语文&quot;</span>,<span class="string">&quot;英语&quot;</span>&#125;,</span><br><span class="line">    &#125;</span><br><span class="line">    sJson,err := json.Marshal(s)</span><br><span class="line">    <span class="keyword">if</span> err!=<span class="literal">nil</span>&#123;</span><br><span class="line">        fmt.Println(err)</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    &#125;</span><br><span class="line">    fmt.Println(<span class="string">&quot;json of s = &quot;</span>,<span class="type">string</span>(sJson))</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
         
           <p class="article-more-link">
-            <a href="/2021/11/17/Uber%E5%BC%80%E6%BA%90%E4%B9%8B%E9%AB%98%E6%80%A7%E8%83%BD%E6%97%A5%E5%BF%97%E5%BA%93-zap/#more">Read More</a>
+            <a href="/2021/12/01/%E7%BB%93%E6%9E%84%E4%BD%93%E4%B8%8Ejson%E7%9B%B8%E4%BA%92%E8%BD%AC%E6%8D%A2%EF%BC%8Cmap%E4%B8%8Ejson%E7%9B%B8%E4%BA%92%E8%BD%AC%E6%8D%A2/#more">Read More</a>
           </p>
         
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2021/11/17/Uber%E5%BC%80%E6%BA%90%E4%B9%8B%E9%AB%98%E6%80%A7%E8%83%BD%E6%97%A5%E5%BF%97%E5%BA%93-zap/" data-id="cla0v6617012ng0v10xtaa905" data-title="Uber开源之高性能日志库(zap)" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2021/12/01/%E7%BB%93%E6%9E%84%E4%BD%93%E4%B8%8Ejson%E7%9B%B8%E4%BA%92%E8%BD%AC%E6%8D%A2%EF%BC%8Cmap%E4%B8%8Ejson%E7%9B%B8%E4%BA%92%E8%BD%AC%E6%8D%A2/" data-id="cla0v66gs024eg0v1eksr8147" data-title="结构体与json相互转换，map与json相互转换" class="article-share-link">分享</a>
       
       
       
@@ -114,10 +114,10 @@
 
 
   
-    <article id="post-go语言如何在编译阶段给变量赋值" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+    <article id="post-strings-字符串操作-包使用" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
-    <a href="/2021/11/16/go%E8%AF%AD%E8%A8%80%E5%A6%82%E4%BD%95%E5%9C%A8%E7%BC%96%E8%AF%91%E9%98%B6%E6%AE%B5%E7%BB%99%E5%8F%98%E9%87%8F%E8%B5%8B%E5%80%BC/" class="article-date">
-  <time class="dt-published" datetime="2021-11-16T15:21:49.000Z" itemprop="datePublished">2021-11-16</time>
+    <a href="/2021/11/26/strings-%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%93%8D%E4%BD%9C-%E5%8C%85%E4%BD%BF%E7%94%A8/" class="article-date">
+  <time class="dt-published" datetime="2021-11-26T14:20:40.000Z" itemprop="datePublished">2021-11-26</time>
 </a>
     
   <div class="article-category">
@@ -132,7 +132,7 @@
         
   
     <h1 itemprop="name">
-      <a class="p-name article-title" href="/2021/11/16/go%E8%AF%AD%E8%A8%80%E5%A6%82%E4%BD%95%E5%9C%A8%E7%BC%96%E8%AF%91%E9%98%B6%E6%AE%B5%E7%BB%99%E5%8F%98%E9%87%8F%E8%B5%8B%E5%80%BC/">go语言如何在编译阶段给变量赋值</a>
+      <a class="p-name article-title" href="/2021/11/26/strings-%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%93%8D%E4%BD%9C-%E5%8C%85%E4%BD%BF%E7%94%A8/">strings(字符串操作)包使用</a>
     </h1>
   
 
@@ -140,17 +140,16 @@
     
     <div class="e-content article-entry" itemprop="articleBody">
       
-        <p>Go 语言编译时，可以通过 <code>-ldflags</code> 的方式，为指定包中的变量赋值。</p>
-<p><strong>格式</strong><br><code>$ go build -ldflags &quot;-X &#39;$包名.变量名=$变量值&#39;&quot;</code></p>
+        <h2 id="1-字符串查找"><a href="#1-字符串查找" class="headerlink" title="1.字符串查找"></a>1.字符串查找</h2><p>strings是Go内置的标准包,主要用于字符串查找、替换、比较等。
         
           <p class="article-more-link">
-            <a href="/2021/11/16/go%E8%AF%AD%E8%A8%80%E5%A6%82%E4%BD%95%E5%9C%A8%E7%BC%96%E8%AF%91%E9%98%B6%E6%AE%B5%E7%BB%99%E5%8F%98%E9%87%8F%E8%B5%8B%E5%80%BC/#more">Read More</a>
+            <a href="/2021/11/26/strings-%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%93%8D%E4%BD%9C-%E5%8C%85%E4%BD%BF%E7%94%A8/#more">Read More</a>
           </p>
         
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2021/11/16/go%E8%AF%AD%E8%A8%80%E5%A6%82%E4%BD%95%E5%9C%A8%E7%BC%96%E8%AF%91%E9%98%B6%E6%AE%B5%E7%BB%99%E5%8F%98%E9%87%8F%E8%B5%8B%E5%80%BC/" data-id="cla0v663t01aog0v1da5vgpd2" data-title="go语言如何在编译阶段给变量赋值" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2021/11/26/strings-%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%93%8D%E4%BD%9C-%E5%8C%85%E4%BD%BF%E7%94%A8/" data-id="cla0v668b01m6g0v1atgyhpqa" data-title="strings(字符串操作)包使用" class="article-share-link">分享</a>
       
       
       
@@ -162,10 +161,10 @@
 
 
   
-    <article id="post-Go-语言中关于包导入必学的-8-个知识点" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+    <article id="post-time-时间-包使用" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
-    <a href="/2021/11/15/Go-%E8%AF%AD%E8%A8%80%E4%B8%AD%E5%85%B3%E4%BA%8E%E5%8C%85%E5%AF%BC%E5%85%A5%E5%BF%85%E5%AD%A6%E7%9A%84-8-%E4%B8%AA%E7%9F%A5%E8%AF%86%E7%82%B9/" class="article-date">
-  <time class="dt-published" datetime="2021-11-15T14:56:23.000Z" itemprop="datePublished">2021-11-15</time>
+    <a href="/2021/11/26/time-%E6%97%B6%E9%97%B4-%E5%8C%85%E4%BD%BF%E7%94%A8/" class="article-date">
+  <time class="dt-published" datetime="2021-11-26T14:12:16.000Z" itemprop="datePublished">2021-11-26</time>
 </a>
     
   <div class="article-category">
@@ -180,7 +179,7 @@
         
   
     <h1 itemprop="name">
-      <a class="p-name article-title" href="/2021/11/15/Go-%E8%AF%AD%E8%A8%80%E4%B8%AD%E5%85%B3%E4%BA%8E%E5%8C%85%E5%AF%BC%E5%85%A5%E5%BF%85%E5%AD%A6%E7%9A%84-8-%E4%B8%AA%E7%9F%A5%E8%AF%86%E7%82%B9/">Go 语言中关于包导入必学的 8 个知识点</a>
+      <a class="p-name article-title" href="/2021/11/26/time-%E6%97%B6%E9%97%B4-%E5%8C%85%E4%BD%BF%E7%94%A8/">time(时间)包使用</a>
     </h1>
   
 
@@ -188,16 +187,16 @@
     
     <div class="e-content article-entry" itemprop="articleBody">
       
-        <h2 id="1-单行导入与多行导入"><a href="#1-单行导入与多行导入" class="headerlink" title="1. 单行导入与多行导入"></a>1. 单行导入与多行导入</h2><p>在 Go 语言中，一个包可包含多个 <code>.go</code> 文件（这些文件必须得在同一级文件夹中），只要这些 <code>.go</code> 文件的头部都使用 <code>package</code> 关键字声明了同一个包。
+        <h2 id="1-获取时间"><a href="#1-获取时间" class="headerlink" title="1.获取时间"></a>1.获取时间</h2><h3 id="1-1-当前时间"><a href="#1-1-当前时间" class="headerlink" title="1.1 当前时间"></a>1.1 当前时间</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">unix := time.Now().Unix()</span><br><span class="line">fmt.Printf(<span class="string">&quot;当前时间戳(单位秒): %v \n&quot;</span>,unix)</span><br><span class="line">nano := time.Now().UnixNano()</span><br><span class="line">fmt.Printf(<span class="string">&quot;当前时间戳(单位纳秒): %v\n&quot;</span>,nano)</span><br><span class="line">format := time.Now().Format(<span class="string">&quot;2006-01-02 15:04:05&quot;</span>)</span><br><span class="line">fmt.Printf(<span class="string">&quot;当前时间(Y-m-d H:i:s): %v\n&quot;</span>,format)</span><br><span class="line">format2 := time.Now().Format(<span class="string">&quot;20060102150405&quot;</span>)</span><br><span class="line">fmt.Printf(<span class="string">&quot;当前时间(YmdHis): %v\n&quot;</span>,format2)</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">当前时间戳(单位秒): 1616251448 </span></span><br><span class="line"><span class="comment">当前时间戳(单位纳秒): 1616251448041163000</span></span><br><span class="line"><span class="comment">当前时间(Y-m-d H:i:s): 2021-03-20 22:44:08</span></span><br><span class="line"><span class="comment">当前时间(YmdHis): 20210320224408</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure>
         
           <p class="article-more-link">
-            <a href="/2021/11/15/Go-%E8%AF%AD%E8%A8%80%E4%B8%AD%E5%85%B3%E4%BA%8E%E5%8C%85%E5%AF%BC%E5%85%A5%E5%BF%85%E5%AD%A6%E7%9A%84-8-%E4%B8%AA%E7%9F%A5%E8%AF%86%E7%82%B9/#more">Read More</a>
+            <a href="/2021/11/26/time-%E6%97%B6%E9%97%B4-%E5%8C%85%E4%BD%BF%E7%94%A8/#more">Read More</a>
           </p>
         
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2021/11/15/Go-%E8%AF%AD%E8%A8%80%E4%B8%AD%E5%85%B3%E4%BA%8E%E5%8C%85%E5%AF%BC%E5%85%A5%E5%BF%85%E5%AD%A6%E7%9A%84-8-%E4%B8%AA%E7%9F%A5%E8%AF%86%E7%82%B9/" data-id="cla0v65um00fgg0v12z2m9bif" data-title="Go 语言中关于包导入必学的 8 个知识点" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2021/11/26/time-%E6%97%B6%E9%97%B4-%E5%8C%85%E4%BD%BF%E7%94%A8/" data-id="cla0v668e01mcg0v1fax97rn7" data-title="time(时间)包使用" class="article-share-link">分享</a>
       
       
       
@@ -209,14 +208,14 @@
 
 
   
-    <article id="post-go-语言的继承" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+    <article id="post-在-Docker中使用Laravel-schedule" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
-    <a href="/2021/11/15/go-%E8%AF%AD%E8%A8%80%E7%9A%84%E7%BB%A7%E6%89%BF/" class="article-date">
-  <time class="dt-published" datetime="2021-11-15T14:16:48.000Z" itemprop="datePublished">2021-11-15</time>
+    <a href="/2021/11/25/%E5%9C%A8-Docker%E4%B8%AD%E4%BD%BF%E7%94%A8Laravel-schedule/" class="article-date">
+  <time class="dt-published" datetime="2021-11-25T14:19:44.000Z" itemprop="datePublished">2021-11-25</time>
 </a>
     
   <div class="article-category">
-    <a class="article-category-link" href="/categories/go/">go</a>
+    <a class="article-category-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a>
   </div>
 
   </div>
@@ -227,7 +226,7 @@
         
   
     <h1 itemprop="name">
-      <a class="p-name article-title" href="/2021/11/15/go-%E8%AF%AD%E8%A8%80%E7%9A%84%E7%BB%A7%E6%89%BF/">go 语言的继承</a>
+      <a class="p-name article-title" href="/2021/11/25/%E5%9C%A8-Docker%E4%B8%AD%E4%BD%BF%E7%94%A8Laravel-schedule/">在 Docker中使用Laravel schedule</a>
     </h1>
   
 
@@ -235,20 +234,29 @@
     
     <div class="e-content article-entry" itemprop="articleBody">
       
-        <p>对于 go 语言的继承，之前总是模模糊糊的分不清是什么。不知道如何通过何种方式来继承的。</p>
-<p>然后我就开始对照着 java 的方式，用 java 实现继承，然后用 go 语言实现同样的继承。
+        <p>在 Docker 中部署 Laravel 应用，难免会用到 Laravel 本身的任务调度系统 (Schedule)，而 Schedule 需要用到 cron，在 Docker 中使用 cron，有以下三种方案：</p>
+<ul>
+<li><p>  使用独立的 cron 容器。❎ 如果有多个不同的容器应用需要依赖 cron 时，那么这是一种很完美的解决方案，但是我们只用到 Laravel 的任务调度，因此独立的 cron 容器显得多余，所以不能采用此方案。</p>
+</li>
+<li><p>  直接使用宿主机的 cron。❎ 如果直接使用宿主机的 cron，那么「定时任务」这个功能就不属于容器的一部分了。以后在应用迁移与快速部署时，cron 需要单独配置，这违背了我们使用 Docker 的初衷，我们的初衷是希望用 <code>docker-compose up</code> 这一个命令就能快速构建出一个线上应用。并且，在宿主机上使用 cron，使用 Laravel schedule 任务调度时不能和 MySQL 或 Redis 进行通信，所以这个方案需要被否决。</p>
+</li>
+<li><p>  在 PHP 容器中设置 cron。✅ 这才是最佳解决方案。Laravel 只需要在 cron 中配置一个 <code>Laravel Task Scheduler</code>，使用此容器中的 PHP 执行文件可以直接执行 Laravel 的任务调度。</p>
+</li>
+</ul>
         
           <p class="article-more-link">
-            <a href="/2021/11/15/go-%E8%AF%AD%E8%A8%80%E7%9A%84%E7%BB%A7%E6%89%BF/#more">Read More</a>
+            <a href="/2021/11/25/%E5%9C%A8-Docker%E4%B8%AD%E4%BD%BF%E7%94%A8Laravel-schedule/#more">Read More</a>
           </p>
         
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2021/11/15/go-%E8%AF%AD%E8%A8%80%E7%9A%84%E7%BB%A7%E6%89%BF/" data-id="cla0v663s01amg0v1blb2hfs2" data-title="go 语言的继承" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2021/11/25/%E5%9C%A8-Docker%E4%B8%AD%E4%BD%BF%E7%94%A8Laravel-schedule/" data-id="cla0v66cp01v9g0v195ks47at" data-title="在 Docker中使用Laravel schedule" class="article-share-link">分享</a>
       
       
       
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Docker/" rel="tag">Docker</a></li></ul>
+
     </footer>
   </div>
   
@@ -257,14 +265,14 @@
 
 
   
-    <article id="post-面向对象编程：接口与多态" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+    <article id="post-Docker-挂载目录（bind-mounts）和Volume是不同的" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
-    <a href="/2021/11/15/%E9%9D%A2%E5%90%91%E5%AF%B9%E8%B1%A1%E7%BC%96%E7%A8%8B%EF%BC%9A%E6%8E%A5%E5%8F%A3%E4%B8%8E%E5%A4%9A%E6%80%81/" class="article-date">
-  <time class="dt-published" datetime="2021-11-15T13:34:48.000Z" itemprop="datePublished">2021-11-15</time>
+    <a href="/2021/11/25/Docker-%E6%8C%82%E8%BD%BD%E7%9B%AE%E5%BD%95%EF%BC%88bind-mounts%EF%BC%89%E5%92%8CVolume%E6%98%AF%E4%B8%8D%E5%90%8C%E7%9A%84/" class="article-date">
+  <time class="dt-published" datetime="2021-11-25T14:15:30.000Z" itemprop="datePublished">2021-11-25</time>
 </a>
     
   <div class="article-category">
-    <a class="article-category-link" href="/categories/go/">go</a>
+    <a class="article-category-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a>
   </div>
 
   </div>
@@ -275,7 +283,7 @@
         
   
     <h1 itemprop="name">
-      <a class="p-name article-title" href="/2021/11/15/%E9%9D%A2%E5%90%91%E5%AF%B9%E8%B1%A1%E7%BC%96%E7%A8%8B%EF%BC%9A%E6%8E%A5%E5%8F%A3%E4%B8%8E%E5%A4%9A%E6%80%81/">面向对象编程：接口与多态</a>
+      <a class="p-name article-title" href="/2021/11/25/Docker-%E6%8C%82%E8%BD%BD%E7%9B%AE%E5%BD%95%EF%BC%88bind-mounts%EF%BC%89%E5%92%8CVolume%E6%98%AF%E4%B8%8D%E5%90%8C%E7%9A%84/">Docker - 挂载目录（bind mounts）和Volume是不同的</a>
     </h1>
   
 
@@ -283,22 +291,23 @@
     
     <div class="e-content article-entry" itemprop="articleBody">
       
-        <h2 id="0-接口是什么？"><a href="#0-接口是什么？" class="headerlink" title="0. 接口是什么？"></a>0. 接口是什么？</h2><blockquote>
-<p>这一段摘自 Go语言中文网<br>在面向对象的领域里，接口一般这样定义：<strong>接口定义一个对象的行为</strong>。接口只指定了对象应该做什么，至于如何实现这个行为（即实现细节），则由对象本身去确定。</p>
-</blockquote>
-<p>在 Go 语言中，接口就是方法签名（Method Signature）的集合。当一个类型定义了接口中的所有方法，我们称它实现了该接口。这与面向对象编程（OOP）的说法很类似。<strong>接口指定了一个类型应该具有的方法，并由该类型决定如何实现这些方法</strong>。
+        <p>一直一来，对于多个容器需要共享访问同一数据目录，或者需要持久化容器内数据（如数据库）时，我们都是采用挂载目录形式（bind mounts），将宿主机的某一目录挂载到容器内的指定目录，这种方式能解决问题，但这种方式也一直有一些缺点：</p>
+<p>容器在不同的服务器部署需要根据实际磁盘挂载目录修改路径</p>
+<p>不同操作系统的文件和目录权限会搞得你昏头转向，火冒三丈
         
           <p class="article-more-link">
-            <a href="/2021/11/15/%E9%9D%A2%E5%90%91%E5%AF%B9%E8%B1%A1%E7%BC%96%E7%A8%8B%EF%BC%9A%E6%8E%A5%E5%8F%A3%E4%B8%8E%E5%A4%9A%E6%80%81/#more">Read More</a>
+            <a href="/2021/11/25/Docker-%E6%8C%82%E8%BD%BD%E7%9B%AE%E5%BD%95%EF%BC%88bind-mounts%EF%BC%89%E5%92%8CVolume%E6%98%AF%E4%B8%8D%E5%90%8C%E7%9A%84/#more">Read More</a>
           </p>
         
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2021/11/15/%E9%9D%A2%E5%90%91%E5%AF%B9%E8%B1%A1%E7%BC%96%E7%A8%8B%EF%BC%9A%E6%8E%A5%E5%8F%A3%E4%B8%8E%E5%A4%9A%E6%80%81/" data-id="cla0v66il0288g0v1djq5bt0l" data-title="面向对象编程：接口与多态" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2021/11/25/Docker-%E6%8C%82%E8%BD%BD%E7%9B%AE%E5%BD%95%EF%BC%88bind-mounts%EF%BC%89%E5%92%8CVolume%E6%98%AF%E4%B8%8D%E5%90%8C%E7%9A%84/" data-id="cla0v65tr00ccg0v15r5rbl5x" data-title="Docker - 挂载目录（bind mounts）和Volume是不同的" class="article-share-link">分享</a>
       
       
       
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Docker/" rel="tag">Docker</a></li></ul>
+
     </footer>
   </div>
   
@@ -311,7 +320,7 @@
 
   <nav id="page-nav">
     
-    <a class="extend prev" rel="prev" href="/page/19/">&laquo; 上一页</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/18/">18</a><a class="page-number" href="/page/19/">19</a><span class="page-number current">20</span><a class="page-number" href="/page/21/">21</a><a class="page-number" href="/page/22/">22</a><span class="space">&hellip;</span><a class="page-number" href="/page/243/">243</a><a class="extend next" rel="next" href="/page/21/">下一页 &raquo;</a>
+    <a class="extend prev" rel="prev" href="/page/19/">&laquo; 上一页</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/18/">18</a><a class="page-number" href="/page/19/">19</a><span class="page-number current">20</span><a class="page-number" href="/page/21/">21</a><a class="page-number" href="/page/22/">22</a><span class="space">&hellip;</span><a class="page-number" href="/page/245/">245</a><a class="extend next" rel="next" href="/page/21/">下一页 &raquo;</a>
   </nav>
 
 </section>
@@ -322,7 +331,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">分类</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">80</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">115</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">51</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">25</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">82</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">51</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
     </div>
   </div>
 
@@ -332,7 +341,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">标签云</h3>
     <div class="widget tagcloud">
-      <a href="/tags/AndroidStudio/" style="font-size: 13.16px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.05px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 16.84px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.26px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.63px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 17.89px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 14.21px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.53px;">Flask</a> <a href="/tags/JavaSE/" style="font-size: 18.95px;">JavaSE</a> <a href="/tags/Laravel/" style="font-size: 16.84px;">Laravel</a> <a href="/tags/Maven/" style="font-size: 11.05px;">Maven</a> <a href="/tags/MybatisPlus/" style="font-size: 11.05px;">MybatisPlus</a> <a href="/tags/Puppeteer/" style="font-size: 14.74px;">Puppeteer</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/Selenium/" style="font-size: 11.58px;">Selenium</a> <a href="/tags/SpringBoot/" style="font-size: 19.47px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.58px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.11px;">VMware</a> <a href="/tags/Vue/" style="font-size: 17.37px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.63px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 14.21px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 13.68px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.11px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.21px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.58px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.11px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.05px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.26px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.58px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15.79px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 18.42px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 16.32px;">集群</a>
+      <a href="/tags/AndroidStudio/" style="font-size: 13.16px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.05px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 16.84px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.26px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.63px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 17.37px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 14.21px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.53px;">Flask</a> <a href="/tags/JavaSE/" style="font-size: 18.95px;">JavaSE</a> <a href="/tags/Laravel/" style="font-size: 16.84px;">Laravel</a> <a href="/tags/Maven/" style="font-size: 11.05px;">Maven</a> <a href="/tags/MybatisPlus/" style="font-size: 11.05px;">MybatisPlus</a> <a href="/tags/Puppeteer/" style="font-size: 14.74px;">Puppeteer</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/Selenium/" style="font-size: 11.58px;">Selenium</a> <a href="/tags/SpringBoot/" style="font-size: 19.47px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.58px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.11px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.42px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.63px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 14.21px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 13.68px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.11px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.21px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.58px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.11px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.05px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.26px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.58px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15.79px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.89px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 16.32px;">集群</a>
     </div>
   </div>
 
@@ -344,23 +353,23 @@
       <ul>
         
           <li>
-            <a href="/2023/04/20/Spring-boot-admin-%E6%9C%8D%E5%8A%A1%E7%9B%91%E6%8E%A7%E5%88%A9%E5%99%A8/">Spring boot admin 服务监控利器</a>
+            <a href="/2024/03/19/%E6%8B%A6%E6%88%AA%E5%99%A8%E4%B8%AD%E6%B3%A8%E5%85%A5%EF%BC%88-Autowire-Resource%EF%BC%89%E5%AF%B9%E8%B1%A1%E6%8A%A5%E7%A9%BA%E6%8C%87%E9%92%88%E5%BC%82%E5%B8%B8/">拦截器中注入（@Autowire/@Resource）对象报空指针异常</a>
           </li>
         
           <li>
-            <a href="/2023/04/16/%E6%8E%A8%E9%80%81%E4%BB%A3%E7%A0%81%E5%88%B0-GitHub-%E4%BB%93%E5%BA%93%E5%87%BA%E9%94%99%EF%BC%9AWARNING-REMOTE-HOST-IDENTIFICATION-HAS-CHANGED/">推送代码到 GitHub 仓库出错：WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!</a>
+            <a href="/2023/10/22/margin-top%E5%A1%8C%E9%99%B7%E9%97%AE%E9%A2%98%E7%9A%84%E7%8E%B0%E8%B1%A1%E4%B8%8E%E8%A7%A3%E5%86%B3%E7%9A%84%E5%85%B7%E4%BD%93%E6%96%B9%E6%B3%95/">margin-top塌陷问题的现象与解决的具体方法</a>
           </li>
         
           <li>
-            <a href="/2023/04/16/lambda%E8%A1%A8%E8%BE%BE%E5%BC%8F%E4%BD%BF%E7%94%A8%E5%B1%80%E9%83%A8%E5%8F%98%E9%87%8Ffinal%E9%97%AE%E9%A2%98/">lambda表达式使用局部变量final问题</a>
+            <a href="/2023/09/19/JSON-%E4%B8%8E-Java-%E5%AF%B9%E8%B1%A1%E4%B9%8B%E9%97%B4%E7%9A%84%E8%BD%AC%E5%8C%96/">JSON 与 Java 对象之间的转化</a>
           </li>
         
           <li>
-            <a href="/2023/02/24/Java%E6%96%B9%E6%B3%95%E4%BC%A0%E5%8F%82%E5%88%B0%E5%BA%95%E4%BC%A0%E6%89%80%E9%9C%80%E5%8F%82%E6%95%B0%E5%A5%BD%E8%BF%98%E6%98%AF%E4%BC%A0%E5%AE%9E%E4%BD%93%E5%A5%BD%EF%BC%9F/">Java方法传参到底传所需参数好还是传实体好？</a>
+            <a href="/2023/09/19/element-ui%E4%B8%ADel-table%E7%9A%84%E8%B7%A8%E8%A1%8C%EF%BC%8C%E5%90%88%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97%E6%96%B9%E5%BC%8F/">element-ui中el-table的跨行，合并行计算方式</a>
           </li>
         
           <li>
-            <a href="/2023/02/09/Java8%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B8%AD%E7%9A%84%E6%96%B0%E6%96%B9%E6%B3%95/">Java8集合框架中的新方法</a>
+            <a href="/2023/09/19/vue-element-ui%E8%A1%A8%E6%A0%BC%E5%AE%9E%E7%8E%B0%E5%8A%A8%E6%80%81%E8%A1%A8%E5%A4%B4/">vue+element ui表格实现动态表头</a>
           </li>
         
       </ul>
@@ -376,7 +385,7 @@
   <div class="outer">
     <div id="footer-info" class="inner">
       
-      &copy; 2023 moqiang<br>
+      &copy; 2024 moqiang<br>
       Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
     </div>
   </div>

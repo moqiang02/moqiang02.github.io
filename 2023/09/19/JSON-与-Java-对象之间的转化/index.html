@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>JSON 与 Java 对象之间的转化 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="前言在现在的日常开发中，不管前端还是后端，JSON 格式的数据是用得比较多的，甚至可以说无处不在。 接触最多的就是 POST 请求中传递的数据一般以 JSON 的格式放在请求体中，而且服务端各种 API 返回的数据，在响应体中也基本都是以 JSON 格式的数据进行返回的，这也是 RESTful 风格的体现之一。 当然，不止是请求与响应的过程中使用到 JSON，在某些业务场景下也是需要用到 JSON">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JSON 与 Java 对象之间的转化">
+<meta property="og:url" content="http://moqiang02.github.io/2023/09/19/JSON-%E4%B8%8E-Java-%E5%AF%B9%E8%B1%A1%E4%B9%8B%E9%97%B4%E7%9A%84%E8%BD%AC%E5%8C%96/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="前言在现在的日常开发中，不管前端还是后端，JSON 格式的数据是用得比较多的，甚至可以说无处不在。 接触最多的就是 POST 请求中传递的数据一般以 JSON 的格式放在请求体中，而且服务端各种 API 返回的数据，在响应体中也基本都是以 JSON 格式的数据进行返回的，这也是 RESTful 风格的体现之一。 当然，不止是请求与响应的过程中使用到 JSON，在某些业务场景下也是需要用到 JSON">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2023-09-19T15:09:28.000Z">
+<meta property="article:modified_time" content="2023-09-20T10:18:32.083Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-JSON-与-Java-对象之间的转化" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2023/09/19/JSON-%E4%B8%8E-Java-%E5%AF%B9%E8%B1%A1%E4%B9%8B%E9%97%B4%E7%9A%84%E8%BD%AC%E5%8C%96/" class="article-date">
+  <time class="dt-published" datetime="2023-09-19T15:09:28.000Z" itemprop="datePublished">2023-09-19</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/java/">java</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      JSON 与 Java 对象之间的转化
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">目录</strong>
+              <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%BD%AC%E5%8C%96%E7%9A%84%E5%B7%A5%E5%85%B7"><span class="toc-number">2.</span> <span class="toc-text">转化的工具</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%87%86%E5%A4%87%E7%9A%84-JSON-%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%92%8C-List"><span class="toc-number">3.</span> <span class="toc-text">准备的 JSON 字符串和 List</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Jackson"><span class="toc-number">4.</span> <span class="toc-text">Jackson</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B0%86-JSON-%E5%AD%97%E7%AC%A6%E4%B8%B2-%E8%BD%AC%E6%88%90-Java-%E5%AF%B9%E8%B1%A1%EF%BC%9AreadValue"><span class="toc-number">4.1.</span> <span class="toc-text">将 JSON 字符串 转成 Java 对象：readValue</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B0%86-Java-%E5%AF%B9%E8%B1%A1%E8%BD%AC%E6%88%90-JSON-%E5%AD%97%E7%AC%A6%E4%B8%B2%EF%BC%9AwriteValueAsString"><span class="toc-number">4.2.</span> <span class="toc-text">将 Java 对象转成 JSON 字符串：writeValueAsString</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B0%86-List-%E8%BD%AC%E6%88%90-JSON-%E5%AD%97%E7%AC%A6%E4%B8%B2%EF%BC%9AwriteValueAsString"><span class="toc-number">4.3.</span> <span class="toc-text">将 List 转成 JSON 字符串：writeValueAsString</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B0%86-JSON-%E5%AD%97%E7%AC%A6%E4%B8%B2-%E8%BD%AC%E6%88%90-List%EF%BC%9AreadValue"><span class="toc-number">4.4.</span> <span class="toc-text">将 JSON 字符串 转成 List：readValue</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">4.5.</span> <span class="toc-text">总结</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#FastJson"><span class="toc-number">5.</span> <span class="toc-text">FastJson</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B0%86-JSON-%E5%AD%97%E7%AC%A6%E4%B8%B2-%E8%BD%AC%E6%88%90-Java-%E5%AF%B9%E8%B1%A1%EF%BC%9AparseObject"><span class="toc-number">5.1.</span> <span class="toc-text">将 JSON 字符串 转成 Java 对象：parseObject</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B0%86-Java-%E5%AF%B9%E8%B1%A1%E8%BD%AC%E6%88%90-JSON-%E5%AD%97%E7%AC%A6%E4%B8%B2%EF%BC%9AtoJSONString"><span class="toc-number">5.2.</span> <span class="toc-text">将 Java 对象转成 JSON 字符串：toJSONString</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B0%86-List-%E8%BD%AC%E6%88%90-JSON-%E5%AD%97%E7%AC%A6%E4%B8%B2%EF%BC%9AtoJSONString"><span class="toc-number">5.3.</span> <span class="toc-text">将 List 转成 JSON 字符串：toJSONString</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B0%86-JSON-%E5%AD%97%E7%AC%A6%E4%B8%B2-%E8%BD%AC%E6%88%90-List%EF%BC%9AparseArray"><span class="toc-number">5.4.</span> <span class="toc-text">将 JSON 字符串 转成 List：parseArray</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%80%BB%E7%BB%93-1"><span class="toc-number">5.5.</span> <span class="toc-text">总结</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Gson"><span class="toc-number">6.</span> <span class="toc-text">Gson</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B0%86-JSON-%E5%AD%97%E7%AC%A6%E4%B8%B2-%E8%BD%AC%E6%88%90-Java-%E5%AF%B9%E8%B1%A1%EF%BC%9AfromJson"><span class="toc-number">6.1.</span> <span class="toc-text">将 JSON 字符串 转成 Java 对象：fromJson</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B0%86-Java-%E5%AF%B9%E8%B1%A1%E8%BD%AC%E6%88%90-JSON-%E5%AD%97%E7%AC%A6%E4%B8%B2%EF%BC%9AtoJson"><span class="toc-number">6.2.</span> <span class="toc-text">将 Java 对象转成 JSON 字符串：toJson</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B0%86-List-%E8%BD%AC%E6%88%90-JSON-%E5%AD%97%E7%AC%A6%E4%B8%B2%EF%BC%9AtoJson"><span class="toc-number">6.3.</span> <span class="toc-text">将 List 转成 JSON 字符串：toJson</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B0%86-JSON-%E5%AD%97%E7%AC%A6%E4%B8%B2-%E8%BD%AC%E6%88%90-List%EF%BC%9AfromJson"><span class="toc-number">6.4.</span> <span class="toc-text">将 JSON 字符串 转成 List：fromJson</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%80%BB%E7%BB%93-2"><span class="toc-number">6.5.</span> <span class="toc-text">总结</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Hutool"><span class="toc-number">7.</span> <span class="toc-text">Hutool</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B0%86-JSON-%E5%AD%97%E7%AC%A6%E4%B8%B2-%E8%BD%AC%E6%88%90-Java-%E5%AF%B9%E8%B1%A1%EF%BC%9AtoBean"><span class="toc-number">7.1.</span> <span class="toc-text">将 JSON 字符串 转成 Java 对象：toBean</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B0%86-Java-%E5%AF%B9%E8%B1%A1%E8%BD%AC%E6%88%90-JSON-%E5%AD%97%E7%AC%A6%E4%B8%B2%EF%BC%9AtoJsonStr"><span class="toc-number">7.2.</span> <span class="toc-text">将 Java 对象转成 JSON 字符串：toJsonStr</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B0%86-List-%E8%BD%AC%E6%88%90-JSON-%E5%AD%97%E7%AC%A6%E4%B8%B2%EF%BC%9AtoJsonStr"><span class="toc-number">7.3.</span> <span class="toc-text">将 List 转成 JSON 字符串：toJsonStr</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B0%86-JSON-%E5%AD%97%E7%AC%A6%E4%B8%B2-%E8%BD%AC%E6%88%90-List%EF%BC%9AtoList"><span class="toc-number">7.4.</span> <span class="toc-text">将 JSON 字符串 转成 List：toList</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%80%BB%E7%BB%93-3"><span class="toc-number">7.5.</span> <span class="toc-text">总结</span></a></li></ol></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在现在的日常开发中，不管前端还是后端，JSON 格式的数据是用得比较多的，甚至可以说无处不在。</p>
+<p>接触最多的就是 POST 请求中传递的数据一般以 JSON 的格式放在请求体中，而且服务端各种 API 返回的数据，在响应体中也基本都是以 JSON 格式的数据进行返回的，这也是 RESTful 风格的体现之一。</p>
+<p>当然，不止是请求与响应的过程中使用到 JSON，在某些业务场景下也是需要用到 JSON 的，<strong>特别是 JSON 与 Java 对象之间的转化</strong>。</p>
+<p><strong>所以，对于 Java 开发的我们来说，JSON 格式的数据与 Java 对象之间的转化是必会的。</strong></p>
+<span id="more"></span>
+
+<h2 id="转化的工具"><a href="#转化的工具" class="headerlink" title="转化的工具"></a>转化的工具</h2><p>主流的转化工具有如下几种，一般项目中建议只选其中一种，目前好评最多的感觉就是 Jackson 了。</p>
+<ul>
+<li>Jackson</li>
+<li>FastJson</li>
+<li>Gson</li>
+<li>Hutool</li>
+</ul>
+<h2 id="准备的-JSON-字符串和-List"><a href="#准备的-JSON-字符串和-List" class="headerlink" title="准备的 JSON 字符串和 List"></a>准备的 JSON 字符串和 List</h2><p>为了方便演示，这里给出一个 JSON 字符串：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">String</span> <span class="variable">jsonStr</span> <span class="operator">=</span> <span class="string">&quot;&#123;\&quot;name\&quot; : \&quot;GTA5\&quot;, \&quot;price\&quot; : 54.5&#125;&quot;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>这里给出一个 <code>List&lt;Game&gt;</code>：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Game</span> <span class="variable">game1</span> <span class="operator">=</span> Game.builder().name(<span class="string">&quot;NBA2K23&quot;</span>).price(<span class="keyword">new</span> <span class="title class_">BigDecimal</span>(<span class="string">&quot;198.0&quot;</span>)).build();</span><br><span class="line"><span class="type">Game</span> <span class="variable">game2</span> <span class="operator">=</span> Game.builder().name(<span class="string">&quot;Sim City4&quot;</span>).price(<span class="keyword">new</span> <span class="title class_">BigDecimal</span>(<span class="string">&quot;22.5&quot;</span>)).build();</span><br><span class="line">List&lt;Game&gt; gameList = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">gameList.add(game1);</span><br><span class="line">gameList.add(game2);</span><br></pre></td></tr></table></figure>
+
+<h2 id="Jackson"><a href="#Jackson" class="headerlink" title="Jackson"></a>Jackson</h2><p>我们需要借助 Jackson 提供的 <code>ObjectMapper</code> 对象来完成转化：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">ObjectMapper</span> <span class="variable">objectMapper</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ObjectMapper</span>();</span><br></pre></td></tr></table></figure>
+
+<h3 id="将-JSON-字符串-转成-Java-对象：readValue"><a href="#将-JSON-字符串-转成-Java-对象：readValue" class="headerlink" title="将 JSON 字符串 转成 Java 对象：readValue"></a>将 JSON 字符串 转成 Java 对象：readValue</h3><p>使用 <code>readValue</code> 方法，第一个参数是 JSON 字符串，第二个参数是转化的目标类的类型。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 将 JSON 字符串 转成 Java 对象</span></span><br><span class="line"><span class="type">Game</span> <span class="variable">game</span> <span class="operator">=</span> objectMapper.readValue(jsonStr, Game.class);</span><br></pre></td></tr></table></figure>
+
+<h3 id="将-Java-对象转成-JSON-字符串：writeValueAsString"><a href="#将-Java-对象转成-JSON-字符串：writeValueAsString" class="headerlink" title="将 Java 对象转成 JSON 字符串：writeValueAsString"></a>将 Java 对象转成 JSON 字符串：writeValueAsString</h3><p>使用 <code>writeValueAsString</code> 方法，接受一个 Java 对象，返回一个 JSON 字符串。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 将 Java 对象转成 JSON 字符串</span></span><br><span class="line"><span class="type">String</span> <span class="variable">gameJson</span> <span class="operator">=</span> objectMapper.writeValueAsString(game);</span><br></pre></td></tr></table></figure>
+
+<h3 id="将-List-转成-JSON-字符串：writeValueAsString"><a href="#将-List-转成-JSON-字符串：writeValueAsString" class="headerlink" title="将 List 转成 JSON 字符串：writeValueAsString"></a>将 List 转成 JSON 字符串：writeValueAsString</h3><p>同样使用 <code>writeValueAsString</code> 方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 将 List&lt;Game&gt; 转成 JSON 字符串</span></span><br><span class="line"><span class="type">String</span> <span class="variable">gameListJson</span> <span class="operator">=</span> objectMapper.writeValueAsString(gameList);</span><br></pre></td></tr></table></figure>
+
+<h3 id="将-JSON-字符串-转成-List：readValue"><a href="#将-JSON-字符串-转成-List：readValue" class="headerlink" title="将 JSON 字符串 转成 List：readValue"></a>将 JSON 字符串 转成 List：readValue</h3><p>使用 <code>readValue</code> 方法，第一个参数是 JSON 字符串，第二个参数是转化的目标 TypeReference（类型参照）对象，这里指定其泛型为 <code>List&lt;Game&gt;</code>。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 将 JSON 字符串 转成 List&lt;Game&gt;</span></span><br><span class="line">List&lt;Game&gt; gameListFromJson = objectMapper.readValue(gameListJson, <span class="keyword">new</span> <span class="title class_">TypeReference</span>&lt;List&lt;Game&gt;&gt;() &#123;&#125;);</span><br></pre></td></tr></table></figure>
+
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>从 JSON 到 Java 对象，使用 <code>readValue</code> 方法。</p>
+<p>从 Java 对象到 JSON，使用 <code>writeValueAsString</code> 方法。</p>
+<h2 id="FastJson"><a href="#FastJson" class="headerlink" title="FastJson"></a>FastJson</h2><p>我们需要借助 FastJson 提供的 <code>JSONObject</code> 对象来完成转化。</p>
+<h3 id="将-JSON-字符串-转成-Java-对象：parseObject"><a href="#将-JSON-字符串-转成-Java-对象：parseObject" class="headerlink" title="将 JSON 字符串 转成 Java 对象：parseObject"></a>将 JSON 字符串 转成 Java 对象：parseObject</h3><p>使用 <code>parseObject</code> 方法，将 JSON 字符串解析（转化）成 Java 对象，第一个参数是 JSON 字符串，第二个参数是目标类的类型。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 将 JSON 字符串 转成 Java 对象</span></span><br><span class="line"><span class="type">Game</span> <span class="variable">game</span> <span class="operator">=</span> JSONObject.parseObject(jsonStr, Game.class);</span><br></pre></td></tr></table></figure>
+
+<h3 id="将-Java-对象转成-JSON-字符串：toJSONString"><a href="#将-Java-对象转成-JSON-字符串：toJSONString" class="headerlink" title="将 Java 对象转成 JSON 字符串：toJSONString"></a>将 Java 对象转成 JSON 字符串：toJSONString</h3><p>使用 <code>toJSONString</code> 方法，将 Java 对象直接转成 JSON 字符串，接受一个 Java 对象，返回对应的 JSON 字符串。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 将 Java 对象转成 JSON 字符串</span></span><br><span class="line"><span class="type">String</span> <span class="variable">gameJson</span> <span class="operator">=</span> JSONObject.toJSONString(game);</span><br></pre></td></tr></table></figure>
+
+<h3 id="将-List-转成-JSON-字符串：toJSONString"><a href="#将-List-转成-JSON-字符串：toJSONString" class="headerlink" title="将 List 转成 JSON 字符串：toJSONString"></a>将 List 转成 JSON 字符串：toJSONString</h3><p>同理，可以直接丢一个 List 对象给 <code>toJSONString</code> 方法，把 List 转成 JSON 字符串。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 将 List&lt;Game&gt; 转成 JSON 字符串</span></span><br><span class="line"><span class="type">String</span> <span class="variable">gameListJson</span> <span class="operator">=</span> JSONObject.toJSONString(gameList);</span><br></pre></td></tr></table></figure>
+
+<h3 id="将-JSON-字符串-转成-List：parseArray"><a href="#将-JSON-字符串-转成-List：parseArray" class="headerlink" title="将 JSON 字符串 转成 List：parseArray"></a>将 JSON 字符串 转成 List：parseArray</h3><p>使用 <code>parseArray</code> 方法，将 JSON 字符串解析成 List。2.0 版本需要调用 <code>toJavaList</code> 方法，得到最后的 List</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 将 JSON 字符串 转成 List&lt;Game&gt;</span></span><br><span class="line"><span class="comment">// fastjson 1.2.x 版本：List&lt;Game&gt; gameListFromJson = JSONObject.parseArray(gameListJson, Game.class);</span></span><br><span class="line">List&lt;Game&gt; gameListFromJson = JSONArray.parseArray(gameListJson).toJavaList(Game.class);</span><br></pre></td></tr></table></figure>
+
+<h3 id="总结-1"><a href="#总结-1" class="headerlink" title="总结"></a>总结</h3><p>JSON 转成 Java Bean 使用 <code>parseObject</code> 方法，转成 List 使用 <code>parseArray</code> 方法。</p>
+<p>任意对象转成 JSON，则使用 <code>toJSONString</code> 方法。</p>
+<h2 id="Gson"><a href="#Gson" class="headerlink" title="Gson"></a>Gson</h2><p>我们需要借助 <code>Gson</code> 对象来完成转化：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Gson</span> <span class="variable">gson</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Gson</span>();</span><br></pre></td></tr></table></figure>
+
+<h3 id="将-JSON-字符串-转成-Java-对象：fromJson"><a href="#将-JSON-字符串-转成-Java-对象：fromJson" class="headerlink" title="将 JSON 字符串 转成 Java 对象：fromJson"></a>将 JSON 字符串 转成 Java 对象：fromJson</h3><p>使用 <code>fromJson</code> 方法，两个参数的定义也是和上面两个一样的。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 将 JSON 字符串 转成 Java 对象</span></span><br><span class="line"><span class="type">Game</span> <span class="variable">game</span> <span class="operator">=</span> gson.fromJson(jsonStr, Game.class);</span><br></pre></td></tr></table></figure>
+
+<h3 id="将-Java-对象转成-JSON-字符串：toJson"><a href="#将-Java-对象转成-JSON-字符串：toJson" class="headerlink" title="将 Java 对象转成 JSON 字符串：toJson"></a>将 Java 对象转成 JSON 字符串：toJson</h3><p>使用 <code>toJson</code> 方法，接受一个 Java 对象，然后返回对应的 JSON 字符串。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 将 Java 对象转成 JSON 字符串</span></span><br><span class="line"><span class="type">String</span> <span class="variable">gameJson</span> <span class="operator">=</span> gson.toJson(game);</span><br></pre></td></tr></table></figure>
+
+<h3 id="将-List-转成-JSON-字符串：toJson"><a href="#将-List-转成-JSON-字符串：toJson" class="headerlink" title="将 List 转成 JSON 字符串：toJson"></a>将 List 转成 JSON 字符串：toJson</h3><p>List 也是同理，使用 <code>toJson</code> 方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 将 List&lt;Game&gt; 转成 JSON 字符串</span></span><br><span class="line"><span class="type">String</span> <span class="variable">gameListJson</span> <span class="operator">=</span> gson.toJson(gameList);</span><br></pre></td></tr></table></figure>
+
+<h3 id="将-JSON-字符串-转成-List：fromJson"><a href="#将-JSON-字符串-转成-List：fromJson" class="headerlink" title="将 JSON 字符串 转成 List：fromJson"></a>将 JSON 字符串 转成 List：fromJson</h3><p>这里和 Jackson 的也是类似，第二个参数使用 <code>TypeToken</code> 对象指定转化的目标类型为 <code>List&lt;Game&gt;</code>。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 将 JSON 字符串 转成 List&lt;Game&gt;</span></span><br><span class="line">List&lt;Game&gt; gameListFromJson = gson.fromJson(gameListJson, <span class="keyword">new</span> <span class="title class_">TypeToken</span>&lt;List&lt;Game&gt;&gt;() &#123;&#125;.getType());</span><br></pre></td></tr></table></figure>
+
+<h3 id="总结-2"><a href="#总结-2" class="headerlink" title="总结"></a>总结</h3><p>从 JSON 到 Java 对象，使用 <code>fromJson</code> 方法。</p>
+<p>从 Java 对象到 JSON，使用 <code>toJson</code> 方法。</p>
+<h2 id="Hutool"><a href="#Hutool" class="headerlink" title="Hutool"></a>Hutool</h2><p>我们需要借助 Hutool 提供的 <code>JSONUtil</code> 对象来完成转化。</p>
+<h3 id="将-JSON-字符串-转成-Java-对象：toBean"><a href="#将-JSON-字符串-转成-Java-对象：toBean" class="headerlink" title="将 JSON 字符串 转成 Java 对象：toBean"></a>将 JSON 字符串 转成 Java 对象：toBean</h3><p>使用 <code>toBean</code> 方法，还是同样的，接受的两个参数，一个字符串，一个目标类的类型。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 将 JSON 字符串 转成 Java 对象</span></span><br><span class="line"><span class="type">Game</span> <span class="variable">game</span> <span class="operator">=</span> JSONUtil.toBean(jsonStr, Game.class);</span><br></pre></td></tr></table></figure>
+
+<h3 id="将-Java-对象转成-JSON-字符串：toJsonStr"><a href="#将-Java-对象转成-JSON-字符串：toJsonStr" class="headerlink" title="将 Java 对象转成 JSON 字符串：toJsonStr"></a>将 Java 对象转成 JSON 字符串：toJsonStr</h3><p>使用 <code>toJsonStr</code> 方法，接受一个 Java 对象，返回一个 JSON 字符串。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 将 Java 对象转成 JSON 字符串</span></span><br><span class="line"><span class="type">String</span> <span class="variable">gameJson</span> <span class="operator">=</span> JSONUtil.toJsonStr(game);</span><br></pre></td></tr></table></figure>
+
+<h3 id="将-List-转成-JSON-字符串：toJsonStr"><a href="#将-List-转成-JSON-字符串：toJsonStr" class="headerlink" title="将 List 转成 JSON 字符串：toJsonStr"></a>将 List 转成 JSON 字符串：toJsonStr</h3><p>同理，也是 <code>toJsonStr</code> 方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 将 List&lt;Game&gt; 转成 JSON 字符串</span></span><br><span class="line"><span class="type">String</span> <span class="variable">gameListJson</span> <span class="operator">=</span> JSONUtil.toJsonStr(gameList);</span><br></pre></td></tr></table></figure>
+
+<h3 id="将-JSON-字符串-转成-List：toList"><a href="#将-JSON-字符串-转成-List：toList" class="headerlink" title="将 JSON 字符串 转成 List：toList"></a>将 JSON 字符串 转成 List：toList</h3><p>使用 <code>toList</code> 方法，和 <code>toBean</code> 方法接受的参数一样。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 将 JSON 字符串 转成 List&lt;Game&gt;</span></span><br><span class="line">List&lt;Game&gt; gameListFromJson = JSONUtil.toList(gameListJson, Game.class);</span><br></pre></td></tr></table></figure>
+
+<h3 id="总结-3"><a href="#总结-3" class="headerlink" title="总结"></a>总结</h3><p>JSON 转成 Java Bean 使用 <code>toBean</code> 方法，转成 List 使用 <code>toList</code> 方法。</p>
+<p>任意对象转成 JSON，则使用 <code>toJsonStr</code> 方法。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2023/09/19/JSON-%E4%B8%8E-Java-%E5%AF%B9%E8%B1%A1%E4%B9%8B%E9%97%B4%E7%9A%84%E8%BD%AC%E5%8C%96/" data-id="clq1repvy00016gueckawe23i" data-title="JSON 与 Java 对象之间的转化" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2023/10/22/margin-top%E5%A1%8C%E9%99%B7%E9%97%AE%E9%A2%98%E7%9A%84%E7%8E%B0%E8%B1%A1%E4%B8%8E%E8%A7%A3%E5%86%B3%E7%9A%84%E5%85%B7%E4%BD%93%E6%96%B9%E6%B3%95/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          margin-top塌陷问题的现象与解决的具体方法
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2023/09/19/element-ui%E4%B8%ADel-table%E7%9A%84%E8%B7%A8%E8%A1%8C%EF%BC%8C%E5%90%88%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97%E6%96%B9%E5%BC%8F/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">element-ui中el-table的跨行，合并行计算方式</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">25</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">82</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">121</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">72</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">41</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">51</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.16px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.05px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 16.84px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.26px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.63px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 17.37px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 14.21px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.53px;">Flask</a> <a href="/tags/JavaSE/" style="font-size: 18.95px;">JavaSE</a> <a href="/tags/Laravel/" style="font-size: 16.84px;">Laravel</a> <a href="/tags/Maven/" style="font-size: 11.05px;">Maven</a> <a href="/tags/MybatisPlus/" style="font-size: 11.05px;">MybatisPlus</a> <a href="/tags/Puppeteer/" style="font-size: 14.74px;">Puppeteer</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/Selenium/" style="font-size: 11.58px;">Selenium</a> <a href="/tags/SpringBoot/" style="font-size: 19.47px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.58px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.11px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.42px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.63px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 14.21px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 13.68px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.11px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.21px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.58px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.11px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.05px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.26px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.58px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15.79px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.89px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 16.32px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2024/03/19/%E6%8B%A6%E6%88%AA%E5%99%A8%E4%B8%AD%E6%B3%A8%E5%85%A5%EF%BC%88-Autowire-Resource%EF%BC%89%E5%AF%B9%E8%B1%A1%E6%8A%A5%E7%A9%BA%E6%8C%87%E9%92%88%E5%BC%82%E5%B8%B8/">拦截器中注入（@Autowire/@Resource）对象报空指针异常</a>
+          </li>
+        
+          <li>
+            <a href="/2023/10/22/margin-top%E5%A1%8C%E9%99%B7%E9%97%AE%E9%A2%98%E7%9A%84%E7%8E%B0%E8%B1%A1%E4%B8%8E%E8%A7%A3%E5%86%B3%E7%9A%84%E5%85%B7%E4%BD%93%E6%96%B9%E6%B3%95/">margin-top塌陷问题的现象与解决的具体方法</a>
+          </li>
+        
+          <li>
+            <a href="/2023/09/19/JSON-%E4%B8%8E-Java-%E5%AF%B9%E8%B1%A1%E4%B9%8B%E9%97%B4%E7%9A%84%E8%BD%AC%E5%8C%96/">JSON 与 Java 对象之间的转化</a>
+          </li>
+        
+          <li>
+            <a href="/2023/09/19/element-ui%E4%B8%ADel-table%E7%9A%84%E8%B7%A8%E8%A1%8C%EF%BC%8C%E5%90%88%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97%E6%96%B9%E5%BC%8F/">element-ui中el-table的跨行，合并行计算方式</a>
+          </li>
+        
+          <li>
+            <a href="/2023/09/19/vue-element-ui%E8%A1%A8%E6%A0%BC%E5%AE%9E%E7%8E%B0%E5%8A%A8%E6%80%81%E8%A1%A8%E5%A4%B4/">vue+element ui表格实现动态表头</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2024 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>
