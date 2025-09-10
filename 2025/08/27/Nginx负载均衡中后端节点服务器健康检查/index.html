@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Nginx负载均衡中后端节点服务器健康检查 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="正常情况下，nginx做反向代理，如果后端节点服务器宕掉的话，nginx默认是不能把这台realserver踢出upstream负载集群的，所以还会有请求转发到后端的这台realserver上面，这样势必造成网站访问故障。例如公司的网站访问的时候全部变成404页面，最后发现是后端的一台服务器不可用，直接访问那台后台的服务器的时候，返回的是404页面，因为upstream 里面设置了ip_hash。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Nginx负载均衡中后端节点服务器健康检查">
+<meta property="og:url" content="http://moqiang02.github.io/2025/08/27/Nginx%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E4%B8%AD%E5%90%8E%E7%AB%AF%E8%8A%82%E7%82%B9%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%81%A5%E5%BA%B7%E6%A3%80%E6%9F%A5/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="正常情况下，nginx做反向代理，如果后端节点服务器宕掉的话，nginx默认是不能把这台realserver踢出upstream负载集群的，所以还会有请求转发到后端的这台realserver上面，这样势必造成网站访问故障。例如公司的网站访问的时候全部变成404页面，最后发现是后端的一台服务器不可用，直接访问那台后台的服务器的时候，返回的是404页面，因为upstream 里面设置了ip_hash。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-08-27T08:13:08.000Z">
+<meta property="article:modified_time" content="2025-08-27T09:03:16.900Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Nginx负载均衡中后端节点服务器健康检查" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/08/27/Nginx%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E4%B8%AD%E5%90%8E%E7%AB%AF%E8%8A%82%E7%82%B9%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%81%A5%E5%BA%B7%E6%A3%80%E6%9F%A5/" class="article-date">
+  <time class="dt-published" datetime="2025-08-27T08:13:08.000Z" itemprop="datePublished">2025-08-27</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/nginx/">nginx</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Nginx负载均衡中后端节点服务器健康检查
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">目录</strong>
+              <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%88%A9%E7%94%A8nginx%E8%87%AA%E5%B8%A6%E6%A8%A1%E5%9D%97ngx-http-proxy-module%E5%92%8Cngx-http-upstream-module%E5%AF%B9%E5%90%8E%E7%AB%AF%E8%8A%82%E7%82%B9%E5%81%9A%E5%81%A5%E5%BA%B7%E6%A3%80%E6%9F%A5"><span class="toc-number">1.</span> <span class="toc-text">一、利用nginx自带模块ngx_http_proxy_module和ngx_http_upstream_module对后端节点做健康检查</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%88%A9%E7%94%A8nginx-upstream-check-module%E6%A8%A1%E5%9D%97%E5%AF%B9%E5%90%8E%E7%AB%AF%E8%8A%82%E7%82%B9%E5%81%9A%E5%81%A5%E5%BA%B7%E6%A3%80%E6%9F%A5"><span class="toc-number">2.</span> <span class="toc-text">二、利用nginx_upstream_check_module模块对后端节点做健康检查</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E5%88%A9%E7%94%A8ngx-http-healthcheck-module%E6%A8%A1%E5%9D%97%E5%AF%B9%E5%90%8E%E7%AB%AF%E8%8A%82%E7%82%B9%E5%81%9A%E5%81%A5%E5%BA%B7%E6%A3%80%E6%9F%A5"><span class="toc-number">3.</span> <span class="toc-text">三、利用ngx_http_healthcheck_module模块对后端节点做健康检查</span></a></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <p>正常情况下，nginx做反向代理，如果后端节点服务器宕掉的话，nginx默认是不能把这台realserver踢出upstream负载集群的，所以还会有请求转发到后端的这台realserver上面，这样势必造成网站访问故障。<br>例如公司的网站访问的时候全部变成404页面，最后发现是后端的一台服务器不可用，直接访问那台后台的服务器的时候，返回的是404页面，因为upstream 里面设置了ip_hash。所以导致访问网站时怎么刷新都是404页面。这时可以使用nginx的一个功能，就是当后端的服务器返回给nginx502、504、404、执行超时等错误状态的时候，nginx会自动再把这个请求转发到upstream里面别的服务器上面，从而给网站用户提供更稳定的服务。</p>
+<span id="more"></span>
+<p>虽然nginx可以在localtion中启用proxy_next_upstream来解决返回给用户的错误页面，配置如下：</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">location</span> /</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">#如果后端的服务器返回502、504、执行超时等错误，自动将请求转发到upstream负载均衡池中的另一台服务器，实现故障转移。</span></span><br><span class="line">    <span class="attribute">proxy_next_upstream</span> http_502 http_504 http_404 <span class="literal">error</span> timeout invalid_header;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这样的话，也算是保障了后端服务器的一个高可用性。（下面实例配置中会用到）<br>以上的配置大家可以参考一下，但这个还是会把请求转发给这台服务器的，然后再转发给别的服务器，这样以来就浪费了一次转发，对于网站性能来说也不是最佳理想的方案。为了避免上面说顾虑的情况，可以对nginx后方realserver的健康状态进行检查，如果发现后端服务器不可用，则请求不转发到这台服务器。<br>目前主要有三种方式可以实现对nginx负载均衡的后端节点服务器进行健康检查：<br>1）ngx_http_proxy_module模块和ngx_http_upstream_module模块（这是nginx自带模块）<br>参考地址：<a target="_blank" rel="noopener" href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_next_upstream">http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_next_upstream</a><br>2）nginx_upstream_check_module模块（淘宝技术团队开发）<br>参考地址：<a target="_blank" rel="noopener" href="https://github.com/yaoweibin/nginx_upstream_check_module">https://github.com/yaoweibin/nginx_upstream_check_module</a><br>3）ngx_http_healthcheck_module模块</p>
+<h3 id="一、利用nginx自带模块ngx-http-proxy-module和ngx-http-upstream-module对后端节点做健康检查"><a href="#一、利用nginx自带模块ngx-http-proxy-module和ngx-http-upstream-module对后端节点做健康检查" class="headerlink" title="一、利用nginx自带模块ngx_http_proxy_module和ngx_http_upstream_module对后端节点做健康检查"></a>一、利用nginx自带模块ngx_http_proxy_module和ngx_http_upstream_module对后端节点做健康检查</h3><p>严格来说，nginx自带是没有针对负载均衡后端节点的健康检查的，但是可以通过默认自带的ngx_http_proxy_module模块和ngx_http_upstream_module模块中的相关指令来完成当后端节点出现故障时，自动切换到健康节点来提供访问。下面列出这两个模块中相关的指令：<br>1）ngx_http_proxy_module模块中的 proxy_connect_timeout指令、proxy_read_timeout指令和proxy_next_upstream指令<br>语法:   proxy_connect_timeout time;<br>默认值:  proxy_connect_timeout 60s;<br>上下文:  http, server, location<br>设置与后端服务器建立连接的超时时间。应该注意这个超时一般不可能大于75秒。</p>
+<p>语法: proxy_read_timeout time;<br>默认值:  proxy_read_timeout 60s;<br>上下文:  http, server, location<br>定义从后端服务器读取响应的超时。此超时是指相邻两次读操作之间的最长时间间隔，而不是整个响应传输完成的最长时间。如果后端服务器在超时时间段内没有传输任何数据，连接将被关闭。</p>
+<p>语法: proxy_next_upstream error | timeout | invalid_header | http_500 | http_502 | http_503 | http_504 |http_404 | off …;<br>默认值:  proxy_next_upstream error timeout;<br>上下文:  http, server, location<br>指定在何种情况下一个失败的请求应该被发送到下一台后端服务器：</p>
+<p>error      和后端服务器建立连接时，或者向后端服务器发送请求时，或者从后端服务器接收响应头时，出现错误<br>timeout    和后端服务器建立连接时，或者向后端服务器发送请求时，或者从后端服务器接收响应头时，出现超时<br>invalid_header  后端服务器返回空响应或者非法响应头<br>http_500   后端服务器返回的响应状态码为500<br>http_502   后端服务器返回的响应状态码为502<br>http_503   后端服务器返回的响应状态码为503<br>http_504   后端服务器返回的响应状态码为504<br>http_404   后端服务器返回的响应状态码为404<br>off        停止将请求发送给下一台后端服务器</p>
+<p>需要理解一点的是，只有在没有向客户端发送任何数据以前，将请求转给下一台后端服务器才是可行的。也就是说，如果在传输响应到客户端时出现错误或者超时，这类错误是不可能恢复的。</p>
+<p>范例如下（这个在文档开头已介绍）：</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">http</span> &#123;</span><br><span class="line">    <span class="attribute">proxy_next_upstream</span> http_502 http_504 http_404 <span class="literal">error</span> timeout invalid_header;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>2）ngx_http_upstream_module模块中的server指令<br>语法: server address [parameters];<br>默认值:  ―<br>上下文:  upstream</p>
+<p>范例如下：</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">upstream</span> name &#123;</span><br><span class="line">    <span class="attribute">server</span> <span class="number">10.1.1.110:8080</span> max_fails=<span class="number">1</span> fail_timeout=<span class="number">10s</span>;</span><br><span class="line">    <span class="attribute">server</span> <span class="number">10.1.1.122:8080</span> max_fails=<span class="number">1</span> fail_timeout=<span class="number">10s</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>指令参数解释</strong><br><code>max_fails=number</code><br>设定Nginx与服务器通信的尝试失败的次数。在fail_timeout参数定义的时间段内，如果失败的次数达到此值，Nginx就认为服务器不可用。在下一个fail_timeout时间段，服务器不会再被尝试。失败的尝试次数默认是1。设为0就会停止统计尝试次数，即不对后端节点进行健康检查。认为服务器是一直可用的。</p>
+<p><code>fail_timeout=time</code><br>设定服务器被认为不可用的时间段以及统计失败尝试次数的时间段。在这段时间中，服务器失败次数达到指定的尝试次数，服务器就被认为不可用。默认情况下，该超时时间是10秒。</p>
+<p>在实际应用当中：<br>1）如果后端应用是能够快速重启的应用，比如nginx的话，自带的模块是可以满足需求的。<br>   但是需要注意，如果后端有不健康节点，负载均衡器依然会先把该请求转发给该不健康节点，然后再转发给别的节点，这样就会浪费一次转发。<br>2）如果当后端应用重启时，重启操作需要很久才能完成的时候就会有可能拖死整个负载均衡器。<br>   此时，由于无法准确判断节点健康状态，导致请求handle住，出现假死状态，最终整个负载均衡器上的所有节点都无法正常响应请求。</p>
+<p>比如公司的业务程序是java开发的，因此后端主要是nginx集群和tomcat集群。由于tomcat重启应部署上面的业务不同，有些业务启动初始化时间过长，就会导致上述现象的发生，因此不是很建议使用该模式。<br>并且ngx_http_upstream_module模块中的server指令中的max_fails参数设置值，也会和ngx_http_proxy_module 模块中的的proxy_next_upstream指令设置起冲突。<br>如果将max_fails设置为0，则代表不对后端服务器进行健康检查，这样还会使fail_timeout参数失效（即不起作用）。<br>此时判断后端服务器情况的唯一依据便是ngx_http_proxy_module模块中的proxy_connect_timeout指令和proxy_read_timeout指令，通过将它们的值调低来发现不健康节点，进而将请求往健康节点转移。<br>如果这两个参数设置得过小，但后端程序的执行或多或少会超过这个时间的话，这种情况nginx的效率是非常低的。<br>具体实例配置如下：</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br></pre></td><td class="code"><pre><span class="line">[root@master-<span class="attribute">node</span> ~]<span class="comment"># vim /usr/local/nginx/conf/nginx.conf</span></span><br><span class="line">user  www;</span><br><span class="line"><span class="attribute">worker_processes</span>  <span class="number">8</span>;</span><br><span class="line">   </span><br><span class="line"><span class="comment">#error_log  logs/error.log;</span></span><br><span class="line"><span class="comment">#error_log  logs/error.log  notice;</span></span><br><span class="line"><span class="comment">#error_log  logs/error.log  info;</span></span><br><span class="line">   </span><br><span class="line"><span class="comment">#pid        logs/nginx.pid;</span></span><br><span class="line">   </span><br><span class="line"><span class="section">events</span> &#123;</span><br><span class="line">    <span class="attribute">worker_connections</span>  <span class="number">65535</span>;</span><br><span class="line">&#125;</span><br><span class="line">   </span><br><span class="line"><span class="section">http</span> &#123;</span><br><span class="line">    <span class="attribute">include</span>       mime.types;</span><br><span class="line">    <span class="attribute">default_type</span>  application/octet-stream;</span><br><span class="line">    <span class="attribute">charset</span> utf-<span class="number">8</span>;</span><br><span class="line">         </span><br><span class="line">    <span class="comment">######</span></span><br><span class="line">    <span class="comment">## set access log format</span></span><br><span class="line">    <span class="comment">######</span></span><br><span class="line">    <span class="attribute">log_format</span>  main  <span class="string">&#x27;<span class="variable">$remote_addr</span> <span class="variable">$remote_user</span> [<span class="variable">$time_local</span>] &quot;<span class="variable">$request</span>&quot; &#x27;</span></span><br><span class="line">                  <span class="string">&#x27;<span class="variable">$status</span> <span class="variable">$body_bytes_sent</span> &quot;<span class="variable">$http_referer</span>&quot; &#x27;</span></span><br><span class="line">                  <span class="string">&#x27;<span class="variable">$http_user_agent</span> <span class="variable">$http_x_forwarded_for</span> <span class="variable">$request_time</span> <span class="variable">$upstream_response_time</span> <span class="variable">$upstream_addr</span> <span class="variable">$upstream_status</span>&#x27;</span>;</span><br><span class="line">   </span><br><span class="line">    <span class="comment">#######</span></span><br><span class="line">    <span class="comment">## http setting</span></span><br><span class="line">    <span class="comment">#######</span></span><br><span class="line">    <span class="attribute">sendfile</span>       <span class="literal">on</span>;</span><br><span class="line">    <span class="attribute">tcp_nopush</span>     <span class="literal">on</span>;</span><br><span class="line">    <span class="attribute">tcp_nodelay</span>    <span class="literal">on</span>;</span><br><span class="line">    <span class="attribute">keepalive_timeout</span>  <span class="number">65</span>;</span><br><span class="line">    <span class="attribute">proxy_cache_path</span> /var/www/cache levels=<span class="number">1</span>:<span class="number">2</span> keys_zone=mycache:<span class="number">20m</span> max_size=<span class="number">2048m</span> inactive=<span class="number">60m</span>;</span><br><span class="line">    <span class="attribute">proxy_temp_path</span> /var/www/cache/tmp;</span><br><span class="line">   </span><br><span class="line">    <span class="attribute">fastcgi_connect_timeout</span> <span class="number">3000</span>;</span><br><span class="line">    <span class="attribute">fastcgi_send_timeout</span> <span class="number">3000</span>;</span><br><span class="line">    <span class="attribute">fastcgi_read_timeout</span> <span class="number">3000</span>;</span><br><span class="line">    <span class="attribute">fastcgi_buffer_size</span> <span class="number">256k</span>;</span><br><span class="line">    <span class="attribute">fastcgi_buffers</span> <span class="number">8</span> <span class="number">256k</span>;</span><br><span class="line">    <span class="attribute">fastcgi_busy_buffers_size</span> <span class="number">256k</span>;</span><br><span class="line">    <span class="attribute">fastcgi_temp_file_write_size</span> <span class="number">256k</span>;</span><br><span class="line">    <span class="attribute">fastcgi_intercept_errors</span> <span class="literal">on</span>;</span><br><span class="line"></span><br><span class="line">    <span class="attribute">client_header_timeout</span> <span class="number">600s</span>;</span><br><span class="line">    <span class="attribute">client_body_timeout</span> <span class="number">600s</span>;</span><br><span class="line">    <span class="comment"># client_max_body_size 50m;</span></span><br><span class="line">    <span class="attribute">client_max_body_size</span> <span class="number">100m</span>;               <span class="comment">#允许客户端请求的最大单个文件字节数</span></span><br><span class="line">    <span class="attribute">client_body_buffer_size</span> <span class="number">256k</span>;            <span class="comment">#缓冲区代理缓冲请求的最大字节数，可以理解为先保存到本地再传给用户</span></span><br><span class="line">   </span><br><span class="line">    <span class="attribute">gzip</span>  <span class="literal">on</span>;</span><br><span class="line">    <span class="attribute">gzip_min_length</span>  <span class="number">1k</span>;</span><br><span class="line">    <span class="attribute">gzip_buffers</span>     <span class="number">4</span> <span class="number">16k</span>;</span><br><span class="line">    <span class="attribute">gzip_http_version</span> <span class="number">1</span>.<span class="number">1</span>;</span><br><span class="line">    <span class="attribute">gzip_comp_level</span> <span class="number">9</span>;</span><br><span class="line">    <span class="attribute">gzip_types</span>       text/plain application/x-javascript text/css application/xml text/javascript application/x-httpd-php;</span><br><span class="line">    <span class="attribute">gzip_vary</span> <span class="literal">on</span>;</span><br><span class="line">   </span><br><span class="line">    <span class="comment">## includes vhosts</span></span><br><span class="line">    <span class="attribute">include</span> vhosts/<span class="regexp">*.conf</span>;</span><br><span class="line">&#125;</span><br><span class="line">  </span><br><span class="line">  </span><br><span class="line">[root@master-<span class="attribute">node</span> ~]<span class="comment"># mkdir /usr/local/nginx/conf/vhosts</span></span><br><span class="line">[root<span class="variable">@master</span>-node ~]<span class="comment"># mkdir /var/www/cache</span></span><br><span class="line">[root<span class="variable">@master</span>-node ~]<span class="comment"># ulimit 65535</span></span><br><span class="line">  </span><br><span class="line">[root<span class="variable">@master</span>-node ~]<span class="comment"># vim /usr/local/nginx/conf/vhosts/LB.conf</span></span><br><span class="line">upstream LB-WWW &#123;</span><br><span class="line">      ip_hash;                                                  <span class="comment">#这是负载均衡的ip_hash负载策略，好处是实现session共享。根据需求决定是否加这个配置。</span></span><br><span class="line">      <span class="attribute">server</span> <span class="number">192.168.1.101:80</span> max_fails=<span class="number">3</span> fail_timeout=<span class="number">30s</span>;     <span class="comment">#max_fails = 3 为允许失败的次数，默认值为1。 这是对后端节点做健康检查。</span></span><br><span class="line">      <span class="attribute">server</span> <span class="number">192.168.1.102:80</span> max_fails=<span class="number">3</span> fail_timeout=<span class="number">30s</span>;     <span class="comment">#fail_timeout = 30s 当max_fails次失败后，暂停将请求分发到该后端服务器的时间</span></span><br><span class="line">      <span class="attribute">server</span> <span class="number">192.168.1.118:80</span> max_fails=<span class="number">3</span> fail_timeout=<span class="number">30s</span>;</span><br><span class="line">    &#125;</span><br><span class="line">      </span><br><span class="line"><span class="section">server</span> &#123;</span><br><span class="line">     <span class="attribute">listen</span>       <span class="number">80</span>;</span><br><span class="line">     <span class="attribute">server_name</span>  www.wangshibo.com;</span><br><span class="line">    </span><br><span class="line">      <span class="attribute">access_log</span>  /usr/local/nginx/logs/www-access.log main;</span><br><span class="line">      <span class="attribute">error_log</span>  /usr/local/nginx/logs/www-<span class="literal">error</span>.log;</span><br><span class="line">    </span><br><span class="line">     <span class="section">location</span> / &#123;</span><br><span class="line">         <span class="attribute">proxy_pass</span> http://LB-WWW;</span><br><span class="line">         <span class="attribute">proxy_redirect</span> <span class="literal">off</span> ;</span><br><span class="line">         <span class="attribute">proxy_set_header</span> Host <span class="variable">$host</span>;</span><br><span class="line">         <span class="attribute">proxy_set_header</span> X-Real-IP <span class="variable">$remote_addr</span>;</span><br><span class="line">         <span class="attribute">proxy_set_header</span> REMOTE-HOST <span class="variable">$remote_addr</span>;</span><br><span class="line">         <span class="attribute">proxy_set_header</span> X-Forwarded-For <span class="variable">$proxy_add_x_forwarded_for</span>;</span><br><span class="line">         <span class="attribute">proxy_connect_timeout</span> <span class="number">300</span>;             <span class="comment">#跟后端服务器连接超时时间，发起握手等候响应时间</span></span><br><span class="line">         <span class="attribute">proxy_send_timeout</span> <span class="number">300</span>;                <span class="comment">#后端服务器回传时间，就是在规定时间内后端服务器必须传完所有数据</span></span><br><span class="line">         <span class="attribute">proxy_read_timeout</span> <span class="number">600</span>;                <span class="comment">#连接成功后等待后端服务器的响应时间，已经进入后端的排队之中等候处理</span></span><br><span class="line">         <span class="attribute">proxy_buffer_size</span> <span class="number">256k</span>;                <span class="comment">#代理请求缓冲区,会保存用户的头信息以供nginx进行处理</span></span><br><span class="line">         <span class="attribute">proxy_buffers</span> <span class="number">4</span> <span class="number">256k</span>;                  <span class="comment">#同上，告诉nginx保存单个用几个buffer最大用多少空间</span></span><br><span class="line">         <span class="attribute">proxy_busy_buffers_size</span> <span class="number">256k</span>;          <span class="comment">#如果系统很忙时候可以申请最大的proxy_buffers</span></span><br><span class="line">         <span class="attribute">proxy_temp_file_write_size</span> <span class="number">256k</span>;       <span class="comment">#proxy缓存临时文件的大小</span></span><br><span class="line">         <span class="attribute">proxy_next_upstream</span> <span class="literal">error</span> timeout invalid_header http_500 http_502 http_503 http_504 http_403 http_404;</span><br><span class="line">         <span class="attribute">proxy_max_temp_file_size</span> <span class="number">128m</span>;</span><br><span class="line">         <span class="attribute">proxy_cache</span> mycache;                   <span class="comment">#如果该域名负载的访问请求不需要缓存功能，那就将这以下四行全部注释掉。</span></span><br><span class="line">         <span class="attribute">proxy_cache_valid</span> <span class="number">200</span> <span class="number">302</span> <span class="number">1h</span>;</span><br><span class="line">         <span class="attribute">proxy_cache_valid</span> <span class="number">301</span> <span class="number">1d</span>;</span><br><span class="line">         <span class="attribute">proxy_cache_valid</span> any <span class="number">1m</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>需要注意的是：<br>上面的nginx负载均衡配置中已经开启了cache缓存功能，如果不需要缓存功能，则将上面vhosts目录下的虚拟主机配置中的proxy_cache mycache及其下面三行注释即可！</p>
+<p>这里说下曾经碰到过的一个反常情况：<br>按照上面第一种nginx upstream的健康检查配置后，发现将upstream中的后端两台机器中的一台关闭，访问请求还是会打到这台关闭的后端机器上<br>查看方法：<br>直接浏览器里访问，发现访问结果一会儿好，一会儿坏，这是因为请求不仅打到了后端好的机器上，也打到了关闭的机器上了；</p>
+<p>原因分析：<br>这是因为后端两台机器+端口的访问结果被包含在了 proxy_next_upstream中定义的状态码。</p>
+<p>解决办法：<br>将<code>proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504 http_404;</code><br>改成<code>proxy_next_upstream error timeout invalid_header http_502 http_503 http_504;</code></p>
+<p>重启nginx服务后，在浏览器里输入域名访问，发现访问结果是正常的了！<br>说明：该域名的访问请求都打到了后端好着的那台服务器上了，那台关闭的服务器已经从upstream负载中踢出去了。</p>
+<p>这个通过查看对应域名的access.log日志能发现：<br>访问请求会同时到达后端两台机器上，只不过请求到达关闭的那台机器上时就会通过健康检查发现它是坏的，就会将它自动提出，这样在浏览器里的访问结果显示的就<br>只是正常的那台后端机器处理后的结果了。</p>
+<p>查看error.log错误日志，发现里面的信息都是：访问请求upstream到后端关闭的机器上时，全是”connect() failed (111: Connection refused)”，这是正常的，<br>因为upstream配置里每个几秒就会去健康后端机器，当连接失败时，错误信息就输出到error.log日志里。</p>
+<h3 id="二、利用nginx-upstream-check-module模块对后端节点做健康检查"><a href="#二、利用nginx-upstream-check-module模块对后端节点做健康检查" class="headerlink" title="二、利用nginx_upstream_check_module模块对后端节点做健康检查"></a>二、利用nginx_upstream_check_module模块对后端节点做健康检查</h3><p>除了上面介绍的nginx自带模块，还有一个更专业的模块，来专门提供负载均衡器内节点的健康检查的。这个就是淘宝技术团队开发的nginx模块。<br>用nginx做前端反向代理，如果后端服务器宕掉的话，nginx是不会把这台realserver踢出upstream的，还会把请求转发到后端的这台realserver上面。所以当某台机器出现问题时，会看到nginx的日志会有一段转发失败然后转发正常的日志。借助淘宝技术团队开发的nginx模快nginx_upstream_check_module来检测后方realserver的健康状态，如果后端服务器不可用，则会将其踢出upstream，所有的请求不转发到这台服务器。当期恢复正常时，将其加入upstream。<br>nginx_upstream_check_module，通过它可以用来检测后端realserver的健康状态。如果后端realserver不可用，则所以的请求就不会转发到该节点上。个人比较推荐使用这种方式来检查nginx后端节点的健康状态。<br>在淘宝自己的tengine上是自带了该模块的，大家可以访问淘宝tengine的官网<a target="_blank" rel="noopener" href="http://tengine.taobao.org来获取该版本的nginx,/">http://tengine.taobao.org来获取该版本的nginx，</a><br>如果没有使用淘宝的tengine的话，可以通过补丁的方式来添加该模块到我们自己的nginx中。部署流程如下：</p>
+<p>比如健康检查配置：</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">upstream</span> test_web &#123;</span><br><span class="line">    <span class="attribute">server</span> <span class="number">192.168.1.21:80</span>;</span><br><span class="line">    <span class="attribute">server</span> <span class="number">192.168.1.22:80</span>;</span><br><span class="line">    <span class="attribute">check</span> interval=<span class="number">3000</span> rise=<span class="number">2</span> fall=<span class="number">5</span> timeout=<span class="number">1000</span> type=http;        </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面配置的意思是，对test_web这个负载均衡条目中的所有节点，每个3秒（3000毫秒）检测一次，请求2次正常则标记realserver状态为up，如果检测5次都失败，则标记realserver的状态为down，超时时间为1秒。</p>
+<p><strong>下面列出nginx_upstream_check_module 模块所支持的指令含义</strong><br>Syntax:  <code>check interval=milliseconds [fall=count] [rise=count] [timeout=milliseconds] [default_down=true|false] [type=tcp|http|ssl_hello|mysql|ajp] [port=check_port]</code><br>Default: 如果没有配置参数，默认值是：<code>interval=30000 fall=5 rise=2 timeout=1000 default_down=true type=tcp</code><br>Context: upstream<br>该指令可以打开后端服务器的健康检查功能。指令后面的参数意义是：<br>interval：向后端发送的健康检查包的间隔。<br>fall(fall_count): 如果连续失败次数达到fall_count，服务器就被认为是down。<br>rise(rise_count): 如果连续成功次数达到rise_count，服务器就被认为是up。<br>timeout: 后端健康请求的超时时间，单位毫秒。<br>default_down: 设定初始时服务器的状态，如果是true，就说明默认是down的，如果是false，就是up的。默认值是true，也就是一开始服务器认为是不可用，要等健康检查包达到一定成功次数以后才会被认为是健康的。<br>type：健康检查包的类型，现在支持以下多种类型：<br>tcp：简单的tcp连接，如果连接成功，就说明后端正常。<br>ssl_hello：发送一个初始的SSL hello包并接受服务器的SSL hello包。<br>http：发送HTTP请求，通过后端的回复包的状态来判断后端是否存活。<br>mysql: 向mysql服务器连接，通过接收服务器的greeting包来判断后端是否存活。<br>ajp：向后端发送AJP协议的Cping包，通过接收Cpong包来判断后端是否存活。<br>port: 指定后端服务器的检查端口。你可以指定不同于真实服务的后端服务器的端口，比如后端提供的是443端口的应用，你可以去检查80端口的状态来判断后端健康状况。默认是0，表示跟后端server提供真实服务的端口一样。该选项出现于Tengine-1.4.0。</p>
+<p>Syntax: <code>check_keepalive_requests request_num</code><br>Default: 1<br>Context: upstream<br>该指令可以配置一个连接发送的请求数，其默认值为1，表示Tengine完成1次请求后即关闭连接。</p>
+<p>Syntax: <code>check_http_send http_packet</code><br>Default: “GET / HTTP/1.0”<br>Context: upstream<br>该指令可以配置http健康检查包发送的请求内容。为了减少传输数据量，推荐采用”HEAD”方法。</p>
+<p>当采用长连接进行健康检查时，需在该指令中添加keep-alive请求头，如：”HEAD / HTTP/1.1Connection: keep-alive”。 同时，在采用”GET”方法的情况下，请求uri的size不宜过大，确保可以在1个interval内传输完成，否则会被健康检查模块视为后端服务器或网络异常。<br>Syntax: <code>check_http_expect_alive [ http_2xx | http_3xx | http_4xx | http_5xx ]</code><br>Default: <code>http_2xx | http_3xx</code><br>Context: upstream<br>该指令指定HTTP回复的成功状态，默认认为2XX和3XX的状态是健康的。</p>
+<p>Syntax: check_shm_size size<br>Default: 1M<br>Context: http<br>所有的后端服务器健康检查状态都存于共享内存中，该指令可以设置共享内存的大小。默认是1M，如果你有1千台以上的服务器并在配置的时候出现了错误，就可能需要扩大该内存的大小。</p>
+<p>Syntax: <code>check_status [html|csv|json]</code><br>Default: check_status html<br>Context: location<br>显示服务器的健康状态页面。该指令需要在http块中配置。</p>
+<p>在Tengine-1.4.0以后，可以配置显示页面的格式。支持的格式有: html、csv、 json。默认类型是html。<br>也可以通过请求的参数来指定格式，假设<code>/status</code>是你状态页面的URL， format参数改变页面的格式，比如：<br>/status?format=html<br>/status?format=csv<br>/status?format=json</p>
+<p>同时你也可以通过status参数来获取相同服务器状态的列表，比如：<br>/status?format=html&amp;status=down<br>/status?format=csv&amp;status=up</p>
+<p>下面是一个状态配置的范例：</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">http</span> &#123;</span><br><span class="line">    <span class="section">server</span> &#123;</span><br><span class="line">        <span class="attribute">ocation</span> /nstatus &#123;</span><br><span class="line">             check_status;</span><br><span class="line">             <span class="attribute">access_log</span> <span class="literal">off</span>;</span><br><span class="line">             <span class="comment">#allow IP;</span></span><br><span class="line">             <span class="comment">#deny all;</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>具体实例配置如下： </p>
+<p>1）下载nginx_upstream_check_module模块，并部署到nginx中。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost ~]<span class="comment"># cd /usr/local/src</span></span><br><span class="line">[root@localhost src]<span class="comment"># wget https://github.com/yaoweibin/nginx_upstream_check_module/archive/master.zip</span></span><br><span class="line">[root@localhost src]<span class="comment"># unzip unzip master.zip</span></span><br><span class="line">[root@localhost src]<span class="comment"># ls</span></span><br><span class="line">master.zip  nginx_upstream_check_module-master</span><br><span class="line">[root@localhost src]<span class="comment"># ls nginx_upstream_check_module-master/</span></span><br><span class="line">CHANGES              check_1.2.6+.patch   check.patch                ngx_http_upstream_check_module.c          upstream_fair.patch</span><br><span class="line">check_1.11.1+.patch  check_1.5.12+.patch  config                     ngx_http_upstream_check_module.h          util</span><br><span class="line">check_1.11.5+.patch  check_1.7.2+.patch   doc                        ngx_http_upstream_jvm_route_module.patch</span><br><span class="line">check_1.2.1.patch    check_1.7.5+.patch   nginx-sticky-module.patch  README</span><br><span class="line">check_1.2.2+.patch   check_1.9.2+.patch   nginx-tests                <span class="built_in">test</span></span><br><span class="line">   </span><br><span class="line">[root@localhost src]<span class="comment"># wget http://nginx.org/download/nginx-1.8.0.tar.gz</span></span><br><span class="line">[root@localhost src]<span class="comment"># tar -zxvf nginx-1.8.0.tar.gz</span></span><br><span class="line">[root@localhost src]<span class="comment"># cd nginx-1.8.0</span></span><br><span class="line">   </span><br><span class="line">[root@localhost nginx-1.8.0]<span class="comment"># patch -p1 &lt; ../nginx_upstream_check_module-master/check_1.9.2+.patch</span></span><br><span class="line">[root@localhost nginx-1.8.0]<span class="comment"># ./configure --prefix=/usr/local/nginx --user=nginx --group=nginx --with-http_ssl_module --with-http_flv_module --with-http_stub_status_module --with-http_gzip_static_module --with-pcre --add-module=../nginx_upstream_check_module-master/</span></span><br><span class="line">[root@node1 src]<span class="comment"># make &amp;&amp; make install</span></span><br></pre></td></tr></table></figure>
+<p>2）nginx配置</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line">[root@master-<span class="attribute">node</span> ~]<span class="comment"># vim /usr/local/nginx/conf/vhosts/LB.conf</span></span><br><span class="line">upstream LB-WWW &#123;</span><br><span class="line">    <span class="attribute">server</span> <span class="number">192.168.1.101:80</span>; </span><br><span class="line">    <span class="attribute">server</span> <span class="number">192.168.1.102:80</span>;</span><br><span class="line">    <span class="attribute">check</span> interval=<span class="number">3000</span> rise=<span class="number">2</span> fall=<span class="number">5</span> timeout=<span class="number">1000</span> type=http;</span><br><span class="line">    <span class="attribute">check_keepalive_requests</span> <span class="number">100</span>;</span><br><span class="line">    <span class="attribute">check_http_send</span> <span class="string">&quot;HEAD / HTTP/1.1Connection: keep-alive&quot;</span>;</span><br><span class="line">    <span class="attribute">check_http_expect_alive</span> http_2xx http_3xx;</span><br><span class="line">&#125;</span><br><span class="line">        </span><br><span class="line"><span class="section">server</span> &#123;</span><br><span class="line">    <span class="attribute">listen</span>       <span class="number">80</span>;</span><br><span class="line">    <span class="attribute">server_name</span>  www.wangshibo.com;</span><br><span class="line">      </span><br><span class="line">    <span class="attribute">access_log</span>  /usr/local/nginx/logs/www-access.log main;</span><br><span class="line">    <span class="attribute">error_log</span>  /usr/local/nginx/logs/www-<span class="literal">error</span>.log;</span><br><span class="line">      </span><br><span class="line">    <span class="section">location</span> / &#123;</span><br><span class="line">         <span class="attribute">proxy_pass</span> http://LB-WWW;</span><br><span class="line">         <span class="attribute">proxy_redirect</span> <span class="literal">off</span>;</span><br><span class="line">         <span class="attribute">proxy_set_header</span> Host <span class="variable">$host</span>;</span><br><span class="line">         <span class="attribute">proxy_set_header</span> X-Real-IP <span class="variable">$remote_addr</span>;</span><br><span class="line">         <span class="attribute">proxy_set_header</span> REMOTE-HOST <span class="variable">$remote_addr</span>;</span><br><span class="line">         <span class="attribute">proxy_set_header</span> X-Forwarded-For <span class="variable">$proxy_add_x_forwarded_for</span>;</span><br><span class="line">         <span class="attribute">proxy_connect_timeout</span> <span class="number">300</span>;         </span><br><span class="line">         <span class="attribute">proxy_send_timeout</span> <span class="number">300</span>;           </span><br><span class="line">         <span class="attribute">proxy_read_timeout</span> <span class="number">600</span>;             </span><br><span class="line">         <span class="attribute">proxy_buffer_size</span> <span class="number">256k</span>;             </span><br><span class="line">         <span class="attribute">proxy_buffers</span> <span class="number">4</span> <span class="number">256k</span>;              </span><br><span class="line">         <span class="attribute">proxy_busy_buffers_size</span> <span class="number">256k</span>;       </span><br><span class="line">         <span class="attribute">proxy_temp_file_write_size</span> <span class="number">256k</span>;    </span><br><span class="line">         <span class="attribute">proxy_next_upstream</span> <span class="literal">error</span> timeout invalid_header http_500 http_503 http_404;</span><br><span class="line">         <span class="attribute">proxy_max_temp_file_size</span> <span class="number">128m</span>;</span><br><span class="line">         <span class="attribute">proxy_cache</span> mycache;                            </span><br><span class="line">         <span class="attribute">proxy_cache_valid</span> <span class="number">200</span> <span class="number">302</span> <span class="number">60m</span>;                  </span><br><span class="line">         <span class="attribute">proxy_cache_valid</span> <span class="number">404</span> <span class="number">1m</span>;</span><br><span class="line">    &#125;</span><br><span class="line">         </span><br><span class="line">    <span class="section">location</span> /nstatus &#123;</span><br><span class="line">         check_status;</span><br><span class="line">         <span class="attribute">access_log</span> <span class="literal">off</span>;</span><br><span class="line">         <span class="comment">#allow IP;</span></span><br><span class="line">         <span class="comment">#deny all;</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>配置完毕后，重启nginx。然后访问<code>http://localhost/nstatus</code>这个页面就可以看到当前两台realserver实时的健康状态。</p>
+<p>温馨提示：在生产环境的实施应用中需要注意下面两点<br>1）主要定义好type。由于默认的type是tcp类型，因此假设服务启动，不管是否初始化完毕，它的端口都会起来，所以此时前段负载均衡器为认为该服务已经可用，其实是不可用状态。<br>2）注意check_http_send值的设定。由于它的默认值是”GET / HTTP/1.0”。<br>   假设应用是通过<code>http://ip/name</code>访问的，那么这里check_http_send值就需要更改为 “GET /name HTTP/1.0”才可以。<br>   针对采用长连接进行检查的， 这里增加 keep-alive请求 头，即”HEAD /name HTTP/1.1Connection: keep-alive”。<br>   如果后端的tomcat是基于域名的多虚拟机，此时你需要通过 check_http_send定义host，不然每次访问都是失败，范例：<br>   <code>check_http_send &quot;GET /mobileapi HTTP/1.0 HOST  www.redhat.sx&quot;;</code><br>也可以参考<a target="_blank" rel="noopener" href="http://www.cnblogs.com/kevingrace/p/5882006.html">http://www.cnblogs.com/kevingrace/p/5882006.html</a> 这篇文档里的nginx后端节点健康检查的方法 </p>
+<h3 id="三、利用ngx-http-healthcheck-module模块对后端节点做健康检查"><a href="#三、利用ngx-http-healthcheck-module模块对后端节点做健康检查" class="headerlink" title="三、利用ngx_http_healthcheck_module模块对后端节点做健康检查"></a>三、利用ngx_http_healthcheck_module模块对后端节点做健康检查</h3><p>除了上面两个模块，nginx官方在早期的时候还提供了一个ngx_http_healthcheck_module模块用来进行nginx后端节点的健康检查。nginx_upstream_check_module模块就是参照该模块的设计理念进行开发的，因此在使用和效果上都大同小异。<br>但是需要注意的是，ngx_http_healthcheck_module模块仅仅支持nginx的1.0.0版本，1.1.0版本以后都不支持了！因此，对于目前常见的生产环境上基本都不会去用这个模块了～  </p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2025/08/27/Nginx%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E4%B8%AD%E5%90%8E%E7%AB%AF%E8%8A%82%E7%82%B9%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%81%A5%E5%BA%B7%E6%A3%80%E6%9F%A5/" data-id="cmetqks5f0000xwueg4vicxg7" data-title="Nginx负载均衡中后端节点服务器健康检查" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2025/08/27/%E5%88%A9%E7%94%A8Jenkins%E4%B8%8EDocker%E5%AE%9E%E7%8E%B0Spring-Boot%E9%A1%B9%E7%9B%AE%E7%9A%84%E8%87%AA%E5%8A%A8%E5%8C%96%E9%83%A8%E7%BD%B2%E4%B9%8B%E9%81%93/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          利用Jenkins与Docker实现Spring Boot项目的自动化部署之道
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2025/06/19/%E5%BD%BB%E5%BA%95%E6%90%9E%E6%87%82Vue%E4%B8%AD%E7%9A%84Mixin%E6%B7%B7%E5%85%A5/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">彻底搞懂Vue中的Mixin混入</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">84</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">124</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">74</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">42</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">185</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">52</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.16px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.05px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 16.84px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.26px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.63px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 17.37px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 14.21px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.53px;">Flask</a> <a href="/tags/JavaSE/" style="font-size: 18.42px;">JavaSE</a> <a href="/tags/Laravel/" style="font-size: 16.84px;">Laravel</a> <a href="/tags/Maven/" style="font-size: 11.58px;">Maven</a> <a href="/tags/MybatisPlus/" style="font-size: 11.05px;">MybatisPlus</a> <a href="/tags/Puppeteer/" style="font-size: 14.74px;">Puppeteer</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/Selenium/" style="font-size: 11.58px;">Selenium</a> <a href="/tags/SpringBoot/" style="font-size: 19.47px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.58px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.11px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.95px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.63px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 14.21px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 13.68px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.11px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.21px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.58px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.11px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.05px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.26px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.58px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15.79px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.89px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 16.32px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2025/08/27/%E5%88%A9%E7%94%A8Jenkins%E4%B8%8EDocker%E5%AE%9E%E7%8E%B0Spring-Boot%E9%A1%B9%E7%9B%AE%E7%9A%84%E8%87%AA%E5%8A%A8%E5%8C%96%E9%83%A8%E7%BD%B2%E4%B9%8B%E9%81%93/">利用Jenkins与Docker实现Spring Boot项目的自动化部署之道</a>
+          </li>
+        
+          <li>
+            <a href="/2025/08/27/Nginx%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E4%B8%AD%E5%90%8E%E7%AB%AF%E8%8A%82%E7%82%B9%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%81%A5%E5%BA%B7%E6%A3%80%E6%9F%A5/">Nginx负载均衡中后端节点服务器健康检查</a>
+          </li>
+        
+          <li>
+            <a href="/2025/06/19/%E5%BD%BB%E5%BA%95%E6%90%9E%E6%87%82Vue%E4%B8%AD%E7%9A%84Mixin%E6%B7%B7%E5%85%A5/">彻底搞懂Vue中的Mixin混入</a>
+          </li>
+        
+          <li>
+            <a href="/2025/03/14/%E5%A6%82%E4%BD%95%E5%8F%91%E5%B8%83jar%E5%8C%85%E5%88%B0maven%E4%B8%AD%E5%A4%AE%E4%BB%93%E5%BA%93/">如何发布jar包到maven中央仓库</a>
+          </li>
+        
+          <li>
+            <a href="/2025/03/14/%E6%80%8E%E4%B9%88%E4%BD%BF%E7%94%A8-Redis-%E5%AE%9E%E7%8E%B0%E4%B8%80%E4%B8%AA%E5%BB%B6%E6%97%B6%E9%98%9F%E5%88%97%EF%BC%9F/">怎么使用Redis实现一个延时队列？</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2025 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>
