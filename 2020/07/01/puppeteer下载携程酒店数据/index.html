@@ -14,7 +14,7 @@
 <meta property="og:description" content="如何抓取到携程的每个酒店的装修时间和客房数量呢？本文以puppeteer来抓取。 官方demo就很容易上手，再加上awesome-puppeteer中的例子，很容易就可以实现自己的目标。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-06-30T22:13:39.000Z">
-<meta property="article:modified_time" content="2023-08-22T08:43:02.207Z">
+<meta property="article:modified_time" content="2026-05-13T03:01:35.053Z">
 <meta property="article:author" content="moqiang">
 <meta property="article:tag" content="爬虫">
 <meta property="article:tag" content="Puppeteer">
@@ -64,7 +64,12 @@
         <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
       </div>
     </div>
   </div>
@@ -116,11 +121,11 @@
 <p>目前资料都是</p>
 <figure class="highlight prolog"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ignoreDefaultArgs: [<span class="string">&#x27;--enable-automation&#x27;</span>]</span><br></pre></td></tr></table></figure>
 <p>或</p>
-<figure class="highlight coffeescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">Object</span>.defineProperty(navigator, <span class="string">&#x27;webdriver&#x27;</span>, &#123;</span><br><span class="line">     get: <span class="function"><span class="params">()</span> =&gt;</span> <span class="literal">undefined</span>,</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="title class_">Object</span>.<span class="title function_">defineProperty</span>(navigator, <span class="string">&#x27;webdriver&#x27;</span>, &#123;</span><br><span class="line">     <span class="attr">get</span>: <span class="function">() =&gt;</span> <span class="literal">undefined</span>,</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
 
 <p>实测这两种方法已经无效，webdriver还在，只是值为undefined，通过 webdriver in navigator 或者 <code>navigator.hasOwnProperty(&quot;webdriver&quot;)</code> 都是为true</p>
 <p>最终解决方案：</p>
-<figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">await page.evaluateOnNewDocument(() <span class="operator">=</span>&gt; &#123;</span><br><span class="line">    const newProto <span class="operator">=</span> navigator.__proto__<span class="comment">;</span></span><br><span class="line">    delete newProto.webdriver<span class="comment">;</span></span><br><span class="line">    navigator.__proto__ <span class="operator">=</span> newProto<span class="comment">;</span></span><br><span class="line">  &#125;)<span class="comment">;</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">await</span> page.evaluateOnNewDocument(<span class="function">() =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">const</span> newProto = navigator.<span class="property">__proto__</span>;</span><br><span class="line">    <span class="keyword">delete</span> newProto.<span class="property">webdriver</span>;</span><br><span class="line">    navigator.<span class="property">__proto__</span> = newProto;</span><br><span class="line">  &#125;);</span><br></pre></td></tr></table></figure>
 
 <p>改完以后，<code>headless: false</code>的情况下浏览器不会在自动跳转了，但是改成无头浏览器的话，还是会自动跳转，因为还有其他几个属性不一样。<br>有两个解决方法：<br>1.参考本博客中的文章【navigator plugins与mimetyps的模拟实现分析】手动修改。<br>2.集成扩展组件<strong>puppeteer-extra-plugin-stealth</strong>，它里面已经把所有属性都改了，可以防止被检测。<br>不过这个项目半年没更新了，如果报错【browser.setMaxListeners is not a function】，处理方法：<br>找到<code>puppeteer-extra/packages/puppeteer-extra-plugin-stealth/index.js</code>第155行：<br><code>browser.setMaxListeners(30)</code>，注释掉此行即可。</p>
 <blockquote>
@@ -130,7 +135,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2020/07/01/puppeteer%E4%B8%8B%E8%BD%BD%E6%90%BA%E7%A8%8B%E9%85%92%E5%BA%97%E6%95%B0%E6%8D%AE/" data-id="cla0v667f01jwg0v12ffbgy4e" data-title="puppeteer下载携程酒店数据（反爬虫）" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2020/07/01/puppeteer%E4%B8%8B%E8%BD%BD%E6%90%BA%E7%A8%8B%E9%85%92%E5%BA%97%E6%95%B0%E6%8D%AE/" data-id="cmp3psina01mvk4uedh4fflmm" data-title="puppeteer下载携程酒店数据（反爬虫）" class="article-share-link">分享</a>
       
       
       
@@ -256,6 +261,9 @@
 
 
 <script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
 
 
 

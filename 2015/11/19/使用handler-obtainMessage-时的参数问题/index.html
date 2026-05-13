@@ -14,7 +14,7 @@
 <meta property="og:description" content="handler.obtainMessage() 的作用是从当前的Handler中获取指定的Message以供再次使用 尤其是在监测线程中 如果不断的new Message() 可能出现错误 (错误信息已经忘了 没有记录 &#x3D;.&#x3D;) 有5个重载的方法 12345public final Message obtainMessage ()   public final Message obtainMess">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2015-11-19T15:41:20.000Z">
-<meta property="article:modified_time" content="2022-10-26T09:28:54.077Z">
+<meta property="article:modified_time" content="2026-05-13T03:01:35.332Z">
 <meta property="article:author" content="moqiang">
 <meta name="twitter:card" content="summary">
   
@@ -62,7 +62,12 @@
         <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
       </div>
     </div>
   </div>
@@ -106,9 +111,9 @@
 <p>what arg1 arg2 obj分别对应Message中的相应成员变量。</p>
 <span id="more"></span>
 <p>等价于：</p>
-<figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Message msg <span class="operator">=</span> handler.obtainMessage()<span class="comment">;</span></span><br><span class="line">		msg.arg1 <span class="operator">=</span> <span class="number">1</span><span class="comment">;</span></span><br><span class="line">		msg.arg2 <span class="operator">=</span> <span class="number">2</span><span class="comment">;</span></span><br><span class="line">		msg.what <span class="operator">=</span> <span class="number">3</span><span class="comment">;</span></span><br><span class="line">		msg.obj <span class="operator">=</span> Object<span class="comment">;</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Message</span> <span class="variable">msg</span> <span class="operator">=</span> handler.obtainMessage();</span><br><span class="line">		msg.arg1 = <span class="number">1</span>;</span><br><span class="line">		msg.arg2 = <span class="number">2</span>;</span><br><span class="line">		msg.what = <span class="number">3</span>;</span><br><span class="line">		msg.obj = Object;</span><br></pre></td></tr></table></figure>
 <p>在Handler中接收</p>
-<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Handler <span class="keyword">handler</span> = <span class="keyword">new</span> Handler()&#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">handleMessage</span><span class="params">(Message msg)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.handleMessage(msg);</span><br><span class="line">        <span class="comment">//接收Message发送的消息  msg.what   msg.arg1  msg.arg2  msg.obj</span></span><br><span class="line">        <span class="comment">//这里msg.obj需要强转成你传过来的数据类型</span></span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Handler</span> <span class="variable">handler</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Handler</span>()&#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">handleMessage</span><span class="params">(Message msg)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>.handleMessage(msg);</span><br><span class="line">        <span class="comment">//接收Message发送的消息  msg.what   msg.arg1  msg.arg2  msg.obj</span></span><br><span class="line">        <span class="comment">//这里msg.obj需要强转成你传过来的数据类型</span></span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
 <p>并且这样获得的Message不用再重新定义相应的值，十分好用。</p>
 <p>一般来讲，what是用来switch不同的操作，而其他3个参数都是定义属性。</p>
 <p>要注意的是，具有两个参数的方法只有一个，且第二个参数是Object而不是arg1。</p>
@@ -121,7 +126,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2015/11/19/%E4%BD%BF%E7%94%A8handler-obtainMessage-%E6%97%B6%E7%9A%84%E5%8F%82%E6%95%B0%E9%97%AE%E9%A2%98/" data-id="cla0v66b701s0g0v10xrxcevw" data-title="使用handler.obtainMessage()时的参数问题 " class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2015/11/19/%E4%BD%BF%E7%94%A8handler-obtainMessage-%E6%97%B6%E7%9A%84%E5%8F%82%E6%95%B0%E9%97%AE%E9%A2%98/" data-id="cmp3psipm01vsk4uee96j11pp" data-title="使用handler.obtainMessage()时的参数问题 " class="article-share-link">分享</a>
       
       
       
@@ -245,6 +250,9 @@
 
 
 <script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
 
 
 

@@ -14,7 +14,7 @@
 <meta property="og:description" content="1.vue-router懒加载定义当路由被访问的时候才加载对应组件 2.vue-router懒加载作用当构建的项目比较大的时候，懒加载可以分割代码块，提高页面的初始加载效率。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2019-03-22T02:52:00.000Z">
-<meta property="article:modified_time" content="2022-10-26T09:28:54.042Z">
+<meta property="article:modified_time" content="2026-05-13T01:19:03.377Z">
 <meta property="article:author" content="moqiang">
 <meta property="article:tag" content="Vue">
 <meta name="twitter:card" content="summary">
@@ -63,7 +63,12 @@
         <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
       </div>
     </div>
   </div>
@@ -103,13 +108,13 @@
         <h3 id="1-vue-router懒加载定义"><a href="#1-vue-router懒加载定义" class="headerlink" title="1.vue-router懒加载定义"></a>1.vue-router懒加载定义</h3><p>当路由被访问的时候才加载对应组件</p>
 <h3 id="2-vue-router懒加载作用"><a href="#2-vue-router懒加载作用" class="headerlink" title="2.vue-router懒加载作用"></a>2.vue-router懒加载作用</h3><p>当构建的项目比较大的时候，懒加载可以分割代码块，提高页面的初始加载效率。<span id="more"></span></p>
 <h3 id="3-vue-router懒加载实现"><a href="#3-vue-router懒加载实现" class="headerlink" title="3.vue-router懒加载实现"></a>3.vue-router懒加载实现</h3><p>第一种写法</p>
-<figure class="highlight coffeescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">const routers = [</span><br><span class="line">    &#123;</span><br><span class="line">        path: <span class="string">&#x27;/&#x27;</span>,</span><br><span class="line">        name: <span class="string">&#x27;index&#x27;</span>,</span><br><span class="line">        component: <span class="function"><span class="params">(resolve)</span> =&gt;</span> <span class="built_in">require</span>([<span class="string">&#x27;./views/index.vue&#x27;</span>], resolve)</span><br><span class="line">    &#125;</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> routers = [</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">path</span>: <span class="string">&#x27;/&#x27;</span>,</span><br><span class="line">        <span class="attr">name</span>: <span class="string">&#x27;index&#x27;</span>,</span><br><span class="line">        <span class="attr">component</span>: <span class="function">(<span class="params">resolve</span>) =&gt;</span> <span class="built_in">require</span>([<span class="string">&#x27;./views/index.vue&#x27;</span>], resolve)</span><br><span class="line">    &#125;</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
 
 <p>第二种写法</p>
-<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">const <span class="keyword">Index</span> = () =&gt; <span class="keyword">import</span>(<span class="comment">/* webpackChunkName: &quot;group-home&quot; */</span>  <span class="string">&#x27;@/views/index&#x27;</span>)</span><br><span class="line">const routers = [</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="type">path</span>: <span class="string">&#x27;/&#x27;</span>,</span><br><span class="line">        <span class="type">name</span>: <span class="string">&#x27;index&#x27;</span>,</span><br><span class="line">        component: <span class="keyword">Index</span></span><br><span class="line">    &#125;</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> <span class="title function_">Index</span> = (<span class="params"></span>) =&gt; <span class="title function_">import</span>(<span class="comment">/* webpackChunkName: &quot;group-home&quot; */</span>  <span class="string">&#x27;@/views/index&#x27;</span>)</span><br><span class="line"><span class="keyword">const</span> routers = [</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">path</span>: <span class="string">&#x27;/&#x27;</span>,</span><br><span class="line">        <span class="attr">name</span>: <span class="string">&#x27;index&#x27;</span>,</span><br><span class="line">        <span class="attr">component</span>: <span class="title class_">Index</span></span><br><span class="line">    &#125;</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
 <p>详见：<a target="_blank" rel="noopener" href="https://router.vuejs.org/zh/guide/advanced/lazy-loading.html#%E6%8A%8A%E7%BB%84%E4%BB%B6%E6%8C%89%E7%BB%84%E5%88%86%E5%9D%97">路由懒加载</a></p>
 <p>第三种写法:</p>
-<figure class="highlight livescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> Index = r =&gt; <span class="built_in">require</span>.ensure([], () =&gt; r(<span class="built_in">require</span>(<span class="string">&#x27;./views/index&#x27;</span>)), <span class="string">&#x27;group-home&#x27;</span>);</span><br><span class="line"><span class="keyword">const</span> routers = [</span><br><span class="line">    &#123;</span><br><span class="line">        path: <span class="string">&#x27;/&#x27;</span>,</span><br><span class="line">        name: <span class="string">&#x27;index&#x27;</span>,</span><br><span class="line">        component: Index</span><br><span class="line">    &#125;</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> <span class="title function_">Index</span> = r =&gt; <span class="built_in">require</span>.<span class="title function_">ensure</span>([], <span class="function">() =&gt;</span> <span class="title function_">r</span>(<span class="built_in">require</span>(<span class="string">&#x27;./views/index&#x27;</span>)), <span class="string">&#x27;group-home&#x27;</span>);</span><br><span class="line"><span class="keyword">const</span> routers = [</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="attr">path</span>: <span class="string">&#x27;/&#x27;</span>,</span><br><span class="line">        <span class="attr">name</span>: <span class="string">&#x27;index&#x27;</span>,</span><br><span class="line">        <span class="attr">component</span>: <span class="title class_">Index</span></span><br><span class="line">    &#125;</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
 <p>详见：<a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000015904599">Vue-Router + Webpack 路由懒加载实现</a></p>
 <p>备注:</p>
 <p><code>@/</code> 和 <code>./</code>有异曲同工之用<br><code>.vue</code>后缀可省略<br><code>group-home</code>是把组件按组分块打包, 可以将多个组件放入这个组中</p>
@@ -117,7 +122,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2019/03/22/vue-router%E6%87%92%E5%8A%A0%E8%BD%BD%E7%9A%84%E4%B8%89%E7%A7%8D%E6%96%B9%E5%BC%8F/" data-id="cla0v668n01n1g0v1alap7w3b" data-title="vue-router懒加载的三种方式" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2019/03/22/vue-router%E6%87%92%E5%8A%A0%E8%BD%BD%E7%9A%84%E4%B8%89%E7%A7%8D%E6%96%B9%E5%BC%8F/" data-id="cmp3psio401q9k4uebyrkavdr" data-title="vue-router懒加载的三种方式" class="article-share-link">分享</a>
       
       
       
@@ -243,6 +248,9 @@
 
 
 <script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
 
 
 

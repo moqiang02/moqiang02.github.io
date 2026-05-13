@@ -14,7 +14,7 @@
 <meta property="og:description" content="最近遇到一个问题： 1234var obj &#x3D; &amp;#123;&quot;name1&quot;:&quot;张三&quot;,&quot;name2&quot;:&quot;李四&quot;&amp;#125;;  var key &#x3D; &quot;name1&quot;;  var value &#x3D; obj.key;  &#x2F;&#x2F;得到了&quot;undefined&quot;  value &#x3D; obj.name">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2014-02-23T02:46:21.000Z">
-<meta property="article:modified_time" content="2022-10-26T09:28:53.969Z">
+<meta property="article:modified_time" content="2026-05-13T01:19:02.276Z">
 <meta property="article:author" content="moqiang">
 <meta name="twitter:card" content="summary">
   
@@ -62,7 +62,12 @@
         <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
       </div>
     </div>
   </div>
@@ -104,18 +109,18 @@
 <p>其实我是想动态给key赋值，然后得到key为多少所对就的值。但这种做法行不通，obj.key会去找obj下key为”key”所对应的值，结果当然是找不到喽。</p>
 <span id="more"></span>
 <p>于是，我想到了js中遍历对象属性的方法：</p>
-<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> printObject(obj) &#123;  </span><br><span class="line">    <span class="regexp">//</span>obj = &#123;<span class="string">&quot;cid&quot;</span>:<span class="string">&quot;C0&quot;</span>,<span class="string">&quot;ctext&quot;</span>:<span class="string">&quot;区县&quot;</span>&#125;;  </span><br><span class="line">    var temp = <span class="string">&quot;&quot;</span>;  </span><br><span class="line">    <span class="keyword">for</span> (var i <span class="keyword">in</span> obj) &#123; <span class="regexp">//</span>用javascript的<span class="keyword">for</span>/<span class="keyword">in</span>循环遍历对象的属性  </span><br><span class="line">        temp += i + <span class="string">&quot;:&quot;</span> + obj[i] + <span class="string">&quot;\n&quot;</span>;  </span><br><span class="line">    &#125;  </span><br><span class="line">    <span class="regexp">//</span>alert(obj);  <span class="regexp">//</span>结果：[object Object]  </span><br><span class="line">    <span class="regexp">//</span>console.log(obj);  <span class="regexp">//</span>使用firebug查看结果  </span><br><span class="line">    alert(temp);   <span class="regexp">//</span>结果：cid:C0 \n ctext:区县  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">printObject</span>(<span class="params">obj</span>) &#123;  </span><br><span class="line">    <span class="comment">//obj = &#123;&quot;cid&quot;:&quot;C0&quot;,&quot;ctext&quot;:&quot;区县&quot;&#125;;  </span></span><br><span class="line">    <span class="keyword">var</span> temp = <span class="string">&quot;&quot;</span>;  </span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">var</span> i <span class="keyword">in</span> obj) &#123; <span class="comment">//用javascript的for/in循环遍历对象的属性  </span></span><br><span class="line">        temp += i + <span class="string">&quot;:&quot;</span> + obj[i] + <span class="string">&quot;\n&quot;</span>;  </span><br><span class="line">    &#125;  </span><br><span class="line">    <span class="comment">//alert(obj);  //结果：[object Object]  </span></span><br><span class="line">    <span class="comment">//console.log(obj);  //使用firebug查看结果  </span></span><br><span class="line">    <span class="title function_">alert</span>(temp);   <span class="comment">//结果：cid:C0 \n ctext:区县  </span></span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
 <p>这样，就可以清楚的知道js中一个对象的key和value分别是什么了。</p>
 <p>回到刚才的问题，怎么动态给key赋值，然后以obj.key的方式得到对应的value呢？<br>其实以上printObject中有提示，那就是用<code>obj[key]</code>的方法，key可以是动态的，这样就解决了我上面提出的问题了。<br>最后说一下，还有一个方法也可以，那就是：<code>eval(&quot;obj.&quot;+key)</code>。</p>
 <p>总结：<br>js中想根据动态key得到某对象中相对应的value的方法有二：</p>
-<figure class="highlight maxima"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1</span>、 <span class="built_in">var</span> <span class="built_in">key</span> = <span class="string">&quot;name1&quot;</span>;<span class="built_in">var</span> value = obj[<span class="built_in">key</span>];  </span><br><span class="line"><span class="number">2</span>、 <span class="built_in">var</span> <span class="built_in">key</span> = <span class="string">&quot;name1&quot;</span>;<span class="built_in">var</span> value = <span class="built_in">eval</span>(<span class="string">&quot;obj.&quot;</span>+<span class="built_in">key</span>);  </span><br></pre></td></tr></table></figure>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1</span>、 <span class="keyword">var</span> key = <span class="string">&quot;name1&quot;</span>;<span class="keyword">var</span> value = obj[key];  </span><br><span class="line"><span class="number">2</span>、 <span class="keyword">var</span> key = <span class="string">&quot;name1&quot;</span>;<span class="keyword">var</span> value = <span class="built_in">eval</span>(<span class="string">&quot;obj.&quot;</span>+key);  </span><br></pre></td></tr></table></figure>
 
 <p>扩展阅读：<a target="_blank" rel="noopener" href="http://blog.csdn.net/moqiang02/article/details/18054815">jquery ajax 回调函数的值alert出来[object Object] 解决方法</a></p>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2014/02/23/js%E5%A6%82%E4%BD%95%E8%8E%B7%E5%8F%96object%E7%B1%BB%E5%9E%8B%E9%87%8C%E7%9A%84%E9%94%AE%E5%80%BC/" data-id="cla0v664j01cgg0v1fyu8d9jt" data-title="js如何获取object类型里的键值" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2014/02/23/js%E5%A6%82%E4%BD%95%E8%8E%B7%E5%8F%96object%E7%B1%BB%E5%9E%8B%E9%87%8C%E7%9A%84%E9%94%AE%E5%80%BC/" data-id="cmp3psili01fbk4ue408sa14g" data-title="js如何获取object类型里的键值" class="article-share-link">分享</a>
       
       
       
@@ -239,6 +244,9 @@
 
 
 <script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
 
 
 

@@ -14,7 +14,7 @@
 <meta property="og:description" content="1、简介该扩展包可以生成一个IDE可以理解的文件，以便提供精准的自动补全功能。这个生成的文件基于项目中存在的文件，所以永远是实时的。当然如果你不想手动生成这个文件，也可以使用预生成的文件并把它们放到项目根目录下（这些文件就没有那么实时了）：  Larval 5：https:&#x2F;&#x2F;gist.github.com&#x2F;barryvdh&#x2F;5227822 Lumen：https:&#x2F;&#x2F;gist.github.co">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2016-11-25T09:34:07.000Z">
-<meta property="article:modified_time" content="2022-10-26T09:28:53.856Z">
+<meta property="article:modified_time" content="2026-05-13T03:01:35.002Z">
 <meta property="article:author" content="moqiang">
 <meta property="article:tag" content="Laravel">
 <meta name="twitter:card" content="summary">
@@ -63,7 +63,12 @@
         <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
       </div>
     </div>
   </div>
@@ -118,7 +123,7 @@
 <p>注意：在此之前需要清除bootstrap/compiled.php，所以生成之前需要先运行php artisan clear-compiled然后运行php artisan optimize。</p>
 </blockquote>
 <p>为了后续方便，你也可以在composer.json文件中作如下配置：</p>
-<figure class="highlight prolog"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&quot;scripts&quot;</span>:&#123;</span><br><span class="line">    <span class="string">&quot;post-update-cmd&quot;</span>: [</span><br><span class="line">        <span class="string">&quot;php artisan clear-compiled&quot;</span>,</span><br><span class="line">        <span class="string">&quot;php artisan ide-helper:generate&quot;</span>,</span><br><span class="line">        <span class="string">&quot;php artisan optimize&quot;</span></span><br><span class="line">    ]</span><br><span class="line">&#125;,</span><br></pre></td></tr></table></figure>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">&quot;scripts&quot;</span><span class="punctuation">:</span><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;post-update-cmd&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">        <span class="string">&quot;php artisan clear-compiled&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="string">&quot;php artisan ide-helper:generate&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="string">&quot;php artisan optimize&quot;</span></span><br><span class="line">    <span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br></pre></td></tr></table></figure>
 <p>还可以发布配置文件以修改默认实现：</p>
 <p><code>php artisan vendor:publish --provider=&quot;Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider&quot; --tag=config</code></p>
 <p>生成器会尝试定位真正的类，如果找不到，可以在配置文件中定义。</p>
@@ -129,7 +134,7 @@
 <p>如果你不想自己编写模型属性，可以使用<code>php artisan ide-helper:models</code>命令来基于数据表字段、关联关系以及getters/setters生成对应的phpDoc。你可以通过<code>—write（-W）</code>选项来编写模型文件的注释，默认情况下，你需要覆盖或新建一个单独的文件<code>_ide_helper_models.php</code>，你也可以通过<code>—nowrite（-N）</code>不做更改。需要注意的是在进行操作之前需要备份模型文件，因为我们要保留之前已存在的，只是追加新属性和方法，而不是覆盖和重写。phpdoc已存在会被替换，否则新增，通过<code>—reset（-R）</code>选项，已存在的phpdoc会被忽略，新增的字段/关系才会被保存。</p>
 <p><code>php artisan ide-helper:models Post</code></p>
 <p>该命令会根目录下生成文件 <code>_ide_helper_models.php</code>。</p>
-<figure class="highlight crmsh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * An Eloquent Model: &#x27;Post&#x27;</span><br><span class="line"> *</span><br><span class="line"> * @<span class="keyword">property</span><span class="title"> </span>integer $id</span><br><span class="line"> * @<span class="keyword">property</span><span class="title"> </span>integer $author_id</span><br><span class="line"> * @<span class="keyword">property</span><span class="title"> </span><span class="keyword">string</span> $title</span><br><span class="line"> * @<span class="keyword">property</span><span class="title"> </span><span class="keyword">string</span> $text</span><br><span class="line"> * @<span class="keyword">property</span><span class="title"> </span>\Carbon\Carbon $created_at</span><br><span class="line"> * @<span class="keyword">property</span><span class="title"> </span>\Carbon\Carbon $updated_at</span><br><span class="line"> * @<span class="keyword">property</span><span class="title"></span>-<span class="keyword">read</span> \<span class="keyword">User</span> <span class="title">$author</span></span><br><span class="line"> * @<span class="keyword">property</span><span class="title"></span>-<span class="keyword">read</span> \Illuminate\Database\Eloquent\Collection|\Comment[] $comments</span><br><span class="line"> */</span><br></pre></td></tr></table></figure>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * An Eloquent Model: &#x27;Post&#x27;</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@property</span> integer $id</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@property</span> integer $author_id</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@property</span> string $title</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@property</span> string $text</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@property</span> \Carbon\Carbon $created_at</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@property</span> \Carbon\Carbon $updated_at</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@property</span>-read \User $author</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@property</span>-read \Illuminate\Database\Eloquent\Collection|\Comment[] $comments</span></span><br><span class="line"><span class="comment"> */</span></span><br></pre></td></tr></table></figure>
 <p>默认情况下，app/models中的模型会被遍历，可以使用如下方式告诉哪些模型被使用：</p>
 <p><code>php artisan ide-helper:models Post User</code></p>
 <p>还可以通过<code>--dir</code>选项浏览一个其他目录（基于根路径）：</p>
@@ -141,7 +146,7 @@
 <h3 id="5、PHPStorm中容器实例对应的Meta"><a href="#5、PHPStorm中容器实例对应的Meta" class="headerlink" title="5、PHPStorm中容器实例对应的Meta"></a>5、PHPStorm中容器实例对应的Meta</h3><p>可以生成一个PHPStorm meta文件来添加工厂设计模式支持，对Laravel而言，这意味着我们可以让PHPStorm理解从IoC容器中取出的对象类型。例如，events会返回<code>Illuminate\Events\Dispatcher</code>对象，因此通过meta文件你可以调用<code>app(&#39;events&#39;)</code>然后它会自动补全对应的调度方法。</p>
 <p><code>php artisan ide-helper:meta</code></p>
 <p>会在根目录下生成 .phpstorm.meta.php文件。</p>
-<figure class="highlight scss"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">app</span>(&#x27;events&#x27;)-&gt;<span class="built_in">fire</span>();</span><br><span class="line">\App::<span class="built_in">make</span>(<span class="string">&#x27;events&#x27;</span>)-&gt;<span class="built_in">fire</span>();</span><br><span class="line"></span><br><span class="line"><span class="comment">/** @var \Illuminate\Foundation\Application $app */</span></span><br><span class="line"><span class="variable">$app</span>-&gt;<span class="built_in">make</span>(&#x27;events&#x27;)-&gt;<span class="built_in">fire</span>();</span><br><span class="line"></span><br><span class="line"><span class="comment">// When the key is not found, it uses the argument as class name</span></span><br><span class="line"><span class="built_in">app</span>(&#x27;App\SomeClass&#x27;);</span><br></pre></td></tr></table></figure>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_ invoke__">app</span>(<span class="string">&#x27;events&#x27;</span>)-&gt;<span class="title function_ invoke__">fire</span>();</span><br><span class="line"><span class="title class_">\App</span>::<span class="title function_ invoke__">make</span>(<span class="string">&#x27;events&#x27;</span>)-&gt;<span class="title function_ invoke__">fire</span>();</span><br><span class="line"></span><br><span class="line"><span class="comment">/** <span class="doctag">@var</span> \Illuminate\Foundation\Application $app */</span></span><br><span class="line"><span class="variable">$app</span>-&gt;<span class="title function_ invoke__">make</span>(<span class="string">&#x27;events&#x27;</span>)-&gt;<span class="title function_ invoke__">fire</span>();</span><br><span class="line"></span><br><span class="line"><span class="comment">// When the key is not found, it uses the argument as class name</span></span><br><span class="line"><span class="title function_ invoke__">app</span>(<span class="string">&#x27;App\SomeClass&#x27;</span>);</span><br></pre></td></tr></table></figure>
 <p>预生成示例：<a target="_blank" rel="noopener" href="https://gist.github.com/barryvdh/bb6ffc5d11e0a75dba67">https://gist.github.com/barryvdh/bb6ffc5d11e0a75dba67</a></p>
 <p>注意：你可能需要重启PHPStorm以确保.phpstorm.meta.php被索引。</p>
 <blockquote>
@@ -153,7 +158,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2016/11/25/PhpStorm%E8%87%AA%E5%8A%A8%E8%A1%A5%E5%85%A8%E5%8A%A9%E6%89%8B%EF%BC%9ALaravel-IDE-Helper-Generator/" data-id="cla0v65yy00uqg0v1e0wn1tav" data-title="PhpStorm自动补全助手：Laravel IDE Helper Generator" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2016/11/25/PhpStorm%E8%87%AA%E5%8A%A8%E8%A1%A5%E5%85%A8%E5%8A%A9%E6%89%8B%EF%BC%9ALaravel-IDE-Helper-Generator/" data-id="cmp3psii700w0k4ue7ndvfhda" data-title="PhpStorm自动补全助手：Laravel IDE Helper Generator" class="article-share-link">分享</a>
       
       
       
@@ -279,6 +284,9 @@
 
 
 <script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
 
 
 

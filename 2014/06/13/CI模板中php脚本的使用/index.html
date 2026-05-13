@@ -14,7 +14,7 @@
 <meta property="og:description" content="今天偶然发现，在CI的模板中能够直接使用CI自带的函数，并且可以直接调用controller里面的属性。案例： 控制器： 1234public function test()&amp;#123;       $this-&gt;a &#x3D; &amp;#x27;aaa&amp;#x27;;       $this-&gt;load-&gt;view(&amp;#x27;member&#x2F;test&amp;#x27;,$data);  &amp;#125;">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2014-06-13T03:10:11.000Z">
-<meta property="article:modified_time" content="2022-10-26T09:28:53.708Z">
+<meta property="article:modified_time" content="2026-05-13T03:01:34.607Z">
 <meta property="article:author" content="moqiang">
 <meta property="article:tag" content="CI">
 <meta name="twitter:card" content="summary">
@@ -63,7 +63,12 @@
         <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
       </div>
     </div>
   </div>
@@ -102,17 +107,17 @@
 
         <p>今天偶然发现，在CI的模板中能够直接使用CI自带的函数，并且可以直接调用controller里面的属性。案例：</p>
 <p>控制器：</p>
-<figure class="highlight xl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">public function test()&#123;  </span><br><span class="line">     $<span class="function"><span class="title">this</span>-&gt;</span>a = <span class="string">&#x27;aaa&#x27;</span>;  </span><br><span class="line">     $<span class="function"><span class="title">this</span>-&gt;</span><span class="function"><span class="title">load</span>-&gt;</span>view(<span class="string">&#x27;member/test&#x27;</span>,$<span class="keyword">data</span>);  </span><br><span class="line">&#125;   </span><br></pre></td></tr></table></figure>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">test</span>(<span class="params"></span>)</span>&#123;  </span><br><span class="line">     <span class="variable language_">$this</span>-&gt;a = <span class="string">&#x27;aaa&#x27;</span>;  </span><br><span class="line">     <span class="variable language_">$this</span>-&gt;load-&gt;<span class="title function_ invoke__">view</span>(<span class="string">&#x27;member/test&#x27;</span>,<span class="variable">$data</span>);  </span><br><span class="line">&#125;   </span><br></pre></td></tr></table></figure>
 <span id="more"></span>
 <p>模板：</p>
-<figure class="highlight php-template"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="language-php"><span class="meta">&lt;?php</span> <span class="title function_ invoke__">var_dump</span>(<span class="variable">$this</span>-&gt;a);<span class="meta">?&gt;</span></span><span class="language-xml">  </span></span><br><span class="line"><span class="language-xml"></span><span class="language-php"><span class="meta">&lt;?php</span> <span class="keyword">echo</span> <span class="title function_ invoke__">base_url</span>();<span class="meta">?&gt;</span></span><span class="language-xml"><span class="tag">&lt;<span class="name">br</span>&gt;</span>  </span></span><br><span class="line"><span class="language-xml"></span><span class="language-php"><span class="meta">&lt;?php</span> <span class="keyword">echo</span> <span class="variable language_">$this</span>-&gt;uri-&gt;<span class="title function_ invoke__">segment</span>(<span class="number">4</span>);<span class="meta">?&gt;</span></span><span class="language-xml">  </span></span><br></pre></td></tr></table></figure>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span> <span class="title function_ invoke__">var_dump</span>(<span class="variable">$this</span>-&gt;a);<span class="meta">?&gt;</span>  </span><br><span class="line"><span class="meta">&lt;?php</span> <span class="keyword">echo</span> <span class="title function_ invoke__">base_url</span>();<span class="meta">?&gt;</span>&lt;br&gt;  </span><br><span class="line"><span class="meta">&lt;?php</span> <span class="keyword">echo</span> <span class="variable language_">$this</span>-&gt;uri-&gt;<span class="title function_ invoke__">segment</span>(<span class="number">4</span>);<span class="meta">?&gt;</span>  </span><br></pre></td></tr></table></figure>
 <p>输入url：trunk.com/member/index/test/bbb</p>
 <p>打印结果：</p>
-<figure class="highlight livecodeserver"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">string</span> <span class="string">&#x27;aaa&#x27;</span> (<span class="built_in">length</span>=<span class="number">3</span>)</span><br><span class="line"><span class="keyword">http</span>://trunk.com/</span><br><span class="line">bbb</span><br></pre></td></tr></table></figure>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">string</span> <span class="string">&#x27;aaa&#x27;</span> (length=<span class="number">3</span>)</span><br><span class="line">http:<span class="comment">//trunk.com/</span></span><br><span class="line">bbb</span><br></pre></td></tr></table></figure>
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2014/06/13/CI%E6%A8%A1%E6%9D%BF%E4%B8%ADphp%E8%84%9A%E6%9C%AC%E7%9A%84%E4%BD%BF%E7%94%A8/" data-id="cla0v65sr0083g0v1dj2jccyk" data-title="CI模板中php脚本的使用" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2014/06/13/CI%E6%A8%A1%E6%9D%BF%E4%B8%ADphp%E8%84%9A%E6%9C%AC%E7%9A%84%E4%BD%BF%E7%94%A8/" data-id="cmp3psiev0083k4uebflq9q1c" data-title="CI模板中php脚本的使用" class="article-share-link">分享</a>
       
       
       
@@ -238,6 +243,9 @@
 
 
 <script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
 
 
 

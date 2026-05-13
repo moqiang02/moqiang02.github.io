@@ -14,7 +14,7 @@
 <meta property="og:description" content="Yar 是一个轻量级, 高效的RPC框架, 它提供了一种简单方法来让PHP项目之间可以互相远程调用对方的本地方法. 并且Yar也提供了并行调用的能力. 可以支持同时调用多个远程服务的方法.">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2021-11-04T12:04:32.000Z">
-<meta property="article:modified_time" content="2022-10-26T09:28:53.925Z">
+<meta property="article:modified_time" content="2026-05-13T01:19:03.443Z">
 <meta property="article:author" content="moqiang">
 <meta property="article:tag" content="微服务">
 <meta name="twitter:card" content="summary">
@@ -63,7 +63,12 @@
         <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
       </div>
     </div>
   </div>
@@ -115,7 +120,7 @@
 <blockquote>
 <p>configuration option “php_ini” is not set to php.ini location<br>You should add “extension=msgpack.so” to php.ini</p>
 </blockquote>
-<h3 id="安装-yar"><a href="#安装-yar" class="headerlink" title="安装 yar"></a>安装 yar</h3><figure class="highlight gams"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta"><span class="keyword">$sudo</span> pecl install yar</span></span><br><span class="line">Enable Msgpack Supports [<span class="keyword">no</span>] :  <span class="comment">//填yes or no</span></span><br></pre></td></tr></table></figure>
+<h3 id="安装-yar"><a href="#安装-yar" class="headerlink" title="安装 yar"></a>安装 yar</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$sudo</span> pecl install yar</span><br><span class="line">Enable Msgpack Supports [no] :  //填<span class="built_in">yes</span> or no</span><br></pre></td></tr></table></figure>
 
 <blockquote>
 <p>注意：如果填no，则默认的打包协议是php(serialize)。如果填yes，则默认的打包传输协议为msgpack。</p>
@@ -133,25 +138,25 @@
 <p>configuration option “php_ini” is not set to php.ini location<br>You should add “extension=yar.so” to php.ini</p>
 </blockquote>
 <p>浏览器访问<code>127.0.0.1/test.php</code>，查看php信息并没有看到msgpack和yar，需要进一步配置</p>
-<h3 id="PHP扩展配置"><a href="#PHP扩展配置" class="headerlink" title="PHP扩展配置"></a>PHP扩展配置</h3><figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$sudo</span> find / -name msgpack.so</span><br><span class="line"><span class="regexp">/usr/</span>lib<span class="regexp">/php/</span><span class="number">20190902</span>/msgpack.so</span><br><span class="line"><span class="variable">$sudo</span> find / -name yar.so</span><br><span class="line"><span class="regexp">/usr/</span>lib<span class="regexp">/php/</span><span class="number">20190902</span>/yar.so</span><br></pre></td></tr></table></figure>
+<h3 id="PHP扩展配置"><a href="#PHP扩展配置" class="headerlink" title="PHP扩展配置"></a>PHP扩展配置</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$sudo</span> find / -name msgpack.so</span><br><span class="line">/usr/lib/php/20190902/msgpack.so</span><br><span class="line"><span class="variable">$sudo</span> find / -name yar.so</span><br><span class="line">/usr/lib/php/20190902/yar.so</span><br></pre></td></tr></table></figure>
 
 <p>说明msgpack和yar都已经安装成功</p>
 <figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cd <span class="regexp">/etc/</span>php<span class="regexp">/7.4/m</span>ods-available</span><br><span class="line"><span class="regexp">//</span>可以看到扩展的配置文件</span><br></pre></td></tr></table></figure>
 
-<h3 id="添加扩展配置文件"><a href="#添加扩展配置文件" class="headerlink" title="添加扩展配置文件"></a>添加扩展配置文件</h3><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$sudo</span> vi msgpack.ini</span><br><span class="line">; configuration <span class="keyword">for</span> php msgpack module</span><br><span class="line">; <span class="attribute">priority</span>=20</span><br><span class="line"><span class="attribute">extension</span>=msgpack.so</span><br><span class="line"></span><br><span class="line"><span class="variable">$sudo</span> vi yar.ini</span><br><span class="line">; configuration <span class="keyword">for</span> php yar module</span><br><span class="line">; <span class="attribute">priority</span>=40</span><br><span class="line"><span class="attribute">extension</span>=yar.so</span><br></pre></td></tr></table></figure>
+<h3 id="添加扩展配置文件"><a href="#添加扩展配置文件" class="headerlink" title="添加扩展配置文件"></a>添加扩展配置文件</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$sudo</span> vi msgpack.ini</span><br><span class="line">; configuration <span class="keyword">for</span> php msgpack module</span><br><span class="line">; priority=20</span><br><span class="line">extension=msgpack.so</span><br><span class="line"></span><br><span class="line"><span class="variable">$sudo</span> vi yar.ini</span><br><span class="line">; configuration <span class="keyword">for</span> php yar module</span><br><span class="line">; priority=40</span><br><span class="line">extension=yar.so</span><br></pre></td></tr></table></figure>
 
 <p>注：因为yar依赖于json和msgpack，所以yar的priority的值要大一点</p>
 <h3 id="添加软链接"><a href="#添加软链接" class="headerlink" title="添加软链接"></a>添加软链接</h3><figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cd <span class="regexp">/etc/</span>php<span class="regexp">/7.4/</span>fpm/conf.d</span><br><span class="line">ls -all</span><br></pre></td></tr></table></figure>
 
 <p>可以看到该目录下都是软链接，在该目录下添加上面两个配置文件的软链接</p>
-<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$sudo</span> ln -s ..<span class="regexp">/../m</span>ods-available/msgpack.ini <span class="number">20</span>-msgpack.ini</span><br><span class="line"><span class="variable">$sudo</span> ln -s ..<span class="regexp">/../m</span>ods-available/yar.ini <span class="number">40</span>-yar.ini</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$sudo</span> <span class="built_in">ln</span> -s ../../mods-available/msgpack.ini 20-msgpack.ini</span><br><span class="line"><span class="variable">$sudo</span> <span class="built_in">ln</span> -s ../../mods-available/yar.ini 40-yar.ini</span><br></pre></td></tr></table></figure>
 
 <p>重启Apache，浏览器访问127.0.0.1/test.php查看phpinfo，可以看到已有yar和msgpack，说明配置成功</p>
 <h2 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h2><p>Server端示例(不需要常驻进程):</p>
 <figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">API</span> </span>&#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * the doc info will be generated automatically into service info page.</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@params</span></span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">api</span>(<span class="params"><span class="variable">$parameter</span>, <span class="variable">$option</span> = <span class="string">&quot;foo&quot;</span></span>) </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">protected</span> <span class="function"><span class="keyword">function</span> <span class="title">client_can_not_see</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="variable">$service</span> = <span class="keyword">new</span> <span class="title class_">Yar_Server</span>(<span class="keyword">new</span> <span class="title function_ invoke__">API</span>());</span><br><span class="line"><span class="variable">$service</span>-&gt;<span class="title function_ invoke__">handle</span>();</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
 
 <p>Yar为了方便开发, 把文档和接口绑定到了一起, 对于上面的例子, 如果我们是简单的GET请求这个接口地址的话, 我们就会看到如下的信息页面:</p>
-<figure class="highlight elixir"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="title class_">Yar</span> <span class="symbol">Server:</span> <span class="title class_">API</span></span><br><span class="line">+<span class="title class_">API</span>::api(<span class="variable">$parameter</span>, <span class="variable">$option</span> = <span class="string">&#x27;foo&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Yar Server: API</span><br><span class="line">+API::<span class="title function_ invoke__">api</span>(<span class="variable">$parameter</span>, <span class="variable">$option</span> = <span class="string">&#x27;foo&#x27;</span>)</span><br></pre></td></tr></table></figure>
 
 <p>Client端也很简单，有2种：<br>1)串行：</p>
 <figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="variable">$client</span> = <span class="keyword">new</span> <span class="title class_">Yar_Client</span>(<span class="string">&quot;http://host/api/&quot;</span>);</span><br><span class="line"><span class="variable">$result</span> = <span class="variable">$client</span>-&gt;<span class="title function_ invoke__">api</span>(<span class="string">&quot;parameter&quot;</span>);</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
@@ -199,7 +204,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2021/11/04/Yar%E7%9A%84%E5%AE%89%E8%A3%85%E5%8F%8A%E4%BD%BF%E7%94%A8/" data-id="cla0v66290164g0v1d6rggla1" data-title="Yar的安装及使用" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2021/11/04/Yar%E7%9A%84%E5%AE%89%E8%A3%85%E5%8F%8A%E4%BD%BF%E7%94%A8/" data-id="cmp3psik7018nk4ueau5chsjg" data-title="Yar的安装及使用" class="article-share-link">分享</a>
       
       
       
@@ -325,6 +330,9 @@
 
 
 <script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
 
 
 

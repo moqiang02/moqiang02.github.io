@@ -14,7 +14,7 @@
 <meta property="og:description" content="android中使用数组有种非常简单的方式，在xml中获取，一直以来我都比较排斥这样使用，因为从来没有真正弄懂过，每次需要的时候都是在在网上找一个样板来做，今天花点时间彻底弄懂。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2016-05-13T22:49:37.000Z">
-<meta property="article:modified_time" content="2022-10-26T09:28:53.929Z">
+<meta property="article:modified_time" content="2026-05-13T06:10:15.319Z">
 <meta property="article:author" content="moqiang">
 <meta name="twitter:card" content="summary">
   
@@ -62,7 +62,12 @@
         <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
       </div>
     </div>
   </div>
@@ -107,11 +112,11 @@
 
 <p><code>&lt;string-array&gt;</code>定义的是字符数组，<code>&lt;integer-array&gt;</code>是整数数组。</p>
 <h3 id="引用数组资源"><a href="#引用数组资源" class="headerlink" title="引用数组资源"></a>引用数组资源</h3><p>在java代码中引用</p>
-<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Resources res = get<span class="constructor">Resources()</span>;</span><br><span class="line">String<span class="literal">[]</span> languages = res.get<span class="constructor">StringArray(R.<span class="params">array</span>.<span class="params">languages</span>)</span>;</span><br><span class="line">String<span class="literal">[]</span> reminder_methods = res.get<span class="constructor">IntArray(R.<span class="params">array</span>.<span class="params">reminder_methods_values</span>)</span>;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Resources</span> <span class="variable">res</span> <span class="operator">=</span> getResources();</span><br><span class="line">String[] languages = res.getStringArray(R.array.languages);</span><br><span class="line">String[] reminder_methods = res.getIntArray(R.array.reminder_methods_values);</span><br></pre></td></tr></table></figure>
 
 <p>在xml中引用</p>
 <p>这里以spinner控件为例，因为spinner的entries属性刚好需要的是数组资源</p>
-<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&lt;Spinner</span><br><span class="line">    android:<span class="attribute">id</span>=<span class="string">&quot;@+id/spinner1&quot;</span></span><br><span class="line">    android:<span class="attribute">layout_width</span>=<span class="string">&quot;match_parent&quot;</span></span><br><span class="line">    android:<span class="attribute">layout_height</span>=<span class="string">&quot;wrap_content&quot;</span></span><br><span class="line">    android:<span class="attribute">entries</span>=<span class="string">&quot;@array/languages&quot;</span></span><br><span class="line">  /&gt;</span><br></pre></td></tr></table></figure>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">Spinner</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:id</span>=<span class="string">&quot;@+id/spinner1&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:layout_width</span>=<span class="string">&quot;match_parent&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:layout_height</span>=<span class="string">&quot;wrap_content&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:entries</span>=<span class="string">&quot;@array/languages&quot;</span></span></span><br><span class="line"><span class="tag">  /&gt;</span></span><br></pre></td></tr></table></figure>
 <p>注意上面引用的时候是<code>@array</code>。</p>
 <hr>
 <h3 id="getResources-带来的-NullPointerException"><a href="#getResources-带来的-NullPointerException" class="headerlink" title="getResources 带来的 NullPointerException"></a>getResources 带来的 NullPointerException</h3><p>今天在论坛上看了个帖子  地址是：<a target="_blank" rel="noopener" href="http://bbs.csdn.net/topics/390506826">http://bbs.csdn.net/topics/390506826</a> </p>
@@ -121,7 +126,7 @@
 <p>看到这基本就明白大概出错在哪里了，还是当初的怀疑，<strong>成员变量都会在其它方法之前执行，包括构造函数，（除非成员变量调用了某个方法或者对某个类实例）而  getResources()这个方法属于ContextWrapper这个类的，</strong>在看看源码瞬间你就懂了。</p>
 <figure class="highlight scss"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">@Override</span></span><br><span class="line">publicResources getResources()&#123;</span><br><span class="line">    returnmBase<span class="selector-class">.getResources</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>这里的mBase就是context，而context实在哪里赋值的呢</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public <span class="class"><span class="keyword">class</span> <span class="title">ContextWrapper</span> <span class="keyword">extends</span> <span class="title">Context</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="type">Context</span> mBase;</span><br><span class="line">	 </span><br><span class="line">    publicContextWrapper(<span class="type">Context</span> base) &#123;</span><br><span class="line">        mBase = base;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ContextWrapper</span> <span class="keyword">extends</span> <span class="title class_">Context</span> &#123;</span><br><span class="line"></span><br><span class="line">    Context mBase;</span><br><span class="line">	 </span><br><span class="line">    publicContextWrapper(Context base) &#123;</span><br><span class="line">        mBase = base;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
 
 <p>是在ContextWrapper的构造函数里！！！</p>
 <p>所以不是this为null，而是context为null，this是本类的一个引用而已。</p>
@@ -134,7 +139,7 @@
 <p>1、在xml中要这样定义：</p>
 <p>@drawable/pencil1<br>@drawable/pencil2<br>@drawable/pencil3<br>@drawable/pencil4<br>@drawable/pencil5<br>@drawable/pencil6</p>
 <p>2、在java代码中这样来获取：</p>
-<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">TypedArray ar = context.get<span class="constructor">Resources()</span>.obtain<span class="constructor">TypedArray(R.<span class="params">array</span>.<span class="params">actions_images</span>)</span>;</span><br><span class="line"><span class="built_in">int</span> len = ar.length<span class="literal">()</span>;     </span><br><span class="line"><span class="built_in">int</span><span class="literal">[]</span> resIds = <span class="keyword">new</span> <span class="built_in">int</span><span class="literal">[<span class="identifier">len</span>]</span>;     </span><br><span class="line"><span class="keyword">for</span> (<span class="built_in">int</span> i = <span class="number">0</span>; i &lt; len; i++)     </span><br><span class="line">    resIds<span class="literal">[<span class="identifier">i</span>]</span> = ar.get<span class="constructor">ResourceId(<span class="params">i</span>, 0)</span>;</span><br><span class="line"></span><br><span class="line">ar.recycle<span class="literal">()</span>;  </span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">TypedArray</span> <span class="variable">ar</span> <span class="operator">=</span> context.getResources().obtainTypedArray(R.array.actions_images);</span><br><span class="line"><span class="type">int</span> <span class="variable">len</span> <span class="operator">=</span> ar.length();     </span><br><span class="line"><span class="type">int</span>[] resIds = <span class="keyword">new</span> <span class="title class_">int</span>[len];     </span><br><span class="line"><span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; len; i++)     </span><br><span class="line">    resIds[i] = ar.getResourceId(i, <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">ar.recycle();  </span><br></pre></td></tr></table></figure>
 
 <p>图片的id就保存在resIds中去了，然后我们就可以引用它（比如用<code>img.setImageResourse(resIds[0])</code>）来设置图片了。</p>
 <p>同理，要想在xml中定义id数组，做法一样。</p>
@@ -142,7 +147,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2016/05/14/android%E4%B8%AD%E4%BD%BF%E7%94%A8xml%E9%87%8C%E7%9A%84array%E8%B5%84%E6%BA%90/" data-id="cla0v662h016tg0v11bqxgn76" data-title="android中使用xml里的array资源" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2016/05/14/android%E4%B8%AD%E4%BD%BF%E7%94%A8xml%E9%87%8C%E7%9A%84array%E8%B5%84%E6%BA%90/" data-id="cmp3psikb019ck4ue1pw07ow7" data-title="android中使用xml里的array资源" class="article-share-link">分享</a>
       
       
       
@@ -266,6 +271,9 @@
 
 
 <script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
 
 
 

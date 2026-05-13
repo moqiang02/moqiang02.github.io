@@ -14,7 +14,7 @@
 <meta property="og:description" content="错误提示：java.lang.IllegalArgumentException: Receiver not registered。。 顾名思义就是Receiver没有被注册，这是由于取消了没有注册的Receiver导致的错误。 我们使用Receiver时必须保证注册（register）和反注册(unregister)成对出现。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2016-01-20T13:34:37.000Z">
-<meta property="article:modified_time" content="2022-10-26T09:28:54.191Z">
+<meta property="article:modified_time" content="2026-05-13T03:01:35.589Z">
 <meta property="article:author" content="moqiang">
 <meta name="twitter:card" content="summary">
   
@@ -62,7 +62,12 @@
         <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
       </div>
     </div>
   </div>
@@ -113,17 +118,17 @@
 <p>java.lang.IllegalArgumentException: Receiver not registered: android.widget.ViewFlipper$1@43dee3c0</p>
 <p>这是由于 onDetachedFromWindow() 莫名其妙地在 onAttachedToWindow() 之前被调用了。据说是一个 Bug ，不知在最新的 2.3 上是否修正。</p>
 <p>下面提供一个很简单的解决方案，重写 ViewFlipper 的 onDetachedFromWindow() 方法</p>
-<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">protected</span> <span class="function"><span class="keyword">void</span> <span class="title">onDetachedFromWindow</span> <span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">super</span>.onDetachedFromWindow();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (IllegalArgumentException e) &#123;</span><br><span class="line">        stopFlipping();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">onDetachedFromWindow</span> <span class="params">()</span> &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>.onDetachedFromWindow();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (IllegalArgumentException e) &#123;</span><br><span class="line">        stopFlipping();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <hr>
 <p>当注册广播时，常会遇到的问题就是重复注销广播处理函数是会报错，而且会让进程崩溃。</p>
 <p>一般来说，可以通过一个变量来保存广播处理是否被注销，每当注销时，将它标记为false。如果再次注销时遇到false就不对他进行注销处理。</p>
 <p>但是程序比较复杂的时候会比较难控制。可以使用try catch方式捕获错误。</p>
-<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">try</span> &#123;  </span><br><span class="line">    unregister<span class="constructor">Receiver(<span class="params">receiver</span>)</span>;  </span><br><span class="line">&#125; catch (IllegalArgumentException e) &#123;  </span><br><span class="line">    <span class="keyword">if</span> (e.get<span class="constructor">Message()</span>.contains(<span class="string">&quot;Receiver not registered&quot;</span>)) &#123;  </span><br><span class="line">        <span class="comment">// Ignore this exception. This is exactly what is desired  </span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;  </span><br><span class="line">        <span class="comment">// unexpected, re-throw  </span></span><br><span class="line">        throw e;  </span><br><span class="line">    &#125;  </span><br><span class="line">&#125; </span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">try</span> &#123;  </span><br><span class="line">    unregisterReceiver(receiver);  </span><br><span class="line">&#125; <span class="keyword">catch</span> (IllegalArgumentException e) &#123;  </span><br><span class="line">    <span class="keyword">if</span> (e.getMessage().contains(<span class="string">&quot;Receiver not registered&quot;</span>)) &#123;  </span><br><span class="line">        <span class="comment">// Ignore this exception. This is exactly what is desired  </span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;  </span><br><span class="line">        <span class="comment">// unexpected, re-throw  </span></span><br><span class="line">        <span class="keyword">throw</span> e;  </span><br><span class="line">    &#125;  </span><br><span class="line">&#125; </span><br></pre></td></tr></table></figure>
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2016/01/20/%E9%94%99%E8%AF%AF%E6%8F%90%E7%A4%BAReceiver-not-registered%E7%9A%84%E5%A4%84%E7%90%86/" data-id="cla0v66ie0280g0v1957thzqw" data-title="错误提示Receiver not registered的处理" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2016/01/20/%E9%94%99%E8%AF%AF%E6%8F%90%E7%A4%BAReceiver-not-registered%E7%9A%84%E5%A4%84%E7%90%86/" data-id="cmp3psiuf02cyk4ueazs36gzt" data-title="错误提示Receiver not registered的处理" class="article-share-link">分享</a>
       
       
       
@@ -247,6 +252,9 @@
 
 
 <script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
 
 
 

@@ -14,7 +14,7 @@
 <meta property="og:description" content="Android对UI主线程开启了实时监听，Activity Manager和WindowManager系统服务一旦监听到主线程超过10秒没有响应操作，就会抛出ANR，所以，在UI主线程中不能直接调用Thread.sleep方法去延时，超过10秒就根本不会执行后面的操作，当有必要在主线程中增加延时处理时，可以通过开启子线程的方法：">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2017-02-23T11:17:03.000Z">
-<meta property="article:modified_time" content="2023-02-20T08:20:54.409Z">
+<meta property="article:modified_time" content="2026-05-13T01:19:01.208Z">
 <meta property="article:author" content="moqiang">
 <meta name="twitter:card" content="summary">
   
@@ -62,7 +62,12 @@
         <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
       </div>
     </div>
   </div>
@@ -100,14 +105,14 @@
           
 
         <p>Android对UI主线程开启了实时监听，Activity Manager和WindowManager系统服务一旦监听到主线程超过10秒没有响应操作，就会抛出ANR，所以，在UI主线程中不能直接调用Thread.sleep方法去延时，超过10秒就根本不会执行后面的操作，当有必要在主线程中增加延时处理时，可以通过开启子线程的方法：<span id="more"></span></p>
-<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">new</span> <span class="constructor">Thread(<span class="params">new</span> Runnable()</span>&#123;   </span><br><span class="line">    public void run<span class="literal">()</span>&#123;   </span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="module-access"><span class="module"><span class="identifier">Thread</span>.</span></span>sleep(<span class="number">70000</span>);</span><br><span class="line">        &#125; catch (InterruptedException e) &#123;</span><br><span class="line">            <span class="module-access"><span class="module"><span class="identifier">Log</span>.</span></span>e(TAG, <span class="string">&quot;SLEEP throw e: &quot;</span>+ e.<span class="keyword">to</span><span class="constructor">String()</span>);</span><br><span class="line">            e.print<span class="constructor">StackTrace()</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        Message msg = <span class="keyword">new</span> <span class="constructor">Message()</span>;</span><br><span class="line">        msg.arg1 = <span class="number">1</span>;</span><br><span class="line">        handler.send<span class="constructor">Message(<span class="params">msg</span>)</span>; </span><br><span class="line">    &#125;   </span><br><span class="line"></span><br><span class="line">&#125;).start<span class="literal">()</span>;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">new</span> <span class="title class_">Thread</span>(<span class="keyword">new</span> <span class="title class_">Runnable</span>()&#123;   </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span>&#123;   </span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            Thread.sleep(<span class="number">70000</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">            Log.e(TAG, <span class="string">&quot;SLEEP throw e: &quot;</span>+ e.toString());</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="type">Message</span> <span class="variable">msg</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Message</span>();</span><br><span class="line">        msg.arg1 = <span class="number">1</span>;</span><br><span class="line">        handler.sendMessage(msg); </span><br><span class="line">    &#125;   </span><br><span class="line"></span><br><span class="line">&#125;).start();</span><br></pre></td></tr></table></figure>
 
 <p>然后通过Handler将‘睡’的结果反馈给主线程：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="type">Handler</span> <span class="variable">handler</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Handler</span>() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">handleMessage</span><span class="params">(Message msg)</span> &#123;</span><br><span class="line">        <span class="keyword">switch</span>(msg) &#123;</span><br><span class="line">        <span class="keyword">case</span> <span class="number">0</span>:</span><br><span class="line">        <span class="comment">//TODO</span></span><br><span class="line">        <span class="keyword">case</span> <span class="number">1</span>:</span><br><span class="line">        <span class="comment">//TODO</span></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2017/02/23/Android%E4%B8%BB%E7%BA%BF%E7%A8%8B%E4%B8%AD%E5%BB%B6%E6%97%B6%E5%A4%84%E7%90%86/" data-id="cla0v65rr003zg0v1ciokd4ni" data-title="Android主线程中延时处理" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2017/02/23/Android%E4%B8%BB%E7%BA%BF%E7%A8%8B%E4%B8%AD%E5%BB%B6%E6%97%B6%E5%A4%84%E7%90%86/" data-id="cmp3psiee003zk4ue6hy9dhtt" data-title="Android主线程中延时处理" class="article-share-link">分享</a>
       
       
       
@@ -231,6 +236,9 @@
 
 
 <script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
 
 
 

@@ -14,7 +14,7 @@
 <meta property="og:description" content="当我们登录网站管理后台的时候，会有提示说记住登录状态，记住我等这样的提示，这个选项有什么用呢？如果选中了记登录状态后，下次在浏览这个网站后台时就不用在填写用户名和密码了，在去登录了。下面写了一小代码，简单说明一下，自动登录的思想。方法不止一个，下面说一下我的想法。 一，用户登录的check123456789101112131415161718192021&#x2F;&#x2F;检查用户是否登录  function c">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2014-02-23T02:48:28.000Z">
-<meta property="article:modified_time" content="2022-10-26T09:28:54.020Z">
+<meta property="article:modified_time" content="2026-05-13T03:01:35.039Z">
 <meta property="article:author" content="moqiang">
 <meta name="twitter:card" content="summary">
   
@@ -62,7 +62,12 @@
         <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
       </div>
     </div>
   </div>
@@ -100,7 +105,7 @@
           
 
         <p>当我们登录网站管理后台的时候，会有提示说记住登录状态，记住我等这样的提示，这个选项有什么用呢？如果选中了记登录状态后，下次在浏览这个网站后台时就不用在填写用户名和密码了，在去登录了。下面写了一小代码，简单说明一下，自动登录的思想。方法不止一个，下面说一下我的想法。</p>
-<h3 id="一，用户登录的check"><a href="#一，用户登录的check" class="headerlink" title="一，用户登录的check"></a>一，用户登录的check</h3><figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="regexp">//</span>检查用户是否登录  </span><br><span class="line"><span class="keyword">function</span> checklogin()  </span><br><span class="line">&#123;  </span><br><span class="line">    <span class="keyword">if</span> (empty(<span class="variable">$_SESSION</span>[<span class="string">&#x27;user_info&#x27;</span>])) &#123;  </span><br><span class="line">        <span class="regexp">//</span>检查一下session是不是为空  </span><br><span class="line">        <span class="keyword">if</span> (empty(<span class="variable">$_COOKIE</span>[<span class="string">&#x27;username&#x27;</span>]) || empty(<span class="variable">$_COOKIE</span>[<span class="string">&#x27;password&#x27;</span>])) &#123;  </span><br><span class="line">            <span class="regexp">//</span>如果session为空，并且用户没有选择记录登录状  </span><br><span class="line">            header(<span class="string">&#x27;location:login.php?req_url=&#x27;</span> . <span class="variable">$_SERVER</span>[<span class="string">&#x27;REQUEST_URI&#x27;</span>]);  </span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;  </span><br><span class="line">            <span class="regexp">//</span>用户选择了记住登录状态  </span><br><span class="line">            <span class="variable">$user</span> = getUserInfo(<span class="variable">$_COOKIE</span>[<span class="string">&#x27;username&#x27;</span>], <span class="variable">$_COOKIE</span>[<span class="string">&#x27;password&#x27;</span>]);  </span><br><span class="line">            <span class="regexp">//</span>去取用户的个人资料  </span><br><span class="line">            <span class="keyword">if</span> (empty(<span class="variable">$user</span>)) &#123;  </span><br><span class="line">                <span class="regexp">//</span>用户名密码不对没到取到信息，转到登录页面  </span><br><span class="line">                header(<span class="string">&#x27;location:login.php?req_url=&#x27;</span> . <span class="variable">$_SERVER</span>[<span class="string">&#x27;REQUEST_URI&#x27;</span>]);  </span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;  </span><br><span class="line">                <span class="variable">$_SESSION</span>[<span class="string">&#x27;user_info&#x27;</span>] = <span class="variable">$user</span>;  </span><br><span class="line">            &#125;  </span><br><span class="line">        &#125;  </span><br><span class="line">    &#125;  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
+<h3 id="一，用户登录的check"><a href="#一，用户登录的check" class="headerlink" title="一，用户登录的check"></a>一，用户登录的check</h3><figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//检查用户是否登录  </span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">checklogin</span>(<span class="params"></span>)  </span></span><br><span class="line"><span class="function"></span>&#123;  </span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">empty</span>(<span class="variable">$_SESSION</span>[<span class="string">&#x27;user_info&#x27;</span>])) &#123;  </span><br><span class="line">        <span class="comment">//检查一下session是不是为空  </span></span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">empty</span>(<span class="variable">$_COOKIE</span>[<span class="string">&#x27;username&#x27;</span>]) || <span class="keyword">empty</span>(<span class="variable">$_COOKIE</span>[<span class="string">&#x27;password&#x27;</span>])) &#123;  </span><br><span class="line">            <span class="comment">//如果session为空，并且用户没有选择记录登录状  </span></span><br><span class="line">            <span class="title function_ invoke__">header</span>(<span class="string">&#x27;location:login.php?req_url=&#x27;</span> . <span class="variable">$_SERVER</span>[<span class="string">&#x27;REQUEST_URI&#x27;</span>]);  </span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;  </span><br><span class="line">            <span class="comment">//用户选择了记住登录状态  </span></span><br><span class="line">            <span class="variable">$user</span> = <span class="title function_ invoke__">getUserInfo</span>(<span class="variable">$_COOKIE</span>[<span class="string">&#x27;username&#x27;</span>], <span class="variable">$_COOKIE</span>[<span class="string">&#x27;password&#x27;</span>]);  </span><br><span class="line">            <span class="comment">//去取用户的个人资料  </span></span><br><span class="line">            <span class="keyword">if</span> (<span class="keyword">empty</span>(<span class="variable">$user</span>)) &#123;  </span><br><span class="line">                <span class="comment">//用户名密码不对没到取到信息，转到登录页面  </span></span><br><span class="line">                <span class="title function_ invoke__">header</span>(<span class="string">&#x27;location:login.php?req_url=&#x27;</span> . <span class="variable">$_SERVER</span>[<span class="string">&#x27;REQUEST_URI&#x27;</span>]);  </span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;  </span><br><span class="line">                <span class="variable">$_SESSION</span>[<span class="string">&#x27;user_info&#x27;</span>] = <span class="variable">$user</span>;  </span><br><span class="line">            &#125;  </span><br><span class="line">        &#125;  </span><br><span class="line">    &#125;  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
 <p>在访问后台的每个页面时，都要先进行上面的检查</p>
 <span id="more"></span>
 <h3 id="二，用户提交登录信息"><a href="#二，用户提交登录信息" class="headerlink" title="二，用户提交登录信息"></a>二，用户提交登录信息</h3><p>当用户填写用户名和密码后就提交到这儿来</p>
@@ -114,7 +119,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2014/02/23/php%E8%AE%B0%E4%BD%8F%E5%AF%86%E7%A0%81%E8%87%AA%E5%8A%A8%E7%99%BB%E5%BD%95/" data-id="cla0v667a01jjg0v1b8rs5rdz" data-title="php记住密码自动登录" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2014/02/23/php%E8%AE%B0%E4%BD%8F%E5%AF%86%E7%A0%81%E8%87%AA%E5%8A%A8%E7%99%BB%E5%BD%95/" data-id="cmp3psin701mhk4ue5kug7bj1" data-title="php记住密码自动登录" class="article-share-link">分享</a>
       
       
       
@@ -238,6 +243,9 @@
 
 
 <script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
 
 
 

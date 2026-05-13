@@ -14,7 +14,7 @@
 <meta property="og:description" content="今天想捕获Gallery的Touch事件做自己想要的处理，但你添加完setOnTouchListener监听完之后eclipse自动会生成一个onTouch方法，就可以在这里面做你想要做的处理了，若你小心地看它会增加return false这行。我在处理完Event.ACTION_MOVE时将其改为return true。当我运行我的程序的时候发现Gallery不能左右滚动了。我就觉得很纳闷了，怎">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2016-03-20T09:13:00.000Z">
-<meta property="article:modified_time" content="2022-10-26T09:28:53.996Z">
+<meta property="article:modified_time" content="2026-05-13T01:19:02.711Z">
 <meta property="article:author" content="moqiang">
 <meta name="twitter:card" content="summary">
   
@@ -62,7 +62,12 @@
         <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
       </div>
     </div>
   </div>
@@ -102,11 +107,11 @@
         <p>今天想捕获Gallery的Touch事件做自己想要的处理，但你添加完setOnTouchListener监听完之后eclipse自动会生成一个onTouch方法，就可以在这里面做你想要做的处理了，若你小心地看它会增加return false这行。我在处理完Event.ACTION_MOVE时将其改为return true。当我运行我的程序的时候发现Gallery不能左右滚动了。我就觉得很纳闷了，怎么不能滚动了呢？然后一个朋友提示我应该return false.我改完运行后，果真可以滚动了，并且我在move的时候也实现了我的处理。当时我就在想：return false和return true有何区别呢？<span id="more"></span></p>
 <p>下面就是我在别的文章学习总结来的结论：<br>1.return false说明你还没消费onTouch事件，在执行完你onTouch里面的代码之后，onTouch事件并没有结束。就是会自动地执行Gallery这个view里onTouch代码（这个为默认).所以这就是为什么没增加你的处理的时候就只自动地调用Gallery的onTouch，若你在onTouch里面增加你的代码并且return false就会执行你的处理和默认的处理。</p>
 <p>2.return true说明你已经消费完了onTouch事件，在执行完你的onTouch里面的代码之后，这个onTouch事件就结束了。也就是说不会再调用默认的onTouch事件了。在onTouch里面有很多种的处理比如move,down,up….，若你在move里面return false，那么接着的fling，up等后面的事件也不会处理的。</p>
-<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">mGallery.set<span class="constructor">OnTouchListener(<span class="params">new</span> OnTouchListener()</span>&#123;</span><br><span class="line"></span><br><span class="line">			<span class="comment">//@Override</span></span><br><span class="line">			public boolean on<span class="constructor">Touch(View <span class="params">v</span>, MotionEvent <span class="params">event</span>)</span> &#123;</span><br><span class="line">				<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">				<span class="module-access"><span class="module"><span class="identifier">System</span>.</span></span>out.println(<span class="string">&quot;Gallery onTouch&quot;</span>);</span><br><span class="line">				<span class="keyword">if</span>(event.get<span class="constructor">Action()</span>==MotionEvent.ACTION_MOVE)&#123;</span><br><span class="line">					mDismiss.remove<span class="constructor">Messages(1)</span>;</span><br><span class="line">					<span class="module-access"><span class="module"><span class="identifier">System</span>.</span></span>out.println(<span class="string">&quot;ACTION_MOVE &quot;</span>);</span><br><span class="line">					</span><br><span class="line">				&#125;<span class="keyword">else</span> <span class="keyword">if</span>(event.get<span class="constructor">Action()</span>==MotionEvent.ACTION_UP)&#123;</span><br><span class="line">					mDismiss.send<span class="constructor">EmptyMessageDelayed(1,10000)</span>;</span><br><span class="line">					<span class="module-access"><span class="module"><span class="identifier">System</span>.</span></span>out.println(<span class="string">&quot;ACTION_UP &quot;</span>);</span><br><span class="line">				&#125;</span><br><span class="line">				return <span class="literal">false</span>;</span><br><span class="line">			&#125;</span><br><span class="line">			</span><br><span class="line">		&#125;);</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">mGallery.setOnTouchListener(<span class="keyword">new</span> <span class="title class_">OnTouchListener</span>()&#123;</span><br><span class="line"></span><br><span class="line">			<span class="comment">//@Override</span></span><br><span class="line">			<span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">onTouch</span><span class="params">(View v, MotionEvent event)</span> &#123;</span><br><span class="line">				<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">				System.out.println(<span class="string">&quot;Gallery onTouch&quot;</span>);</span><br><span class="line">				<span class="keyword">if</span>(event.getAction()==MotionEvent.ACTION_MOVE)&#123;</span><br><span class="line">					mDismiss.removeMessages(<span class="number">1</span>);</span><br><span class="line">					System.out.println(<span class="string">&quot;ACTION_MOVE &quot;</span>);</span><br><span class="line">					</span><br><span class="line">				&#125;<span class="keyword">else</span> <span class="keyword">if</span>(event.getAction()==MotionEvent.ACTION_UP)&#123;</span><br><span class="line">					mDismiss.sendEmptyMessageDelayed(<span class="number">1</span>,<span class="number">10000</span>);</span><br><span class="line">					System.out.println(<span class="string">&quot;ACTION_UP &quot;</span>);</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">			&#125;</span><br><span class="line">			</span><br><span class="line">		&#125;);</span><br></pre></td></tr></table></figure>
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2016/03/20/onTouchEvent-%E4%B8%ADonTouch%E7%9A%84%E8%BF%94%E5%9B%9E%E5%80%BC%E7%9A%84%E6%84%8F%E4%B9%89/" data-id="cla0v665w01g3g0v19nzr3n15" data-title="onTouchEvent 中onTouch的返回值的意义" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2016/03/20/onTouchEvent-%E4%B8%ADonTouch%E7%9A%84%E8%BF%94%E5%9B%9E%E5%80%BC%E7%9A%84%E6%84%8F%E4%B9%89/" data-id="cmp3psimg01j5k4ue37mq3ces" data-title="onTouchEvent 中onTouch的返回值的意义" class="article-share-link">分享</a>
       
       
       
@@ -230,6 +235,9 @@
 
 
 <script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
 
 
 

@@ -18,7 +18,7 @@
 <meta property="og:image" content="http://moqiang02.github.io/images/PHP%E8%BF%9E%E6%8E%A5Memcached%E4%BD%BF%E7%94%A8%E7%9F%AD%E8%BF%9E%E6%8E%A5%E9%80%A0%E6%88%90CPU%E8%BF%87%E9%AB%98/3.png">
 <meta property="og:image" content="http://moqiang02.github.io/images/PHP%E8%BF%9E%E6%8E%A5Memcached%E4%BD%BF%E7%94%A8%E7%9F%AD%E8%BF%9E%E6%8E%A5%E9%80%A0%E6%88%90CPU%E8%BF%87%E9%AB%98/4.png">
 <meta property="article:published_time" content="2015-08-20T11:48:19.000Z">
-<meta property="article:modified_time" content="2022-10-26T09:28:53.855Z">
+<meta property="article:modified_time" content="2026-05-13T01:19:03.009Z">
 <meta property="article:author" content="moqiang">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="http://moqiang02.github.io/images/PHP%E8%BF%9E%E6%8E%A5Memcached%E4%BD%BF%E7%94%A8%E7%9F%AD%E8%BF%9E%E6%8E%A5%E9%80%A0%E6%88%90CPU%E8%BF%87%E9%AB%98/1.png">
@@ -67,7 +67,12 @@
         <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
       </div>
     </div>
   </div>
@@ -119,7 +124,7 @@
 <p>看到软中断过高开始怀疑是不是网卡驱动不好，因为以前碰到过有些网卡只会用到一个cpu的软中断，查了查也不是。</p>
 <p>那到底是什么使用了这么多的软中断呢？就怀疑是网络连接了，用<code>netstat -anpo | grep :11211 | awk -F&quot; &quot; &#39;&#123;print $6&#125;&#39; | sort |uniq -c  | sort -rn</code>看了一下，发现time_out状态的连接超多。正常不应该有这么多的。</p>
 <p>到这里直接就去查php代码了，发现连接代码如下：</p>
-<figure class="highlight perl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$handle = new Memcache();</span><br><span class="line">$handle-&gt;<span class="keyword">connect</span>($config[<span class="string">&#x27;host&#x27;</span>], $config[<span class="string">&#x27;port&#x27;</span>]);</span><br></pre></td></tr></table></figure>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$handle</span> = <span class="keyword">new</span> <span class="title class_">Memcache</span>();</span><br><span class="line"><span class="variable">$handle</span>-&gt;<span class="title function_ invoke__">connect</span>(<span class="variable">$config</span>[<span class="string">&#x27;host&#x27;</span>], <span class="variable">$config</span>[<span class="string">&#x27;port&#x27;</span>]);</span><br></pre></td></tr></table></figure>
 <p>用的是connect，这个是短连接。<br>为什么软中断会这么高？</p>
 <p>因为php连接memcache使用短连接方式，这种方式是每次连上memcached，读写操作完成后，连接关闭，下次需要读写memcache时再重新连。由于php读写memcache特别频繁，自然php连接memcache的次数也就非常多了。而新建连接是需要代价的，会产生软中断。所以就在top内看到%si一直会很高，50%~90%。</p>
 <p>基本确定原因后，改代码：</p>
@@ -130,7 +135,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2015/08/20/PHP%E8%BF%9E%E6%8E%A5Memcached%E4%BD%BF%E7%94%A8%E7%9F%AD%E8%BF%9E%E6%8E%A5%E9%80%A0%E6%88%90CPU%E8%BF%87%E9%AB%98/" data-id="cla0v65yv00uig0v18jg08rw1" data-title="PHP连接Memcached使用短连接造成CPU过高" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2015/08/20/PHP%E8%BF%9E%E6%8E%A5Memcached%E4%BD%BF%E7%94%A8%E7%9F%AD%E8%BF%9E%E6%8E%A5%E9%80%A0%E6%88%90CPU%E8%BF%87%E9%AB%98/" data-id="cmp3psii600vuk4ue1gdx55ka" data-title="PHP连接Memcached使用短连接造成CPU过高" class="article-share-link">分享</a>
       
       
       
@@ -254,6 +259,9 @@
 
 
 <script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
 
 
 

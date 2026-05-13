@@ -14,7 +14,7 @@
 <meta property="og:description" content="nginx 中的内置变量都可以通过if指令 + 正则表达式来进行截取,截取之后的结果通过正则表达式的分组来进行引用 比如:从请求中传过来的一个名为 ssl_client_s_dn 的变量,它的值是类似cn&#x3D;username这样的 我们想要只留下username ,可以这样: 123if ( $ssl_client_s_dn ~ (CN&#x3D;([\S\s]*)) )&amp;#123;    set  $use">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-02-05T15:12:51.000Z">
-<meta property="article:modified_time" content="2023-04-21T05:24:00.903Z">
+<meta property="article:modified_time" content="2026-05-13T03:58:58.328Z">
 <meta property="article:author" content="moqiang">
 <meta name="twitter:card" content="summary">
   
@@ -62,7 +62,12 @@
         <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
       </div>
     </div>
   </div>
@@ -111,15 +116,15 @@
 <p>在NGINX中进行调试的时候，有时候想要看一下变量的值，有两种方法。</p>
 <p>1.通过标头发送nginx变量值:<br><code>add_header X-uri &quot;$uri&quot;;</code><br>将在浏览器的响应标题中看到:<br><code>X-uri:/index.php</code></p>
 <p>2.直接返回文本：</p>
-<figure class="highlight crmsh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">location</span> <span class="title">/ &#123;</span></span><br><span class="line"><span class="title">    default_type</span>    text/plain;</span><br><span class="line">    return <span class="number">502</span> <span class="string">&quot;服务正在升级，请稍后再试……&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">location</span> / &#123;</span><br><span class="line">    <span class="attribute">default_type</span>    text/plain;</span><br><span class="line">    <span class="attribute">return</span> <span class="number">502</span> <span class="string">&quot;服务正在升级，请稍后再试……&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>也可以使用html标签格式：</p>
-<figure class="highlight crmsh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">location</span> <span class="title">/ &#123;</span></span><br><span class="line"><span class="title">    default_type</span>    text/html;</span><br><span class="line">    return <span class="number">502</span> <span class="string">&quot;服务正在升级，请稍后再试……&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">location</span> / &#123;</span><br><span class="line">    <span class="attribute">default_type</span>    text/html;</span><br><span class="line">    <span class="attribute">return</span> <span class="number">502</span> <span class="string">&quot;服务正在升级，请稍后再试……&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>也可以直接返回json文本：</p>
-<figure class="highlight crmsh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">location</span> <span class="title">/ &#123;</span></span><br><span class="line"><span class="title">    default_type</span>    application/json;</span><br><span class="line">    return <span class="number">502</span> &#x27;&#123;<span class="string">&quot;status&quot;</span>:<span class="number">502</span>,<span class="string">&quot;msg&quot;</span>:<span class="string">&quot;服务正在升级，请稍后再试……&quot;</span>&#125;&#x27;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">location / <span class="punctuation">&#123;</span></span><br><span class="line">    default_type    application/json;</span><br><span class="line">    return <span class="number">502</span> &#x27;<span class="punctuation">&#123;</span><span class="attr">&quot;status&quot;</span><span class="punctuation">:</span><span class="number">502</span><span class="punctuation">,</span><span class="attr">&quot;msg&quot;</span><span class="punctuation">:</span><span class="string">&quot;服务正在升级，请稍后再试……&quot;</span><span class="punctuation">&#125;</span>&#x27;;</span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2020/02/05/%E4%BD%BF%E7%94%A8%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%9D%A5%E6%88%AA%E5%8F%96nginx%E4%B8%AD%E7%9A%84%E5%86%85%E7%BD%AE%E5%8F%98%E9%87%8F/" data-id="cla0v66bg01sgg0v1beuyfolv" data-title="使用正则表达式来截取nginx中的内置变量" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2020/02/05/%E4%BD%BF%E7%94%A8%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%9D%A5%E6%88%AA%E5%8F%96nginx%E4%B8%AD%E7%9A%84%E5%86%85%E7%BD%AE%E5%8F%98%E9%87%8F/" data-id="cmp3psipq01w8k4uehvmna8vp" data-title="使用正则表达式来截取nginx中的内置变量" class="article-share-link">分享</a>
       
       
       
@@ -243,6 +248,9 @@
 
 
 <script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
 
 
 

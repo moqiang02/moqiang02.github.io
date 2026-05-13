@@ -14,7 +14,7 @@
 <meta property="og:description" content="摘要 本文探讨了如何利用Jenkins和Docker技术实现Spring Boot项目的可持续自动化部署。通过详细讲解Jenkins与Docker的结合使用，文章展示了如何构建一个高效、可扩展的自动化部署流程，旨在帮助开发者提高部署效率和系统稳定性。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2025-08-27T09:09:35.000Z">
-<meta property="article:modified_time" content="2025-08-27T09:22:24.887Z">
+<meta property="article:modified_time" content="2026-05-12T10:08:52.351Z">
 <meta property="article:author" content="moqiang">
 <meta name="twitter:card" content="summary">
   
@@ -62,7 +62,12 @@
         <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
       </div>
     </div>
   </div>
@@ -152,7 +157,7 @@
 <h3 id="2-3-配置Jenkins自动化部署的环境"><a href="#2-3-配置Jenkins自动化部署的环境" class="headerlink" title="2.3 配置Jenkins自动化部署的环境"></a>2.3 配置Jenkins自动化部署的环境</h3><p>配置Jenkins以实现自动化部署是整个流程的核心环节。通过Jenkins，可以自动化地执行代码构建、测试和部署任务，从而提高开发效率和系统稳定性。以下是配置Jenkins自动化部署环境的具体步骤：</p>
 <ol>
 <li><p><strong>安装Jenkins</strong>：首先需要在服务器上安装Jenkins。可以使用以下命令安装Jenkins：</p>
-<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">sudo apt <span class="keyword">update</span></span><br><span class="line">sudo apt install openjdk<span class="number">-11</span>-jdk</span><br><span class="line">wget -q -O - https://pkg.jenkins.io/debian-<span class="keyword">stable</span>/jenkins.io.key | sudo apt-key <span class="keyword">add</span> -</span><br><span class="line">sudo sh -c <span class="string">&#x27;echo deb http://pkg.jenkins.io/debian-stable binary/ &gt; /etc/apt/sources.list.d/jenkins.list&#x27;</span></span><br><span class="line">sudo apt <span class="keyword">update</span></span><br><span class="line">sudo apt install jenkins</span><br><span class="line">sudo systemctl <span class="keyword">start</span> jenkins</span><br><span class="line">sudo systemctl <span class="keyword">enable</span> jenkins</span><br></pre></td></tr></table></figure></li>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">sudo apt update</span><br><span class="line">sudo apt install openjdk-11-jdk</span><br><span class="line">wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -</span><br><span class="line">sudo sh -c <span class="string">&#x27;echo deb http://pkg.jenkins.io/debian-stable binary/ &gt; /etc/apt/sources.list.d/jenkins.list&#x27;</span></span><br><span class="line">sudo apt update</span><br><span class="line">sudo apt install jenkins</span><br><span class="line">sudo systemctl start jenkins</span><br><span class="line">sudo systemctl <span class="built_in">enable</span> jenkins</span><br></pre></td></tr></table></figure></li>
 <li><p><strong>安装必要的插件</strong>：登录Jenkins管理界面，安装以下插件以支持Docker和Spring Boot项目的自动化部署：</p>
 <ul>
 <li><strong>Git Plugin</strong>：用于从Git仓库拉取代码。</li>
@@ -238,7 +243,7 @@
 
 <p>通过这种方式，可以实时监控应用的性能指标，并在Grafana中生成丰富的监控仪表盘，帮助开发团队及时发现和解决问题。</p>
 <h4 id="5-3-2-日志管理和告警"><a href="#5-3-2-日志管理和告警" class="headerlink" title="5.3.2 日志管理和告警"></a>5.3.2 日志管理和告警</h4><p>日志管理是确保系统可维护性的关键。通过集成ELK Stack（Elasticsearch、Logstash、Kibana），可以集中管理应用的日志，方便排查问题和分析日志数据。例如，可以在Kubernetes中配置Fluentd，将应用的日志发送到Elasticsearch：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: ConfigMap</span><br><span class="line">metadata:</span><br><span class="line">  name: fluentd-config</span><br><span class="line">data:</span><br><span class="line">  fluent.conf: |</span><br><span class="line">    &lt;<span class="built_in">source</span>&gt;</span><br><span class="line">      @<span class="built_in">type</span> <span class="built_in">tail</span></span><br><span class="line">      path /var/log/containers/*.<span class="built_in">log</span></span><br><span class="line">      pos_file /var/log/fluentd-containers.log.pos</span><br><span class="line">      tag kubernetes.*</span><br><span class="line">      read_from_head <span class="literal">true</span></span><br><span class="line">      &lt;parse&gt;</span><br><span class="line">        @<span class="built_in">type</span> json</span><br><span class="line">      &lt;/parse&gt;</span><br><span class="line">    &lt;/source&gt;</span><br><span class="line">    &lt;match kubernetes.**&gt;</span><br><span class="line">      @<span class="built_in">type</span> elasticsearch</span><br><span class="line">      host elasticsearch</span><br><span class="line">      port 9200</span><br><span class="line">      logstash_format <span class="literal">true</span></span><br><span class="line">      flush_interval 10s</span><br><span class="line">    &lt;/match&gt;</span><br></pre></td></tr></table></figure>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">ConfigMap</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">fluentd-config</span></span><br><span class="line"><span class="attr">data:</span></span><br><span class="line">  <span class="attr">fluent.conf:</span> <span class="string">|</span></span><br><span class="line"><span class="string">    &lt;source&gt;</span></span><br><span class="line"><span class="string">      @type tail</span></span><br><span class="line"><span class="string">      path /var/log/containers/*.log</span></span><br><span class="line"><span class="string">      pos_file /var/log/fluentd-containers.log.pos</span></span><br><span class="line"><span class="string">      tag kubernetes.*</span></span><br><span class="line"><span class="string">      read_from_head true</span></span><br><span class="line"><span class="string">      &lt;parse&gt;</span></span><br><span class="line"><span class="string">        @type json</span></span><br><span class="line"><span class="string">      &lt;/parse&gt;</span></span><br><span class="line"><span class="string">    &lt;/source&gt;</span></span><br><span class="line"><span class="string">    &lt;match kubernetes.**&gt;</span></span><br><span class="line"><span class="string">      @type elasticsearch</span></span><br><span class="line"><span class="string">      host elasticsearch</span></span><br><span class="line"><span class="string">      port 9200</span></span><br><span class="line"><span class="string">      logstash_format true</span></span><br><span class="line"><span class="string">      flush_interval 10s</span></span><br><span class="line"><span class="string">    &lt;/match&gt;</span></span><br></pre></td></tr></table></figure>
 
 <p>通过这种方式，可以集中管理应用的日志，并在Kibana中进行日志分析和搜索，帮助开发团队快速定位和解决问题。</p>
 <h4 id="5-3-3-自动化告警"><a href="#5-3-3-自动化告警" class="headerlink" title="5.3.3 自动化告警"></a>5.3.3 自动化告警</h4><p>自动化告警是确保系统稳定性的关键。通过配置Prometheus和Alertmanager，可以自动发送告警通知，确保开发团队及时收到系统异常的通知。例如，可以在Prometheus中配置告警规则，并在Alertmanager中配置告警接收方式：</p>
@@ -250,7 +255,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2025/08/27/%E5%88%A9%E7%94%A8Jenkins%E4%B8%8EDocker%E5%AE%9E%E7%8E%B0Spring-Boot%E9%A1%B9%E7%9B%AE%E7%9A%84%E8%87%AA%E5%8A%A8%E5%8C%96%E9%83%A8%E7%BD%B2%E4%B9%8B%E9%81%93/" data-id="cmetrfvmz0000j4ue7t0w01j4" data-title="利用Jenkins与Docker实现Spring Boot项目的自动化部署之道" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2025/08/27/%E5%88%A9%E7%94%A8Jenkins%E4%B8%8EDocker%E5%AE%9E%E7%8E%B0Spring-Boot%E9%A1%B9%E7%9B%AE%E7%9A%84%E8%87%AA%E5%8A%A8%E5%8C%96%E9%83%A8%E7%BD%B2%E4%B9%8B%E9%81%93/" data-id="cmp3psiq401xmk4ue8cothiwz" data-title="利用Jenkins与Docker实现Spring Boot项目的自动化部署之道" class="article-share-link">分享</a>
       
       
       
@@ -374,6 +379,9 @@
 
 
 <script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
 
 
 

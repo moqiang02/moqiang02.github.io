@@ -14,7 +14,7 @@
 <meta property="og:description" content="现在LNMP架构很流行，然而有时我们会遇到一个莫名其妙的问题，就是我们访问php页面时服务器返回”HTTP&#x2F;1.1 500 Internal Server Error”错误。 这个错误让人匪夷所思，起初我以为是nginx的rewrite重写错误的缘故。其实是php代码语法错误导致的，主要是因为我把PHP的版本升级到了7.0，然而一些老的开源项目（比如douphp）,它的运行环境是PHP5.4，项目">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2018-01-10T03:01:51.000Z">
-<meta property="article:modified_time" content="2022-10-26T09:28:54.180Z">
+<meta property="article:modified_time" content="2026-05-12T10:08:52.588Z">
 <meta property="article:author" content="moqiang">
 <meta name="twitter:card" content="summary">
   
@@ -62,7 +62,12 @@
         <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
       </div>
     </div>
   </div>
@@ -109,7 +114,7 @@
 <p>通过php源码也可以看出来，本次使用的php版本是：php-5.3.26</p>
 <p>源文件是：php-5.3.26/main/main.c</p>
 <p>第1110行，如下：</p>
-<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span>(!<span class="constructor">PG(<span class="params">display_errors</span>)</span><span class="operator"> &amp;&amp; </span>!<span class="constructor">SG(<span class="params">headers_sent</span>)</span><span class="operator"> &amp;&amp; </span><span class="constructor">SG(<span class="params">sapi_headers</span>)</span>.http_response_code<span class="operator"> == </span><span class="number">200</span>)&#123;</span><br><span class="line">    sapi_header_line ctr = &#123;<span class="number">0</span>&#125;;</span><br><span class="line">    ctr.line = <span class="string">&quot;HTTP/1.0 500 Internal Server Error&quot;</span>;</span><br><span class="line">    ctr.line_len = strlen(ctr.line);</span><br><span class="line">    sapi<span class="constructor">_header_op(SAPI_HEADER_REPLACE, &amp;<span class="params">ctr</span> TSRMLS_CC)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span>(!<span class="title function_ invoke__">PG</span>(display_errors) &amp;&amp; !<span class="title function_ invoke__">SG</span>(headers_sent) &amp;&amp; <span class="title function_ invoke__">SG</span>(sapi_headers).http_response_code == <span class="number">200</span>)&#123;</span><br><span class="line">    sapi_header_line ctr = &#123;<span class="number">0</span>&#125;;</span><br><span class="line">    ctr.line = <span class="string">&quot;HTTP/1.0 500 Internal Server Error&quot;</span>;</span><br><span class="line">    ctr.line_len = <span class="title function_ invoke__">strlen</span>(ctr.line);</span><br><span class="line">    <span class="title function_ invoke__">sapi_header_op</span>(SAPI_HEADER_REPLACE, &amp;ctr TSRMLS_CC);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>通过if条件可以得知，在满足 display_errors=0 和 headers_sent=0即空白页和http_response_code=200的条件下返回500错误</p>
 <p>初看这个500错误容易误认为nginx出错，可以适当调整为其它响应码</p>
 <p>只要在php.ini中设置 fastcgi.error_header 选项即可，如返回503：<code>fastcgi.error_header = &quot;HTTP/1.1 503 PHP Parse Error&quot;</code></p>
@@ -133,16 +138,16 @@
 <p>那么结果是 off。</p>
 <hr>
 <p>对于ThinkPHP，在Nginx低版本中，是不支持PATHINFO的，但是可以通过在Nginx.conf中配置转发规则实现：</p>
-<figure class="highlight perl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">location / &#123; <span class="regexp">//</span> …..省略部分代码</span><br><span class="line">    <span class="keyword">if</span> (!-e $request_filename) &#123;</span><br><span class="line">        rewrite  ^(.*)$  /index.php?s=/$1  <span class="keyword">last</span>;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">location</span> / &#123; // …..省略部分代码</span><br><span class="line">    <span class="attribute">if</span> (!-e <span class="variable">$request_filename</span>) &#123;</span><br><span class="line">        <span class="attribute">rewrite</span> <span class="regexp"> ^(.*)$</span>  /index.php?s=/<span class="variable">$1</span>  <span class="literal">last</span>;</span><br><span class="line">        break;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>其实内部是转发到了ThinkPHP提供的兼容URL，利用这种方式，可以解决其他不支持PATHINFO的WEB服务器环境。</p>
 <p>如果你的应用安装在二级目录，Nginx的伪静态方法设置如下，其中youdomain是所在的目录名称。</p>
-<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">location <span class="regexp">/youdomain/</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (!-e <span class="variable">$request_filename</span>)&#123;</span><br><span class="line">        rewrite  ^<span class="regexp">/youdomain/</span>(.*)$  <span class="regexp">/youdomain/i</span>ndex.php?s=/<span class="variable">$1</span>  last;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">location</span> /youdomain/ &#123;</span><br><span class="line">    <span class="attribute">if</span> (!-e <span class="variable">$request_filename</span>)&#123;</span><br><span class="line">        <span class="attribute">rewrite</span> <span class="regexp"> ^/youdomain/(.*)$</span>  /youdomain/index.php?s=/<span class="variable">$1</span>  <span class="literal">last</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>原来的访问URL：<code>http://serverName/index.php/模块/控制器/操作/[参数名/参数值...]</code><br>设置后，我们可以采用下面的方式访问：<code>http://serverName/模块/控制器/操作/[参数名/参数值...]</code></p>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2018/01/10/%E8%A7%A3%E5%86%B3%EF%BC%9ALNMP%E6%9E%B6%E6%9E%84%E4%B8%8B%E8%AE%BF%E9%97%AEphp%E9%A1%B5%E9%9D%A2%E5%87%BA%E7%8E%B0500%E9%94%99%E8%AF%AF/" data-id="cla0v66hq026lg0v10a1ghidn" data-title="解决：LNMP架构下访问php页面出现500错误" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2018/01/10/%E8%A7%A3%E5%86%B3%EF%BC%9ALNMP%E6%9E%B6%E6%9E%84%E4%B8%8B%E8%AE%BF%E9%97%AEphp%E9%A1%B5%E9%9D%A2%E5%87%BA%E7%8E%B0500%E9%94%99%E8%AF%AF/" data-id="cmp3psiu002bjk4ue3qgq6glp" data-title="解决：LNMP架构下访问php页面出现500错误" class="article-share-link">分享</a>
       
       
       
@@ -266,6 +271,9 @@
 
 
 <script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
 
 
 

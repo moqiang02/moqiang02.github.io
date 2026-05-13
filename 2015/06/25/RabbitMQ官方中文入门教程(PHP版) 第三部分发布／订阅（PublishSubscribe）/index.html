@@ -17,7 +17,7 @@
 <meta property="og:image" content="http://moqiang02.github.io/images/RabbitMQ%E5%AE%98%E6%96%B9%E4%B8%AD%E6%96%87%E5%85%A5%E9%97%A8%E6%95%99%E7%A8%8B/7.png">
 <meta property="og:image" content="http://moqiang02.github.io/images/RabbitMQ%E5%AE%98%E6%96%B9%E4%B8%AD%E6%96%87%E5%85%A5%E9%97%A8%E6%95%99%E7%A8%8B/8.png">
 <meta property="article:published_time" content="2015-06-25T12:30:13.000Z">
-<meta property="article:modified_time" content="2022-10-26T09:28:53.874Z">
+<meta property="article:modified_time" content="2026-05-13T05:39:20.275Z">
 <meta property="article:author" content="moqiang">
 <meta property="article:tag" content="消息队列">
 <meta name="twitter:card" content="summary">
@@ -67,7 +67,12 @@
         <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
       </div>
     </div>
   </div>
@@ -117,7 +122,7 @@
 </ul>
 <p>RabbitMQ消息模型的核心理念是：发布者（producer）不会直接发送任何消息给队列。事实上，发布者（producer）甚至不知道消息是否已经被投递到队列。</p>
 <p>发布者（producer）只需要把消息发送给一个交换器（exchange）。交换器非常简单，它一边从发布者方接收消息，一边把消息推入队列。交换器必须知道如何处理它接收到的消息，是应该推送到指定的队列还是是多个队列，或者是直接忽略消息。这些规则是通过exchange type来定义的。<br><img src="/images/RabbitMQ%E5%AE%98%E6%96%B9%E4%B8%AD%E6%96%87%E5%85%A5%E9%97%A8%E6%95%99%E7%A8%8B/6.png"><br>有几个可供选择的交换器类型：AMQPEXTYPEDIRECT, AMQPEXTYPEFANOUT,AMQPEXTYPEHEADER or AMQPEXTYPETOPIC。我们在这里主要说明AMQPEXTYPE_FANOUT。先创建一个fanout类型的交换器，命名为logs：</p>
-<figure class="highlight xl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$<span class="function"><span class="title">exchange</span>-&gt;</span>setName(<span class="string">&#x27;logs&#x27;</span>);</span><br><span class="line">$<span class="function"><span class="title">exchange</span>-&gt;</span>setType(AMQP_EX_TYPE_FANOUT);</span><br><span class="line">$<span class="function"><span class="title">exchange</span>-&gt;</span>declare();</span><br></pre></td></tr></table></figure>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$exchange</span>-&gt;<span class="title function_ invoke__">setName</span>(<span class="string">&#x27;logs&#x27;</span>);</span><br><span class="line"><span class="variable">$exchange</span>-&gt;<span class="title function_ invoke__">setType</span>(AMQP_EX_TYPE_FANOUT);</span><br><span class="line"><span class="variable">$exchange</span>-&gt;<span class="keyword">declare</span>();</span><br></pre></td></tr></table></figure>
 <p>fanout交换器很简单，你可能从名字上就能猜测出来，它把消息发送给它所知道的所有队列。这正是我们的日志系统所需要的。</p>
 <blockquote>
 <p>交换器列表<br>rabbitmqctl能够列出服务器上所有的交换器：</p>
@@ -131,7 +136,7 @@
 <h3 id="临时队列"><a href="#临时队列" class="headerlink" title="临时队列"></a>临时队列</h3><p>你还记得之前我们使用的队列名吗（ hello和task_queue）？给一个队列命名是很重要的——我们需要把工作者（workers）指向正确的队列。如果你打算在发布者（producers）和消费者（consumers）之间共享同队列的话，给队列命名是十分重要的。</p>
 <p>但是这并不适用于我们的日志系统。我们打算接收所有的日志消息，而不仅仅是一小部分。我们关心的是最新的消息而不是旧的。为了解决这个问题，我们需要做两件事情。</p>
 <p>首先，当我们连接上RabbitMQ的时候，我们需要一个全新的、空的队列。我们可以手动创建一个随机的队列名，或者让服务器为我们选择一个随机的队列名（推荐）。我们只要在调用$queue-&gt;declare();方法的时候，不提供queue参数就可以了：</p>
-<figure class="highlight gams"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta"><span class="keyword">$queue</span> = new AMQPQueue($channel);</span></span><br><span class="line"><span class="meta"><span class="keyword">$queue</span>-&gt;setFlags(AMQP_EXCLUSIVE);</span></span><br><span class="line"><span class="meta"><span class="keyword">$queue</span>-&gt;declare();</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$queue</span> = <span class="keyword">new</span> <span class="title class_">AMQPQueue</span>(<span class="variable">$channel</span>);</span><br><span class="line"><span class="variable">$queue</span>-&gt;<span class="title function_ invoke__">setFlags</span>(AMQP_EXCLUSIVE);</span><br><span class="line"><span class="variable">$queue</span>-&gt;<span class="keyword">declare</span>();</span><br></pre></td></tr></table></figure>
 <p>这时候我们可以通过<code>$queue-&gt;getName();</code>获得已经生成的随机队列名。它可能是这样子的：<code>amq.gen-U0srCoW8TsaXjNh73pnVAw==</code>。</p>
 <p>第二步，当与消费者（consumer）断开连接的时候，这个队列应当被删除。我们可以使用exclusive标识。</p>
 <p><code>$queue-&gt;setFlags(AMQP_EXCLUSIVE);</code></p>
@@ -161,7 +166,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2015/06/25/RabbitMQ%E5%AE%98%E6%96%B9%E4%B8%AD%E6%96%87%E5%85%A5%E9%97%A8%E6%95%99%E7%A8%8B(PHP%E7%89%88)%20%E7%AC%AC%E4%B8%89%E9%83%A8%E5%88%86%E5%8F%91%E5%B8%83%EF%BC%8F%E8%AE%A2%E9%98%85%EF%BC%88PublishSubscribe%EF%BC%89/" data-id="cla0v65zm00x5g0v1bith46x1" data-title="RabbitMQ官方中文入门教程(PHP版) 第三部分:发布/订阅" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2015/06/25/RabbitMQ%E5%AE%98%E6%96%B9%E4%B8%AD%E6%96%87%E5%85%A5%E9%97%A8%E6%95%99%E7%A8%8B(PHP%E7%89%88)%20%E7%AC%AC%E4%B8%89%E9%83%A8%E5%88%86%E5%8F%91%E5%B8%83%EF%BC%8F%E8%AE%A2%E9%98%85%EF%BC%88PublishSubscribe%EF%BC%89/" data-id="cmp3psiim00yqk4ue017v71so" data-title="RabbitMQ官方中文入门教程(PHP版) 第三部分:发布/订阅" class="article-share-link">分享</a>
       
       
       
@@ -287,6 +292,9 @@
 
 
 <script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
 
 
 

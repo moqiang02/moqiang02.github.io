@@ -14,7 +14,7 @@
 <meta property="og:description" content="钩子，英文为hooks。在程序中应用相当广泛，但是究竟什么是钩子呢？本人介绍一下目前本人对钩子的理解和相关心得。 假如有这么一段程序流： 1234function fun()&amp;#123;       funA();       funB();  &amp;#125;   fun函数正常的执行顺序，肯定是执行完funA，然后执行funB，然后fun函数就结束了。但是，假如我们想对函数做一些变化。比如说，fu">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2014-04-13T06:06:41.000Z">
-<meta property="article:modified_time" content="2022-10-26T09:28:54.186Z">
+<meta property="article:modified_time" content="2026-05-13T03:01:35.581Z">
 <meta property="article:author" content="moqiang">
 <meta name="twitter:card" content="summary">
   
@@ -62,7 +62,12 @@
         <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
       </div>
     </div>
   </div>
@@ -101,19 +106,19 @@
 
         <p>钩子，英文为hooks。在程序中应用相当广泛，但是究竟什么是钩子呢？本人介绍一下目前本人对钩子的理解和相关心得。</p>
 <p>假如有这么一段程序流：</p>
-<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="keyword">fun</span><span class="literal">()</span>&#123;  </span><br><span class="line">     <span class="keyword">fun</span><span class="constructor">A()</span>;  </span><br><span class="line">     <span class="keyword">fun</span><span class="constructor">B()</span>;  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">fun</span>(<span class="params"></span>)</span>&#123;  </span><br><span class="line">     <span class="title function_ invoke__">funA</span>();  </span><br><span class="line">     <span class="title function_ invoke__">funB</span>();  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
 <p>fun函数正常的执行顺序，肯定是执行完funA，然后执行funB，然后fun函数就结束了。但是，假如我们想对函数做一些变化。比如说，fun是一个解析函数，我们希望后期可以提供丰富的解析函数，而究竟用哪个函数解析，我们希望在配置文件中配置。这个时候就可以发挥钩子的力量了。</p>
 <span id="more"></span>
 <p>我们可以在function fun(){}<br>中加入一个挂钩点H,然后再执行H这个函数之前，将钩子函数配置好，我么就可以根据需要来解析了。</p>
 <p>例如:</p>
-<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$h=config_item(<span class="string">&quot;parser_fun&quot;</span>) ;     <span class="comment">//从配置文件中获得相应的配置信息  </span></span><br><span class="line">function <span class="function"><span class="title">fun</span><span class="params">($<span class="keyword">data</span>)</span></span>&#123;  </span><br><span class="line">    global $h;  </span><br><span class="line">   <span class="keyword">return</span>  $h();  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$h</span>=<span class="title function_ invoke__">config_item</span>(<span class="string">&quot;parser_fun&quot;</span>) ;     <span class="comment">//从配置文件中获得相应的配置信息  </span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">fun</span>(<span class="params"><span class="variable">$data</span></span>)</span>&#123;  </span><br><span class="line">    <span class="keyword">global</span> <span class="variable">$h</span>;  </span><br><span class="line">   <span class="keyword">return</span>  <span class="variable">$h</span>();  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
 <p><a target="_blank" rel="noopener" href="http://istrone.com/?p=57#">帮助</a></p>
 <p>当然前提，我们得有自己的解析函数。<br>除此意外，PHP还可以根据字符串提供自己的类，然后调用类的一个方法，传递某些参数，这些就为PHP程序的编写，以及后期的维护扩展奠定了，相当坚实的基础。<br>类的实现方法，大致如下：<br>$c=get_class_name(); //获得类的名字<br>$m=get_method_name(); //获得方法的名字<br>$k=$c-&gt;$m(); //执行类的某一个方法<br>钩子在PHP中应用还是相当广泛的，就目前笔者所知的Codeigniter和Drupal中钩子的应用做出如下介绍：<br>CodeIgniter中钩子的应用，主要是将所有钩子应用给了一个类Hook类，他向开发者对CI进行扩展,CI提供了几个挂钩点，在CodeIgniter的整个执行过程中，加入一些开发者自己的函数，而在Hook类的内部，根据外部config.php和hooks.php中的相应配置，获得相应的类或者单独的函数，然后执行之。当然这些类或者方法都是开发者自己写的。这样就可以让开发者用的更加舒心，感觉比较舒服，毕竟每个开发者应该都想在一个框架中加入更多的自己的东西。详细情况可以参看CodeIgniter官方文档，关于钩子的那一节：<a target="_blank" rel="noopener" href="http://codeigniter.org.cn/user_guide/general/hooks.html">CodeIgniter钩子应用</a>.<br>而在Drupal中钩子的应用更是无处不在，他本身就是靠钩子维护了一个体系，Module，Block，Node各个部分的实现，都是经过根本的hook函数，然后将函数名经过相应的改变，然后调用该函数得到了整个的hook结构，甚至于到显示层theme的实现，都覆盖了theme主题的api，更加令人佩服的一件事是，他居然还可以用可视化的角度，来实现相应的theme钩子，这样就将主题的开发分为了开发者和设计者两大类，设计者对可视化更敏感，而开发者对函数更为敏感。两者都可以从各自的角度，对drupal进行相应的改变。岂不快哉！</p>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2014/04/13/%E8%B0%88PHP%E4%B8%AD%E7%9A%84%E9%92%A9%E5%AD%90/" data-id="cla0v66i2027ag0v1bub02t1u" data-title="谈PHP中的钩子" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2014/04/13/%E8%B0%88PHP%E4%B8%AD%E7%9A%84%E9%92%A9%E5%AD%90/" data-id="cmp3psiu802cak4uef0lb0rmf" data-title="谈PHP中的钩子" class="article-share-link">分享</a>
       
       
       
@@ -237,6 +242,9 @@
 
 
 <script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
 
 
 

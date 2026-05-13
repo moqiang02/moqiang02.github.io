@@ -14,7 +14,7 @@
 <meta property="og:description" content="ECSHOP的缓存机制从一定程度上可以减少ECSHOP反复读取数据库的几率，从而一定程度上降低服务器负担，提高访问速度。但是启用缓存机制，对一些新手站长也有不利的地方。我就遇到很多新手站长经常问，我明明修改了什么什么，为什么前台就没变化呢，这就是缓存在作怪，一般到后台清除缓存就可以了。 鉴于上述原因，有一些站长就在想能不能“禁用ECSHOP缓存，关闭ECSHOP缓存”呢？答案是肯定的。下面就来讲一">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2014-06-09T06:07:35.000Z">
-<meta property="article:modified_time" content="2022-10-26T09:28:54.162Z">
+<meta property="article:modified_time" content="2026-05-12T10:08:52.556Z">
 <meta property="article:author" content="moqiang">
 <meta property="article:tag" content="ecshop">
 <meta name="twitter:card" content="summary">
@@ -63,7 +63,12 @@
         <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
       </div>
     </div>
   </div>
@@ -105,9 +110,9 @@
 <p>ECSHOP的缓存分两种，一种是SMARTY的页面缓存；另一种是SQL查询结果的缓存。<br>这两种缓存都是保存在<code>templates/caches/</code>文件夹下。<br>只要我们分别关闭这两个缓存，就可以完全禁用ECSHOP的缓存。<br>当然你也可以根据自己的需要关闭其中某一个。</p>
 <span id="more"></span>
 <p>１、关闭SMARTY的缓存：<br>打开includes/cls_template.php，找到下面一段</p>
-<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (file<span class="constructor">_put_contents($<span class="params">hash_dir</span> . &#x27;<span class="operator">/</span>&#x27; . $<span class="params">cachename</span> . &#x27;.<span class="params">php</span>&#x27;, &#x27;&lt;?<span class="params">php</span> <span class="params">exit</span>;?&gt;&#x27; . $<span class="params">data</span> . $<span class="params">out</span>, LOCK_EX)</span><span class="operator"> === </span><span class="literal">false</span>)</span><br><span class="line">&#123;</span><br><span class="line">trigger<span class="constructor">_error(&#x27;<span class="params">can</span>\&#x27;<span class="params">t</span> <span class="params">write</span>:&#x27; . $<span class="params">hash_dir</span> . &#x27;<span class="operator">/</span>&#x27; . $<span class="params">cachename</span> . &#x27;.<span class="params">php</span>&#x27;)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (<span class="title function_ invoke__">file_put_contents</span>(<span class="variable">$hash_dir</span> . <span class="string">&#x27;/&#x27;</span> . <span class="variable">$cachename</span> . <span class="string">&#x27;.php&#x27;</span>, <span class="string">&#x27;&lt;?php exit;?&gt;&#x27;</span> . <span class="variable">$data</span> . <span class="variable">$out</span>, LOCK_EX) === <span class="literal">false</span>)</span><br><span class="line">&#123;</span><br><span class="line"><span class="title function_ invoke__">trigger_error</span>(<span class="string">&#x27;can\&#x27;t write:&#x27;</span> . <span class="variable">$hash_dir</span> . <span class="string">&#x27;/&#x27;</span> . <span class="variable">$cachename</span> . <span class="string">&#x27;.php&#x27;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>将这一部分注释掉即可，改成</p>
-<figure class="highlight elixir"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"><span class="keyword">if</span> (file_put_contents(<span class="variable">$hash_dir</span> . <span class="string">&#x27;/&#x27;</span> . <span class="variable">$cachename</span> . <span class="string">&#x27;.php&#x27;</span>, <span class="string">&#x27;&lt;?php exit;?&gt;&#x27;</span> . <span class="variable">$data</span> . <span class="variable">$out</span>, <span class="title class_">LOCK_EX</span>) === <span class="literal">false</span>)</span><br><span class="line">&#123;</span><br><span class="line">trigger_error(<span class="string">&#x27;can\&#x27;t write:&#x27;</span> . <span class="variable">$hash_dir</span> . <span class="string">&#x27;/&#x27;</span> . <span class="variable">$cachename</span> . <span class="string">&#x27;.php&#x27;</span>);</span><br><span class="line">&#125;</span><br><span class="line">*/</span><br></pre></td></tr></table></figure>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">if (file_put_contents($hash_dir . &#x27;/&#x27; . $cachename . &#x27;.php&#x27;, &#x27;&lt;?php exit;?&gt;&#x27; . $data . $out, LOCK_EX) === false)</span></span><br><span class="line"><span class="comment">&#123;</span></span><br><span class="line"><span class="comment">trigger_error(&#x27;can\&#x27;t write:&#x27; . $hash_dir . &#x27;/&#x27; . $cachename . &#x27;.php&#x27;);</span></span><br><span class="line"><span class="comment">&#125;</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure>
 <p>２、关闭SQL查询结果缓存</p>
 <p>打开<code>includes/cls_mysql.php</code><br>找到<br><code>var $max_cache_time=3600;</code>//最大的缓存时间，以秒为单位<br>改为<br><code>var $max_cache_time=0;</code>//最大的缓存时间，以秒为单位</p>
 <p>经过上面修改后，就已经将ECSHOP的页面缓存和数据查询缓存都禁用了，这样当你做了任何修改后，前台都能马上体现出最新的变化，但是对服务器的压力会比禁用缓存之前稍微大那么一点。</p>
@@ -115,7 +120,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2014/06/09/%E7%A6%81%E7%94%A8%E5%92%8C%E5%85%B3%E9%97%ADECSHOP%E7%BC%93%E5%AD%98/" data-id="cla0v66gl023zg0v17kag9hjd" data-title="禁用和关闭ECSHOP缓存" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2014/06/09/%E7%A6%81%E7%94%A8%E5%92%8C%E5%85%B3%E9%97%ADECSHOP%E7%BC%93%E5%AD%98/" data-id="cmp3psit8028rk4uefl3r2f8z" data-title="禁用和关闭ECSHOP缓存" class="article-share-link">分享</a>
       
       
       
@@ -241,6 +246,9 @@
 
 
 <script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
 
 
 

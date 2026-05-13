@@ -19,7 +19,7 @@
 <meta property="og:image" content="http://moqiang02.github.io/images/Vue%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81%E6%8F%92%E4%BB%B6%E7%9A%84%E5%86%99%E4%BD%9C%E8%BF%87%E7%A8%8B/4.jpg">
 <meta property="og:image" content="http://moqiang02.github.io/images/Vue%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81%E6%8F%92%E4%BB%B6%E7%9A%84%E5%86%99%E4%BD%9C%E8%BF%87%E7%A8%8B/5.jpg">
 <meta property="article:published_time" content="2017-01-09T02:30:07.000Z">
-<meta property="article:modified_time" content="2023-09-20T10:18:32.088Z">
+<meta property="article:modified_time" content="2026-05-13T03:01:35.231Z">
 <meta property="article:author" content="moqiang">
 <meta property="article:tag" content="Vue">
 <meta name="twitter:card" content="summary">
@@ -69,7 +69,12 @@
         <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
       </div>
     </div>
   </div>
@@ -140,7 +145,7 @@
 <h4 id="va-js主要用的是-Vue指令"><a href="#va-js主要用的是-Vue指令" class="headerlink" title="va.js主要用的是 Vue指令"></a>va.js主要用的是 Vue指令</h4><p><img src="/images/Vue%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81%E6%8F%92%E4%BB%B6%E7%9A%84%E5%86%99%E4%BD%9C%E8%BF%87%E7%A8%8B/2.jpg"><br><img src="/images/Vue%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81%E6%8F%92%E4%BB%B6%E7%9A%84%E5%86%99%E4%BD%9C%E8%BF%87%E7%A8%8B/3.jpg"><br>Vue 文档真的写得很用心，但是我再补充一点吧<br><strong>vnode.context 就是Vue的实例</strong><br>我们做项目的时候，经常一个根组件上挂着N个子组件，子组件上又可能挂着N个子组件。<strong>vnode.context获取的实例，是绑定该指令的组件的实例。</strong>这个就相当好用了。你可以做很多事情</p>
 <h4 id="当然还用了点Vue-prototype"><a href="#当然还用了点Vue-prototype" class="headerlink" title="当然还用了点Vue.prototype"></a>当然还用了点Vue.prototype</h4><p><code>Vue.prototype.$method</code> 就是可以在各个组件上调用的方法。可以在组件内部用 <code>this.$method</code>调用的</p>
 <h3 id="三、具体实现的思路"><a href="#三、具体实现的思路" class="headerlink" title="三、具体实现的思路"></a>三、具体实现的思路</h3><p>核心思路如下图：<br><img src="/images/Vue%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81%E6%8F%92%E4%BB%B6%E7%9A%84%E5%86%99%E4%BD%9C%E8%BF%87%E7%A8%8B/4.jpg"><br>规则的构造函数</p>
-<figure class="highlight pony"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//va配置的构造函数</span></span><br><span class="line">function <span class="type">VaConfig</span>(<span class="keyword">type</span>, typeVal, errMsg, name, <span class="meta">tag</span>)&#123;</span><br><span class="line">    <span class="literal">this</span>.<span class="keyword">type</span> = <span class="keyword">type</span>, <span class="literal">this</span>.typeVal = typeVal, <span class="literal">this</span>.errMsg = errMsg, <span class="literal">this</span>.name = name, <span class="literal">this</span>.<span class="meta">tag</span> = <span class="meta">tag</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//va配置的构造函数</span></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">VaConfig</span>(<span class="params">type, typeVal, errMsg, name, tag</span>)&#123;</span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">type</span> = type, <span class="variable language_">this</span>.<span class="property">typeVal</span> = typeVal, <span class="variable language_">this</span>.<span class="property">errMsg</span> = errMsg, <span class="variable language_">this</span>.<span class="property">name</span> = name, <span class="variable language_">this</span>.<span class="property">tag</span> = tag</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <ol>
 <li>type: nonvoid(非空), reg(正则), limit(区间), equal(与某个input相等)，unique(不能相同)</li>
 <li>typeVal: 根据不同type设置不同的值</li>
@@ -168,7 +173,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2017/01/09/Vue%20%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81%E6%8F%92%E4%BB%B6%E7%9A%84%E5%86%99%E4%BD%9C%E8%BF%87%E7%A8%8B/" data-id="cla0v661r014gg0v119yo01of" data-title="Vue 表单验证插件的写作过程" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2017/01/09/Vue%20%E8%A1%A8%E5%8D%95%E9%AA%8C%E8%AF%81%E6%8F%92%E4%BB%B6%E7%9A%84%E5%86%99%E4%BD%9C%E8%BF%87%E7%A8%8B/" data-id="cmp3psijw0175k4uegbng1k5f" data-title="Vue 表单验证插件的写作过程" class="article-share-link">分享</a>
       
       
       
@@ -294,6 +299,9 @@
 
 
 <script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
 
 
 

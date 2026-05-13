@@ -15,7 +15,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://moqiang02.github.io/images/%E8%AE%B0%E4%B8%80%E6%AC%A1MongoDB%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98/1.jpg">
 <meta property="article:published_time" content="2014-09-16T14:43:38.000Z">
-<meta property="article:modified_time" content="2022-10-26T09:28:54.183Z">
+<meta property="article:modified_time" content="2026-05-13T06:02:05.085Z">
 <meta property="article:author" content="moqiang">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="http://moqiang02.github.io/images/%E8%AE%B0%E4%B8%80%E6%AC%A1MongoDB%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98/1.jpg">
@@ -64,7 +64,12 @@
         <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
       </div>
     </div>
   </div>
@@ -139,7 +144,7 @@
 <figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mongo&gt; use &lt;DB&gt;</span><br><span class="line">mongo&gt; db<span class="selector-class">.system</span><span class="selector-class">.profile</span><span class="selector-class">.find</span>()<span class="selector-class">.sort</span>(&#123;<span class="variable">$natural</span>:-<span class="number">1</span>&#125;)</span><br></pre></td></tr></table></figure>
 <p>…</p>
 <p>问题始终没有得到解决，求人不如求己，我又重复了几次迁移旧数据的过程，结果自然还是老样子，但我发现每当出问题的时候，总有一个名叫irqbalance的进程CPU占用率居高不下，搜索了一下，发现很多介绍irqbalance的文章中都提及了NUMA，让我一下子想起之前在日志中看到的警告信息，我勒个去，竟然绕了这么大一个圈圈！安下心来仔细翻阅文档，发现官方其实已经有了<a target="_blank" rel="noopener" href="http://www.mongodb.org/display/DOCS/NUMA">相关介绍</a>，按如下设置搞定：</p>
-<figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">shell</span>&gt; <span class="keyword">echo</span> <span class="number">0</span> &gt; /proc/sys/<span class="keyword">vm</span>/zone_reclaim_mode</span><br><span class="line"><span class="keyword">shell</span>&gt; numactl --interleave=<span class="keyword">all</span> mongod [<span class="keyword">options</span>]</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; <span class="built_in">echo</span> 0 &gt; /proc/sys/vm/zone_reclaim_mode</span><br><span class="line">shell&gt; numactl --interleave=all mongod [options]</span><br></pre></td></tr></table></figure>
 <p>关于zone_reclaim_mode内核参数的说明，可以参考<a target="_blank" rel="noopener" href="http://www.kernel.org/doc/Documentation/sysctl/vm.txt">官方文档</a>。</p>
 <p>注：从MongoDB1.9.2开始：MongoDB会在启动时自动设置zone_reclaim_mode。</p>
 <p>至于NUMA的含义，简单点说，在有多个物理CPU的架构下，NUMA把内存分为本地和远程，每个物理CPU都有属于自己的本地内存，访问本地内存速度快于访问远程内存，缺省情况下，每个物理CPU只能访问属于自己的本地内存。对于MongoDB这种需要大内存的服务来说就可能造成内存不足，NUMA的详细介绍，可以参考<a target="_blank" rel="noopener" href="http://jcole.us/blog/archives/2010/09/28/mysql-swap-insanity-and-the-numa-architecture/">老外的文章</a>。</p>
@@ -153,7 +158,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2014/09/16/%E8%AE%B0%E4%B8%80%E6%AC%A1MongoDB%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98/" data-id="cla0v66hy0272g0v16rdj4t2s" data-title="记一次MongoDB性能问题" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2014/09/16/%E8%AE%B0%E4%B8%80%E6%AC%A1MongoDB%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98/" data-id="cmp3psiu302buk4ue6nyzbr47" data-title="记一次MongoDB性能问题" class="article-share-link">分享</a>
       
       
       
@@ -277,6 +282,9 @@
 
 
 <script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
 
 
 

@@ -14,7 +14,7 @@
 <meta property="og:description" content="省市区联动下拉效果在WEB中应用非常广泛，尤其在一些会员信息系统、电商网站最为常见。开发者一般使用Ajax实现无刷新下拉联动。本文将讲述，利用jQuery插件，通过读取JSON数据，实现无刷新动态下拉省市二（三）级联动效果。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2015-04-14T23:35:49.000Z">
-<meta property="article:modified_time" content="2022-10-26T09:28:54.105Z">
+<meta property="article:modified_time" content="2026-05-13T06:01:57.303Z">
 <meta property="article:author" content="moqiang">
 <meta name="twitter:card" content="summary">
   
@@ -62,7 +62,12 @@
         <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
       </div>
     </div>
   </div>
@@ -101,9 +106,9 @@
 
         <p>省市区联动下拉效果在WEB中应用非常广泛，尤其在一些会员信息系统、电商网站最为常见。开发者一般使用Ajax实现无刷新下拉联动。本文将讲述，利用jQuery插件，通过读取JSON数据，实现无刷新动态下拉省市二（三）级联动效果。<span id="more"></span></p>
 <p>首先在head中载入jquery库和cityselect插件。</p>
-<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">type</span>=<span class="string">&quot;text/javascript&quot;</span> <span class="attr">src</span>=<span class="string">&quot;js/jquery.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span> </span><br><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">type</span>=<span class="string">&quot;text/javascript&quot;</span> <span class="attr">src</span>=<span class="string">&quot;js/jquery.cityselect.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span> </span><br></pre></td></tr></table></figure>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">type</span>=<span class="string">&quot;text/javascript&quot;</span> <span class="attr">src</span>=<span class="string">&quot;js/jquery.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span> </span><br><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">type</span>=<span class="string">&quot;text/javascript&quot;</span> <span class="attr">src</span>=<span class="string">&quot;js/jquery.cityselect.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span> </span><br></pre></td></tr></table></figure>
 <p>接下来，我们在#city中，放置三个select，并且三个select分别设置class属性为：prov、city、dist，分别表示省、市、区（县）三个下拉框。注意如果只想实现省市二级联动，则去掉第三个dist的select即可。</p>
-<figure class="highlight axapta"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;<span class="keyword">div</span> id=<span class="string">&quot;city&quot;</span>&gt; </span><br><span class="line">      &lt;<span class="keyword">select</span> <span class="keyword">class</span>=<span class="string">&quot;prov&quot;</span>&gt;&lt;/<span class="keyword">select</span>&gt;  </span><br><span class="line">    &lt;<span class="keyword">select</span> <span class="keyword">class</span>=<span class="string">&quot;city&quot;</span> disabled=<span class="string">&quot;disabled&quot;</span>&gt;&lt;/<span class="keyword">select</span>&gt; </span><br><span class="line">    &lt;<span class="keyword">select</span> <span class="keyword">class</span>=<span class="string">&quot;dist&quot;</span> disabled=<span class="string">&quot;disabled&quot;</span>&gt;&lt;/<span class="keyword">select</span>&gt; </span><br><span class="line">&lt;/<span class="keyword">div</span>&gt; </span><br></pre></td></tr></table></figure>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">id</span>=<span class="string">&quot;city&quot;</span>&gt;</span> </span><br><span class="line">      <span class="tag">&lt;<span class="name">select</span> <span class="attr">class</span>=<span class="string">&quot;prov&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">select</span>&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;<span class="name">select</span> <span class="attr">class</span>=<span class="string">&quot;city&quot;</span> <span class="attr">disabled</span>=<span class="string">&quot;disabled&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">select</span>&gt;</span> </span><br><span class="line">    <span class="tag">&lt;<span class="name">select</span> <span class="attr">class</span>=<span class="string">&quot;dist&quot;</span> <span class="attr">disabled</span>=<span class="string">&quot;disabled&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">select</span>&gt;</span> </span><br><span class="line"><span class="tag">&lt;/<span class="name">div</span>&gt;</span> </span><br></pre></td></tr></table></figure>
 
 <p>调用cityselect插件非常简单，直接调用：<br><code>$(&quot;#city&quot;).citySelect(); </code></p>
 <p>自定义参数调用，设置默认省市区。</p>
@@ -119,7 +124,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2015/04/15/%E5%9F%BA%E4%BA%8EjQuery-JSON%E7%9A%84%E7%9C%81%E5%B8%82%E8%81%94%E5%8A%A8%E6%95%88%E6%9E%9C/" data-id="cla0v66d101w2g0v18yvr99wv" data-title="基于jQuery+JSON的省市联动效果" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2015/04/15/%E5%9F%BA%E4%BA%8EjQuery-JSON%E7%9A%84%E7%9C%81%E5%B8%82%E8%81%94%E5%8A%A8%E6%95%88%E6%9E%9C/" data-id="cmp3psiqs01zzk4ue9qtl2i7k" data-title="基于jQuery+JSON的省市联动效果" class="article-share-link">分享</a>
       
       
       
@@ -243,6 +248,9 @@
 
 
 <script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
 
 
 

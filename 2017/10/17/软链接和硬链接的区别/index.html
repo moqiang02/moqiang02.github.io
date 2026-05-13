@@ -14,7 +14,7 @@
 <meta property="og:description" content="什么是链接？链接简单说实际上是一种文件共享的方式，是 POSIX 中的概念，主流文件系统都支持链接文件。 它是用来干什么的？你可以将链接简单地理解为 Windows 中常见的快捷方式（或是 OS X 中的替身），Linux 中常用它来解决一些库版本的问题，通常也会将一些目录层次较深的文件链接到一个更易访问的目录中。在这些用途上，我们通常会使用到软链接（也称符号链接）。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2017-10-17T13:11:20.000Z">
-<meta property="article:modified_time" content="2022-10-26T09:28:54.187Z">
+<meta property="article:modified_time" content="2026-05-13T03:57:33.995Z">
 <meta property="article:author" content="moqiang">
 <meta name="twitter:card" content="summary">
   
@@ -62,7 +62,12 @@
         <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
       </div>
     </div>
   </div>
@@ -105,13 +110,13 @@
 <p>首先，从使用的角度讲，两者没有任何区别，都与正常的文件访问方式一样，支持读写，如果是可执行文件的话也可以直接执行。</p>
 <p>那区别在哪呢？在底层的原理上。</p>
 <p>为了解释清楚，我们首先在自己的一个工作目录下创建一个文件，然后对这个文件进行链接的创建：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">touch</span> myfile &amp;&amp; <span class="built_in">echo</span> <span class="string">&quot;This is a plain text file.&quot;</span> &gt; myfile</span></span><br><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">cat</span> myfile</span></span><br><span class="line"></span><br><span class="line">This is a plain text file.</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">touch</span> myfile &amp;&amp; <span class="built_in">echo</span> <span class="string">&quot;This is a plain text file.&quot;</span> &gt; myfile</span><br><span class="line">$ <span class="built_in">cat</span> myfile</span><br><span class="line"></span><br><span class="line">This is a plain text file.</span><br></pre></td></tr></table></figure>
 <p>现在我们创建了一个普通地不能再普通的文件了。然后我们对它创建一个硬链接，并查看一下当前目录：</p>
 <figure class="highlight tap"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ ln myfile hard</span><br><span class="line">$ ls -li</span><br><span class="line"></span><br><span class="line">25869085 -rw-r--r-- <span class="number"> 2 </span>unixzii  staff <span class="number"> 27 </span><span class="number"> 7 </span><span class="number"> 8 </span>17:39 hard</span><br><span class="line">25869085 -rw-r--r-- <span class="number"> 2 </span>unixzii  staff <span class="number"> 27 </span><span class="number"> 7 </span><span class="number"> 8 </span>17:39 myfile</span><br></pre></td></tr></table></figure>
 <p>在 ls 结果的最左边一列，是文件的 inode 值，你可以简单把它想成 C 语言中的指针。它指向了物理硬盘的一个区块，事实上文件系统会维护一个引用计数，只要有文件指向这个区块，它就不会从硬盘上消失。</p>
 <p>你也看到了，这两个文件就如同一个文件一样，inode 值相同，都指向同一个区块。</p>
 <p>然后我们修改一下刚才创建的 hard 链接文件：</p>
-<figure class="highlight vhdl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ echo <span class="string">&quot;New line&quot;</span> &gt;&gt; hard</span><br><span class="line">$ cat myfile</span><br><span class="line"></span><br><span class="line">This <span class="keyword">is</span> a plain <span class="literal">text</span> <span class="keyword">file</span>.</span><br><span class="line"><span class="keyword">New</span> <span class="literal">line</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">echo</span> <span class="string">&quot;New line&quot;</span> &gt;&gt; hard</span><br><span class="line">$ <span class="built_in">cat</span> myfile</span><br><span class="line"></span><br><span class="line">This is a plain text file.</span><br><span class="line">New line</span><br></pre></td></tr></table></figure>
 <p>可以看到，这两个文件果真就是一个文件。 下面我们看看软链接（也就是符号链接）和它有什么区别。</p>
 <figure class="highlight tap"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ ln -s myfile soft</span><br><span class="line">$ ls -li</span><br><span class="line"></span><br><span class="line">25869085 -rw-r--r-- <span class="number"> 2 </span>unixzii  staff <span class="number"> 36 </span><span class="number"> 7 </span><span class="number"> 8 </span>17:45 hard</span><br><span class="line">25869085 -rw-r--r-- <span class="number"> 2 </span>unixzii  staff <span class="number"> 36 </span><span class="number"> 7 </span><span class="number"> 8 </span>17:45 myfile</span><br><span class="line">25869216 lrwxr-xr-x <span class="number"> 1 </span>unixzii  staff  <span class="number"> 6 </span><span class="number"> 7 </span><span class="number"> 8 </span>17:47 soft -&gt; myfile</span><br></pre></td></tr></table></figure>
 <p>诶，你会发现，这个软链接的 inode 竟然不一样啊，并且它的文件属性上也有一个<code>l</code>的 flag，这就说明它与之前我们创建的两个文件根本不是一个类型。</p>
@@ -119,7 +124,7 @@
 <figure class="highlight stata"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="keyword">rm</span> myfile</span><br><span class="line">$ <span class="keyword">cat</span> hard</span><br><span class="line"></span><br><span class="line">This is a plain text <span class="keyword">file</span>.</span><br><span class="line">New <span class="keyword">line</span></span><br><span class="line"></span><br><span class="line">$ <span class="keyword">cat</span> soft</span><br><span class="line"></span><br><span class="line"><span class="keyword">cat</span>: soft: <span class="keyword">No</span> such <span class="keyword">file</span> or directory</span><br></pre></td></tr></table></figure>
 <p>之前的硬链接没有丝毫地影响，因为它 inode 所指向的区块由于有一个硬链接在指向它，所以这个区块仍然有效，并且可以访问到。 然而软链接的 inode 所指向的内容实际上是保存了一个绝对路径，当用户访问这个文件时，系统会自动将其替换成其所指的文件路径，然而这个文件已经被删除了，所以自然就会显示无法找到该文件了。</p>
 <p>为验证这一猜想，我们再向这个软链接写点东西：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">echo</span> <span class="string">&quot;Something&quot;</span> &gt;&gt; soft</span></span><br><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">ls</span></span></span><br><span class="line"></span><br><span class="line">hard myfile soft</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">echo</span> <span class="string">&quot;Something&quot;</span> &gt;&gt; soft</span><br><span class="line">$ <span class="built_in">ls</span></span><br><span class="line"></span><br><span class="line">hard myfile soft</span><br></pre></td></tr></table></figure>
 <p>可以看到，刚才删除的 myfile 文件竟然又出现了！这就说明，当我们写入访问软链接时，系统自动将其路径替换为其所代表的绝对路径，并直接访问那个路径了。</p>
 <h3 id="硬链接和软链接的作用"><a href="#硬链接和软链接的作用" class="headerlink" title="硬链接和软链接的作用"></a>硬链接和软链接的作用</h3><p>硬链接：<br>硬连接的作用是允许一个文件拥有多个有效路径名，这样用户就可以建立硬连接到重要文件，以防止“误删”的功能。只删除一个连接并不影响节点本身和其它的连接，只有当最后一个连接被删除后，文件的数据块及目录的连接才会被释放。也就是说，文件真正删除的条件是与之相关的所有硬连接文件均被删除。</p>
 <p>软链接：<br>软链接又称之为符号连接（Symbolic Link）。软链接文件类似于Windows的快捷方式。它实际上是一个特殊的文件。在符号连接中，文件实际上是一个文本文件，其中包含的有另一文件的位置信息。</p>
@@ -132,7 +137,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2017/10/17/%E8%BD%AF%E9%93%BE%E6%8E%A5%E5%92%8C%E7%A1%AC%E9%93%BE%E6%8E%A5%E7%9A%84%E5%8C%BA%E5%88%AB/" data-id="cla0v66i9027ng0v17rfh79hj" data-title="软链接和硬链接的区别" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2017/10/17/%E8%BD%AF%E9%93%BE%E6%8E%A5%E5%92%8C%E7%A1%AC%E9%93%BE%E6%8E%A5%E7%9A%84%E5%8C%BA%E5%88%AB/" data-id="cmp3psiu902cck4ue5ux89o7p" data-title="软链接和硬链接的区别" class="article-share-link">分享</a>
       
       
       
@@ -256,6 +261,9 @@
 
 
 <script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
 
 
 

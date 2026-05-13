@@ -14,7 +14,7 @@
 <meta property="og:description" content="Laravel 中实现用户认证非常简单。实际上，几乎所有东西都已经为你配置好了。配置文件位于 config&#x2F;auth.php，其中包含了用于调整认证服务行为的、标注好注释的选项配置。 在其核心代码中，Laravel 的认证组件由 guards 和 providers 组成，Guard 定义了用户在每个请求中如何实现认证，例如，Laravel 通过 session guard 来维护 Session">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2017-10-02T04:50:12.000Z">
-<meta property="article:modified_time" content="2022-10-26T09:28:53.972Z">
+<meta property="article:modified_time" content="2026-05-13T05:26:03.648Z">
 <meta property="article:author" content="moqiang">
 <meta property="article:tag" content="Laravel">
 <meta name="twitter:card" content="summary">
@@ -63,7 +63,12 @@
         <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
       </div>
     </div>
   </div>
@@ -109,7 +114,7 @@
 <p>之后你就会在自己的laravel框架中看到这一套登陆验证，退出登录的代码。</p>
 <p>2.手动认证用户（写一个简单的）</p>
 <p>首先是登陆界面，一定注意不要落掉令牌</p>
-<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&lt;form action=&quot;dologin&quot; <span class="keyword">method</span>=&quot;post&quot;&gt;  </span><br><span class="line">    &lt;<span class="keyword">input</span> <span class="keyword">type</span>=&quot;hidden&quot; <span class="type">name</span>=&quot;_token&quot; <span class="keyword">value</span>=&quot;&#123;&#123; csrf_token() &#125;&#125;&quot;&gt;  </span><br><span class="line">    &lt;<span class="keyword">input</span> <span class="keyword">type</span>=&quot;text&quot; <span class="type">name</span>=&quot;name&quot; /&gt;  </span><br><span class="line">    &lt;<span class="keyword">input</span> <span class="keyword">type</span>=&quot;password&quot; <span class="type">name</span>=&quot;password&quot; /&gt;  </span><br><span class="line">    &lt;<span class="keyword">input</span> <span class="keyword">type</span>=&quot;submit&quot; <span class="keyword">value</span>=&quot;提交&quot;&gt;  </span><br><span class="line">&lt;/form&gt;  </span><br></pre></td></tr></table></figure>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">form</span> <span class="attr">action</span>=<span class="string">&quot;dologin&quot;</span> <span class="attr">method</span>=<span class="string">&quot;post&quot;</span>&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">&quot;hidden&quot;</span> <span class="attr">name</span>=<span class="string">&quot;_token&quot;</span> <span class="attr">value</span>=<span class="string">&quot;&#123;&#123; csrf_token() &#125;&#125;&quot;</span>&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">&quot;text&quot;</span> <span class="attr">name</span>=<span class="string">&quot;name&quot;</span> /&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">&quot;password&quot;</span> <span class="attr">name</span>=<span class="string">&quot;password&quot;</span> /&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">&quot;submit&quot;</span> <span class="attr">value</span>=<span class="string">&quot;提交&quot;</span>&gt;</span>  </span><br><span class="line"><span class="tag">&lt;/<span class="name">form</span>&gt;</span>  </span><br></pre></td></tr></table></figure>
 <p>接着是Model，这个可以采用Auth中生成的那个user.php,但是注意自己的路径和命名空间问题。模型可以直接使用artisan命令生成。注意：如果你的模型路径有变更，比如在admin下面而不是原来放置user.php的位置，你需要到config/auth.php文件中修改此处路径：</p>
 <p><code>&#39;model&#39; =&gt; App\Model\Admin\User::class,</code></p>
 <figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span>  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">namespace</span> <span class="title class_">App</span>\<span class="title class_">Model</span>\<span class="title class_">Admin</span>;  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">use</span> <span class="title">Illuminate</span>\<span class="title">Foundation</span>\<span class="title">Auth</span>\<span class="title">User</span> <span class="keyword">as</span> <span class="title">Authenticatable</span>;  </span><br><span class="line">  </span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">User</span> <span class="keyword">extends</span>  <span class="title">Authenticatable</span>  </span></span><br><span class="line"><span class="class"></span>&#123;  </span><br><span class="line">    <span class="comment">//  </span></span><br><span class="line">    <span class="keyword">protected</span> <span class="variable">$fillable</span> = [  </span><br><span class="line">        <span class="string">&#x27;name&#x27;</span>, <span class="string">&#x27;email&#x27;</span>, <span class="string">&#x27;password&#x27;</span>,  </span><br><span class="line">    ];  </span><br><span class="line">  </span><br><span class="line">    <span class="comment">/** </span></span><br><span class="line"><span class="comment">     * The attributes that should be hidden for arrays. </span></span><br><span class="line"><span class="comment">     * </span></span><br><span class="line"><span class="comment">     * <span class="doctag">@var</span> array </span></span><br><span class="line"><span class="comment">     */</span>  </span><br><span class="line">    <span class="keyword">protected</span> <span class="variable">$hidden</span> = [  </span><br><span class="line">        <span class="string">&#x27;password&#x27;</span>, <span class="string">&#x27;remember_token&#x27;</span>,  </span><br><span class="line">    ];  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
@@ -119,7 +124,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2017/10/02/laravel%E7%9A%84%E7%94%A8%E6%88%B7%E8%AE%A4%E8%AF%81%E7%B3%BB%E7%BB%9F-%E6%89%8B%E5%8A%A8%E8%AE%A4%E8%AF%81%E7%94%A8%E6%88%B7/" data-id="cla0v664n01crg0v1a8ou1u2l" data-title="laravel的用户认证系统-手动认证用户" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2017/10/02/laravel%E7%9A%84%E7%94%A8%E6%88%B7%E8%AE%A4%E8%AF%81%E7%B3%BB%E7%BB%9F-%E6%89%8B%E5%8A%A8%E8%AE%A4%E8%AF%81%E7%94%A8%E6%88%B7/" data-id="cmp3psill01fok4ue57v34gkg" data-title="laravel的用户认证系统-手动认证用户" class="article-share-link">分享</a>
       
       
       
@@ -245,6 +250,9 @@
 
 
 <script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
 
 
 

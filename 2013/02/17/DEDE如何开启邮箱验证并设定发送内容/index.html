@@ -14,7 +14,7 @@
 <meta property="og:description" content="一、开启邮箱验证（1）打开织梦系统首页，进入系统—–系统基本参数—–核心设置，然后找到网站发信Email，在里面填入你发出验证邮件的邮箱地址，再找到SMTP服务器，填入smtp.163.com(网易163)或者smtp.qq.com(QQ)，或者其他。找到SMTP服务器的用户邮箱，填入你的邮箱地址，找到SMTP服务器的用户帐号和用户密码，分别填入你邮箱的用户名和密码。smtp服务器端口默认为25，">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2013-02-17T13:10:55.000Z">
-<meta property="article:modified_time" content="2022-10-26T09:28:53.725Z">
+<meta property="article:modified_time" content="2026-05-13T01:19:01.822Z">
 <meta property="article:author" content="moqiang">
 <meta property="article:tag" content="DEDE">
 <meta name="twitter:card" content="summary">
@@ -63,7 +63,12 @@
         <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
       </div>
     </div>
   </div>
@@ -103,15 +108,15 @@
         <h3 id="一、开启邮箱验证"><a href="#一、开启邮箱验证" class="headerlink" title="一、开启邮箱验证"></a>一、开启邮箱验证</h3><p>（1）打开织梦系统首页，进入系统—–系统基本参数—–核心设置，然后找到网站发信Email，在里面填入你发出验证邮件的邮箱地址，再找到SMTP服务器，填入smtp.163.com(网易163)或者smtp.qq.com(QQ)，或者其他。找到SMTP服务器的用户邮箱，填入你的邮箱地址，找到SMTP服务器的用户帐号和用户密码，分别填入你邮箱的用户名和密码。smtp服务器端口默认为25，所以不用修改。<br>（2）接下来就需要开启会员功能和邮箱验证功能。进入系统—-系统基本参数—-会员设置，找到是否开启会员，选择是；找到会员使用权限开通状态(-10 邮件验证 -1 手工审核, 0 没限制)，选择-10。到此为止，会员邮箱验证功能开启。</p>
 <span id="more"></span>
 <h3 id="二、修改验证邮件内容"><a href="#二、修改验证邮件内容" class="headerlink" title="二、修改验证邮件内容"></a>二、修改验证邮件内容</h3><p>需要修改两个PHP文件，一个是member文件夹下的reg_new.php文件，另一个是member下的index_do.php。进入这两个文件夹，可以搜索邮箱验证，找到默认邮箱内容。<br>默认内容如下：</p>
-<figure class="highlight gams"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta"><span class="keyword">$mailtitle</span> = “&#123;$cfg_webname&#125;–会员邮件验证通知”;</span></span><br><span class="line"><span class="meta"><span class="keyword">$mailbody</span> = ”;</span></span><br><span class="line"><span class="meta"><span class="keyword">$mailbody</span> .= “尊敬的用户[&#123;$uname&#125;]，您好：\r\n”;</span></span><br><span class="line"><span class="meta"><span class="keyword">$mailbody</span> .= “欢迎注册成为[&#123;$cfg_webname&#125;]的会员。\r\n”;</span></span><br><span class="line"><span class="meta"><span class="keyword">$mailbody</span> .= “要通过注册，还必须进行最后一步操作，请点击或复制下面链接到地址栏访问这地址：\r\n\r\n”;</span></span><br><span class="line"><span class="meta"><span class="keyword">$mailbody</span> .= “&#123;$url&#125;\r\n\r\n”;</span></span><br><span class="line"><span class="meta"><span class="keyword">$mailbody</span> .= “Power by http://www.dedecms.com 织梦内容管理系统！\r\n”;</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$mailtitle</span> = “&#123;<span class="variable">$cfg_webname</span>&#125;–会员邮件验证通知”;</span><br><span class="line"><span class="variable">$mailbody</span> = ”;</span><br><span class="line"><span class="variable">$mailbody</span> .= “尊敬的用户[&#123;<span class="variable">$uname</span>&#125;]，您好：\r\n”;</span><br><span class="line"><span class="variable">$mailbody</span> .= “欢迎注册成为[&#123;<span class="variable">$cfg_webname</span>&#125;]的会员。\r\n”;</span><br><span class="line"><span class="variable">$mailbody</span> .= “要通过注册，还必须进行最后一步操作，请点击或复制下面链接到地址栏访问这地址：\r\n\r\n”;</span><br><span class="line"><span class="variable">$mailbody</span> .= “&#123;<span class="variable">$url</span>&#125;\r\n\r\n”;</span><br><span class="line"><span class="variable">$mailbody</span> .= “Power by http:<span class="comment">//www.dedecms.com 织梦内容管理系统！\r\n”;</span></span><br></pre></td></tr></table></figure>
 <p>可以修改其中的内容，也可以添加其他内容。<br>完整的内容如下：</p>
-<figure class="highlight gams"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta"><span class="keyword">$mailtitle</span> = “&#123;$cfg_webname&#125;–会员邮件验证通知”;</span></span><br><span class="line"><span class="meta"><span class="keyword">$mailbody</span> = ”;</span></span><br><span class="line"><span class="meta"><span class="keyword">$mailbody</span> .= “尊敬的用户[&#123;$uname&#125;]，您好：\r\n”;</span></span><br><span class="line"><span class="meta"><span class="keyword">$mailbody</span> .= “你使用了邮箱&#123;$email &#125;注册了&#123;$cfg_webname&#125;的会员。请点击以下链接，确认你在&#123;$cfg_webname&#125;的注册：\r\n”;</span></span><br><span class="line"><span class="meta"><span class="keyword">$mailbody</span> .= “欢迎注册成为[&#123;$cfg_webname&#125;]的会员。\r\n”;</span></span><br><span class="line"><span class="meta"><span class="keyword">$mailbody</span> .= “要通过注册，还必须进行最后一步操作，请点击或复制下面链接到地址栏访问这地址：\r\n\r\n”;</span></span><br><span class="line"><span class="meta"><span class="keyword">$mailbody</span> .= “&#123;$url&#125;\r\n\r\n”;</span></span><br><span class="line"><span class="meta"><span class="keyword">$mailbody</span> .= “（这是一封自动发送的邮件，请不要直接回复）\r\n”;</span></span><br><span class="line"><span class="meta"><span class="keyword">$mailbody</span> .= “-如果你没有注册过&#123;$cfg_webname&#125;，可能是有人尝试使用你的邮件来注册，请忽略本邮件。\r\n”;</span></span><br><span class="line"><span class="meta"><span class="keyword">$mailbody</span> .= “没有激活的账号会为你保留24个小时, 请尽快激活。\r\n”;</span></span><br><span class="line"><span class="meta"><span class="keyword">$mailbody</span> .= “24个小时以后, 没有被激活的注册会自动失效，你需要重新填写并注册。\r\n”;</span></span><br><span class="line"><span class="meta"><span class="keyword">$mailbody</span> .= “还有其他问题? 联系我们 \r\n “;</span></span><br><span class="line"><span class="meta"><span class="keyword">$mailbody</span> .= “Power by http://www.dedecms.com 织梦！\r\n”;</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$mailtitle</span> = “&#123;<span class="variable">$cfg_webname</span>&#125;–会员邮件验证通知”;</span><br><span class="line"><span class="variable">$mailbody</span> = ”;</span><br><span class="line"><span class="variable">$mailbody</span> .= “尊敬的用户[&#123;<span class="variable">$uname</span>&#125;]，您好：\r\n”;</span><br><span class="line"><span class="variable">$mailbody</span> .= “你使用了邮箱&#123;<span class="variable">$email</span> &#125;注册了&#123;<span class="variable">$cfg_webname</span>&#125;的会员。请点击以下链接，确认你在&#123;<span class="variable">$cfg_webname</span>&#125;的注册：\r\n”;</span><br><span class="line"><span class="variable">$mailbody</span> .= “欢迎注册成为[&#123;<span class="variable">$cfg_webname</span>&#125;]的会员。\r\n”;</span><br><span class="line"><span class="variable">$mailbody</span> .= “要通过注册，还必须进行最后一步操作，请点击或复制下面链接到地址栏访问这地址：\r\n\r\n”;</span><br><span class="line"><span class="variable">$mailbody</span> .= “&#123;<span class="variable">$url</span>&#125;\r\n\r\n”;</span><br><span class="line"><span class="variable">$mailbody</span> .= “（这是一封自动发送的邮件，请不要直接回复）\r\n”;</span><br><span class="line"><span class="variable">$mailbody</span> .= “-如果你没有注册过&#123;<span class="variable">$cfg_webname</span>&#125;，可能是有人尝试使用你的邮件来注册，请忽略本邮件。\r\n”;</span><br><span class="line"><span class="variable">$mailbody</span> .= “没有激活的账号会为你保留<span class="number">24</span>个小时, 请尽快激活。\r\n”;</span><br><span class="line"><span class="variable">$mailbody</span> .= “<span class="number">24</span>个小时以后, 没有被激活的注册会自动失效，你需要重新填写并注册。\r\n”;</span><br><span class="line"><span class="variable">$mailbody</span> .= “还有其他问题? 联系我们 \r\n “;</span><br><span class="line"><span class="variable">$mailbody</span> .= “Power by http:<span class="comment">//www.dedecms.com 织梦！\r\n”;</span></span><br></pre></td></tr></table></figure>
 <p>到此问题解决了。  </p>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2013/02/17/DEDE%E5%A6%82%E4%BD%95%E5%BC%80%E5%90%AF%E9%82%AE%E7%AE%B1%E9%AA%8C%E8%AF%81%E5%B9%B6%E8%AE%BE%E5%AE%9A%E5%8F%91%E9%80%81%E5%86%85%E5%AE%B9/" data-id="cla0v65td00arg0v1g62t2oxx" data-title="DEDE如何开启邮箱验证并设定发送内容" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2013/02/17/DEDE%E5%A6%82%E4%BD%95%E5%BC%80%E5%90%AF%E9%82%AE%E7%AE%B1%E9%AA%8C%E8%AF%81%E5%B9%B6%E8%AE%BE%E5%AE%9A%E5%8F%91%E9%80%81%E5%86%85%E5%AE%B9/" data-id="cmp3psif800atk4ueans76y9e" data-title="DEDE如何开启邮箱验证并设定发送内容" class="article-share-link">分享</a>
       
       
       
@@ -237,6 +242,9 @@
 
 
 <script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
 
 
 

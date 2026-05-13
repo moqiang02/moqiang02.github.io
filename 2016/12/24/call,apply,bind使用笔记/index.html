@@ -14,7 +14,7 @@
 <meta property="og:description" content="两者作用一致，都是把obj(即this)绑定到thisObj，这时候thisObj具备了obj的属性和方法。或者说thisObj『继承』了obj的属性和方法。绑定后会立即执行函数。 12obj.call(thisObj, arg1, arg2, ...);obj.apply(thisObj, [arg1, arg2, ...]);">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2016-12-24T12:30:07.000Z">
-<meta property="article:modified_time" content="2022-10-26T09:28:53.941Z">
+<meta property="article:modified_time" content="2026-05-13T03:01:34.574Z">
 <meta property="article:author" content="moqiang">
 <meta name="twitter:card" content="summary">
   
@@ -62,7 +62,12 @@
         <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
       </div>
     </div>
   </div>
@@ -105,17 +110,17 @@
 
 
 <p>唯一区别是apply接受的是数组参数，call接受的是连续参数。</p>
-<figure class="highlight ada"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title">add</span>(j, k)&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="type">j+k</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title">sub</span>(j, k)&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="type">j-k</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">add</span>(<span class="params">j, k</span>)&#123;</span><br><span class="line">    <span class="keyword">return</span> j+k;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">sub</span>(<span class="params">j, k</span>)&#123;</span><br><span class="line">    <span class="keyword">return</span> j-k;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>我们在控制台运行：</p>
 <figure class="highlight perl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">add(<span class="number">5</span>,<span class="number">3</span>); <span class="regexp">//</span><span class="number">8</span></span><br><span class="line">add.call(<span class="function"><span class="keyword">sub</span>, 5, 3)</span>; //<span class="number">8</span></span><br><span class="line">add.apply(<span class="function"><span class="keyword">sub</span>, [5, 3])</span>; //<span class="number">8</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">sub</span></span>(5, 3); //<span class="number">2</span></span><br><span class="line">sub.call(add, <span class="number">5</span>, <span class="number">3</span>); <span class="regexp">//</span><span class="number">2</span></span><br><span class="line">sub.apply(add, [<span class="number">5</span>, <span class="number">3</span>]); <span class="regexp">//</span><span class="number">2</span></span><br></pre></td></tr></table></figure>
 
 <p><strong>调用原生对象的方法</strong></p>
 <p>示例：</p>
-<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">var a = &#123;<span class="number">0</span>:<span class="number">1</span>, <span class="number">1</span>:&quot;yjc&quot;, length: <span class="number">2</span>&#125;; </span><br><span class="line"></span><br><span class="line">a.<span class="keyword">slice</span>(); //TypeError: a.<span class="keyword">slice</span> <span class="keyword">is</span> <span class="keyword">not</span> a <span class="keyword">function</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">Array</span>.prototype.<span class="keyword">slice</span>.<span class="keyword">call</span>(a);//[<span class="number">1</span>, &quot;yjc&quot;]</span><br></pre></td></tr></table></figure>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> a = &#123;<span class="number">0</span>:<span class="number">1</span>, <span class="number">1</span>:<span class="string">&quot;yjc&quot;</span>, <span class="attr">length</span>: <span class="number">2</span>&#125;; </span><br><span class="line"></span><br><span class="line">a.<span class="title function_">slice</span>(); <span class="comment">//TypeError: a.slice is not a function</span></span><br><span class="line"></span><br><span class="line"><span class="title class_">Array</span>.<span class="property"><span class="keyword">prototype</span></span>.<span class="property">slice</span>.<span class="title function_">call</span>(a);<span class="comment">//[1, &quot;yjc&quot;]</span></span><br></pre></td></tr></table></figure>
 <p>对象a类似array，但不具备array的slice等方法。使用call绑定，这时候就可以调用slice方法。</p>
 <p><strong>实现继承</strong></p>
 <p>通过call和apply，我们可以实现对象继承。示例：</p>
-<figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">var Parent <span class="operator">=</span> function()&#123;</span><br><span class="line">    this.name <span class="operator">=</span> <span class="string">&quot;yjc&quot;</span><span class="comment">;</span></span><br><span class="line">    this.age <span class="operator">=</span> <span class="number">22</span><span class="comment">;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">var child <span class="operator">=</span> &#123;&#125;<span class="comment">;</span></span><br><span class="line"></span><br><span class="line">console.log(child)<span class="comment">;//Object &#123;&#125; ,空对象</span></span><br><span class="line"></span><br><span class="line">Parent.call(child)<span class="comment">;</span></span><br><span class="line"></span><br><span class="line">console.log(child)<span class="comment">; //Object &#123;name: &quot;yjc&quot;, age: 22&#125;</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> <span class="title class_">Parent</span> = <span class="keyword">function</span>(<span class="params"></span>)&#123;</span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">name</span> = <span class="string">&quot;yjc&quot;</span>;</span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">age</span> = <span class="number">22</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> child = &#123;&#125;;</span><br><span class="line"></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(child);<span class="comment">//Object &#123;&#125; ,空对象</span></span><br><span class="line"></span><br><span class="line"><span class="title class_">Parent</span>.<span class="title function_">call</span>(child);</span><br><span class="line"></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(child); <span class="comment">//Object &#123;name: &quot;yjc&quot;, age: 22&#125;</span></span><br></pre></td></tr></table></figure>
 <p>以上实现了对象的继承。</p>
 <p><strong>bind的使用</strong></p>
 <p><code>obj.bind(thisObj, arg1, arg2, ...);</code></p>
@@ -127,7 +132,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2016/12/24/call,apply,bind%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/" data-id="cla0v6631018fg0v16wrx4012" data-title="call,apply,bind使用笔记" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2016/12/24/call,apply,bind%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/" data-id="cmp3psikm01ayk4ueabv0amzk" data-title="call,apply,bind使用笔记" class="article-share-link">分享</a>
       
       
       
@@ -251,6 +256,9 @@
 
 
 <script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
 
 
 

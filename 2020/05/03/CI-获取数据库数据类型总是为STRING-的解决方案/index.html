@@ -14,7 +14,7 @@
 <meta property="og:description" content="使用php的CI框架的时候，发现在数据库中是int型的数据，返回的时候全变成了string了。对于弱类型的语言来说，这个没多大关系，但是，如果是做APP接口，在进行JSON转对象的时候，可能要求score这种字段是int类型，这个时候就不行了。其实这不是CI框架的问题，PHP与mysql的通讯全都用string。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-05-03T14:13:58.000Z">
-<meta property="article:modified_time" content="2022-10-26T09:28:53.706Z">
+<meta property="article:modified_time" content="2026-05-13T03:01:34.604Z">
 <meta property="article:author" content="moqiang">
 <meta property="article:tag" content="CI">
 <meta name="twitter:card" content="summary">
@@ -63,7 +63,12 @@
         <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
       </div>
     </div>
   </div>
@@ -104,16 +109,16 @@
 <p><strong>方法一：</strong><br>从PHP环境层面解决，在 php 扩展中启用 mysqlnd 驱动程序。<br>php应用mysql扩展的话，不能获取数据库中的数据类型，而当用mysqlnd的时候，是可以获取的。</p>
 <p>在php7以后，mysql扩展已经摒弃了，建议用mysqli，而mysqli是可以获取数据库中的数据类型的，但是默认并没有开启。需要设置option参数  <code>MYSQLI_OPT_INT_AND_FLOAT_NATIVE</code> 为 <code>true</code>,也就是下面的方法二。</p>
 <p><strong>方法二：</strong><br>在 Codeigniter 驱动程序中设置 mysqli 选项。 下面的方法适用于使用 mysqli 作为数据库驱动程序的用户(可能不适用于所有系统)。<br>Open mysqli_driver.php file from system &gt; database &gt; drivers &gt; mysqli_driver.php<br>Add below line to the code</p>
-<figure class="highlight lasso"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> function db_connect($persistent = <span class="literal">FALSE</span>)</span><br><span class="line">    <span class="params">...</span></span><br><span class="line">    $this-&gt;_mysqli-&gt;options(MYSQLI_OPT_CONNECT_TIMEOUT, <span class="number">10</span>); <span class="comment">// already exits</span></span><br><span class="line">    $this-&gt;_mysqli-&gt;options(MYSQLI_OPT_INT_AND_FLOAT_NATIVE,<span class="literal">TRUE</span>); <span class="comment">// add this line</span></span><br><span class="line">    <span class="params">...</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">db_connect</span>(<span class="params"><span class="variable">$persistent</span> = <span class="literal">FALSE</span></span>)</span></span><br><span class="line"><span class="function">    ...</span></span><br><span class="line"><span class="function">    $<span class="title">this</span>-&gt;<span class="title">_mysqli</span>-&gt;<span class="title">options</span>(<span class="params">MYSQLI_OPT_CONNECT_TIMEOUT, <span class="number">10</span></span>)</span>; <span class="comment">// already exits</span></span><br><span class="line">    <span class="variable language_">$this</span>-&gt;_mysqli-&gt;<span class="title function_ invoke__">options</span>(MYSQLI_OPT_INT_AND_FLOAT_NATIVE,<span class="literal">TRUE</span>); <span class="comment">// add this line</span></span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
 
 <p>After the code change, you get response like below</p>
-<figure class="highlight sml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">array</span> (size=<span class="number">16</span>)</span><br><span class="line">    <span class="symbol">&#x27;auth_id&#x27;</span> =&gt; <span class="built_in">int</span> <span class="number">1</span>            </span><br><span class="line">    <span class="symbol">&#x27;role&#x27;</span> =&gt; <span class="built_in">string</span> <span class="symbol">&#x27;admin&#x27;</span> (length=<span class="number">5</span>)</span><br><span class="line">    <span class="symbol">&#x27;permissions&#x27;</span> =&gt; <span class="built_in">string</span> <span class="symbol">&#x27;all&#x27;</span> (length=<span class="number">3</span>)       </span><br><span class="line">    <span class="symbol">&#x27;login_attempt&#x27;</span> =&gt; <span class="built_in">int</span> <span class="number">0</span></span><br><span class="line">    <span class="symbol">&#x27;active&#x27;</span> =&gt; <span class="built_in">int</span> <span class="number">1</span>        </span><br><span class="line">    <span class="symbol">&#x27;mobile_verified&#x27;</span> =&gt; <span class="built_in">int</span> <span class="number">1</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">array</span> (size=<span class="number">16</span>)</span><br><span class="line">    <span class="string">&#x27;auth_id&#x27;</span> =&gt; <span class="keyword">int</span> <span class="number">1</span>            </span><br><span class="line">    <span class="string">&#x27;role&#x27;</span> =&gt; <span class="keyword">string</span> <span class="string">&#x27;admin&#x27;</span> (length=<span class="number">5</span>)</span><br><span class="line">    <span class="string">&#x27;permissions&#x27;</span> =&gt; <span class="keyword">string</span> <span class="string">&#x27;all&#x27;</span> (length=<span class="number">3</span>)       </span><br><span class="line">    <span class="string">&#x27;login_attempt&#x27;</span> =&gt; <span class="keyword">int</span> <span class="number">0</span></span><br><span class="line">    <span class="string">&#x27;active&#x27;</span> =&gt; <span class="keyword">int</span> <span class="number">1</span>        </span><br><span class="line">    <span class="string">&#x27;mobile_verified&#x27;</span> =&gt; <span class="keyword">int</span> <span class="number">1</span></span><br></pre></td></tr></table></figure>
 
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2020/05/03/CI-%E8%8E%B7%E5%8F%96%E6%95%B0%E6%8D%AE%E5%BA%93%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E6%80%BB%E6%98%AF%E4%B8%BASTRING-%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/" data-id="cla0v65sl007dg0v17y993imy" data-title="CI 获取数据库数据类型总是为STRING 的解决方案" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2020/05/03/CI-%E8%8E%B7%E5%8F%96%E6%95%B0%E6%8D%AE%E5%BA%93%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E6%80%BB%E6%98%AF%E4%B8%BASTRING-%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/" data-id="cmp3psies007hk4uees074hy8" data-title="CI 获取数据库数据类型总是为STRING 的解决方案" class="article-share-link">分享</a>
       
       
       
@@ -239,6 +244,9 @@
 
 
 <script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
 
 
 

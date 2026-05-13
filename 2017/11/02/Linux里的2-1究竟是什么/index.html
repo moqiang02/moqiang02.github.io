@@ -16,7 +16,7 @@
 <meta property="og:image" content="http://moqiang02.github.io/images/Linux%E9%87%8C%E7%9A%8421%E4%BB%80%E4%B9%88%E9%AC%BC/1.jpg">
 <meta property="og:image" content="http://moqiang02.github.io/images/Linux%E9%87%8C%E7%9A%8421%E4%BB%80%E4%B9%88%E9%AC%BC/2.jpg">
 <meta property="article:published_time" content="2017-11-02T14:48:06.000Z">
-<meta property="article:modified_time" content="2022-10-26T09:28:53.803Z">
+<meta property="article:modified_time" content="2026-05-13T01:19:02.438Z">
 <meta property="article:author" content="moqiang">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="http://moqiang02.github.io/images/Linux%E9%87%8C%E7%9A%8421%E4%BB%80%E4%B9%88%E9%AC%BC/1.jpg">
@@ -65,7 +65,12 @@
         <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://moqiang02.github.io"></form>
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
       </div>
     </div>
   </div>
@@ -114,7 +119,7 @@
 <h3 id="说说2-gt-amp-1"><a href="#说说2-gt-amp-1" class="headerlink" title="说说2&gt;&amp;1"></a>说说<code>2&gt;&amp;1</code></h3><p>通过上面<code>command &gt; /dev/null</code>等价于<code>command 1 &gt; /dev/null</code>,那么对于<code>2&gt;&amp;1</code>也就好理解了，2就是标准错误，1是标准输出，那么这条命令不就是相当于把标准错误重定向到标准输出么。等等是<code>&amp;1</code>而不是1，这里<code>&amp;</code>是什么？这里<code>&amp;</code>相当于等效于标准输出。这里有点不好理解，先看下面。</p>
 <h3 id="command-gt-a-2-gt-a-与-command-gt-a-2-gt-amp-1的区别"><a href="#command-gt-a-2-gt-a-与-command-gt-a-2-gt-amp-1的区别" class="headerlink" title="command&gt;a 2&gt;a 与 command&gt;a 2&gt;&amp;1的区别"></a>command&gt;a 2&gt;a 与 command&gt;a 2&gt;&amp;1的区别</h3><p>通过上面的分析，对于<code>command&gt;a 2&gt;&amp;1</code>这条命令，等价于<code>command 1&gt;a 2&gt;&amp;1</code>可以理解为执行command产生的标准输入重定向到文件a中，标准错误也重定向到文件a中。那么是否就说<code>command 1&gt;a 2&gt;&amp;1</code>等价于<code>command 1&gt;a 2&gt;a</code>呢。其实不是，<code>command 1&gt;a 2&gt;&amp;1</code>与<code>command 1&gt;a 2&gt;a</code>还是有区别的，区别就在于前者只打开一次文件a，后者会打开文件两次，并导致stdout被stderr覆盖。<code>&amp;1</code>的含义就可以理解为用标准输出的引用，引用的就是重定向标准输出产生打开的a。从IO效率上来讲，<code>command 1&gt;a 2&gt;&amp;1</code>比<code>command 1&gt;a 2&gt;a</code>的效率更高。</p>
 <h3 id="举个栗子"><a href="#举个栗子" class="headerlink" title="举个栗子"></a>举个栗子</h3><p>来个shell</p>
-<figure class="highlight d"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//test.sh</span></span><br><span class="line"><span class="meta">#!/bin/sh</span></span><br><span class="line">t</span><br><span class="line">date</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">//test.sh</span><br><span class="line"><span class="comment">#!/bin/sh</span></span><br><span class="line">t</span><br><span class="line"><span class="built_in">date</span></span><br></pre></td></tr></table></figure>
 <p><code>chmod +x test.sh为test.sh</code>增加执行权限。这里我们弄了两条命令，其中t指令并不存在，执行会报错，会输出到stderr。date能正常执行，执行会输出当前时间，会输出到stdout。</p>
 <p>执行<code>./test.sh &gt; res1.log</code>结果为<br><img src="/images/Linux%E9%87%8C%E7%9A%8421%E4%BB%80%E4%B9%88%E9%AC%BC/1.jpg"><br>我们发现stderr并没有被重定向到res1.log中，stderr被打印到了屏幕上。这也进一步证明了上面说的<code>./test.sh &gt; res1.log</code>等价于<code>./test.sh 1&gt;res1.log</code></p>
 <p>执行<code>./test.sh&gt;res2.log 2&gt;&amp;1</code>结果为<br><img src="/images/Linux%E9%87%8C%E7%9A%8421%E4%BB%80%E4%B9%88%E9%AC%BC/2.jpg"><br>这次我们发现stdout和stderr都被重定向到了res2.log中了。上面我们未对stderr也就是2说明如何输出，stderr就输出到了屏 幕上，这里我们不仅对stdout进行说明，重定向到res2.log中，对标准错误也进行了说明，让其重定向到res2.log的引用即res2.log的文件描述符中。</p>
@@ -123,7 +128,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://moqiang02.github.io/2017/11/02/Linux%E9%87%8C%E7%9A%842-1%E7%A9%B6%E7%AB%9F%E6%98%AF%E4%BB%80%E4%B9%88/" data-id="cla0v65wo00n5g0v1espb8rxr" data-title="Linux里的2&gt;&amp;1究竟是什么" class="article-share-link">分享</a>
+      <a data-url="http://moqiang02.github.io/2017/11/02/Linux%E9%87%8C%E7%9A%842-1%E7%A9%B6%E7%AB%9F%E6%98%AF%E4%BB%80%E4%B9%88/" data-id="cmp3psigx00nvk4ueg0mw8beu" data-title="Linux里的2&gt;&amp;1究竟是什么" class="article-share-link">分享</a>
       
       
       
@@ -247,6 +252,9 @@
 
 
 <script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
 
 
 
