@@ -63,7 +63,7 @@
     var results = searchIndex.filter(function(item) {
       return (item.title && item.title.toLowerCase().indexOf(keyword.toLowerCase()) !== -1) ||
              (item.content && item.content.toLowerCase().indexOf(keyword.toLowerCase()) !== -1);
-    }).slice(0, 10); // 最多显示10条
+    }).slice(0, 20); // 最多显示20条
     renderResults(results, keyword);
   }
 

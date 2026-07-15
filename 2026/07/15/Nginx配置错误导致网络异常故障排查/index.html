@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Nginx配置错误导致网络异常故障排查 | 自强不息</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="一、问题现象系统运行过程中，前端偶发出现接口请求失败。 浏览器控制台提示： 123456Access to XMLHttpRequest at&amp;#x27;https:&#x2F;&#x2F;api.xxx.city&#x2F;admin-api&#x2F;hotel&#x2F;room&#x2F;getRoomAll?id&#x3D;10162&amp;#x27;from origin &amp;#x27;https:&#x2F;&#x2F;desk.xxx.city&amp;#x27;has been bl">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Nginx配置错误导致网络异常故障排查">
+<meta property="og:url" content="http://moqiang02.github.io/2026/07/15/Nginx%E9%85%8D%E7%BD%AE%E9%94%99%E8%AF%AF%E5%AF%BC%E8%87%B4%E7%BD%91%E7%BB%9C%E5%BC%82%E5%B8%B8%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/index.html">
+<meta property="og:site_name" content="自强不息">
+<meta property="og:description" content="一、问题现象系统运行过程中，前端偶发出现接口请求失败。 浏览器控制台提示： 123456Access to XMLHttpRequest at&amp;#x27;https:&#x2F;&#x2F;api.xxx.city&#x2F;admin-api&#x2F;hotel&#x2F;room&#x2F;getRoomAll?id&#x3D;10162&amp;#x27;from origin &amp;#x27;https:&#x2F;&#x2F;desk.xxx.city&amp;#x27;has been bl">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-07-15T05:11:52.000Z">
+<meta property="article:modified_time" content="2026-07-15T05:34:47.085Z">
+<meta property="article:author" content="moqiang">
+<meta name="twitter:card" content="summary">
+  
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+  
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@0.0.71/index.min.css">
+
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">自强不息</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <div class="search-form">
+          <input type="text" id="local-search-input" class="search-form-input" placeholder="搜索..." autocomplete="off">
+          <button type="button" class="search-form-submit">&#xF002;</button>
+        </div>
+        <div id="search-overlay"></div>
+        <div id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-Nginx配置错误导致网络异常故障排查" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/07/15/Nginx%E9%85%8D%E7%BD%AE%E9%94%99%E8%AF%AF%E5%AF%BC%E8%87%B4%E7%BD%91%E7%BB%9C%E5%BC%82%E5%B8%B8%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/" class="article-date">
+  <time class="dt-published" datetime="2026-07-15T05:11:52.000Z" itemprop="datePublished">2026-07-15</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/nginx/">nginx</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Nginx配置错误导致网络异常故障排查
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+
+          <!-- rex -->
+          
+            <!-- 文章目录开始 -->
+            
+              <div id="toc" class="toc-article">
+              <strong class="toc-title" style="cursor:pointer">目录</strong>
+              <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E9%97%AE%E9%A2%98%E7%8E%B0%E8%B1%A1"><span class="toc-number">1.</span> <span class="toc-text">一、问题现象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E6%8A%93%E5%8C%85%E5%88%86%E6%9E%90"><span class="toc-number">2.</span> <span class="toc-text">二、抓包分析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E6%9F%A5%E7%9C%8B-Spring-Boot-%E6%97%A5%E5%BF%97"><span class="toc-number">3.</span> <span class="toc-text">三、查看 Spring Boot 日志</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E7%9C%9F%E6%AD%A3%E7%9A%84%E5%8E%9F%E5%9B%A0"><span class="toc-number">4.</span> <span class="toc-text">四、真正的原因</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BC%9A%E6%8F%90%E7%A4%BA-CORS%EF%BC%9F"><span class="toc-number">5.</span> <span class="toc-text">五、为什么会提示 CORS？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BC%9A%E5%87%BA%E7%8E%B0-worker-connections-are-not-enough%EF%BC%9F"><span class="toc-number">6.</span> <span class="toc-text">六、为什么会出现 worker_connections are not enough？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E7%9C%9F%E6%AD%A3%E9%9C%80%E8%A6%81%E6%8E%92%E6%9F%A5%E7%9A%84%E4%B8%8D%E6%98%AF-Nginx"><span class="toc-number">7.</span> <span class="toc-text">七、真正需要排查的不是 Nginx</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1%E3%80%81Spring-Boot-%E6%8E%A5%E5%8F%A3%E5%93%8D%E5%BA%94%E8%BF%87%E6%85%A2"><span class="toc-number">7.1.</span> <span class="toc-text">1、Spring Boot 接口响应过慢</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2%E3%80%81%E6%95%B0%E6%8D%AE%E5%BA%93%E6%85%A2%E6%9F%A5%E8%AF%A2"><span class="toc-number">7.2.</span> <span class="toc-text">2、数据库慢查询</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3%E3%80%81Redis-%E6%88%96%E7%AC%AC%E4%B8%89%E6%96%B9%E6%8E%A5%E5%8F%A3%E9%98%BB%E5%A1%9E"><span class="toc-number">7.3.</span> <span class="toc-text">3、Redis 或第三方接口阻塞</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4%E3%80%81WebSocket-%E6%88%96%E9%95%BF%E8%BF%9E%E6%8E%A5%E8%BF%87%E5%A4%9A"><span class="toc-number">7.4.</span> <span class="toc-text">4、WebSocket 或长连接过多</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88"><span class="toc-number">8.</span> <span class="toc-text">八、解决方案</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%96%B9%E6%A1%88%E4%B8%80%EF%BC%9A%E6%8F%90%E9%AB%98-worker-connections"><span class="toc-number">8.1.</span> <span class="toc-text">方案一：提高 worker_connections</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%96%B9%E6%A1%88%E4%BA%8C%EF%BC%9A%E7%BB%A7%E7%BB%AD%E5%AE%9A%E4%BD%8D%E7%9C%9F%E6%AD%A3%E7%93%B6%E9%A2%88"><span class="toc-number">8.2.</span> <span class="toc-text">方案二：继续定位真正瓶颈</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B9%9D%E3%80%81%E6%8E%92%E6%9F%A5%E7%BB%8F%E9%AA%8C%E6%80%BB%E7%BB%93"><span class="toc-number">9.</span> <span class="toc-text">九、排查经验总结</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%81%E3%80%81%E6%80%BB%E7%BB%93"><span class="toc-number">10.</span> <span class="toc-text">十、总结</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8E%92%E6%9F%A5%E7%BB%93%E8%AE%BA"><span class="toc-number">10.1.</span> <span class="toc-text">排查结论</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BB%8F%E9%AA%8C%E6%80%BB%E7%BB%93"><span class="toc-number">10.2.</span> <span class="toc-text">经验总结</span></a></li></ol></li></ol>
+              </div>
+            
+            <!-- 文章目录结束 -->	  
+          
+
+        <h2 id="一、问题现象"><a href="#一、问题现象" class="headerlink" title="一、问题现象"></a>一、问题现象</h2><p>系统运行过程中，前端偶发出现接口请求失败。</p>
+<p>浏览器控制台提示：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Access to XMLHttpRequest at</span><br><span class="line">&#x27;https://api.xxx.city/admin-api/hotel/room/getRoomAll?id=10162&#x27;</span><br><span class="line">from origin &#x27;https://desk.xxx.city&#x27;</span><br><span class="line">has been blocked by CORS policy:</span><br><span class="line"></span><br><span class="line">No &#x27;Access-Control-Allow-Origin&#x27; header is present on the requested resource.</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+<p>同时还伴随着：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">GET https://api.xxx.city/admin-api/hotel/room/getRoomAll?id=10162</span><br><span class="line">500 (Internal Server Error)</span><br></pre></td></tr></table></figure>
+
+<p>Axios 最终抛出：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">AxiosError: Network Error</span><br><span class="line">code: ERR_NETWORK</span><br></pre></td></tr></table></figure>
+
+<p>第一眼很容易怀疑：</p>
+<ul>
+<li>DNS 是否解析异常？</li>
+<li>CORS 是否配置错误？</li>
+<li>Spring Boot 是否抛出了异常？</li>
+</ul>
+<h2 id="二、抓包分析"><a href="#二、抓包分析" class="headerlink" title="二、抓包分析"></a>二、抓包分析</h2><p>查看 Response Header：</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">HTTP/1.1</span> <span class="number">500</span> Internal Server Error</span><br><span class="line"><span class="attribute">Server</span><span class="punctuation">: </span>nginx/1.18.0 (Ubuntu)</span><br><span class="line"><span class="attribute">Date</span><span class="punctuation">: </span>Wed, 15 Jul 2026 03:38:38 GMT</span><br><span class="line"><span class="attribute">Content-Type</span><span class="punctuation">: </span>text/html</span><br><span class="line"><span class="attribute">Content-Length</span><span class="punctuation">: </span>588</span><br><span class="line"><span class="attribute">Connection</span><span class="punctuation">: </span>close</span><br><span class="line"></span><br><span class="line"><span class="language-mathematica"><span class="variable">Access</span><span class="operator">-</span><span class="built_in">Control</span><span class="operator">-</span><span class="variable">Allow</span><span class="operator">-</span><span class="variable">Credentials</span><span class="operator">:</span> <span class="variable">true</span></span></span><br><span class="line"><span class="language-mathematica"><span class="variable">Access</span><span class="operator">-</span><span class="built_in">Control</span><span class="operator">-</span><span class="variable">Allow</span><span class="operator">-</span><span class="variable">Methods</span><span class="operator">:</span> <span class="variable">GET</span><span class="operator">,</span> <span class="variable">POST</span><span class="operator">,</span> <span class="variable">PUT</span><span class="operator">,</span> <span class="variable">DELETE</span><span class="operator">,</span> <span class="variable">OPTIONS</span></span></span><br><span class="line"><span class="language-mathematica"><span class="variable">Access</span><span class="operator">-</span><span class="built_in">Control</span><span class="operator">-</span><span class="variable">Allow</span><span class="operator">-</span><span class="variable">Headers</span><span class="operator">:</span> <span class="variable">DNT</span><span class="operator">,</span><span class="variable">User</span><span class="operator">-</span><span class="variable">Agent</span><span class="operator">,</span><span class="variable">X</span><span class="operator">-</span><span class="variable">Requested</span><span class="operator">-</span><span class="built_in">With</span><span class="operator">,</span><span class="built_in">If</span><span class="operator">-</span><span class="variable">Modified</span><span class="operator">-</span><span class="variable">Since</span><span class="operator">,</span><span class="variable">Cache</span><span class="operator">-</span><span class="built_in">Control</span><span class="operator">,</span><span class="variable">Content</span><span class="operator">-</span><span class="variable">Type</span><span class="operator">,</span><span class="built_in">Range</span><span class="operator">,</span><span class="variable">Authorization</span><span class="operator">,</span><span class="built_in">Version</span></span></span><br><span class="line"><span class="language-mathematica"><span class="variable">Access</span><span class="operator">-</span><span class="built_in">Control</span><span class="operator">-</span><span class="variable">Expose</span><span class="operator">-</span><span class="variable">Headers</span><span class="operator">:</span> <span class="variable">Content</span><span class="operator">-</span><span class="built_in">Length</span><span class="operator">,</span><span class="variable">Content</span><span class="operator">-</span><span class="built_in">Range</span></span></span><br></pre></td></tr></table></figure>
+
+<p>可以发现：</p>
+<ul>
+<li>请求已经到达 Nginx</li>
+<li>返回的是 HTTP 500</li>
+<li>并没有 <code>Access-Control-Allow-Origin</code> (因为一个响应头中不能出现两次Access-Control-Allow-Origin，因为已经在后端添加了，因此在nginx中重复配置，所以这个不是问题)</li>
+</ul>
+<p>因此：</p>
+<blockquote>
+<p>浏览器提示 CORS，只是因为 500 响应没有携带 <code>Access-Control-Allow-Origin</code>，真正的问题还是 HTTP 500。<br>而且Content-Type: text/html，而非：Content-Type: application/json，说明500是nginx返回的，不是后端程序返回的。</p>
+</blockquote>
+<p>此时可以排除：</p>
+<ul>
+<li>DNS 解析失败</li>
+<li>SSL 握手失败</li>
+<li>网络不通</li>
+</ul>
+<h2 id="三、查看-Spring-Boot-日志"><a href="#三、查看-Spring-Boot-日志" class="headerlink" title="三、查看 Spring Boot 日志"></a>三、查看 Spring Boot 日志</h2><p>Spring Boot 日志中发现了一些异常，例如：java.lang.NullPointerException，以及：ServiceException: 产品查询为空<br>但是这些异常全部发生在：queue-2线程中，例如：MeituanAriConsumer，属于 Redis MQ 消费线程。</p>
+<p>浏览器访问的是：<code>GET /admin-api/hotel/room/getRoomAll</code><br>对应的 Spring MVC 请求线程应该是：<code>http-nio-48080-exec-*</code><br>因此这些 Redis 消费异常虽然需要处理，但并不是导致 HTTP 500 的直接原因。</p>
+<h2 id="四、真正的原因"><a href="#四、真正的原因" class="headerlink" title="四、真正的原因"></a>四、真正的原因</h2><p>查看 Nginx Error Log：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">2026/07/15 11:38:38 [alert]</span><br><span class="line">worker_connections are not enough</span><br><span class="line">while connecting to upstream</span><br><span class="line"></span><br><span class="line">upstream:</span><br><span class="line">http://127.0.0.1:48080/admin-api/hotel/room/getRoomAll?id=10162</span><br></pre></td></tr></table></figure>
+<p>终于找到根因。</p>
+<p>Nginx 在连接 Spring Boot 时：<strong>已经没有可用连接了</strong>。因此直接返回：<code>500 Internal Server Error</code>。</p>
+<h2 id="五、为什么会提示-CORS？"><a href="#五、为什么会提示-CORS？" class="headerlink" title="五、为什么会提示 CORS？"></a>五、为什么会提示 CORS？</h2><p>浏览器看到的是：<code>No &#39;Access-Control-Allow-Origin&#39;</code></p>
+<p>实际上我的 Nginx 配置如下：</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">location</span> /admin-api/ &#123;</span><br><span class="line"></span><br><span class="line">    <span class="attribute">add_header</span> <span class="string">&#x27;Access-Control-Allow-Credentials&#x27;</span> <span class="string">&#x27;true&#x27;</span> always;</span><br><span class="line">    <span class="attribute">add_header</span> <span class="string">&#x27;Access-Control-Allow-Methods&#x27;</span> <span class="string">&#x27;GET, POST, PUT, DELETE, OPTIONS&#x27;</span> always;</span><br><span class="line">    <span class="attribute">add_header</span> <span class="string">&#x27;Access-Control-Allow-Headers&#x27;</span> <span class="string">&#x27;DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,Version&#x27;</span> always;</span><br><span class="line">    <span class="attribute">add_header</span> <span class="string">&#x27;Access-Control-Expose-Headers&#x27;</span> <span class="string">&#x27;Content-Length,Content-Range&#x27;</span> always;</span><br><span class="line"></span><br><span class="line">    <span class="attribute">if</span> (<span class="variable">$request_method</span> = <span class="string">&#x27;OPTIONS&#x27;</span>) &#123;</span><br><span class="line">        <span class="attribute">add_header</span> <span class="string">&#x27;Access-Control-Allow-Origin&#x27;</span> <span class="string">&#x27;<span class="variable">$http_origin</span>&#x27;</span> always;</span><br><span class="line">        ...</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="attribute">proxy_pass</span> http://pms_backend/admin-api/;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以发现普通请求（GET、POST）并没有返回：<code>Access-Control-Allow-Origin</code><br>只有 OPTIONS 请求才设置了。</p>
+<p>因此：</p>
+<ul>
+<li>OPTIONS 请求正常</li>
+<li>GET 请求返回 500 时没有 Origin Header</li>
+<li>浏览器误认为是跨域错误</li>
+</ul>
+<p>所以：CORS 只是表现，不是真正原因。</p>
+<h2 id="六、为什么会出现-worker-connections-are-not-enough？"><a href="#六、为什么会出现-worker-connections-are-not-enough？" class="headerlink" title="六、为什么会出现 worker_connections are not enough？"></a>六、为什么会出现 <code>worker_connections are not enough</code>？</h2><p>当前 Nginx 配置：</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">worker_processes</span> auto;</span><br><span class="line"></span><br><span class="line"><span class="section">events</span> &#123;</span><br><span class="line">    <span class="attribute">worker_connections</span> <span class="number">768</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>服务器配置：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">ulimit</span> -n</span><br><span class="line">65535</span><br></pre></td></tr></table></figure>
+
+<p>说明：</p>
+<ul>
+<li>Linux 文件描述符充足</li>
+<li><code>worker_processes auto</code> 也没有问题</li>
+</ul>
+<p>真正限制的是：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">worker_connections</span> <span class="number">768</span></span><br></pre></td></tr></table></figure>
+
+<p>它表示： <strong>每个 Worker 最多只能维护 768 个连接。</strong></p>
+<p>连接不仅包括客户端请求，还包括：</p>
+<ul>
+<li>浏览器连接</li>
+<li>KeepAlive 连接</li>
+<li>Upstream 连接</li>
+<li>HTTP/2</li>
+<li>WebSocket</li>
+<li>SSE</li>
+</ul>
+<p>一旦连接长期不能释放，就容易耗尽。</p>
+<h2 id="七、真正需要排查的不是-Nginx"><a href="#七、真正需要排查的不是-Nginx" class="headerlink" title="七、真正需要排查的不是 Nginx"></a>七、真正需要排查的不是 Nginx</h2><p>把：</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">worker_connections</span> <span class="number">768</span>;</span><br></pre></td></tr></table></figure>
+
+<p>改成：</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">worker_connections</span> <span class="number">4096</span>;</span><br></pre></td></tr></table></figure>
+
+<p>确实可以缓解问题。</p>
+<p>但是： <strong>这通常只是缓解，而不是根治。</strong></p>
+<p>真正需要继续排查的是：为什么连接一直没有释放？</p>
+<p>常见原因包括：</p>
+<h3 id="1、Spring-Boot-接口响应过慢"><a href="#1、Spring-Boot-接口响应过慢" class="headerlink" title="1、Spring Boot 接口响应过慢"></a>1、Spring Boot 接口响应过慢</h3><p>例如：</p>
+<figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">浏览器</span><br><span class="line">    │</span><br><span class="line">    ▼</span><br><span class="line">Nginx</span><br><span class="line">    │</span><br><span class="line">    ▼</span><br><span class="line">Spring <span class="keyword">Boot</span></span><br><span class="line"><span class="keyword"></span>    │</span><br><span class="line">    ▼</span><br><span class="line">MySQL 慢查询</span><br><span class="line">    │</span><br><span class="line">    ▼</span><br><span class="line"><span class="number">30</span> 秒以后才返回</span><br><span class="line">    │</span><br><span class="line">    ▼</span><br><span class="line">Nginx 连接一直占着</span><br><span class="line">    │</span><br><span class="line">    ▼</span><br><span class="line">越来越多</span><br><span class="line">    │</span><br><span class="line">    ▼</span><br><span class="line">worker_connections 耗尽</span><br></pre></td></tr></table></figure>
+
+
+<h3 id="2、数据库慢查询"><a href="#2、数据库慢查询" class="headerlink" title="2、数据库慢查询"></a>2、数据库慢查询</h3><p>如果 MySQL 出现：</p>
+<ul>
+<li>慢 SQL</li>
+<li>锁等待</li>
+<li>RDS 性能不足</li>
+</ul>
+<p>都会导致接口响应越来越慢。</p>
+<h3 id="3、Redis-或第三方接口阻塞"><a href="#3、Redis-或第三方接口阻塞" class="headerlink" title="3、Redis 或第三方接口阻塞"></a>3、Redis 或第三方接口阻塞</h3><p>例如：</p>
+<ul>
+<li>Redis 超时</li>
+<li>OTA 接口超时</li>
+<li>HTTP 调用阻塞</li>
+</ul>
+<p>都会导致请求堆积。</p>
+<h3 id="4、WebSocket-或长连接过多"><a href="#4、WebSocket-或长连接过多" class="headerlink" title="4、WebSocket 或长连接过多"></a>4、WebSocket 或长连接过多</h3><p>如果系统存在：</p>
+<ul>
+<li>WebSocket</li>
+<li>SSE</li>
+<li>长轮询</li>
+</ul>
+<p>同样容易耗尽连接。</p>
+<h2 id="八、解决方案"><a href="#八、解决方案" class="headerlink" title="八、解决方案"></a>八、解决方案</h2><h3 id="方案一：提高-worker-connections"><a href="#方案一：提高-worker-connections" class="headerlink" title="方案一：提高 worker_connections"></a>方案一：提高 <code>worker_connections</code></h3><figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">worker_processes</span> auto;</span><br><span class="line"></span><br><span class="line"><span class="section">events</span> &#123;</span><br><span class="line">    <span class="attribute">worker_connections</span> <span class="number">4096</span>;</span><br><span class="line">    <span class="attribute">multi_accept</span> <span class="literal">on</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>修改后执行：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">nginx -t</span><br><span class="line">nginx -s reload</span><br></pre></td></tr></table></figure>
+
+
+<h3 id="方案二：继续定位真正瓶颈"><a href="#方案二：继续定位真正瓶颈" class="headerlink" title="方案二：继续定位真正瓶颈"></a>方案二：继续定位真正瓶颈</h3><p>建议重点排查：</p>
+<p><strong>Spring Boot</strong></p>
+<p>查看：</p>
+<ul>
+<li><code>http-nio-*</code> 请求线程</li>
+<li>接口执行耗时</li>
+<li>Thread Dump（jstack）</li>
+</ul>
+<p><strong>MySQL</strong></p>
+<p>查看：</p>
+<ul>
+<li>慢 SQL</li>
+<li>锁等待</li>
+<li>活跃连接数</li>
+</ul>
+<p><strong>Redis</strong></p>
+<p>查看：</p>
+<ul>
+<li>是否存在阻塞</li>
+<li>是否大量重试</li>
+</ul>
+<p><strong>系统连接状态</strong></p>
+<p>执行：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ss -ant | grep :48080</span><br></pre></td></tr></table></figure>
+
+<p>重点关注：</p>
+<ul>
+<li>ESTAB</li>
+<li>CLOSE_WAIT</li>
+<li>TIME_WAIT</li>
+</ul>
+<p>判断连接为什么迟迟不能释放。</p>
+<h2 id="九、排查经验总结"><a href="#九、排查经验总结" class="headerlink" title="九、排查经验总结"></a>九、排查经验总结</h2><p>很多时候浏览器提示：<code>CORS Error</code>，真正的问题并不是 CORS。</p>
+<p>推荐排查顺序：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">浏览器<span class="built_in"> Console</span></span><br><span class="line"><span class="built_in"></span>        │</span><br><span class="line">        ▼</span><br><span class="line">Network（确认 HTTP Status）</span><br><span class="line">        │</span><br><span class="line">        ▼</span><br><span class="line">Nginx <span class="built_in">Error</span> Log</span><br><span class="line">        │</span><br><span class="line">        ▼</span><br><span class="line">Spring Boot 日志</span><br><span class="line">        │</span><br><span class="line">        ▼</span><br><span class="line">数据库</span><br><span class="line">        │</span><br><span class="line">        ▼</span><br><span class="line">Redis / 第三方服务</span><br></pre></td></tr></table></figure>
+
+<p>不要因为浏览器提示：<code>No Access-Control-Allow-Origin</code>就一直修改跨域配置。</p>
+<p>真正值得关注的是：<code>HTTP 500</code>，只有找到导致 500 的根因，问题才能彻底解决。</p>
+<h2 id="十、总结"><a href="#十、总结" class="headerlink" title="十、总结"></a>十、总结</h2><p>本次故障形成了一条完整的故障链：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">Spring Boot 请求处理变慢（待进一步排查）</span><br><span class="line">            │</span><br><span class="line">            ▼</span><br><span class="line">Nginx 与 upstream 的连接长期占用</span><br><span class="line">            │</span><br><span class="line">            ▼</span><br><span class="line">worker_connections(768) 耗尽</span><br><span class="line">            │</span><br><span class="line">            ▼</span><br><span class="line">Nginx 返回 HTTP 500</span><br><span class="line">            │</span><br><span class="line">            ▼</span><br><span class="line">500 响应未携带 Access-Control-Allow-Origin</span><br><span class="line">            │</span><br><span class="line">            ▼</span><br><span class="line">浏览器提示 CORS</span><br><span class="line">            │</span><br><span class="line">            ▼</span><br><span class="line">Axios 最终抛出 Network Error</span><br></pre></td></tr></table></figure>
+
+<h3 id="排查结论"><a href="#排查结论" class="headerlink" title="排查结论"></a>排查结论</h3><table>
+<thead>
+<tr>
+<th>现象</th>
+<th>原因</th>
+<th>是否根因</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>浏览器提示 CORS</td>
+<td>500 响应未返回 <code>Access-Control-Allow-Origin</code></td>
+<td>❌</td>
+</tr>
+<tr>
+<td>Axios <code>Network Error</code></td>
+<td>浏览器因跨域策略屏蔽了 500 响应</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>HTTP 500</td>
+<td>Nginx 无法建立新的 upstream 连接</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td><code>worker_connections are not enough</code></td>
+<td>Nginx Worker 连接耗尽</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>Spring Boot 请求耗时过长 / 后端连接长期占用</td>
+<td>导致 Nginx 连接无法及时释放</td>
+<td>✅（最终需要继续排查）</td>
+</tr>
+</tbody></table>
+<h3 id="经验总结"><a href="#经验总结" class="headerlink" title="经验总结"></a>经验总结</h3><p>浏览器提示的错误往往只是<strong>表象</strong>。</p>
+<p>本次故障中：</p>
+<ul>
+<li>CORS 不是根因；</li>
+<li>DNS 也没有任何问题；</li>
+<li><code>worker_connections</code> 不足只是触发了 500；</li>
+<li>真正值得继续排查的是 <strong>为什么 Spring Boot 与数据库、Redis 等后端资源响应变慢，导致 Nginx 连接长期占用</strong>。</li>
+</ul>
+<p>对于这类问题，建议优先从 <strong>HTTP 状态码 → Nginx 日志 → 应用日志 → 数据库</strong> 的顺序进行定位，而不是一开始就怀疑跨域配置。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://moqiang02.github.io/2026/07/15/Nginx%E9%85%8D%E7%BD%AE%E9%94%99%E8%AF%AF%E5%AF%BC%E8%87%B4%E7%BD%91%E7%BB%9C%E5%BC%82%E5%B8%B8%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/" data-id="cmrlnjhlr00sp9oue1eo50j2t" data-title="Nginx配置错误导致网络异常故障排查" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2026/03/25/%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E5%86%85%E5%AD%98%E6%BA%A2%E5%87%BA%E6%8E%92%E6%9F%A5%E5%AE%9E%E5%BD%95/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">生产环境内存溢出排查实录</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/android/">android</a><span class="category-list-count">255</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/apache/">apache</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/flutter/">flutter</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/github%E5%8D%9A%E5%AE%A2/">github博客</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/go/">go</a><span class="category-list-count">26</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/html-css/">html+css</a><span class="category-list-count">27</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/iis/">iis</a><span class="category-list-count">15</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/java/">java</a><span class="category-list-count">85</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/javascript/">javascript</a><span class="category-list-count">124</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kotlin/">kotlin</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/linux/">linux</a><span class="category-list-count">68</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mac/">mac</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/memcached/">memcached</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mongodb/">mongodb</a><span class="category-list-count">19</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/mysql/">mysql</a><span class="category-list-count">74</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nginx/">nginx</a><span class="category-list-count">43</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/nodejs/">nodejs</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/php/">php</a><span class="category-list-count">186</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python/">python</a><span class="category-list-count">44</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">14</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%85%B6%E5%AE%83/">其它</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/">开发工具</a><span class="category-list-count">52</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%BC%80%E6%BA%90%E9%A1%B9%E7%9B%AE/">开源项目</a><span class="category-list-count">73</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB%E9%9A%8F%E7%AC%94/">生活随笔</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BD%91%E7%BB%9C/">网络</a><span class="category-list-count">10</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%8C%96%E4%BA%A4%E6%98%93/">量化交易</a><span class="category-list-count">3</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/AndroidStudio/" style="font-size: 13.16px;">AndroidStudio</a> <a href="/tags/AndroidUI/" style="font-size: 20px;">AndroidUI</a> <a href="/tags/Android%E4%BA%8B%E4%BB%B6%E6%8B%A6%E6%88%AA/" style="font-size: 11.05px;">Android事件拦截</a> <a href="/tags/Android%E5%BC%80%E6%BA%90/" style="font-size: 16.84px;">Android开源</a> <a href="/tags/CI/" style="font-size: 15.26px;">CI</a> <a href="/tags/CURL/" style="font-size: 12.63px;">CURL</a> <a href="/tags/DEDE/" style="font-size: 17.37px;">DEDE</a> <a href="/tags/Docker/" style="font-size: 14.21px;">Docker</a> <a href="/tags/Flask/" style="font-size: 10.53px;">Flask</a> <a href="/tags/JavaSE/" style="font-size: 18.42px;">JavaSE</a> <a href="/tags/Laravel/" style="font-size: 16.84px;">Laravel</a> <a href="/tags/Maven/" style="font-size: 11.58px;">Maven</a> <a href="/tags/MybatisPlus/" style="font-size: 11.05px;">MybatisPlus</a> <a href="/tags/Puppeteer/" style="font-size: 14.74px;">Puppeteer</a> <a href="/tags/SVN/" style="font-size: 10px;">SVN</a> <a href="/tags/Selenium/" style="font-size: 11.58px;">Selenium</a> <a href="/tags/SpringBoot/" style="font-size: 19.47px;">SpringBoot</a> <a href="/tags/Thinkphp/" style="font-size: 10.53px;">Thinkphp</a> <a href="/tags/UEditor/" style="font-size: 11.58px;">UEditor</a> <a href="/tags/VMware/" style="font-size: 12.11px;">VMware</a> <a href="/tags/Vue/" style="font-size: 18.95px;">Vue</a> <a href="/tags/WebSocket/" style="font-size: 12.63px;">WebSocket</a> <a href="/tags/ecshop/" style="font-size: 14.21px;">ecshop</a> <a href="/tags/scrapy/" style="font-size: 13.68px;">scrapy</a> <a href="/tags/smarty/" style="font-size: 12.11px;">smarty</a> <a href="/tags/socket/" style="font-size: 14.21px;">socket</a> <a href="/tags/sphinx/" style="font-size: 11.58px;">sphinx</a> <a href="/tags/vagrant/" style="font-size: 12.11px;">vagrant</a> <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.05px;">微服务</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93/" style="font-size: 15.26px;">数据传输</a> <a href="/tags/%E6%AD%A3%E5%88%99/" style="font-size: 11.58px;">正则</a> <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" style="font-size: 15.79px;">消息队列</a> <a href="/tags/%E7%88%AC%E8%99%AB/" style="font-size: 17.89px;">爬虫</a> <a href="/tags/%E9%9B%86%E7%BE%A4/" style="font-size: 16.32px;">集群</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/07/15/Nginx%E9%85%8D%E7%BD%AE%E9%94%99%E8%AF%AF%E5%AF%BC%E8%87%B4%E7%BD%91%E7%BB%9C%E5%BC%82%E5%B8%B8%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">Nginx配置错误导致网络异常故障排查</a>
+          </li>
+        
+          <li>
+            <a href="/2026/03/25/%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E5%86%85%E5%AD%98%E6%BA%A2%E5%87%BA%E6%8E%92%E6%9F%A5%E5%AE%9E%E5%BD%95/">生产环境内存溢出排查实录</a>
+          </li>
+        
+          <li>
+            <a href="/2025/10/28/%E5%9C%A8git%E4%B8%BB%E5%88%86%E6%94%AF%E6%B8%85%E7%90%86%E4%BB%A3%E7%A0%81%E6%B3%A8%E9%87%8A%E7%9A%84%E6%96%B9%E6%A1%88/">在git主分支清理代码注释的方案</a>
+          </li>
+        
+          <li>
+            <a href="/2025/10/21/ThinkPHP6-0%E9%83%A8%E7%BD%B2%E7%9B%B8%E5%85%B3%E9%97%AE%E9%A2%98/">ThinkPHP6.0部署相关问题</a>
+          </li>
+        
+          <li>
+            <a href="/2025/08/27/%E5%88%A9%E7%94%A8Jenkins%E4%B8%8EDocker%E5%AE%9E%E7%8E%B0Spring-Boot%E9%A1%B9%E7%9B%AE%E7%9A%84%E8%87%AA%E5%8A%A8%E5%8C%96%E9%83%A8%E7%BD%B2%E4%B9%8B%E9%81%93/">利用Jenkins与Docker实现Spring Boot项目的自动化部署之道</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 moqiang<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.4.1.min.js"></script>
+
+<!-- rex -->
+
+<script src="/js/toc.js"></script>
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>
